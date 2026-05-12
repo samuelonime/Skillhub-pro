@@ -1,0 +1,328 @@
+// SkillHub Prisma Schema — PostgreSQL
+// npx prisma migrate dev --name init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id              String   @id @default(uuid())
+  email           String   @unique
+  password        String
+  firstName       String
+  lastName        String
+  role            Role     @default(student)
+  avatar          String?
+  title           String?
+  bio             String?
+  location        String?
+  company         String?
+  profileStrength Int      @default(20)
+  meritCoins      Int      @default(100)
+  skills          String[] @default([])
+  verified        Boolean  @default(false)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  refreshTokens RefreshToken[]
+  enrollments   Enrollment[]
+  applications  Application[]
+  savedJobs     SavedJob[]
+  certificates  Certificate[]
+  projects      Project[]
+  notifications Notification[]
+  transactions  Transaction[]
+  settings      UserSettings?
+  payments      Payment[]
+  subscriptions Subscription[]
+
+  @@map("users")
+}
+
+enum Role {
+  student
+  employer
+  instructor
+  admin
+}
+
+model RefreshToken {
+  id        String   @id @default(uuid())
+  token     String   @unique
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  @@map("refresh_tokens")
+}
+
+model Course {
+  id          String   @id @default(uuid())
+  title       String
+  provider    String
+  category    String
+  level       Level    @default(Beginner)
+  duration    String
+  rating      Float    @default(0)
+  enrollCount Int      @default(0)
+  price       Float    @default(0)
+  thumbnail   String?
+  description String?
+  isPremium   Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  enrollments Enrollment[]
+
+  @@map("courses")
+}
+
+enum Level {
+  Beginner
+  Intermediate
+  Advanced
+}
+
+model Enrollment {
+  id          String    @id @default(uuid())
+  userId      String
+  courseId    String
+  progress    Int       @default(0)
+  enrolledAt  DateTime  @default(now())
+  completedAt DateTime?
+
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  course Course @relation(fields: [courseId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, courseId])
+  @@map("enrollments")
+}
+
+model Job {
+  id          String    @id @default(uuid())
+  title       String
+  company     String
+  location    String
+  type        String
+  salary      String?
+  skills      String[]  @default([])
+  description String?
+  status      JobStatus @default(active)
+  postedAt    DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  applications Application[]
+  savedBy      SavedJob[]
+
+  @@map("jobs")
+}
+
+enum JobStatus {
+  active
+  closed
+  draft
+}
+
+model Application {
+  id          String            @id @default(uuid())
+  userId      String
+  jobId       String
+  coverLetter String?
+  status      ApplicationStatus @default(pending)
+  appliedAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  job  Job  @relation(fields: [jobId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, jobId])
+  @@map("applications")
+}
+
+enum ApplicationStatus {
+  pending
+  reviewed
+  shortlisted
+  rejected
+  accepted
+}
+
+model SavedJob {
+  id      String   @id @default(uuid())
+  userId  String
+  jobId   String
+  savedAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  job  Job  @relation(fields: [jobId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, jobId])
+  @@map("saved_jobs")
+}
+
+model Certificate {
+  id           String            @id @default(uuid())
+  userId       String
+  name         String
+  issuer       String
+  issueDate    DateTime
+  expiryDate   DateTime?
+  status       CertificateStatus @default(pending)
+  credentialId String?
+  fileUrl      String?
+  verifiedAt   DateTime?
+  verifiedBy   String?
+  createdAt    DateTime          @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("certificates")
+}
+
+enum CertificateStatus {
+  pending
+  verified
+  rejected
+}
+
+model Project {
+  id           String   @id @default(uuid())
+  userId       String
+  title        String
+  description  String?
+  technologies String[] @default([])
+  liveUrl      String?
+  githubUrl    String?
+  thumbnail    String?
+  score        Float    @default(8.0)
+  views        Int      @default(0)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("projects")
+}
+
+model Notification {
+  id        String   @id @default(uuid())
+  userId    String
+  type      String
+  icon      String?
+  title     String
+  message   String
+  read      Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("notifications")
+}
+
+model Transaction {
+  id           String   @id @default(uuid())
+  userId       String
+  type         String
+  amount       Int
+  description  String
+  balanceAfter Int
+  createdAt    DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("transactions")
+}
+
+model UserSettings {
+  id             String   @id @default(uuid())
+  userId         String   @unique
+  emailNotifs    Boolean  @default(true)
+  pushNotifs     Boolean  @default(true)
+  jobAlerts      Boolean  @default(true)
+  courseUpdates  Boolean  @default(true)
+  weeklyDigest   Boolean  @default(false)
+  profileVisible Boolean  @default(true)
+  showEmail      Boolean  @default(false)
+  showLocation   Boolean  @default(true)
+  theme          String   @default("light")
+  language       String   @default("en")
+  timezone       String   @default("Africa/Lagos")
+  updatedAt      DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("user_settings")
+}
+
+model Payment {
+  id             String         @id @default(uuid())
+  userId         String
+  amount         Int
+  currency       String         @default("NGN")
+  status         PaymentStatus  @default(pending)
+  paystackRef    String         @unique
+  paystackTrxRef String?
+  purpose        PaymentPurpose
+  metadata       Json?
+  paidAt         DateTime?
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+
+  user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  subscription Subscription?
+
+  @@map("payments")
+}
+
+enum PaymentStatus {
+  pending
+  success
+  failed
+  abandoned
+  refunded
+}
+
+enum PaymentPurpose {
+  subscription
+  merit_coins
+  course
+  featured_profile
+}
+
+model Subscription {
+  id        String             @id @default(uuid())
+  userId    String
+  paymentId String             @unique
+  plan      SubscriptionPlan
+  status    SubscriptionStatus @default(active)
+  startDate DateTime           @default(now())
+  endDate   DateTime
+  autoRenew Boolean            @default(true)
+  createdAt DateTime           @default(now())
+  updatedAt DateTime           @updatedAt
+
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  payment Payment @relation(fields: [paymentId], references: [id])
+
+  @@map("subscriptions")
+}
+
+enum SubscriptionPlan {
+  pro_monthly
+  pro_annual
+  employer_monthly
+  employer_annual
+}
+
+enum SubscriptionStatus {
+  active
+  expired
+  cancelled
+  paused
+}

@@ -1,0 +1,1368 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <!-- Meta Information -->
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Settings | SkillHub</title>
+    
+    <!-- SEO Meta Tags -->
+    <meta name="description" content="SkillHub - Account settings and preferences">
+    <meta name="keywords" content="settings, account, payment, notifications, connections">
+    <meta name="author" content="SkillHub">
+    
+    <!-- Fonts & Icons -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    
+    <!-- Stylesheets -->
+    <link rel="stylesheet" href="styles/settings.css">
+</head>
+<body>
+    <div class="settings-container">
+        <!-- ========== SIDEBAR NAVIGATION ========== -->
+        <aside class="settings-sidebar">
+            <!-- Sidebar Header -->
+            <div class="sidebar-header">
+                <a href="dashboard.html" class="logo">
+                    <i class="fas fa-graduation-cap"></i>
+                    <span>SkillHub</span>
+                </a>
+                <div class="user-info">
+                    <img src="https://ui-avatars.com/api/?name=John+Doe&background=4f46e5&color=fff&size=64" 
+                         alt="John Doe" class="user-avatar">
+                    <div>
+                        <h4>John Doe</h4>
+                        <p>john.doe@email.com</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Navigation Menu -->
+            <nav class="settings-nav">
+                <a href="#account" class="nav-item active" data-section="account">
+                    <i class="fas fa-user-cog"></i>
+                    <span>Account Settings</span>
+                </a>
+                <a href="#payment" class="nav-item" data-section="payment">
+                    <i class="fas fa-credit-card"></i>
+                    <span>Payment Settings</span>
+                </a>
+                <a href="#notifications" class="nav-item" data-section="notifications">
+                    <i class="fas fa-bell"></i>
+                    <span>Notification Preferences</span>
+                </a>
+                <a href="#connections" class="nav-item" data-section="connections">
+                    <i class="fas fa-plug"></i>
+                    <span>Platform Connections</span>
+                </a>
+                <a href="#security" class="nav-item" data-section="security">
+                    <i class="fas fa-shield-alt"></i>
+                    <span>Security & Privacy</span>
+                </a>
+                <a href="#appearance" class="nav-item" data-section="appearance">
+                    <i class="fas fa-palette"></i>
+                    <span>Appearance</span>
+                </a>
+            </nav>
+
+            <!-- Sidebar Footer -->
+            <div class="sidebar-footer">
+                <a href="index.html" class="back-btn">
+                    <i class="fas fa-arrow-left"></i>
+                    <span>Back to Dashboard</span>
+                </a>
+            </div>
+        </aside>
+
+        <!-- ========== MAIN CONTENT AREA ========== -->
+        <main class="settings-main">
+            <!-- SECTION 1: ACCOUNT SETTINGS -->
+            <section id="account-section" class="settings-section active">
+                <div class="section-header">
+                    <h1><i class="fas fa-user-cog"></i> Account Settings</h1>
+                    <p class="section-subtitle">Manage your personal information and account preferences</p>
+                </div>
+
+                <div class="settings-grid">
+                    <!-- Personal Information Card -->
+                    <div class="settings-card">
+                        <div class="card-header">
+                            <h3><i class="fas fa-user"></i> Personal Information</h3>
+                            <button class="btn btn-sm btn-outline" id="edit-profile">
+                                <i class="fas fa-edit"></i> Edit
+                            </button>
+                        </div>
+                        <div class="card-body">
+                            <div class="info-group">
+                                <label>Full Name</label>
+                                <p class="info-value">John Doe</p>
+                            </div>
+                            <div class="info-group">
+                                <label>Email Address</label>
+                                <p class="info-value">john.doe@email.com</p>
+                            </div>
+                            <div class="info-group">
+                                <label>Phone Number</label>
+                                <p class="info-value">+1 (555) 123-4567</p>
+                            </div>
+                            <div class="info-group">
+                                <label>Location</label>
+                                <p class="info-value">San Francisco, CA</p>
+                            </div>
+                            <div class="info-group">
+                                <label>Job Title</label>
+                                <p class="info-value">Full Stack Developer</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Profile Visibility Card -->
+                    <div class="settings-card">
+                        <div class="card-header">
+                            <h3><i class="fas fa-eye"></i> Profile Visibility</h3>
+                        </div>
+                        <div class="card-body">
+                            <div class="visibility-controls">
+                                <div class="visibility-option">
+                                    <div class="option-header">
+                                        <div>
+                                            <h4>Public Profile</h4>
+                                            <p>Your profile is visible to employers and recruiters</p>
+                                        </div>
+                                        <label class="switch">
+                                            <input type="checkbox" id="public-profile" checked>
+                                            <span class="slider"></span>
+                                        </label>
+                                    </div>
+                                </div>
+                                <div class="visibility-option">
+                                    <div class="option-header">
+                                        <div>
+                                            <h4>Show Portfolio</h4>
+                                            <p>Display your projects and certificates publicly</p>
+                                        </div>
+                                        <label class="switch">
+                                            <input type="checkbox" id="show-portfolio" checked>
+                                            <span class="slider"></span>
+                                        </label>
+                                    </div>
+                                </div>
+                                <div class="visibility-option">
+                                    <div class="option-header">
+                                        <div>
+                                            <h4>Search Engine Indexing</h4>
+                                            <p>Allow search engines to index your profile</p>
+                                        </div>
+                                        <label class="switch">
+                                            <input type="checkbox" id="search-indexing">
+                                            <span class="slider"></span>
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Account Preferences Card -->
+                    <div class="settings-card">
+                        <div class="card-header">
+                            <h3><i class="fas fa-sliders-h"></i> Account Preferences</h3>
+                        </div>
+                        <div class="card-body">
+                            <div class="preference-group">
+                                <div class="preference-item">
+                                    <label>Language</label>
+                                    <select class="form-select">
+                                        <option selected>English</option>
+                                        <option>Spanish</option>
+                                        <option>French</option>
+                                        <option>German</option>
+                                        <option>Chinese</option>
+                                    </select>
+                                </div>
+                                <div class="preference-item">
+                                    <label>Time Zone</label>
+                                    <select class="form-select">
+                                        <option selected>Pacific Time (PT)</option>
+                                        <option>Mountain Time (MT)</option>
+                                        <option>Central Time (CT)</option>
+                                        <option>Eastern Time (ET)</option>
+                                    </select>
+                                </div>
+                                <div class="preference-item">
+                                    <label>Date Format</label>
+                                    <select class="form-select">
+                                        <option selected>MM/DD/YYYY</option>
+                                        <option>DD/MM/YYYY</option>
+                                        <option>YYYY-MM-DD</option>
+                                    </select>
+                                </div>
+                                <div class="preference-item">
+                                    <label>Default Dashboard View</label>
+                                    <select class="form-select">
+                                        <option selected>Learning Overview</option>
+                                        <option>Job Matches</option>
+                                        <option>Portfolio</option>
+                                        <option>Rewards</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <button class="btn btn-primary btn-block mt-4">
+                                <i class="fas fa-save"></i> Save Preferences
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Danger Zone Card -->
+                    <div class="settings-card danger">
+                        <div class="card-header">
+                            <h3><i class="fas fa-exclamation-triangle"></i> Danger Zone</h3>
+                        </div>
+                        <div class="card-body">
+                            <div class="danger-actions">
+                                <div class="danger-action">
+                                    <div>
+                                        <h4>Export Account Data</h4>
+                                        <p>Download all your data including courses, certificates, and portfolio</p>
+                                    </div>
+                                    <button class="btn btn-outline">
+                                        <i class="fas fa-download"></i> Export Data
+                                    </button>
+                                </div>
+                                <div class="danger-action">
+                                    <div>
+                                        <h4>Deactivate Account</h4>
+                                        <p>Temporarily disable your account. You can reactivate anytime</p>
+                                    </div>
+                                    <button class="btn btn-outline">
+                                        <i class="fas fa-user-slash"></i> Deactivate
+                                    </button>
+                                </div>
+                                <div class="danger-action">
+                                    <div>
+                                        <h4>Delete Account</h4>
+                                        <p>Permanently delete your account and all associated data</p>
+                                    </div>
+                                    <button class="btn btn-danger">
+                                        <i class="fas fa-trash-alt"></i> Delete Account
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- SECTION 2: PAYMENT SETTINGS -->
+            <section id="payment-section" class="settings-section">
+                <div class="section-header">
+                    <h1><i class="fas fa-credit-card"></i> Payment Settings</h1>
+                    <p class="section-subtitle">Manage your billing information and subscription</p>
+                </div>
+
+                <div class="settings-grid">
+                    <!-- Current Plan Card -->
+                    <div class="settings-card payment-plan">
+                        <div class="card-header">
+                            <h3><i class="fas fa-crown"></i> Current Plan</h3>
+                            <span class="plan-badge">Active</span>
+                        </div>
+                        <div class="plan-hero">
+                            <h2 class="plan-title">Pro Plan</h2>
+                            <div class="plan-price-container">
+                                <span class="plan-price-main">$19.99</span>
+                                <span class="plan-price-period">/month</span>
+                            </div>
+                        </div>
+                        <div class="plan-features-premium">
+                            <div class="feature-item-premium">
+                                <i class="fas fa-check-circle"></i>
+                                <span>Unlimited course access</span>
+                            </div>
+                            <div class="feature-item-premium">
+                                <i class="fas fa-check-circle"></i>
+                                <span>Priority job matching</span>
+                            </div>
+                            <div class="feature-item-premium">
+                                <i class="fas fa-check-circle"></i>
+                                <span>Advanced analytics</span>
+                            </div>
+                            <div class="feature-item-premium">
+                                <i class="fas fa-check-circle"></i>
+                                <span>Premium support</span>
+                            </div>
+                        </div>
+                        <div class="plan-actions-premium">
+                            <button class="btn btn-outline">
+                                <i class="fas fa-download"></i> Download Invoice
+                            </button>
+                            <button class="btn btn-primary">
+                                <i class="fas fa-sync-alt"></i> Upgrade Plan
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Payment Methods Card -->
+                    <div class="payment-method enhanced default">
+                        <div class="method-icon enhanced visa">
+                            <i class="fab fa-cc-visa"></i>
+                        </div>
+                        <div class="method-details">
+                            <h4>Visa ending in 4242</h4>
+                            <p>Expires 05/2025</p>
+                        </div>
+                        <div class="method-actions enhanced">
+                            <button class="btn-icon" title="Edit">
+                                <i class="fas fa-edit"></i>
+                            </button>
+                            <button class="btn-icon" title="Remove">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Billing History Card -->
+                    <div class="settings-card">
+                        <div class="card-header">
+                            <h3><i class="fas fa-history"></i> Billing History</h3>
+                            <button class="btn btn-sm btn-outline" id="view-all-invoices">
+                                View All
+                            </button>
+                        </div>
+                        <div class="card-body">
+                            <div class="billing-table enhanced">
+                                <table>
+                                    <thead>
+                                        <tr>
+                                            <th>Date</th>
+                                            <th>Description</th>
+                                            <th>Amount</th>
+                                            <th>Status</th>
+                                            <th>Invoice</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr>
+                                            <td>Apr 1, 2024</td>
+                                            <td>Pro Plan - Monthly</td>
+                                            <td>$19.99</td>
+                                            <td><span class="status-badge paid">Paid</span></td>
+                                            <td><button class="btn-link">View</button></td>
+                                        </tr>
+                                        <tr>
+                                            <td>Mar 1, 2024</td>
+                                            <td>Pro Plan - Monthly</td>
+                                            <td>$19.99</td>
+                                            <td><span class="status-badge paid">Paid</span></td>
+                                            <td><button class="btn-link">View</button></td>
+                                        </tr>
+                                        <tr>
+                                            <td>Feb 1, 2024</td>
+                                            <td>Pro Plan - Monthly</td>
+                                            <td>$19.99</td>
+                                            <td><span class="status-badge paid">Paid</span></td>
+                                            <td><button class="btn-link">View</button></td>
+                                        </tr>
+                                        <tr>
+                                            <td>Jan 1, 2024</td>
+                                            <td>Basic to Pro Upgrade</td>
+                                            <td>$9.99</td>
+                                            <td><span class="status-badge paid">Paid</span></td>
+                                            <td><button class="btn-link">View</button></td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Billing Information Card -->
+                    <div class="settings-card">
+                        <div class="card-header">
+                            <h3><i class="fas fa-file-invoice"></i> Billing Information</h3>
+                            <button class="btn btn-sm btn-outline" id="edit-billing">
+                                <i class="fas fa-edit"></i> Edit
+                            </button>
+                        </div>
+                        <div class="card-body">
+                            <div class="billing-info enhanced">
+                                <div class="info-row">
+                                    <div class="info-label">Billing Name</div>
+                                    <div class="info-value">John Doe</div>
+                                </div>
+                                <div class="info-row">
+                                    <div class="info-label">Company</div>
+                                    <div class="info-value">N/A</div>
+                                </div>
+                                <div class="info-row">
+                                    <div class="info-label">Address</div>
+                                    <div class="info-value">123 Main St, San Francisco, CA 94105</div>
+                                </div>
+                                <div class="info-row">
+                                    <div class="info-label">Tax ID</div>
+                                    <div class="info-value">Not provided</div>
+                                </div>
+                                <div class="info-row">
+                                    <div class="info-label">Next Billing Date</div>
+                                    <div class="info-value">May 1, 2024</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- SECTION 3: NOTIFICATION PREFERENCES -->
+            <section id="notifications-section" class="settings-section">
+                <div class="section-header">
+                    <h1><i class="fas fa-bell"></i> Notification Preferences</h1>
+                    <p class="section-subtitle">Control how and when you receive notifications</p>
+                </div>
+
+                <div class="settings-grid">
+                    <!-- Notification Channels Card -->
+                    <div class="settings-card">
+                        <div class="card-header">
+                            <h3><i class="fas fa-broadcast-tower"></i> Notification Channels</h3>
+                        </div>
+                        <div class="card-body">
+                            <div class="channel-controls">
+                                <div class="channel-item">
+                                    <div class="channel-info">
+                                        <div class="channel-icon">
+                                            <i class="fas fa-envelope"></i>
+                                        </div>
+                                        <div>
+                                            <h4>Email Notifications</h4>
+                                            <p>Receive notifications via email</p>
+                                        </div>
+                                    </div>
+                                    <label class="switch">
+                                        <input type="checkbox" id="email-notifications" checked>
+                                        <span class="slider"></span>
+                                    </label>
+                                </div>
+                                <div class="channel-item">
+                                    <div class="channel-info">
+                                        <div class="channel-icon">
+                                            <i class="fas fa-bell"></i>
+                                        </div>
+                                        <div>
+                                            <h4>Push Notifications</h4>
+                                            <p>Receive browser push notifications</p>
+                                        </div>
+                                    </div>
+                                    <label class="switch">
+                                        <input type="checkbox" id="push-notifications" checked>
+                                        <span class="slider"></span>
+                                    </label>
+                                </div>
+                                <div class="channel-item">
+                                    <div class="channel-info">
+                                        <div class="channel-icon">
+                                            <i class="fas fa-mobile-alt"></i>
+                                        </div>
+                                        <div>
+                                            <h4>SMS Notifications</h4>
+                                            <p>Receive text message notifications</p>
+                                        </div>
+                                    </div>
+                                    <label class="switch">
+                                        <input type="checkbox" id="sms-notifications">
+                                        <span class="slider"></span>
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Learning Notifications Card -->
+                    <div class="settings-card">
+                        <div class="card-header">
+                            <h3><i class="fas fa-graduation-cap"></i> Learning Notifications</h3>
+                        </div>
+                        <div class="card-body">
+                            <div class="notification-group">
+                                <div class="notification-item">
+                                    <div class="notification-info">
+                                        <h4>Course Updates</h4>
+                                        <p>New content, assignments, and announcements</p>
+                                    </div>
+                                    <div class="notification-settings">
+                                        <select class="form-select">
+                                            <option value="immediate">Immediate</option>
+                                            <option value="daily" selected>Daily Digest</option>
+                                            <option value="weekly">Weekly Digest</option>
+                                            <option value="none">Don't notify</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="notification-item">
+                                    <div class="notification-info">
+                                        <h4>Deadline Reminders</h4>
+                                        <p>Course deadlines and assignment due dates</p>
+                                    </div>
+                                    <div class="notification-settings">
+                                        <select class="form-select">
+                                            <option value="immediate" selected>Immediate</option>
+                                            <option value="daily">Daily Digest</option>
+                                            <option value="weekly">Weekly Digest</option>
+                                            <option value="none">Don't notify</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="notification-item">
+                                    <div class="notification-info">
+                                        <h4>Skill Recommendations</h4>
+                                        <p>Personalized course and learning path suggestions</p>
+                                    </div>
+                                    <div class="notification-settings">
+                                        <select class="form-select">
+                                            <option value="immediate">Immediate</option>
+                                            <option value="daily" selected>Daily Digest</option>
+                                            <option value="weekly">Weekly Digest</option>
+                                            <option value="none">Don't notify</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="notification-item">
+                                    <div class="notification-info">
+                                        <h4>Learning Milestones</h4>
+                                        <p>Course completions and certificate achievements</p>
+                                    </div>
+                                    <div class="notification-settings">
+                                        <select class="form-select">
+                                            <option value="immediate" selected>Immediate</option>
+                                            <option value="daily">Daily Digest</option>
+                                            <option value="weekly">Weekly Digest</option>
+                                            <option value="none">Don't notify</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Job Notifications Card -->
+                    <div class="settings-card">
+                        <div class="card-header">
+                            <h3><i class="fas fa-briefcase"></i> Job & Career Notifications</h3>
+                        </div>
+                        <div class="card-body">
+                            <div class="notification-group">
+                                <div class="notification-item">
+                                    <div class="notification-info">
+                                        <h4>New Job Matches</h4>
+                                        <p>Jobs matching your skills and preferences</p>
+                                    </div>
+                                    <div class="notification-settings">
+                                        <select class="form-select">
+                                            <option value="immediate" selected>Immediate</option>
+                                            <option value="daily">Daily Digest</option>
+                                            <option value="weekly">Weekly Digest</option>
+                                            <option value="none">Don't notify</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="notification-item">
+                                    <div class="notification-info">
+                                        <h4>Application Updates</h4>
+                                        <p>Status changes on your job applications</p>
+                                    </div>
+                                    <div class="notification-settings">
+                                        <select class="form-select">
+                                            <option value="immediate" selected>Immediate</option>
+                                            <option value="daily">Daily Digest</option>
+                                            <option value="weekly">Weekly Digest</option>
+                                            <option value="none">Don't notify</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="notification-item">
+                                    <div class="notification-info">
+                                        <h4>Employer Messages</h4>
+                                        <p>Messages from recruiters and employers</p>
+                                    </div>
+                                    <div class="notification-settings">
+                                        <select class="form-select">
+                                            <option value="immediate" selected>Immediate</option>
+                                            <option value="daily">Daily Digest</option>
+                                            <option value="weekly">Weekly Digest</option>
+                                            <option value="none">Don't notify</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="notification-item">
+                                    <div class="notification-info">
+                                        <h4>Interview Invitations</h4>
+                                        <p>Interview requests and scheduling updates</p>
+                                    </div>
+                                    <div class="notification-settings">
+                                        <select class="form-select">
+                                            <option value="immediate" selected>Immediate</option>
+                                            <option value="daily">Daily Digest</option>
+                                            <option value="weekly">Weekly Digest</option>
+                                            <option value="none">Don't notify</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Quiet Hours Card -->
+                    <div class="settings-card">
+                        <div class="card-header">
+                            <h3><i class="fas fa-moon"></i> Quiet Hours</h3>
+                        </div>
+                        <div class="card-body">
+                            <div class="quiet-hours-controls">
+                                <div class="quiet-hours-toggle">
+                                    <div class="toggle-info">
+                                        <h4>Enable Quiet Hours</h4>
+                                        <p>Pause notifications during specific hours</p>
+                                    </div>
+                                    <label class="switch">
+                                        <input type="checkbox" id="quiet-hours">
+                                        <span class="slider"></span>
+                                    </label>
+                                </div>
+                                <div class="quiet-hours-schedule" id="quiet-hours-schedule">
+                                    <div class="schedule-row">
+                                        <div class="schedule-label">Start Time</div>
+                                        <div class="schedule-control">
+                                            <select class="form-select">
+                                                <option value="22:00">10:00 PM</option>
+                                                <option value="23:00">11:00 PM</option>
+                                                <option value="00:00">12:00 AM</option>
+                                                <option value="01:00">1:00 AM</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <div class="schedule-row">
+                                        <div class="schedule-label">End Time</div>
+                                        <div class="schedule-control">
+                                            <select class="form-select">
+                                                <option value="06:00">6:00 AM</option>
+                                                <option value="07:00">7:00 AM</option>
+                                                <option value="08:00">8:00 AM</option>
+                                                <option value="09:00">9:00 AM</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <div class="schedule-row">
+                                        <div class="schedule-label">Days</div>
+                                        <div class="schedule-days">
+                                            <label class="day-checkbox">
+                                                <input type="checkbox" checked> M
+                                            </label>
+                                            <label class="day-checkbox">
+                                                <input type="checkbox" checked> T
+                                            </label>
+                                            <label class="day-checkbox">
+                                                <input type="checkbox" checked> W
+                                            </label>
+                                            <label class="day-checkbox">
+                                                <input type="checkbox" checked> T
+                                            </label>
+                                            <label class="day-checkbox">
+                                                <input type="checkbox" checked> F
+                                            </label>
+                                            <label class="day-checkbox">
+                                                <input type="checkbox"> S
+                                            </label>
+                                            <label class="day-checkbox">
+                                                <input type="checkbox"> S
+                                            </label>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <button class="btn btn-primary btn-block mt-4">
+                                <i class="fas fa-save"></i> Save Notification Settings
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- SECTION 4: PLATFORM CONNECTIONS -->
+            <section id="connections-section" class="settings-section">
+                <div class="section-header">
+                    <h1><i class="fas fa-plug"></i> Platform Connections</h1>
+                    <p class="section-subtitle">Connect and sync with your learning platforms</p>
+                </div>
+
+                <div class="settings-grid">
+                    <!-- Merged Platforms Card -->
+                    <div class="settings-card">
+                        <div class="card-header">
+                            <h3><i class="fas fa-layer-group"></i> All Platforms</h3>
+                            <div class="platform-stats-header">
+                                <span class="badge badge-success connected-count">3 Connected</span>
+                                <span class="badge badge-outline available-count">4 Available</span>
+                            </div>
+                        </div>
+                        
+                        <div class="card-body">
+                            <!-- Platform Tabs -->
+                            <div class="platform-tabs">
+                                <button class="platform-tab active" data-tab="all">All Platforms</button>
+                                <button class="platform-tab" data-tab="connected">Connected</button>
+                                <button class="platform-tab" data-tab="available">Available</button>
+                            </div>
+                            
+                            <!-- Platforms Grid -->
+                            <div class="platforms-grid merged-view">
+                                <!-- Udemy Platform Card -->
+                                <div class="platform-card connected" data-platform="udemy" data-status="connected">
+                                    <div class="platform-card-header">
+                                        <div class="platform-icon udemy connected">
+                                            <i class="fas fa-graduation-cap"></i>
+                                        </div>
+                                        <div class="platform-info">
+                                            <h4>Udemy</h4>
+                                            <p>Sync your Udemy courses and certificates</p>
+                                        </div>
+                                        <div class="platform-status-badge">
+                                            <span class="status-badge connected">
+                                                <i class="fas fa-check-circle"></i> Connected
+                                            </span>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="platform-card-body">
+                                        <div class="platform-stats">
+                                            <div class="stat-item">
+                                                <i class="fas fa-graduation-cap"></i>
+                                                <span>12 courses</span>
+                                            </div>
+                                            <div class="stat-item">
+                                                <i class="fas fa-certificate"></i>
+                                                <span>8 certificates</span>
+                                            </div>
+                                            <div class="stat-item">
+                                                <i class="fas fa-sync"></i>
+                                                <span>Synced 2 hours ago</span>
+                                            </div>
+                                        </div>
+                                        
+                                        <div class="platform-features">
+                                            <span class="feature-tag">Course Sync</span>
+                                            <span class="feature-tag">Certificates</span>
+                                            <span class="feature-tag">Progress Tracking</span>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="platform-card-actions">
+                                        <button class="btn btn-sm btn-outline btn-sync" title="Sync Now">
+                                            <i class="fas fa-sync"></i> Sync Now
+                                        </button>
+                                        <button class="btn btn-sm btn-danger btn-connect-toggle connected" 
+                                                data-platform="udemy"
+                                                title="Click to disconnect">
+                                            <i class="fas fa-unlink"></i> Disconnect
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <!-- Coursera Platform Card -->
+                                <div class="platform-card connected" data-platform="coursera" data-status="connected">
+                                    <div class="platform-card-header">
+                                        <div class="platform-icon coursera connected">
+                                            <i class="fas fa-university"></i>
+                                        </div>
+                                        <div class="platform-info">
+                                            <h4>Coursera</h4>
+                                            <p>Sync Coursera courses and specializations</p>
+                                        </div>
+                                        <div class="platform-status-badge">
+                                            <span class="status-badge connected">
+                                                <i class="fas fa-check-circle"></i> Connected
+                                            </span>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="platform-card-body">
+                                        <div class="platform-stats">
+                                            <div class="stat-item">
+                                                <i class="fas fa-graduation-cap"></i>
+                                                <span>8 courses</span>
+                                            </div>
+                                            <div class="stat-item">
+                                                <i class="fas fa-certificate"></i>
+                                                <span>5 certificates</span>
+                                            </div>
+                                            <div class="stat-item">
+                                                <i class="fas fa-sync"></i>
+                                                <span>Synced 1 day ago</span>
+                                            </div>
+                                        </div>
+                                        
+                                        <div class="platform-features">
+                                            <span class="feature-tag">Course Sync</span>
+                                            <span class="feature-tag">Degrees</span>
+                                            <span class="feature-tag">Specializations</span>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="platform-card-actions">
+                                        <button class="btn btn-sm btn-outline btn-sync" title="Sync Now">
+                                            <i class="fas fa-sync"></i> Sync Now
+                                        </button>
+                                        <button class="btn btn-sm btn-danger btn-connect-toggle connected" 
+                                                data-platform="coursera"
+                                                title="Click to disconnect">
+                                            <i class="fas fa-unlink"></i> Disconnect
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <!-- LinkedIn Learning Platform Card -->
+                                <div class="platform-card connected" data-platform="linkedin" data-status="connected">
+                                    <div class="platform-card-header">
+                                        <div class="platform-icon linkedin connected">
+                                            <i class="fab fa-linkedin"></i>
+                                        </div>
+                                        <div class="platform-info">
+                                            <h4>LinkedIn Learning</h4>
+                                            <p>Sync LinkedIn Learning courses and skills</p>
+                                        </div>
+                                        <div class="platform-status-badge">
+                                            <span class="status-badge connected">
+                                                <i class="fas fa-check-circle"></i> Connected
+                                            </span>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="platform-card-body">
+                                        <div class="platform-stats">
+                                            <div class="stat-item">
+                                                <i class="fas fa-graduation-cap"></i>
+                                                <span>5 courses</span>
+                                            </div>
+                                            <div class="stat-item">
+                                                <i class="fas fa-certificate"></i>
+                                                <span>3 certificates</span>
+                                            </div>
+                                            <div class="stat-item">
+                                                <i class="fas fa-sync"></i>
+                                                <span>Synced just now</span>
+                                            </div>
+                                        </div>
+                                        
+                                        <div class="platform-features">
+                                            <span class="feature-tag">Course Sync</span>
+                                            <span class="feature-tag">Skills</span>
+                                            <span class="feature-tag">Progress</span>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="platform-card-actions">
+                                        <button class="btn btn-sm btn-outline btn-sync" title="Sync Now">
+                                            <i class="fas fa-sync"></i> Sync Now
+                                        </button>
+                                        <button class="btn btn-sm btn-danger btn-connect-toggle connected" 
+                                                data-platform="linkedin"
+                                                title="Click to disconnect">
+                                            <i class="fas fa-unlink"></i> Disconnect
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <!-- GitHub Platform Card -->
+                                <div class="platform-card available" data-platform="github" data-status="available">
+                                    <div class="platform-card-header">
+                                        <div class="platform-icon github available">
+                                            <i class="fab fa-github"></i>
+                                        </div>
+                                        <div class="platform-info">
+                                            <h4>GitHub</h4>
+                                            <p>Import your repositories and contributions</p>
+                                        </div>
+                                        <div class="platform-status-badge">
+                                            <span class="status-badge available">
+                                                <i class="fas fa-plug"></i> Available
+                                            </span>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="platform-card-body">
+                                        <div class="platform-stats">
+                                            <div class="stat-item">
+                                                <i class="fas fa-code-branch"></i>
+                                                <span>Import repositories</span>
+                                            </div>
+                                            <div class="stat-item">
+                                                <i class="fas fa-chart-line"></i>
+                                                <span>Contribution history</span>
+                                            </div>
+                                            <div class="stat-item">
+                                                <i class="fas fa-project-diagram"></i>
+                                                <span>Project showcase</span>
+                                            </div>
+                                        </div>
+                                        
+                                        <div class="platform-features">
+                                            <span class="feature-tag">Repositories</span>
+                                            <span class="feature-tag">Contributions</span>
+                                            <span class="feature-tag">Projects</span>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="platform-card-actions">
+                                        <button class="btn btn-sm btn-outline btn-info">
+                                            <i class="fas fa-info-circle"></i> Learn More
+                                        </button>
+                                        <button class="btn btn-sm btn-primary btn-connect-toggle" 
+                                                data-platform="github"
+                                                title="Click to connect">
+                                            <i class="fas fa-plug"></i> Connect
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <!-- YouTube Platform Card -->
+                                <div class="platform-card available" data-platform="youtube" data-status="available">
+                                    <div class="platform-card-header">
+                                        <div class="platform-icon youtube available">
+                                            <i class="fab fa-youtube"></i>
+                                        </div>
+                                        <div class="platform-info">
+                                            <h4>YouTube</h4>
+                                            <p>Sync your YouTube learning playlists and progress</p>
+                                        </div>
+                                        <div class="platform-status-badge">
+                                            <span class="status-badge available">
+                                                <i class="fas fa-plug"></i> Available
+                                            </span>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="platform-card-body">
+                                        <div class="platform-stats">
+                                            <div class="stat-item">
+                                                <i class="fas fa-play-circle"></i>
+                                                <span>Learning playlists</span>
+                                            </div>
+                                            <div class="stat-item">
+                                                <i class="fas fa-users"></i>
+                                                <span>Channel subscriptions</span>
+                                            </div>
+                                            <div class="stat-item">
+                                                <i class="fas fa-sync"></i>
+                                                <span>Connect to sync</span>
+                                            </div>
+                                        </div>
+                                        
+                                        <div class="platform-features">
+                                            <span class="feature-tag">Tutorials</span>
+                                            <span class="feature-tag">Courses</span>
+                                            <span class="feature-tag">Progress</span>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="platform-card-actions">
+                                        <button class="btn btn-sm btn-outline btn-info">
+                                            <i class="fas fa-info-circle"></i> Learn More
+                                        </button>
+                                        <button class="btn btn-sm btn-primary btn-connect-toggle" 
+                                                data-platform="youtube"
+                                                title="Click to connect">
+                                            <i class="fas fa-plug"></i> Connect
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <!-- Pluralsight Platform Card -->
+                                <div class="platform-card available" data-platform="pluralsight" data-status="available">
+                                    <div class="platform-card-header">
+                                        <div class="platform-icon pluralsight available">
+                                            <i class="fas fa-tv"></i>
+                                        </div>
+                                        <div class="platform-info">
+                                            <h4>Pluralsight</h4>
+                                            <p>Sync Pluralsight courses and skill assessments</p>
+                                        </div>
+                                        <div class="platform-status-badge">
+                                            <span class="status-badge available">
+                                                <i class="fas fa-plug"></i> Available
+                                            </span>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="platform-card-body">
+                                        <div class="platform-stats">
+                                            <div class="stat-item">
+                                                <i class="fas fa-graduation-cap"></i>
+                                                <span>Skill assessments</span>
+                                            </div>
+                                            <div class="stat-item">
+                                                <i class="fas fa-chart-bar"></i>
+                                                <span>Learning paths</span>
+                                            </div>
+                                            <div class="stat-item">
+                                                <i class="fas fa-star"></i>
+                                                <span>Skill IQ</span>
+                                            </div>
+                                        </div>
+                                        
+                                        <div class="platform-features">
+                                            <span class="feature-tag">Courses</span>
+                                            <span class="feature-tag">Assessments</span>
+                                            <span class="feature-tag">Skill IQ</span>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="platform-card-actions">
+                                        <button class="btn btn-sm btn-outline btn-info">
+                                            <i class="fas fa-info-circle"></i> Learn More
+                                        </button>
+                                        <button class="btn btn-sm btn-primary btn-connect-toggle" 
+                                                data-platform="pluralsight"
+                                                title="Click to connect">
+                                            <i class="fas fa-plug"></i> Connect
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <!-- edX Platform Card -->
+                                <div class="platform-card available" data-platform="edx" data-status="available">
+                                    <div class="platform-card-header">
+                                        <div class="platform-icon edx available">
+                                            <i class="fas fa-university"></i>
+                                        </div>
+                                        <div class="platform-info">
+                                            <h4>edX</h4>
+                                            <p>Sync edX courses and micro-degrees</p>
+                                        </div>
+                                        <div class="platform-status-badge">
+                                            <span class="status-badge available">
+                                                <i class="fas fa-plug"></i> Available
+                                            </span>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="platform-card-body">
+                                        <div class="platform-stats">
+                                            <div class="stat-item">
+                                                <i class="fas fa-graduation-cap"></i>
+                                                <span>University courses</span>
+                                            </div>
+                                            <div class="stat-item">
+                                                <i class="fas fa-certificate"></i>
+                                                <span>Professional certificates</span>
+                                            </div>
+                                            <div class="stat-item">
+                                                <i class="fas fa-microscope"></i>
+                                                <span>Micro-degrees</span>
+                                            </div>
+                                        </div>
+                                        
+                                        <div class="platform-features">
+                                            <span class="feature-tag">University Courses</span>
+                                            <span class="feature-tag">Certificates</span>
+                                            <span class="feature-tag">Micro-degrees</span>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="platform-card-actions">
+                                        <button class="btn btn-sm btn-outline btn-info">
+                                            <i class="fas fa-info-circle"></i> Learn More
+                                        </button>
+                                        <button class="btn btn-sm btn-primary btn-connect-toggle" 
+                                                data-platform="edx"
+                                                title="Click to connect">
+                                            <i class="fas fa-plug"></i> Connect
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <!-- Codecademy Platform Card -->
+                                <div class="platform-card available" data-platform="codecademy" data-status="available">
+                                    <div class="platform-card-header">
+                                        <div class="platform-icon codecademy available">
+                                            <i class="fas fa-code"></i>
+                                        </div>
+                                        <div class="platform-info">
+                                            <h4>Codecademy</h4>
+                                            <p>Sync coding courses and projects</p>
+                                        </div>
+                                        <div class="platform-status-badge">
+                                            <span class="status-badge available">
+                                                <i class="fas fa-plug"></i> Available
+                                            </span>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="platform-card-body">
+                                        <div class="platform-stats">
+                                            <div class="stat-item">
+                                                <i class="fas fa-laptop-code"></i>
+                                                <span>Interactive coding</span>
+                                            </div>
+                                            <div class="stat-item">
+                                                <i class="fas fa-project-diagram"></i>
+                                                <span>Coding projects</span>
+                                            </div>
+                                            <div class="stat-item">
+                                                <i class="fas fa-trophy"></i>
+                                                <span>Achievements</span>
+                                            </div>
+                                        </div>
+                                        
+                                        <div class="platform-features">
+                                            <span class="feature-tag">Interactive</span>
+                                            <span class="feature-tag">Projects</span>
+                                            <span class="feature-tag">Achievements</span>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="platform-card-actions">
+                                        <button class="btn btn-sm btn-outline btn-info">
+                                            <i class="fas fa-info-circle"></i> Learn More
+                                        </button>
+                                        <button class="btn btn-sm btn-primary btn-connect-toggle" 
+                                                data-platform="codecademy"
+                                                title="Click to connect">
+                                            <i class="fas fa-plug"></i> Connect
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Quick Action Buttons -->
+                            <div class="quick-actions">
+                                <button class="btn btn-outline" id="sync-all-platforms">
+                                    <i class="fas fa-sync-alt"></i> Sync All Connected
+                                </button>
+                                <button class="btn btn-primary" id="connect-all-available">
+                                    <i class="fas fa-plug"></i> Connect All Available
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Connection Status & Statistics Card -->
+                    <div class="settings-card">
+                        <div class="card-header">
+                            <h3><i class="fas fa-chart-line"></i> Connection Status</h3>
+                        </div>
+                        <div class="card-body">
+                            <div class="connection-status-grid">
+                                <div class="status-item">
+                                    <div class="status-indicator active"></div>
+                                    <div class="status-info">
+                                        <h5>Udemy</h5>
+                                        <p>Last sync: 2 hours ago</p>
+                                    </div>
+                                    <div class="status-actions">
+                                        <button class="btn btn-xs btn-outline btn-sync-platform" data-platform="udemy">
+                                            <i class="fas fa-sync"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                                <div class="status-item">
+                                    <div class="status-indicator active"></div>
+                                    <div class="status-info">
+                                        <h5>Coursera</h5>
+                                        <p>Last sync: 1 day ago</p>
+                                    </div>
+                                    <div class="status-actions">
+                                        <button class="btn btn-xs btn-outline btn-sync-platform" data-platform="coursera">
+                                            <i class="fas fa-sync"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                                <div class="status-item">
+                                    <div class="status-indicator active"></div>
+                                    <div class="status-info">
+                                        <h5>LinkedIn Learning</h5>
+                                        <p>Last sync: Just now</p>
+                                    </div>
+                                    <div class="status-actions">
+                                        <button class="btn btn-xs btn-outline btn-sync-platform" data-platform="linkedin">
+                                            <i class="fas fa-sync"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                                <div class="status-item">
+                                    <div class="status-indicator inactive"></div>
+                                    <div class="status-info">
+                                        <h5>GitHub</h5>
+                                        <p>Not connected</p>
+                                    </div>
+                                    <div class="status-actions">
+                                        <button class="btn btn-xs btn-primary btn-connect-platform" data-platform="github">
+                                            <i class="fas fa-plug"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="connection-summary">
+                                <h5>Summary</h5>
+                                <div class="summary-stats">
+                                    <div class="summary-stat">
+                                        <span class="stat-label">Connected Platforms</span>
+                                        <span class="stat-value">3/7</span>
+                                    </div>
+                                    <div class="summary-stat">
+                                        <span class="stat-label">Total Courses</span>
+                                        <span class="stat-value">25</span>
+                                    </div>
+                                    <div class="summary-stat">
+                                        <span class="stat-label">Certificates</span>
+                                        <span class="stat-value">16</span>
+                                    </div>
+                                    <div class="summary-stat">
+                                        <span class="stat-label">Sync Success Rate</span>
+                                        <span class="stat-value">98%</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Sync Settings Card -->
+                    <div class="settings-card">
+                        <div class="card-header">
+                            <h3><i class="fas fa-sync"></i> Sync Settings</h3>
+                        </div>
+                        <div class="card-body">
+                            <div class="sync-controls">
+                                <div class="sync-option">
+                                    <div class="option-info">
+                                        <h4>Auto-Sync Frequency</h4>
+                                        <p>How often to automatically sync platform data</p>
+                                    </div>
+                                    <select class="form-select">
+                                        <option value="1">Every hour</option>
+                                        <option value="6">Every 6 hours</option>
+                                        <option value="12" selected>Every 12 hours</option>
+                                        <option value="24">Every 24 hours</option>
+                                        <option value="manual">Manual only</option>
+                                    </select>
+                                </div>
+                                <div class="sync-option">
+                                    <div class="option-info">
+                                        <h4>Sync Course Progress</h4>
+                                        <p>Automatically update course completion status</p>
+                                    </div>
+                                    <label class="switch">
+                                        <input type="checkbox" id="sync-progress" checked>
+                                        <span class="slider"></span>
+                                    </label>
+                                </div>
+                                <div class="sync-option">
+                                    <div class="option-info">
+                                        <h4>Sync Certificates</h4>
+                                        <p>Import new certificates automatically</p>
+                                    </div>
+                                    <label class="switch">
+                                        <input type="checkbox" id="sync-certificates" checked>
+                                        <span class="slider"></span>
+                                    </label>
+                                </div>
+                                <div class="sync-option">
+                                    <div class="option-info">
+                                        <h4>Sync Skills & Badges</h4>
+                                        <p>Update skills and badges from platforms</p>
+                                    </div>
+                                    <label class="switch">
+                                        <input type="checkbox" id="sync-skills" checked>
+                                        <span class="slider"></span>
+                                    </label>
+                                </div>
+                                <div class="sync-option">
+                                    <div class="option-info">
+                                        <h4>Background Sync</h4>
+                                        <p>Sync data in background without interrupting you</p>
+                                    </div>
+                                    <label class="switch">
+                                        <input type="checkbox" id="background-sync" checked>
+                                        <span class="slider"></span>
+                                    </label>
+                                </div>
+                            </div>
+                            <div class="sync-actions">
+                                <button class="btn btn-outline">
+                                    <i class="fas fa-history"></i> View Sync History
+                                </button>
+                                <button class="btn btn-primary">
+                                    <i class="fas fa-sync-alt"></i> Sync All Platforms
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- API Status Card -->
+                    <div class="settings-card">
+                        <div class="card-header">
+                            <h3><i class="fas fa-server"></i> API Status & Limits</h3>
+                        </div>
+                        <div class="card-body">
+                            <div class="api-status-grid">
+                                <div class="api-status-item">
+                                    <div class="status-indicator active"></div>
+                                    <div class="status-info">
+                                        <h5>Udemy API</h5>
+                                        <p>Status: Active</p>
+                                    </div>
+                                    <div class="status-details">
+                                        <span class="api-calls">Calls: 42/1000 day</span>
+                                    </div>
+                                </div>
+                                <div class="api-status-item">
+                                    <div class="status-indicator active"></div>
+                                    <div class="status-info">
+                                        <h5>Coursera API</h5>
+                                        <p>Status: Manual Upload</p>
+                                    </div>
+                                    <div class="status-details">
+                                        <span class="api-calls">API not available</span>
+                                    </div>
+                                </div>
+                                <div class="api-status-item">
+                                    <div class="status-indicator active"></div>
+                                    <div class="status-info">
+                                        <h5>LinkedIn Learning</h5>
+                                        <p>Status: Active</p>
+                                    </div>
+                                    <div class="status-details">
+                                        <span class="api-calls">Calls: 18/500 day</span>
+                                    </div>
+                                </div>
+                                <div class="api-status-item">
+                                    <div class="status-indicator inactive"></div>
+                                    <div class="status-info">
+                                        <h5>GitHub API</h5>
+                                        <p>Status: Not Connected</p>
+                                    </div>
+                                    <div class="status-details">
+                                        <span class="api-calls">Connect to enable</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="api-limits">
+                                <h5>API Usage Limits</h5>
+                                <div class="limits-info">
+                                    <p>Daily API calls reset at midnight UTC. Contact support to increase limits.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- JavaScript -->
+    <script src="scripts/api.js"></script>
+    <script src="scripts/layout.js"></script>
+    <script src="scripts/settings.js"></script>
+</body>
+</html>
