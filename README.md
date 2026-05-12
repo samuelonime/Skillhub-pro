@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # SkillHub Professional — Full-Stack Platform
 
 A professional skills-matching platform with a complete **Node.js/Express backend** and a vanilla JS frontend.
@@ -105,3 +106,6 @@ skillhub-pro/
 4. **Frontend API base** — Add `<meta name="api-base" content="https://api.yoursite.com/api/v1">` in each HTML page, or configure a reverse proxy
 5. **Deploy backend** — Railway, Render, Fly.io, or AWS
 6. **Deploy frontend** — Vercel, Netlify, or Nginx
+=======
+# Skillhub-pro
+>>>>>>> 60380c86a582c3b3de406cfe726958951f31308f
