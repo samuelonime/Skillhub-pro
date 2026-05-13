@@ -224,6 +224,12 @@ tbody tr:hover { background:var(--surface-2); }
 }
 .sidebar-backdrop.open { display: block; }
 
+.sidebar-logo {
+  width: 40px;     /* adjust size */
+  height: auto;
+  object-fit: contain;
+}
+
 /* ---- 768px and below ---- */
 @media (max-width: 768px) {
   /* Show hamburger */

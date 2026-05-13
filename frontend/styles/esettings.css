@@ -1692,3 +1692,9 @@ body.reduce-motion * {
     background: rgba(255, 255, 255, 0.05);
     color: white;
 }
+
+.sidebar-logo {
+  width: 40px;     /* adjust size */
+  height: auto;
+  object-fit: contain;
+}

@@ -2407,3 +2407,9 @@ input:checked + .slider:before {
         flex-wrap: wrap;
     }
 }
+
+.sidebar-logo {
+  width: 40px;     /* adjust size */
+  height: auto;
+  object-fit: contain;
+}

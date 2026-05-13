@@ -5715,3 +5715,9 @@ html {
     gap: var(--spacing-xs);
     box-shadow: 0 2px 8px rgba(255, 0, 0, 0.2);
 }
+
+.sidebar-logo {
+  width: 40px;     /* adjust size */
+  height: auto;
+  object-fit: contain;
+}

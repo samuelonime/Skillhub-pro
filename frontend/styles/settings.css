@@ -3401,3 +3401,9 @@ select.form-control:focus {
     border-color: #FF0000;
 }
 
+.sidebar-logo {
+  width: 40px;     /* adjust size */
+  height: auto;
+  object-fit: contain;
+}
+

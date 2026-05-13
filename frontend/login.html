@@ -18,6 +18,12 @@
     body { font-family: 'DM Sans', sans-serif; background: var(--ink); color: var(--white); min-height: 100vh; display: grid; grid-template-columns: 1fr 1fr; overflow: auto; }
     html { height: 100%; }
 
+    .sidebar-logo {
+      width: 40px;     /* adjust size */
+      height: auto;
+      object-fit: contain;
+    }
+
     /* LEFT HERO */
     .hero { position: relative; display: flex; flex-direction: column; justify-content: space-between; padding: 48px; overflow: hidden; background: linear-gradient(140deg, #0d0b1e 0%, #1a1040 50%, #0a0a0f 100%); }
     .hero::before { content: ''; position: absolute; top: -180px; left: -180px; width: 560px; height: 560px; border-radius: 50%; background: radial-gradient(circle, rgba(91,76,245,0.28) 0%, transparent 70%); pointer-events: none; }

@@ -5451,3 +5451,9 @@ body *::after {
 .breakdown-bar .bar-fill {
     transition: all 0.5s ease;
 }
+
+.sidebar-logo {
+  width: 40px;     /* adjust size */
+  height: auto;
+  object-fit: contain;
+}
