@@ -5,6 +5,7 @@ node_modules/
 # Environment — NEVER commit real secrets
 backend/.env
 
+
 # Uploads directory (user-generated content)
 backend/uploads/*
 !backend/uploads/.gitkeep
