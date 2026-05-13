@@ -5,6 +5,8 @@
   <title>Dashboard — SkillHub</title>
   <link rel="stylesheet" href="styles/main.css" />
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+  
+
   <style>
     .welcome-banner { background: linear-gradient(135deg, var(--brand) 0%, #7c3aed 100%); border-radius: var(--radius-lg); padding: 28px 32px; margin-bottom: 24px; display: flex; align-items: center; justify-content: space-between; gap: 20px; color: #fff; position: relative; overflow: hidden; }
     .welcome-banner::before { content: ''; position: absolute; top: -60px; right: -60px; width: 220px; height: 220px; border-radius: 50%; background: rgba(255,255,255,.08); }
@@ -61,9 +63,10 @@
   <!-- SIDEBAR -->
   <aside class="sidebar">
     <div class="sidebar-brand">
-      <div class="sidebar-brand-icon"><i class="fas fa-graduation-cap"></i></div>
+      <div class="sidebar-brand-icon">
+        <img src="images/meritlives_logo.png" class="sidebar-logo" alt="SkillHub Logo">
+      </div>
       <span class="sidebar-brand-name">SkillHub</span>
-    </div>
     <nav class="sidebar-nav"></nav>
     <div class="sidebar-footer">
       <div class="sidebar-user" onclick="toggleDropdown('userMenu')">
