@@ -60,7 +60,7 @@ const SkillHub = {
         res = await fetch(`${window.API_BASE}${path}`, { ...opts, headers: newHeaders });
       } else {
         this.clearSession();
-        window.location.href = 'login.html';
+        window.location.href = 'landing.html';
         return;
       }
     }
@@ -100,15 +100,15 @@ const SkillHub = {
 
   requireAuth(roles) {
     const user = this.getUser(), token = this.getToken();
-    if (!user || !token) { window.location.href = 'login.html'; return null; }
-    if (roles && !roles.includes(user.role)) { window.location.href = 'login.html'; return null; }
+    if (!user || !token) { window.location.href = 'landing.html'; return null; }
+    if (roles && !roles.includes(user.role)) { window.location.href = 'landing.html'; return null; }
     return user;
   },
 
   async logout() {
     try { await this.post('/auth/logout', { refreshToken: localStorage.getItem('sh_refresh') }); } catch { /* best-effort */ }
     this.clearSession();
-    window.location.href = 'login.html';
+    window.location.href = 'landing.html';
   },
 
   // ── Named API helpers ──────────────────────────────────────────────────────

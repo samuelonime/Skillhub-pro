@@ -177,3 +177,81 @@ async function markAllRead() {
   document.getElementById('notifDot').style.display = 'none';
   await SkillHub.markAllRead();
 }
+
+// ── SCROLL PROGRESS BAR + BACK TO TOP ────────────────────────────────────────
+(function initScrollFeatures() {
+  // Progress bar
+  const bar = document.createElement('div');
+  bar.id = 'scrollProgressBar';
+  document.body.prepend(bar);
+
+  // Back to top button
+  const btt = document.createElement('button');
+  btt.id = 'backToTop';
+  btt.setAttribute('aria-label', 'Back to top');
+  btt.innerHTML = '<i class="fas fa-arrow-up"></i>';
+  btt.addEventListener('click', () => window.scrollTo({ top: 0, behavior: 'smooth' }));
+  document.body.appendChild(btt);
+
+  // Toast container (if not already there)
+  if (!document.getElementById('toastContainer')) {
+    const tc = document.createElement('div');
+    tc.id = 'toastContainer';
+    document.body.appendChild(tc);
+  }
+
+  // Scroll handler
+  const main = document.querySelector('.main') || window;
+  const scrollEl = document.querySelector('.main') || document.documentElement;
+
+  function onScroll() {
+    const scrollTop    = scrollEl.scrollTop || window.scrollY;
+    const scrollHeight = scrollEl.scrollHeight - scrollEl.clientHeight;
+    const pct = scrollHeight > 0 ? Math.min(100, (scrollTop / scrollHeight) * 100) : 0;
+    bar.style.width = pct + '%';
+
+    if (pct > 15) btt.classList.add('visible');
+    else          btt.classList.remove('visible');
+  }
+
+  (document.querySelector('.main') || window).addEventListener('scroll', onScroll, { passive: true });
+  onScroll(); // set initial state
+})();
+
+// ── TOAST HELPER ─────────────────────────────────────────────────────────────
+function toast(message, type = 'info', duration = 4000) {
+  const icons = { success: 'fa-check-circle', error: 'fa-times-circle', info: 'fa-info-circle', warning: 'fa-exclamation-triangle' };
+  let container = document.getElementById('toastContainer');
+  if (!container) {
+    container = document.createElement('div');
+    container.id = 'toastContainer';
+    document.body.appendChild(container);
+  }
+  const el = document.createElement('div');
+  el.className = `toast ${type}`;
+  el.innerHTML = `<i class="fas ${icons[type] || icons.info}"></i><span>${message}</span>`;
+  el.addEventListener('click', () => remove(el));
+  container.appendChild(el);
+
+  function remove(t) {
+    t.classList.add('removing');
+    t.addEventListener('animationend', () => t.remove(), { once: true });
+  }
+  setTimeout(() => remove(el), duration);
+}
+window.toast = toast;
+
+// ── RELATIVE TIME ─────────────────────────────────────────────────────────────
+function relTime(dateStr) {
+  if (!dateStr) return '';
+  const diff = Date.now() - new Date(dateStr).getTime();
+  const m = Math.floor(diff / 60000);
+  if (m < 1)  return 'just now';
+  if (m < 60) return `${m}m ago`;
+  const h = Math.floor(m / 60);
+  if (h < 24) return `${h}h ago`;
+  const d = Math.floor(h / 24);
+  if (d < 7)  return `${d}d ago`;
+  return new Date(dateStr).toLocaleDateString();
+}
+window.relTime = relTime;

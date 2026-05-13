@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" /><meta name="viewport" content="width=device-width,initial-scale=1.0" />
+  <title>Rewards — SkillHub</title>
+  <link rel="stylesheet" href="styles/main.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+  <style>
+    .coin-hero { background:linear-gradient(135deg,#5b4cf5 0%,#a78bfa 100%); border-radius:var(--radius-xl); padding:28px 32px; color:#fff; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:16px; margin-bottom:22px; }
+    .coin-balance { font-family:'Syne',sans-serif; font-size:48px; font-weight:800; letter-spacing:-2px; display:flex; align-items:center; gap:14px; }
+    .coin-balance i { font-size:36px; color:gold; filter:drop-shadow(0 2px 8px rgba(255,200,0,0.5)); }
+    .coin-sub  { font-size:14px; opacity:.8; margin-top:4px; }
+    .buy-btn   { background:rgba(255,255,255,0.18); border:1.5px solid rgba(255,255,255,0.35); border-radius:12px; color:#fff; padding:12px 22px; font-size:14px; font-weight:600; font-family:inherit; cursor:pointer; transition:all .2s; }
+    .buy-btn:hover { background:rgba(255,255,255,0.28); }
+    .rewards-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(240px,1fr)); gap:16px; }
+    .reward-card { background:var(--white); border:1px solid var(--line); border-radius:var(--radius-lg); padding:20px; text-align:center; transition:transform .2s,box-shadow .2s; }
+    .reward-card:hover { transform:translateY(-3px); box-shadow:var(--shadow); }
+    .reward-icon { width:56px; height:56px; border-radius:16px; display:grid; place-items:center; font-size:22px; margin:0 auto 14px; }
+    .reward-name { font-size:15px; font-weight:700; margin-bottom:6px; }
+    .reward-desc { font-size:13px; color:var(--muted); margin-bottom:14px; line-height:1.5; }
+    .reward-cost { font-family:'Syne',sans-serif; font-size:18px; font-weight:800; color:var(--brand); margin-bottom:12px; }
+    .reward-cost i { color:gold; font-size:15px; }
+    .tx-row { display:flex; align-items:center; gap:12px; padding:12px 0; border-bottom:1px solid var(--line-2); }
+    .tx-row:last-child { border-bottom:none; }
+    .tx-icon { width:36px; height:36px; border-radius:10px; display:grid; place-items:center; font-size:14px; flex-shrink:0; }
+    .tx-earn   { background:var(--green-bg); color:var(--green); }
+    .tx-redeem { background:var(--red-bg); color:var(--red); }
+    .tx-purchase { background:var(--brand-bg); color:var(--brand); }
+    .tx-label  { flex:1; font-size:13.5px; font-weight:500; }
+    .tx-time   { font-size:11.5px; color:var(--muted); }
+    .tx-amount { font-family:'Syne',sans-serif; font-size:15px; font-weight:700; }
+    .tx-amount.positive { color:var(--green); }
+    .tx-amount.negative { color:var(--red); }
+    .bundle-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:12px; }
+    .bundle-card { border:2px solid var(--line); border-radius:14px; padding:18px; text-align:center; cursor:pointer; transition:all .2s; }
+    .bundle-card:hover,.bundle-card.selected { border-color:var(--brand); background:var(--brand-bg); }
+    .bundle-coins { font-family:'Syne',sans-serif; font-size:22px; font-weight:800; color:var(--brand); }
+    .bundle-price { font-size:13px; color:var(--muted); margin-top:4px; }
+    .bundle-badge { font-size:10px; font-weight:700; background:var(--green); color:#fff; border-radius:100px; padding:2px 8px; display:inline-block; margin-top:6px; }
+  </style>
+</head>
+<body>
+<div class="app-shell">
+  <aside class="sidebar">
+    <div class="sidebar-brand">
+      <div class="sidebar-brand-icon"><i class="fas fa-graduation-cap"></i></div>
+      <span class="sidebar-brand-name">SkillHub</span>
+    </div>
+    <nav class="sidebar-nav"></nav>
+    <div class="sidebar-footer">
+      <div class="sidebar-user" onclick="toggleDropdown('userMenu')">
+        <img src="" alt="Avatar" />
+        <div class="sidebar-user-info">
+          <div class="sidebar-user-name">Loading…</div>
+          <div class="sidebar-user-role">student</div>
+        </div>
+        <i class="fas fa-ellipsis-h"></i>
+      </div>
+      <div class="dropdown-menu" id="userMenu" style="bottom:70px;top:auto">
+        <div class="dropdown-item" onclick="location.href='settings.html'"><i class="fas fa-gear"></i>Settings</div>
+        <div class="dropdown-divider"></div>
+        <div class="dropdown-item danger" onclick="SkillHub.logout()"><i class="fas fa-sign-out-alt"></i>Sign Out</div>
+      </div>
+    </div>
+  </aside>
+  <div class="main">
+    <header class="topbar">
+      <span class="topbar-title" id="topbarTitle">Rewards</span>
+      <div class="topbar-search"><i class="fas fa-search"></i><input type="text" placeholder="Search…" /></div>
+      <div class="topbar-actions">
+        <div class="dropdown notif-wrap" style="position:relative">
+          <button class="icon-btn" onclick="toggleDropdown('notifPanel')"><i class="fas fa-bell"></i><span class="notif-dot" id="notifDot" style="display:none"></span></button>
+          <div class="notif-panel" id="notifPanel">
+            <div class="notif-header"><span>Notifications</span><a onclick="markAllRead()">Mark all read</a></div>
+            <div class="notif-list" id="notifList"></div>
+          </div>
+        </div>
+        <img class="avatar-btn" id="topbarAvatar" src="" alt="Avatar" onclick="location.href='settings.html'" />
+      </div>
+    </header>
+    <div class="page">
+      <div class="page-header">
+        <div class="page-header-left"><h1>Rewards</h1><p>Earn and redeem Merit Coins</p></div>
+      </div>
+
+      <!-- Coin Hero -->
+      <div class="coin-hero">
+        <div>
+          <div class="coin-balance"><i class="fas fa-coins"></i><span id="coinBalance">—</span></div>
+          <div class="coin-sub">Merit Coins available to spend</div>
+        </div>
+        <button class="buy-btn" onclick="document.getElementById('buyModal').classList.add('open')">
+          <i class="fas fa-plus-circle"></i> Buy Coins
+        </button>
+      </div>
+
+      <!-- How to earn -->
+      <div class="card" style="margin-bottom:22px">
+        <div class="card-header"><span class="card-title"><i class="fas fa-info-circle" style="color:var(--brand);margin-right:7px"></i>How to Earn</span></div>
+        <div style="display:flex;flex-wrap:wrap;gap:16px">
+          ${[
+            ['fa-user-circle','Complete profile','+20 coins'],
+            ['fa-book-open','Enroll in a course','+10 coins'],
+            ['fa-graduation-cap','Complete a course','+100 coins'],
+            ['fa-folder-open','Add a project','+25 coins'],
+            ['fa-certificate','Get cert verified','+50 coins'],
+          ].map(([icon,label,coins])=>`<div style="display:flex;align-items:center;gap:10px;padding:10px 14px;background:var(--surface);border-radius:10px;flex:1;min-width:160px"><i class="fas ${icon}" style="color:var(--brand);font-size:16px"></i><div><div style="font-size:13px;font-weight:600">${label}</div><div style="font-size:12px;color:var(--green);font-weight:700">${coins}</div></div></div>`).join('')}
+        </div>
+      </div>
+
+      <!-- Rewards Catalog -->
+      <h2 style="font-size:16px;margin-bottom:14px">Redeem Rewards</h2>
+      <div class="rewards-grid" id="rewardsGrid">
+        <div class="skeleton" style="height:220px;border-radius:var(--radius-lg)"></div>
+        <div class="skeleton" style="height:220px;border-radius:var(--radius-lg)"></div>
+        <div class="skeleton" style="height:220px;border-radius:var(--radius-lg)"></div>
+      </div>
+
+      <!-- Transaction History -->
+      <div class="card" style="margin-top:24px">
+        <div class="card-header">
+          <span class="card-title"><i class="fas fa-history" style="color:var(--brand);margin-right:7px"></i>Transaction History</span>
+        </div>
+        <div id="txList"><div class="skeleton" style="height:48px;margin-bottom:8px"></div><div class="skeleton" style="height:48px"></div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Buy Coins Modal -->
+<div class="modal-overlay" id="buyModal">
+  <div class="modal" style="max-width:440px">
+    <div class="modal-header">
+      <h3 class="modal-title">Buy Merit Coins</h3>
+      <button class="modal-close" onclick="document.getElementById('buyModal').classList.remove('open')"><i class="fas fa-times"></i></button>
+    </div>
+    <p style="font-size:13px;color:var(--muted);margin-bottom:16px">Top up your wallet with Merit Coins via Paystack</p>
+    <div class="bundle-grid">
+      <div class="bundle-card" onclick="selectBundle('coins_500',this)">
+        <div class="bundle-coins">500</div>
+        <div style="font-size:11px;color:var(--muted);margin:2px 0">coins</div>
+        <div class="bundle-price">₦1,000</div>
+      </div>
+      <div class="bundle-card selected" onclick="selectBundle('coins_1500',this)">
+        <div class="bundle-coins">1,500</div>
+        <div style="font-size:11px;color:var(--muted);margin:2px 0">coins</div>
+        <div class="bundle-price">₦2,500</div>
+        <div class="bundle-badge">Popular</div>
+      </div>
+      <div class="bundle-card" onclick="selectBundle('coins_5000',this)">
+        <div class="bundle-coins">5,000</div>
+        <div style="font-size:11px;color:var(--muted);margin:2px 0">coins</div>
+        <div class="bundle-price">₦7,000</div>
+        <div class="bundle-badge">Best value</div>
+      </div>
+    </div>
+    <div style="margin-top:20px;display:flex;gap:10px;justify-content:flex-end">
+      <button class="btn btn-secondary" onclick="document.getElementById('buyModal').classList.remove('open')">Cancel</button>
+      <button class="btn btn-primary" onclick="buyCoins()"><i class="fas fa-credit-card"></i> Pay with Paystack</button>
+    </div>
+  </div>
+</div>
+
+<script src="scripts/api.js"></script>
+<script src="scripts/layout.js"></script>
+<script>
+const user = SkillHub.requireAuth();
+if (user) buildLayout({ page: 'rewards', role: user.role, title: 'Rewards' });
+
+let selectedBundle = 'coins_1500';
+
+function selectBundle(key, el) {
+  selectedBundle = key;
+  document.querySelectorAll('.bundle-card').forEach(c => c.classList.remove('selected'));
+  el.classList.add('selected');
+}
+
+async function loadRewards() {
+  try {
+    const [coinsData, rewardsData, txData] = await Promise.all([
+      SkillHub._fetch('/rewards/merit-coins'),
+      SkillHub._fetch('/rewards'),
+      SkillHub._fetch('/rewards/transactions'),
+    ]);
+    document.getElementById('coinBalance').textContent = (coinsData?.data?.balance || 0).toLocaleString();
+    renderCatalog(rewardsData?.data?.catalog || []);
+    renderTx(txData?.data || []);
+  } catch { toast('Failed to load rewards','error'); }
+}
+
+function renderCatalog(catalog) {
+  const colorMap = { learning:'brand', visibility:'amber', career:'green', merchandise:'blue', prestige:'red' };
+  const iconMap  = { 'graduation-cap':'fa-graduation-cap', star:'fa-star', 'file-alt':'fa-file-alt', comments:'fa-comments', tshirt:'fa-tshirt', award:'fa-award' };
+  document.getElementById('rewardsGrid').innerHTML = catalog.map(r => `
+    <div class="reward-card">
+      <div class="reward-icon stat-icon ${colorMap[r.category]||'brand'}"><i class="fas ${iconMap[r.icon]||'fa-gift'}"></i></div>
+      <div class="reward-name">${esc(r.name)}</div>
+      <div class="reward-desc">${esc(r.description)}</div>
+      <div class="reward-cost"><i class="fas fa-coins"></i> ${r.cost.toLocaleString()}</div>
+      <button class="btn btn-primary btn-sm" style="width:100%" onclick="redeem('${r.id}','${esc(r.name)}',${r.cost})">Redeem</button>
+    </div>`).join('');
+}
+
+function renderTx(txs) {
+  const icons = { earn:'fa-plus', redeem:'fa-gift', purchase:'fa-shopping-cart', refund:'fa-undo' };
+  document.getElementById('txList').innerHTML = txs.length
+    ? txs.map(t => `
+      <div class="tx-row">
+        <div class="tx-icon ${t.type==='redeem'?'tx-redeem':t.type==='earn'?'tx-earn':'tx-purchase'}">
+          <i class="fas ${icons[t.type]||'fa-coins'}"></i>
+        </div>
+        <div style="flex:1">
+          <div class="tx-label">${esc(t.description)}</div>
+          <div class="tx-time">${relTime(t.createdAt)}</div>
+        </div>
+        <div class="tx-amount ${t.amount>0?'positive':'negative'}">${t.amount>0?'+':''}${t.amount.toLocaleString()}</div>
+      </div>`).join('')
+    : '<div style="text-align:center;padding:24px;color:var(--muted);font-size:13px">No transactions yet</div>';
+}
+
+async function redeem(id, name, cost) {
+  if (!confirm(`Redeem "${name}" for ${cost} Merit Coins?`)) return;
+  try {
+    const r = await SkillHub._fetch(`/rewards/${id}/redeem`, { method:'POST' });
+    if (r?.success) { toast(r.message || 'Redeemed!', 'success'); loadRewards(); }
+    else toast(r?.message || 'Insufficient coins', 'error');
+  } catch { toast('Redemption failed','error'); }
+}
+
+async function buyCoins() {
+  try {
+    const r = await SkillHub._fetch('/payment/initiate', {
+      method: 'POST',
+      body: JSON.stringify({
+        purpose: 'merit_coins',
+        planOrBundle: selectedBundle,
+        callbackUrl: window.location.origin + '/rewards.html'
+      })
+    });
+    if (r?.data?.authorizationUrl) {
+      window.location.href = r.data.authorizationUrl;
+    } else {
+      toast(r?.message || 'Payment initiation failed', 'error');
+    }
+  } catch { toast('Failed to start payment','error'); }
+}
+
+// Handle Paystack callback — verify if reference is in URL
+(async function checkPaystackReturn() {
+  const params = new URLSearchParams(window.location.search);
+  const ref = params.get('reference') || params.get('trxref');
+  if (!ref) return;
+  window.history.replaceState({}, '', window.location.pathname);
+  try {
+    const r = await SkillHub._fetch(`/payment/verify/${ref}`, { method:'POST' });
+    if (r?.success) toast('Payment successful! Coins added 🎉','success');
+    else toast(r?.message||'Payment verification failed','error');
+  } catch { toast('Verification failed','error'); }
+})();
+
+loadRewards();
+</script>
+</body>
+</html>

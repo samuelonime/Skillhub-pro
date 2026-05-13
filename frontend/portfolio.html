@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" /><meta name="viewport" content="width=device-width,initial-scale=1.0" />
+  <title>Portfolio — SkillHub</title>
+  <link rel="stylesheet" href="styles/main.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+  <style>
+    .portfolio-hero { background:linear-gradient(135deg,var(--brand-bg) 0%,var(--white) 100%); border:1px solid var(--line); border-radius:var(--radius-xl); padding:28px; margin-bottom:22px; display:flex; align-items:center; gap:20px; flex-wrap:wrap; }
+    .portfolio-avatar { width:76px; height:76px; border-radius:50%; border:3px solid var(--brand); object-fit:cover; flex-shrink:0; }
+    .portfolio-info h2 { font-size:20px; margin-bottom:4px; }
+    .portfolio-info p  { font-size:13.5px; color:var(--muted); }
+    .portfolio-stats  { display:flex; gap:28px; margin-left:auto; flex-wrap:wrap; }
+    .ps-item { text-align:center; }
+    .ps-num  { font-family:'Syne',sans-serif; font-size:22px; font-weight:800; color:var(--brand); }
+    .ps-lbl  { font-size:11px; color:var(--muted); }
+    .project-card { background:var(--white); border:1px solid var(--line); border-radius:var(--radius-lg); overflow:hidden; transition:transform .2s,box-shadow .2s; }
+    .project-card:hover { transform:translateY(-3px); box-shadow:var(--shadow); }
+    .project-thumb { width:100%; aspect-ratio:16/9; object-fit:cover; background:var(--brand-bg); display:block; }
+    .project-body { padding:16px; }
+    .project-title { font-size:15px; font-weight:700; margin-bottom:6px; }
+    .project-desc  { font-size:13px; color:var(--muted); margin-bottom:10px; line-height:1.55; }
+    .project-techs { display:flex; flex-wrap:wrap; gap:5px; margin-bottom:12px; }
+    .tech-tag { padding:3px 9px; background:var(--brand-bg); border-radius:100px; font-size:11.5px; color:var(--brand); font-weight:500; }
+    .project-footer { display:flex; align-items:center; justify-content:space-between; }
+    .project-score { display:flex; align-items:center; gap:5px; font-size:13px; font-weight:700; color:var(--amber); }
+    .skills-wrap { display:flex; flex-wrap:wrap; gap:8px; margin-bottom:10px; }
+    .skill-chip { display:inline-flex; align-items:center; gap:6px; padding:5px 12px; background:var(--brand-bg); border:1px solid rgba(91,76,245,.2); border-radius:100px; font-size:13px; color:var(--brand); font-weight:500; }
+    .skill-chip button { background:none; border:none; color:var(--brand); cursor:pointer; font-size:11px; padding:0; line-height:1; opacity:.6; }
+    .skill-chip button:hover { opacity:1; }
+  </style>
+</head>
+<body>
+<div class="app-shell">
+  <aside class="sidebar">
+    <div class="sidebar-brand">
+      <div class="sidebar-brand-icon"><i class="fas fa-graduation-cap"></i></div>
+      <span class="sidebar-brand-name">SkillHub</span>
+    </div>
+    <nav class="sidebar-nav"></nav>
+    <div class="sidebar-footer">
+      <div class="sidebar-user" onclick="toggleDropdown('userMenu')">
+        <img src="" alt="Avatar" />
+        <div class="sidebar-user-info">
+          <div class="sidebar-user-name">Loading…</div>
+          <div class="sidebar-user-role">student</div>
+        </div>
+        <i class="fas fa-ellipsis-h"></i>
+      </div>
+      <div class="dropdown-menu" id="userMenu" style="bottom:70px;top:auto">
+        <div class="dropdown-item" onclick="location.href='settings.html'"><i class="fas fa-gear"></i>Settings</div>
+        <div class="dropdown-divider"></div>
+        <div class="dropdown-item danger" onclick="SkillHub.logout()"><i class="fas fa-sign-out-alt"></i>Sign Out</div>
+      </div>
+    </div>
+  </aside>
+  <div class="main">
+    <header class="topbar">
+      <span class="topbar-title" id="topbarTitle">Portfolio</span>
+      <div class="topbar-search"><i class="fas fa-search"></i><input type="text" placeholder="Search…" /></div>
+      <div class="topbar-actions">
+        <div class="dropdown notif-wrap" style="position:relative">
+          <button class="icon-btn" onclick="toggleDropdown('notifPanel')"><i class="fas fa-bell"></i><span class="notif-dot" id="notifDot" style="display:none"></span></button>
+          <div class="notif-panel" id="notifPanel">
+            <div class="notif-header"><span>Notifications</span><a onclick="markAllRead()">Mark all read</a></div>
+            <div class="notif-list" id="notifList"></div>
+          </div>
+        </div>
+        <img class="avatar-btn" id="topbarAvatar" src="" alt="Avatar" onclick="location.href='settings.html'" />
+      </div>
+    </header>
+    <div class="page">
+      <div class="page-header">
+        <div class="page-header-left"><h1>Portfolio</h1><p>Your professional showcase</p></div>
+        <button class="btn btn-primary" onclick="openAddProject()"><i class="fas fa-plus"></i> Add Project</button>
+      </div>
+
+      <!-- Profile Hero -->
+      <div class="portfolio-hero" id="portfolioHero">
+        <div class="skeleton" style="width:76px;height:76px;border-radius:50%;flex-shrink:0"></div>
+        <div style="flex:1"><div class="skeleton" style="height:20px;width:200px;margin-bottom:8px"></div><div class="skeleton" style="height:14px;width:140px"></div></div>
+      </div>
+
+      <!-- Skills -->
+      <div class="card" style="margin-bottom:18px">
+        <div class="card-header">
+          <span class="card-title"><i class="fas fa-code" style="color:var(--brand);margin-right:7px"></i>Skills</span>
+          <button class="btn btn-sm btn-secondary" onclick="openSkillModal()"><i class="fas fa-edit"></i> Edit</button>
+        </div>
+        <div class="skills-wrap" id="skillsWrap">
+          <div class="skeleton" style="height:30px;width:80px;border-radius:100px"></div>
+          <div class="skeleton" style="height:30px;width:100px;border-radius:100px"></div>
+          <div class="skeleton" style="height:30px;width:70px;border-radius:100px"></div>
+        </div>
+      </div>
+
+      <!-- Projects -->
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+        <h2 style="font-size:16px">Projects</h2>
+        <span id="projectCount" style="font-size:13px;color:var(--muted)"></span>
+      </div>
+      <div class="courses-grid" id="projectsGrid">
+        <div class="skeleton" style="height:220px;border-radius:var(--radius-lg)"></div>
+        <div class="skeleton" style="height:220px;border-radius:var(--radius-lg)"></div>
+        <div class="skeleton" style="height:220px;border-radius:var(--radius-lg)"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Add Project Modal -->
+<div class="modal-overlay" id="projectModal">
+  <div class="modal" style="max-width:560px">
+    <div class="modal-header">
+      <h3 class="modal-title" id="projectModalTitle">Add Project</h3>
+      <button class="modal-close" onclick="closeProjectModal()"><i class="fas fa-times"></i></button>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Title *</label>
+      <div class="input-wrap"><i class="input-icon fas fa-folder"></i><input class="form-input" id="pTitle" placeholder="My Awesome Project" /></div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Description *</label>
+      <textarea class="form-textarea" id="pDesc" placeholder="What does this project do?"></textarea>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Technologies (comma-separated)</label>
+      <div class="input-wrap"><i class="input-icon fas fa-code"></i><input class="form-input" id="pTechs" placeholder="React, Node.js, MongoDB" /></div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+      <div class="form-group">
+        <label class="form-label">Live URL</label>
+        <div class="input-wrap"><i class="input-icon fas fa-globe"></i><input class="form-input" id="pLive" placeholder="https://…" /></div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">GitHub URL</label>
+        <div class="input-wrap"><i class="input-icon fas fa-github"></i><input class="form-input" id="pGithub" placeholder="https://github.com/…" /></div>
+      </div>
+    </div>
+    <div style="display:flex;gap:10px;justify-content:flex-end">
+      <button class="btn btn-secondary" onclick="closeProjectModal()">Cancel</button>
+      <button class="btn btn-primary" onclick="saveProject()"><i class="fas fa-save"></i> Save Project</button>
+    </div>
+  </div>
+</div>
+
+<!-- Skills Modal -->
+<div class="modal-overlay" id="skillModal">
+  <div class="modal">
+    <div class="modal-header">
+      <h3 class="modal-title">Edit Skills</h3>
+      <button class="modal-close" onclick="document.getElementById('skillModal').classList.remove('open')"><i class="fas fa-times"></i></button>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Add skill</label>
+      <div style="display:flex;gap:8px">
+        <div class="input-wrap" style="flex:1"><i class="input-icon fas fa-code"></i><input class="form-input" id="newSkillInput" placeholder="e.g. TypeScript" onkeydown="if(event.key==='Enter')addSkill()" /></div>
+        <button class="btn btn-primary" onclick="addSkill()">Add</button>
+      </div>
+    </div>
+    <div class="skills-wrap" id="skillModalList"></div>
+    <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:16px">
+      <button class="btn btn-secondary" onclick="document.getElementById('skillModal').classList.remove('open')">Cancel</button>
+      <button class="btn btn-primary" onclick="saveSkills()">Save Skills</button>
+    </div>
+  </div>
+</div>
+
+<script src="scripts/api.js"></script>
+<script src="scripts/layout.js"></script>
+<script>
+const user = SkillHub.requireAuth();
+if (user) buildLayout({ page: 'portfolio', role: user.role, title: 'Portfolio' });
+
+let portfolioData = null, editingSkills = [];
+
+async function loadPortfolio() {
+  try {
+    const d = await SkillHub._fetch('/portfolio');
+    portfolioData = d?.data;
+    renderHero(portfolioData);
+    renderSkills(portfolioData.user.skills || []);
+    renderProjects(portfolioData.projects || []);
+  } catch { toast('Failed to load portfolio', 'error'); }
+}
+
+function renderHero(data) {
+  const u = data.user, s = data.stats;
+  document.getElementById('portfolioHero').innerHTML = `
+    <img class="portfolio-avatar" src="${u.avatar || 'https://ui-avatars.com/api/?name='+encodeURIComponent(u.name)}" />
+    <div class="portfolio-info">
+      <h2>${esc(u.name)}</h2>
+      <p>${esc(u.title||'')} ${u.location?'· '+esc(u.location):''}</p>
+      ${u.bio ? `<p style="margin-top:6px;font-size:13px;color:var(--muted-2)">${esc(u.bio)}</p>` : ''}
+    </div>
+    <div class="portfolio-stats">
+      <div class="ps-item"><div class="ps-num">${s.projectCount}</div><div class="ps-lbl">Projects</div></div>
+      <div class="ps-item"><div class="ps-num">${s.avgScore}</div><div class="ps-lbl">Avg Score</div></div>
+      <div class="ps-item"><div class="ps-num">${s.totalViews}</div><div class="ps-lbl">Views</div></div>
+      <div class="ps-item"><div class="ps-num">${s.certCount}</div><div class="ps-lbl">Certs</div></div>
+    </div>`;
+}
+
+function renderSkills(skills) {
+  editingSkills = [...skills];
+  document.getElementById('skillsWrap').innerHTML = skills.length
+    ? skills.map(s => `<span class="skill-chip">${esc(s)}</span>`).join('')
+    : '<span style="font-size:13px;color:var(--muted)">No skills added yet.</span>';
+}
+
+function renderProjects(projects) {
+  document.getElementById('projectCount').textContent = `${projects.length} project${projects.length!==1?'s':''}`;
+  const grid = document.getElementById('projectsGrid');
+  if (!projects.length) {
+    grid.innerHTML = `<div class="empty-state" style="grid-column:1/-1"><i class="fas fa-folder-open"></i><h3>No projects yet</h3><p>Add your first project to build your portfolio</p><button class="btn btn-primary" onclick="openAddProject()">Add Project</button></div>`;
+    return;
+  }
+  grid.innerHTML = projects.map(p => `
+    <div class="project-card">
+      <img class="project-thumb" src="${p.thumbnail||'https://placehold.co/400x225/4f46e5/white?text='+encodeURIComponent(p.title)}" />
+      <div class="project-body">
+        <div class="project-title">${esc(p.title)}</div>
+        <div class="project-desc">${esc(p.description||'')}</div>
+        <div class="project-techs">${(p.technologies||[]).map(t=>`<span class="tech-tag">${esc(t)}</span>`).join('')}</div>
+        <div class="project-footer">
+          <div class="project-score"><i class="fas fa-star"></i> ${p.score?.toFixed(1)||'8.0'} <span style="color:var(--muted);font-weight:400;font-size:11px">(${p.views} views)</span></div>
+          <div style="display:flex;gap:7px">
+            ${p.liveUrl   ? `<a href="${p.liveUrl}" target="_blank" class="btn btn-sm btn-secondary"><i class="fas fa-external-link-alt"></i></a>` : ''}
+            ${p.githubUrl ? `<a href="${p.githubUrl}" target="_blank" class="btn btn-sm btn-secondary"><i class="fas fa-code-branch"></i></a>` : ''}
+            <button class="btn btn-sm btn-danger" onclick="deleteProject('${p.id}',this)"><i class="fas fa-trash"></i></button>
+          </div>
+        </div>
+      </div>
+    </div>`).join('');
+}
+
+function openAddProject() { document.getElementById('projectModal').classList.add('open'); }
+function closeProjectModal() { document.getElementById('projectModal').classList.remove('open'); ['pTitle','pDesc','pTechs','pLive','pGithub'].forEach(id => document.getElementById(id).value=''); }
+
+async function saveProject() {
+  const title = document.getElementById('pTitle').value.trim();
+  const description = document.getElementById('pDesc').value.trim();
+  if (!title || !description) { toast('Title and description required','warning'); return; }
+  const technologies = document.getElementById('pTechs').value.split(',').map(s=>s.trim()).filter(Boolean);
+  try {
+    const r = await SkillHub._fetch('/portfolio/projects', { method:'POST', body:JSON.stringify({ title, description, technologies, liveUrl:document.getElementById('pLive').value, githubUrl:document.getElementById('pGithub').value }) });
+    if (r?.success) { toast(r.message||'Project added! +25 Merit Coins','success'); closeProjectModal(); loadPortfolio(); }
+    else toast(r?.message||'Failed','error');
+  } catch { toast('Failed to save project','error'); }
+}
+
+async function deleteProject(id) {
+  if (!confirm('Delete this project?')) return;
+  try {
+    const r = await SkillHub._fetch(`/portfolio/projects/${id}`, { method:'DELETE' });
+    if (r?.success) { toast('Project deleted','info'); loadPortfolio(); }
+  } catch { toast('Failed','error'); }
+}
+
+function openSkillModal() {
+  const skills = portfolioData?.user?.skills || [];
+  editingSkills = [...skills];
+  renderSkillModalList();
+  document.getElementById('skillModal').classList.add('open');
+}
+
+function renderSkillModalList() {
+  document.getElementById('skillModalList').innerHTML = editingSkills.map((s,i) =>
+    `<span class="skill-chip">${esc(s)}<button onclick="removeSkill(${i})">✕</button></span>`).join('');
+}
+
+function addSkill() {
+  const val = document.getElementById('newSkillInput').value.trim();
+  if (!val || editingSkills.includes(val)) return;
+  editingSkills.push(val);
+  document.getElementById('newSkillInput').value = '';
+  renderSkillModalList();
+}
+
+function removeSkill(i) { editingSkills.splice(i,1); renderSkillModalList(); }
+
+async function saveSkills() {
+  try {
+    const r = await SkillHub._fetch('/portfolio/skills', { method:'PUT', body:JSON.stringify({ skills: editingSkills }) });
+    if (r?.success) { toast('Skills updated','success'); document.getElementById('skillModal').classList.remove('open'); loadPortfolio(); }
+  } catch { toast('Failed to save skills','error'); }
+}
+
+loadPortfolio();
+</script>
+</body>
+</html>

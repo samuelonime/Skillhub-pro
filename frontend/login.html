@@ -87,10 +87,6 @@
     .divider { display: flex; align-items: center; gap: 10px; margin: 18px 0; color: var(--muted-2); font-size: 12px; }
     .divider::before, .divider::after { content: ''; flex: 1; height: 1px; background: var(--line); }
 
-    .demo-btns { display: grid; gap: 8px; }
-    .demo-btn { padding: 10px; border: 1.5px solid var(--line); border-radius: 10px; background: var(--white); font-size: 13px; cursor: pointer; font-family: inherit; transition: border-color .2s; text-align: center; }
-    .demo-btn:hover { border-color: var(--brand); }
-
     .terms { font-size: 11px; color: var(--muted); text-align: center; margin-top: 14px; line-height: 1.5; }
     .terms a { color: var(--brand); text-decoration: none; }
 
@@ -171,12 +167,7 @@
     </div>
     <a class="forgot" href="#">Forgot password?</a>
     <button type="submit" class="btn" id="btnLogin"><span class="lbl">Sign In</span><div class="spin"></div></button>
-    <div class="divider">or try a demo account</div>
-    <div class="demo-btns">
-      <button type="button" class="demo-btn" onclick="fillDemo('student')"><i class="fas fa-user-graduate" style="color:var(--brand);margin-right:6px"></i>Demo as Student</button>
-      <button type="button" class="demo-btn" onclick="fillDemo('employer')"><i class="fas fa-building" style="color:#10b981;margin-right:6px"></i>Demo as Employer</button>
-      <button type="button" class="demo-btn" onclick="fillDemo('admin')"><i class="fas fa-shield-alt" style="color:#ef4444;margin-right:6px"></i>Demo as Admin</button>
-    </div>
+
   </form>
 
   <!-- REGISTER -->
@@ -201,6 +192,9 @@
 <script>
   const API = 'http://localhost:5000/api/v1';
   let role = 'student';
+
+  // Auto-open register tab if URL hash is #register
+  if (window.location.hash === '#register') showTab('reg');
 
   function showTab(t) {
     const login = t === 'login';
@@ -240,11 +234,6 @@
     b.disabled = v;
   }
 
-  function fillDemo(r) {
-    const map = { student: ['student@skillhub.com','Password123!'], employer: ['employer@skillhub.com','Password123!'], admin: ['admin@skillhub.com','Admin123!'] };
-    document.getElementById('lEmail').value = map[r][0];
-    document.getElementById('lPwd').value = map[r][1];
-  }
 
   async function doLogin(e) {
     e.preventDefault(); clearAlert(); setLoad('btnLogin', true);
