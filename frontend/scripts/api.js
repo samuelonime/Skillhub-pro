@@ -8,7 +8,7 @@
   window.API_BASE = metaBase || (
     location.hostname === 'localhost' || location.hostname === '127.0.0.1'
       ? `${location.protocol}//${location.hostname}:5000/api/v1`
-      : '/api/v1'  // same-origin reverse proxy (Nginx, etc.)
+      : 'https://skillhub-u918.onrender.com/api/v1'  // same-origin reverse proxy (Nginx, etc.)
   );
 })();
 
