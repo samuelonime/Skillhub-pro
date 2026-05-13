@@ -786,3 +786,11 @@ document.addEventListener('DOMContentLoaded', () => {
         new Toast('Settings loaded successfully!', 'info');
     }, 1000);
 });
+// ── SkillHub layout integration ──────────────────────────────────────────────
+(function() {
+  const user = SkillHub.requireAuth(['employer', 'admin']);
+  if (!user) return;
+  if (typeof buildLayout === 'function') {
+    buildLayout({ page: 'settings', role: user.role, title: 'Employer Settings' });
+  }
+})();

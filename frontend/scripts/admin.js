@@ -2719,3 +2719,12 @@ const globalStyles = `
 const styleSheet = document.createElement('style');
 styleSheet.textContent = globalStyles;
 document.head.appendChild(styleSheet);
+// ── SkillHub layout integration ──────────────────────────────────────────────
+// Connects admin pages to the shared sidebar/topbar/scroll-bar system
+(function() {
+  const user = SkillHub.requireAuth(['admin']);
+  if (!user) return;
+  if (typeof buildLayout === 'function') {
+    buildLayout({ page: 'dashboard', role: 'admin', title: 'Admin Panel' });
+  }
+})();

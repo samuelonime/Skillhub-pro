@@ -1996,3 +1996,12 @@ function handleNotificationAction(notificationType) {
     }
 }
 
+
+// ── SkillHub layout integration ──────────────────────────────────────────────
+(function() {
+  const user = SkillHub.requireAuth(['employer', 'admin']);
+  if (!user) return;
+  if (typeof buildLayout === 'function') {
+    buildLayout({ page: 'dashboard', role: user.role, title: 'Employer Dashboard' });
+  }
+})();

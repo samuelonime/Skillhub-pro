@@ -2319,3 +2319,11 @@ document.addEventListener('DOMContentLoaded', function() {
     // Initialize platform stats on load
     updatePlatformStats();
 });
+// ── SkillHub layout integration ──────────────────────────────────────────────
+(function() {
+  const user = SkillHub.requireAuth();
+  if (!user) return;
+  if (typeof buildLayout === 'function') {
+    buildLayout({ page: 'settings', role: user.role, title: 'Settings' });
+  }
+})();

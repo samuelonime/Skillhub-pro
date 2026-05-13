@@ -15,7 +15,8 @@
       --brand: #5b4cf5; --brand-2: #7c6ff7; --brand-glow: rgba(91,76,245,0.15);
       --green: #22c55e; --red: #ef4444;
     }
-    body { font-family: 'DM Sans', sans-serif; background: var(--ink); color: var(--white); min-height: 100vh; display: grid; grid-template-columns: 1fr 1fr; overflow: hidden; }
+    body { font-family: 'DM Sans', sans-serif; background: var(--ink); color: var(--white); min-height: 100vh; display: grid; grid-template-columns: 1fr 1fr; overflow: auto; }
+    html { height: 100%; }
 
     /* LEFT HERO */
     .hero { position: relative; display: flex; flex-direction: column; justify-content: space-between; padding: 48px; overflow: hidden; background: linear-gradient(140deg, #0d0b1e 0%, #1a1040 50%, #0a0a0f 100%); }
@@ -46,7 +47,7 @@
     .testi-role { font-size: 11px; color: var(--muted-2); }
 
     /* RIGHT AUTH */
-    .auth { background: var(--white); color: var(--ink); display: flex; flex-direction: column; justify-content: center; padding: 60px 56px; overflow-y: auto; }
+    .auth { background: var(--white); color: var(--ink); display: flex; flex-direction: column; justify-content: center; padding: 60px 56px; overflow-y: auto; min-height: 100vh; }
     .tab-row { display: flex; gap: 4px; background: var(--surface); padding: 4px; border-radius: 12px; width: fit-content; margin-bottom: 32px; }
     .tab { padding: 10px 24px; border: none; background: transparent; border-radius: 9px; font-size: 14px; font-weight: 500; font-family: inherit; color: var(--muted); cursor: pointer; transition: all .2s; }
     .tab.on { background: var(--white); color: var(--ink); font-weight: 600; box-shadow: 0 1px 5px rgba(0,0,0,.09); }
@@ -91,9 +92,9 @@
     .terms a { color: var(--brand); text-decoration: none; }
 
     @media (max-width: 860px) {
-      body { grid-template-columns: 1fr; }
+      body { grid-template-columns: 1fr; overflow-y: auto; }
       .hero { display: none; }
-      .auth { padding: 40px 24px; }
+      .auth { padding: 40px 24px; min-height: 100vh; justify-content: flex-start; overflow-y: visible; }
     }
     @media (max-width: 480px) {
       .auth { padding: 28px 16px; }
