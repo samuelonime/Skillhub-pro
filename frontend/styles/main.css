@@ -46,7 +46,10 @@ a:hover { text-decoration: underline; }
 .nav-link:hover { background:rgba(255,255,255,.07); color:rgba(255,255,255,.88); text-decoration:none; }
 .nav-link.active { background:var(--brand); color:#fff; }
 .nav-badge { margin-left:auto; background:var(--red); color:#fff; font-size:10px; font-weight:700; padding:2px 7px; border-radius:100px; min-width:20px; text-align:center; }
-.sidebar-footer { padding:12px 10px; border-top:1px solid rgba(255,255,255,.06); }
+.sidebar-footer { padding:12px 10px; border-top:1px solid rgba(255,255,255,.06); display:flex; flex-direction:column; gap:8px; }
+.sidebar-logout-btn { display:flex; align-items:center; gap:9px; width:100%; padding:9px 12px; border-radius:10px; border:1px solid rgba(239,68,68,.25); background:rgba(239,68,68,.07); color:#f87171; font-size:13px; font-weight:500; cursor:pointer; transition:all .16s; font-family:inherit; }
+.sidebar-logout-btn:hover { background:rgba(239,68,68,.15); border-color:rgba(239,68,68,.45); color:#ef4444; transform:translateX(2px); }
+.sidebar-logout-btn i { font-size:13px; width:15px; text-align:center; }
 .sidebar-user { display:flex; align-items:center; gap:10px; padding:10px 12px; border-radius:10px; cursor:pointer; transition:background .16s; }
 .sidebar-user:hover { background:rgba(255,255,255,.07); }
 .sidebar-user img { width:32px; height:32px; border-radius:50%; object-fit:cover; border:2px solid rgba(255,255,255,.14); }
