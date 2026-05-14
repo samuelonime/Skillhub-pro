@@ -41,6 +41,10 @@ model User {
   payments      Payment[]
   subscriptions Subscription[]
 
+  // REQUIRED BACK RELATIONS
+  employerShortlists  ShortlistedCandidate[] @relation("EmployerShortlists")
+  candidateShortlists ShortlistedCandidate[] @relation("CandidateShortlists")
+
   @@map("users")
 }
 
