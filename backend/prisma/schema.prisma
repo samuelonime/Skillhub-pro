@@ -124,6 +124,8 @@ model Job {
   applications Application[]
   savedBy      SavedJob[]
 
+  shortlistedCandidates ShortlistedCandidate[]
+
   @@map("jobs")
 }
 
