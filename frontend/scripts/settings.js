@@ -2444,3 +2444,4 @@ document.addEventListener('DOMContentLoaded', function() {
   // Run on page load
   loadUserProfile();
 })();
+
