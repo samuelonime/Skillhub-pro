@@ -5,6 +5,7 @@
   <title>Talent Pool — SkillHub</title>
   <link rel="stylesheet" href="styles/main.css" />
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+  <link rel="icon" type="image/png" href="images/meritlives_logo.png">
   <style>
     /* ── Layout ── */
     .talent-layout { display:grid; grid-template-columns:280px 1fr; gap:24px; align-items:start; }
@@ -53,7 +54,7 @@
     .match-badge.medium { background:var(--amber-bg); color:#92400e; }
     .match-badge.low    { background:var(--surface);  color:var(--muted); }
     .candidate-title { font-size:13px; color:var(--muted); margin-bottom:8px; }
-    .candidate-bio   { font-size:13px; color:var(--muted); margin-bottom:10px; line-height:1.5; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
+    .candidate-bio   { font-size:13px; color:var(--muted); margin-bottom:10px; line-height:1.5; display:-webkit-box; -webkit-line-clamp:2; line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
 
     .candidate-skills { display:flex; flex-wrap:wrap; gap:5px; margin-bottom:10px; }
     .skill-pill { padding:3px 10px; border-radius:6px; font-size:12px; font-weight:500; background:var(--surface); color:var(--ink-2); border:1px solid var(--line); display:flex; align-items:center; gap:4px; }
