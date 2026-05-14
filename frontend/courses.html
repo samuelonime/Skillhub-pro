@@ -5,7 +5,311 @@
   <title>Courses — SkillHub</title>
   <link rel="stylesheet" href="styles/main.css" />
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+  <style>
+    .platforms-strip { display:flex; gap:12px; flex-wrap:wrap; margin-bottom:22px; }
+    .platform-pill { display:flex; align-items:center; gap:8px; padding:10px 16px; border-radius:50px; border:1.5px solid var(--line); background:var(--white); cursor:pointer; transition:all .2s; font-size:13px; font-weight:600; color:var(--ink-3); }
+    .platform-pill:hover { border-color:var(--brand); color:var(--brand); }
+    .platform-pill.connected { border-color:var(--green); background:var(--green-bg); color:#15803d; }
+    .platform-pill.active-filter { border-color:var(--brand); background:var(--brand); color:#fff; }
+    .platform-pill .pill-dot { width:8px; height:8px; border-radius:50%; background:currentColor; flex-shrink:0; }
+    .platform-pill .pill-count { font-size:11px; opacity:.8; }
+    .platform-sync-bar { background:var(--surface); border:1px solid var(--line); border-radius:var(--radius-lg); padding:14px 18px; margin-bottom:18px; display:flex; align-items:center; gap:14px; flex-wrap:wrap; }
+    .platform-sync-bar .sync-info { flex:1; min-width:180px; }
+    .platform-sync-bar .sync-info strong { font-size:13px; color:var(--ink); }
+    .platform-sync-bar .sync-info span { font-size:12px; color:var(--muted); display:block; margin-top:2px; }
+    .connect-cta { background:linear-gradient(135deg,var(--brand-bg),var(--white)); border:1.5px dashed var(--brand); border-radius:var(--radius-lg); padding:22px; text-align:center; margin-bottom:20px; }
+    .connect-cta h3 { font-size:15px; margin-bottom:6px; color:var(--ink); }
+    .connect-cta p { font-size:13px; color:var(--muted); margin-bottom:14px; }
+  </style>
 </head>
+<body>
+<div class="app-shell">
+  <aside class="sidebar">
+    <div class="sidebar-brand">
+      <div class="sidebar-brand-icon"><img src="images/meritlives_logo.png" class="sidebar-logo" alt="SkillHub Logo"></div>
+      <span class="sidebar-brand-name">SkillHub</span>
+    </div>
+    <nav class="sidebar-nav"></nav>
+    <div class="sidebar-footer">
+      <div class="sidebar-user" onclick="toggleDropdown('userMenu')">
+        <img src="" alt="Avatar" />
+        <div class="sidebar-user-info">
+          <div class="sidebar-user-name">Loading…</div>
+          <div class="sidebar-user-role">student</div>
+        </div>
+        <i class="fas fa-ellipsis-h"></i>
+      </div>
+      <div class="dropdown-menu" id="userMenu" style="bottom:70px;top:auto">
+        <div class="dropdown-item" onclick="location.href='settings.html'"><i class="fas fa-gear"></i>Settings</div>
+        <div class="dropdown-divider"></div>
+        <div class="dropdown-item danger" onclick="SkillHub.logout()"><i class="fas fa-sign-out-alt"></i>Sign Out</div>
+      </div>
+    </div>
+  </aside>
+  <div class="main">
+    <header class="topbar">
+      <span class="topbar-title" id="topbarTitle">Courses</span>
+      <div class="topbar-search"><i class="fas fa-search"></i><input type="text" id="searchInput" placeholder="Search courses…" /></div>
+      <div class="topbar-actions">
+        <div class="dropdown notif-wrap" style="position:relative">
+          <button class="icon-btn" onclick="toggleDropdown('notifPanel')"><i class="fas fa-bell"></i><span class="notif-dot" id="notifDot" style="display:none"></span></button>
+          <div class="notif-panel" id="notifPanel">
+            <div class="notif-header"><span>Notifications</span><a onclick="markAllRead()">Mark all read</a></div>
+            <div class="notif-list" id="notifList"></div>
+          </div>
+        </div>
+        <img class="avatar-btn" id="topbarAvatar" src="" alt="Avatar" onclick="location.href='settings.html'" />
+      </div>
+    </header>
+    <div class="page">
+      <div class="page-header">
+        <div class="page-header-left">
+          <h1>Courses</h1>
+          <p>Expand your skills with world-class learning</p>
+        </div>
+        <a href="settings.html#connections" class="btn btn-secondary"><i class="fas fa-plug"></i> Manage Platforms</a>
+      </div>
+
+      <!-- Connected Platforms Strip -->
+      <div id="platformsStrip" class="platforms-strip">
+        <div class="skeleton" style="height:40px;width:100px;border-radius:50px"></div>
+        <div class="skeleton" style="height:40px;width:120px;border-radius:50px"></div>
+        <div class="skeleton" style="height:40px;width:110px;border-radius:50px"></div>
+      </div>
+
+      <!-- Sync status bar (shown when a platform filter is active) -->
+      <div id="syncBar" style="display:none" class="platform-sync-bar">
+        <div style="width:36px;height:36px;border-radius:50%;display:grid;place-items:center;flex-shrink:0" id="syncBarIcon"></div>
+        <div class="sync-info">
+          <strong id="syncBarTitle">Platform</strong>
+          <span id="syncBarMeta">Last synced: —</span>
+        </div>
+        <button class="btn btn-sm btn-secondary" onclick="syncPlatform(activePlatformFilter)"><i class="fas fa-sync"></i> Sync Now</button>
+        <button class="btn btn-sm btn-secondary" onclick="clearPlatformFilter()"><i class="fas fa-times"></i> Show All</button>
+      </div>
+
+      <!-- Tabs -->
+      <div class="tab-bar">
+        <button class="tab-btn active" onclick="switchTab('all', this)">All Courses</button>
+        <button class="tab-btn" onclick="switchTab('enrolled', this)">My Courses</button>
+        <button class="tab-btn" onclick="switchTab('recommended', this)">Recommended</button>
+      </div>
+
+      <!-- Filters -->
+      <div class="filter-bar">
+        <input class="search-input-bar" id="courseSearch" placeholder="Search courses…" oninput="filterCourses()" />
+        <select class="filter-select" id="catFilter" onchange="filterCourses()">
+          <option value="">All Categories</option>
+          <option>Frontend</option><option>Backend</option><option>Data</option>
+          <option>Cloud</option><option>Design</option>
+        </select>
+        <select class="filter-select" id="levelFilter" onchange="filterCourses()">
+          <option value="">All Levels</option>
+          <option>Beginner</option><option>Intermediate</option><option>Advanced</option>
+        </select>
+        <select class="filter-select" id="providerFilter" onchange="filterCourses()">
+          <option value="">All Platforms</option>
+          <option value="Udemy">Udemy</option>
+          <option value="Coursera">Coursera</option>
+          <option value="LinkedIn Learning">LinkedIn Learning</option>
+          <option value="Pluralsight">Pluralsight</option>
+          <option value="edX">edX</option>
+          <option value="Codecademy">Codecademy</option>
+          <option value="YouTube">YouTube</option>
+        </select>
+      </div>
+
+      <div class="courses-grid" id="coursesGrid">
+        ${[1,2,3,4,5,6].map(() => `<div class="card" style="padding:0;overflow:hidden"><div class="skeleton" style="height:160px;border-radius:0"></div><div style="padding:16px"><div class="skeleton" style="height:16px;margin-bottom:8px"></div><div class="skeleton" style="height:12px;width:60%"></div></div></div>`).join('')}
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="scripts/api.js"></script>
+<script src="scripts/layout.js"></script>
+<script>
+const user = SkillHub.requireAuth();
+if (user) buildLayout({ page: 'courses', role: user.role, title: 'Courses' });
+
+let allCourses = [];
+let currentTab = 'all';
+let activePlatformFilter = null;
+
+const PLATFORMS = [
+  { id:'udemy',     label:'Udemy',            icon:'fa-graduation-cap', color:'#a435f0', bg:'#f3e8ff' },
+  { id:'coursera',  label:'Coursera',          icon:'fa-university',     color:'#0056d2', bg:'#e8f0ff' },
+  { id:'linkedin',  label:'LinkedIn Learning', icon:'fa-linkedin',       color:'#0a66c2', bg:'#e8f4ff', fab:true },
+  { id:'pluralsight',label:'Pluralsight',      icon:'fa-tv',             color:'#ef5b25', bg:'#fff0eb' },
+  { id:'edx',       label:'edX',              icon:'fa-university',     color:'#02262b', bg:'#e8f5f6' },
+  { id:'codecademy',label:'Codecademy',        icon:'fa-code',           color:'#1f4056', bg:'#e8f0f7' },
+  { id:'youtube',   label:'YouTube',           icon:'fa-youtube',        color:'#ff0000', bg:'#ffe8e8', fab:true },
+];
+
+async function loadPlatformsStrip() {
+  try {
+    const r = await SkillHub._fetch('/settings/platforms');
+    const connected = r?.data || [];
+    const strip = document.getElementById('platformsStrip');
+
+    // "All" pill
+    let html = `<div class="platform-pill active-filter" id="pill-all" onclick="setPlatformFilter(null, this)">
+      <span class="pill-dot"></span> All Platforms
+    </div>`;
+
+    PLATFORMS.forEach(p => {
+      const conn = connected.find(c => c.platform === p.id);
+      const isConn = !!conn;
+      html += `<div class="platform-pill ${isConn ? 'connected' : ''}" id="pill-${p.id}" onclick="${isConn ? `setPlatformFilter('${p.id}', this)` : `location.href='settings.html#connections'`}" title="${isConn ? 'Filter by '+p.label : 'Connect '+p.label+' in Settings'}">
+        <i class="${p.fab ? 'fab' : 'fas'} ${p.icon}" style="font-size:13px;color:${p.color}"></i>
+        ${p.label}
+        ${isConn ? `<span class="pill-count">${conn.courseCount||0}</span>` : '<span style="font-size:10px;opacity:.6">Connect</span>'}
+      </div>`;
+    });
+
+    // If no platforms connected, show CTA
+    if (!connected.length) {
+      document.getElementById('coursesGrid').insertAdjacentHTML('beforebegin', `
+        <div class="connect-cta" id="connectCta">
+          <h3><i class="fas fa-plug" style="color:var(--brand)"></i> Connect your learning platforms</h3>
+          <p>Sync courses from Udemy, Coursera, LinkedIn Learning and more to track all your progress in one place.</p>
+          <a href="settings.html#connections" class="btn btn-primary"><i class="fas fa-plug"></i> Connect Platforms</a>
+        </div>`);
+    }
+
+    strip.innerHTML = html;
+  } catch(e) {
+    // Fallback — show static pills with connect links
+    document.getElementById('platformsStrip').innerHTML = PLATFORMS.map(p =>
+      `<a href="settings.html#connections" class="platform-pill" title="Connect ${p.label}">
+        <i class="${p.fab?'fab':'fas'} ${p.icon}" style="font-size:13px;color:${p.color}"></i>
+        ${p.label} <span style="font-size:10px;opacity:.6">Connect</span>
+      </a>`
+    ).join('');
+  }
+}
+
+function setPlatformFilter(platformId, pillEl) {
+  activePlatformFilter = platformId;
+  document.querySelectorAll('.platform-pill').forEach(p => p.classList.remove('active-filter'));
+  if (pillEl) pillEl.classList.add('active-filter');
+
+  const syncBar = document.getElementById('syncBar');
+  if (platformId) {
+    const p = PLATFORMS.find(x => x.id === platformId);
+    syncBar.style.display = 'flex';
+    document.getElementById('syncBarIcon').innerHTML = `<i class="${p.fab?'fab':'fas'} ${p.icon}" style="font-size:18px;color:${p.color}"></i>`;
+    document.getElementById('syncBarTitle').textContent = p.label;
+    document.getElementById('syncBarMeta').textContent = 'Filtering to ' + p.label + ' courses';
+  } else {
+    syncBar.style.display = 'none';
+  }
+
+  filterCourses();
+}
+
+function clearPlatformFilter() {
+  setPlatformFilter(null, document.getElementById('pill-all'));
+}
+
+async function syncPlatform(platformId) {
+  if (!platformId) return;
+  toast('Syncing ' + (PLATFORMS.find(p=>p.id===platformId)?.label||platformId) + '…', 'info');
+  try {
+    await SkillHub._fetch(`/settings/platforms/${platformId}/sync`, { method:'POST' });
+    toast('Sync complete!', 'success');
+    loadCourses(currentTab);
+  } catch { toast('Sync failed', 'error'); }
+}
+
+async function loadCourses(tab = 'all') {
+  currentTab = tab;
+  try {
+    let data;
+    if (tab === 'enrolled')         data = await SkillHub._fetch('/courses/enrolled');
+    else if (tab === 'recommended') data = await SkillHub._fetch('/courses/recommended');
+    else                            data = await SkillHub._fetch('/courses');
+    allCourses = data?.data || [];
+    filterCourses();
+  } catch(e) { toast('Failed to load courses', 'error'); }
+}
+
+function filterCourses() {
+  const q   = document.getElementById('courseSearch').value.toLowerCase();
+  const cat = document.getElementById('catFilter').value;
+  const lvl = document.getElementById('levelFilter').value;
+  const prv = document.getElementById('providerFilter').value;
+
+  const filtered = allCourses.filter(c =>
+    (!q   || c.title.toLowerCase().includes(q) || (c.provider||'').toLowerCase().includes(q)) &&
+    (!cat || c.category === cat) &&
+    (!lvl || c.level === lvl) &&
+    (!prv || c.provider === prv) &&
+    (!activePlatformFilter || (c.provider||'').toLowerCase().includes(activePlatformFilter))
+  );
+  renderCourses(filtered);
+}
+
+function renderCourses(courses) {
+  const grid = document.getElementById('coursesGrid');
+  if (!courses.length) {
+    grid.innerHTML = `<div class="empty-state" style="grid-column:1/-1"><i class="fas fa-book-open"></i><h3>No courses found</h3><p>Try adjusting your filters${activePlatformFilter ? ' or <a href="settings.html#connections">connect '+PLATFORMS.find(p=>p.id===activePlatformFilter)?.label+'</a>' : ''}</p></div>`;
+    return;
+  }
+  grid.innerHTML = courses.map(c => {
+    const plat = PLATFORMS.find(p => (c.provider||'').toLowerCase().includes(p.id));
+    const platColor = plat?.color || 'var(--brand)';
+    return `
+    <div class="course-card">
+      <img class="course-card-thumb" src="${c.thumbnail || 'https://placehold.co/320x180/4f46e5/white?text=Course'}" alt="${esc(c.title)}" />
+      <div class="course-card-body">
+        <div style="display:flex;align-items:center;gap:6px;margin-bottom:6px">
+          <span class="chip chip-brand" style="font-size:11px">${esc(c.level)}</span>
+          ${c.isPremium ? '<span class="chip chip-amber" style="font-size:11px">⭐ Premium</span>' : ''}
+          ${c.enrolled  ? '<span class="chip chip-green" style="font-size:11px">✓ Enrolled</span>' : ''}
+        </div>
+        <div class="course-card-title">${esc(c.title)}</div>
+        <div class="course-card-meta" style="display:flex;align-items:center;gap:6px">
+          ${plat ? `<i class="${plat.fab?'fab':'fas'} ${plat.icon}" style="color:${platColor};font-size:12px"></i>` : ''}
+          <span>${esc(c.provider)}</span> · <span>${esc(c.duration)}</span>
+        </div>
+        ${c.enrolled && c.progress > 0 ? `<div class="progress-bar" style="margin:8px 0 4px"><div class="progress-fill" style="width:${c.progress}%"></div></div><div style="font-size:11px;color:var(--brand);margin-bottom:8px">${c.progress}% complete</div>` : ''}
+        <div class="course-card-footer">
+          <div class="course-rating"><i class="fas fa-star"></i> ${c.rating || '4.7'} <span style="color:var(--muted);font-weight:400">(${(c.enrollCount||0).toLocaleString()})</span></div>
+          ${c.enrolled
+            ? `<button class="btn btn-sm btn-primary" onclick="continueLearn('${c.id}', '${esc(c.externalUrl||'')}')"><i class="fas fa-external-link-alt"></i> Continue</button>`
+            : `<button class="btn btn-sm ${c.isPremium ? 'btn-secondary' : 'btn-primary'}" onclick="enroll('${c.id}', this)">${c.isPremium ? '₦' + (c.price||0).toLocaleString() : 'Enroll Free'}</button>`}
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function switchTab(tab, btn) {
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  loadCourses(tab);
+}
+
+async function enroll(id, btn) {
+  btn.disabled = true; btn.textContent = 'Enrolling…';
+  try {
+    const r = await SkillHub._fetch(`/courses/${id}/enroll`, { method: 'POST' });
+    if (r?.success) { toast('Enrolled! +10 Merit Coins 🎉', 'success'); loadCourses(currentTab); }
+    else toast(r?.message || 'Enrollment failed', 'error');
+  } catch { toast('Enrollment failed', 'error'); btn.disabled = false; btn.textContent = 'Enroll Free'; }
+}
+
+function continueLearn(id, externalUrl) {
+  if (externalUrl) window.open(externalUrl, '_blank');
+  else toast('Continuing course…', 'info');
+}
+
+loadPlatformsStrip();
+loadCourses();
+</script>
+</body>
+</html>
 <body>
 <div class="app-shell">
   <aside class="sidebar">

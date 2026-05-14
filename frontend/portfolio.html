@@ -18,6 +18,17 @@
     .project-card:hover { transform:translateY(-3px); box-shadow:var(--shadow); }
     .project-thumb { width:100%; aspect-ratio:16/9; object-fit:cover; background:var(--brand-bg); display:block; }
     .project-body { padding:16px; }
+    .grid-2 { display:grid; grid-template-columns:1fr 1fr; gap:16px; }
+    @media(max-width:700px){ .grid-2 { grid-template-columns:1fr; } }
+    .toggle-switch { position:relative; display:inline-block; width:44px; height:24px; flex-shrink:0; }
+    .toggle-switch input { opacity:0; width:0; height:0; }
+    .toggle-slider { position:absolute; cursor:pointer; inset:0; background:var(--line); border-radius:100px; transition:.3s; }
+    .toggle-slider:before { content:''; position:absolute; height:18px; width:18px; left:3px; bottom:3px; background:#fff; border-radius:50%; transition:.3s; }
+    .toggle-switch input:checked + .toggle-slider { background:var(--brand); }
+    .toggle-switch input:checked + .toggle-slider:before { transform:translateX(20px); }
+    .resume-upload-area { border:2px dashed var(--line); border-radius:10px; padding:18px; text-align:center; cursor:pointer; transition:border-color .2s; }
+    .resume-upload-area:hover { border-color:var(--brand); }
+    .resume-upload-area i { font-size:22px; color:var(--muted); margin-bottom:6px; }
     .project-title { font-size:15px; font-weight:700; margin-bottom:6px; }
     .project-desc  { font-size:13px; color:var(--muted); margin-bottom:10px; line-height:1.55; }
     .project-techs { display:flex; flex-wrap:wrap; gap:5px; margin-bottom:12px; }
@@ -91,6 +102,46 @@
           <div class="skeleton" style="height:30px;width:80px;border-radius:100px"></div>
           <div class="skeleton" style="height:30px;width:100px;border-radius:100px"></div>
           <div class="skeleton" style="height:30px;width:70px;border-radius:100px"></div>
+        </div>
+      </div>
+
+      <!-- Resume + Visibility row -->
+      <div class="grid-2" style="margin-bottom:18px">
+        <!-- Resume Upload -->
+        <div class="card">
+          <div class="card-header">
+            <span class="card-title"><i class="fas fa-file-pdf" style="color:var(--red);margin-right:7px"></i>Resume</span>
+          </div>
+          <div id="resumeSection">
+            <div class="skeleton" style="height:48px"></div>
+          </div>
+        </div>
+
+        <!-- Portfolio Visibility -->
+        <div class="card">
+          <div class="card-header">
+            <span class="card-title"><i class="fas fa-eye" style="color:var(--brand);margin-right:7px"></i>Visibility</span>
+          </div>
+          <div style="display:flex;align-items:center;justify-content:space-between;gap:12px">
+            <div>
+              <div id="visibilityLabel" style="font-size:14px;font-weight:600;color:var(--ink)">Public</div>
+              <div style="font-size:12px;color:var(--muted)">Employers can find your portfolio</div>
+            </div>
+            <label class="toggle-switch" title="Toggle portfolio visibility">
+              <input type="checkbox" id="visibilityToggle" onchange="toggleVisibility(this.checked)" checked>
+              <span class="toggle-slider"></span>
+            </label>
+          </div>
+          <div style="display:flex;gap:6px;margin-top:12px;flex-wrap:wrap">
+            <label style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--muted)">
+              <input type="checkbox" id="searchIndexToggle" onchange="saveVisibilitySettings()" checked>
+              <span>Search engine indexing</span>
+            </label>
+            <label style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--muted);margin-left:8px">
+              <input type="checkbox" id="showPortfolioToggle" onchange="saveVisibilitySettings()" checked>
+              <span>Show portfolio on profile</span>
+            </label>
+          </div>
         </div>
       </div>
 
@@ -181,6 +232,8 @@ async function loadPortfolio() {
     renderHero(portfolioData);
     renderSkills(portfolioData.user.skills || []);
     renderProjects(portfolioData.projects || []);
+    renderResumeSection(portfolioData);
+    renderVisibilitySection(portfolioData);
   } catch { toast('Failed to load portfolio', 'error'); }
 }
 
@@ -284,6 +337,69 @@ async function saveSkills() {
     const r = await SkillHub._fetch('/portfolio/skills', { method:'PUT', body:JSON.stringify({ skills: editingSkills }) });
     if (r?.success) { toast('Skills updated','success'); document.getElementById('skillModal').classList.remove('open'); loadPortfolio(); }
   } catch { toast('Failed to save skills','error'); }
+}
+
+function renderResumeSection(data) {
+  const resumeUrl = data?.user?.resumeUrl;
+  document.getElementById('resumeSection').innerHTML = resumeUrl
+    ? `<div style="display:flex;align-items:center;gap:12px;padding:8px 0">
+         <i class="fas fa-file-pdf" style="font-size:28px;color:var(--red)"></i>
+         <div style="flex:1;min-width:0">
+           <div style="font-size:13px;font-weight:600;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Resume uploaded</div>
+           <div style="font-size:11px;color:var(--muted)">Click below to replace</div>
+         </div>
+         <a href="${resumeUrl}" target="_blank" class="btn btn-sm btn-secondary"><i class="fas fa-download"></i> View</a>
+       </div>
+       <label class="btn btn-sm btn-secondary" style="cursor:pointer;width:100%;justify-content:center;margin-top:8px">
+         <i class="fas fa-upload"></i> Replace Resume
+         <input type="file" accept=".pdf,.doc,.docx" style="display:none" onchange="uploadResume(this)">
+       </label>`
+    : `<label class="resume-upload-area" style="display:block">
+         <input type="file" accept=".pdf,.doc,.docx" style="display:none" onchange="uploadResume(this)">
+         <i class="fas fa-upload" style="display:block;font-size:24px;color:var(--muted);margin-bottom:6px"></i>
+         <div style="font-size:13px;font-weight:600;color:var(--ink)">Upload Resume</div>
+         <div style="font-size:11px;color:var(--muted);margin-top:4px">PDF, DOC or DOCX · Max 5MB</div>
+       </label>`;
+}
+
+function renderVisibilitySection(data) {
+  const isPublic = data?.user?.portfolioVisibility !== 'private';
+  const toggle = document.getElementById('visibilityToggle');
+  const label  = document.getElementById('visibilityLabel');
+  if (toggle) toggle.checked = isPublic;
+  if (label)  label.textContent = isPublic ? 'Public' : 'Private';
+}
+
+async function toggleVisibility(isPublic) {
+  document.getElementById('visibilityLabel').textContent = isPublic ? 'Public' : 'Private';
+  try {
+    await SkillHub._fetch('/portfolio/visibility', { method:'POST', body: JSON.stringify({ visibility: isPublic ? 'public' : 'private' }) });
+    toast(`Portfolio set to ${isPublic ? 'public' : 'private'}`, 'success');
+  } catch { toast('Failed to update visibility', 'error'); }
+}
+
+async function saveVisibilitySettings() {
+  const searchIndex = document.getElementById('searchIndexToggle')?.checked;
+  const showPortfolio = document.getElementById('showPortfolioToggle')?.checked;
+  try {
+    await SkillHub._fetch('/portfolio/visibility', { method:'POST', body: JSON.stringify({ searchIndexing: searchIndex, showPortfolio }) });
+    toast('Visibility settings saved', 'success');
+  } catch { toast('Failed to save settings', 'error'); }
+}
+
+async function uploadResume(input) {
+  const file = input.files[0];
+  if (!file) return;
+  if (file.size > 5 * 1024 * 1024) { toast('File too large. Max 5MB', 'warning'); return; }
+  const formData = new FormData();
+  formData.append('resume', file);
+  toast('Uploading resume…', 'info');
+  try {
+    const r = await fetch(`${SkillHub.BASE_URL}/portfolio/resume`, { method:'POST', headers:{ Authorization:`Bearer ${SkillHub.getToken()}` }, body:formData });
+    const data = await r.json();
+    if (data?.success) { toast('Resume uploaded!', 'success'); loadPortfolio(); }
+    else toast(data?.message || 'Upload failed', 'error');
+  } catch { toast('Upload failed', 'error'); }
 }
 
 loadPortfolio();

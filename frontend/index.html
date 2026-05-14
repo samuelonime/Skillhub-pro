@@ -70,11 +70,10 @@
   <aside class="sidebar">
     <div class="sidebar-brand">
       <div class="sidebar-brand-icon">
-        <img src="images/meritlives_logo.png" class="sidebar-logo">
+        <img src="images/meritlives_logo.png" class="sidebar-logo" alt="SkillHub Logo">
       </div>
       <span class="sidebar-brand-name">SkillHub</span>
-    </div>           
-
+    </div>
     <nav class="sidebar-nav"></nav>
     <div class="sidebar-footer">
       <div class="sidebar-user" onclick="toggleDropdown('userMenu')">
@@ -173,8 +172,26 @@
         </div>
       </div>
 
-      <!-- Second row: Activity + Job Matches -->
-      <div class="grid-2">
+      <!-- Second row: Skill Path Progress + Certificate Summary -->
+      <div class="grid-2" style="margin-bottom:16px">
+        <div class="card">
+          <div class="card-header">
+            <span class="card-title"><i class="fas fa-road" style="color:var(--brand);margin-right:7px"></i>Skill Path Progress</span>
+            <a href="skillpaths.html" class="btn btn-sm btn-secondary">View all</a>
+          </div>
+          <div id="skillPathProgress"><div class="skeleton" style="height:56px;margin-bottom:8px"></div><div class="skeleton" style="height:56px"></div></div>
+        </div>
+        <div class="card">
+          <div class="card-header">
+            <span class="card-title"><i class="fas fa-certificate" style="color:var(--green);margin-right:7px"></i>Certificate Summary</span>
+            <a href="certificates.html" class="btn btn-sm btn-secondary">Manage</a>
+          </div>
+          <div id="certSummaryWidget"><div class="skeleton" style="height:56px;margin-bottom:8px"></div><div class="skeleton" style="height:56px"></div></div>
+        </div>
+      </div>
+
+      <!-- Third row: Activity + Job Matches -->
+      <div class="grid-2" style="margin-bottom:16px">
         <div class="card">
           <div class="card-header"><span class="card-title">Recent Activity</span></div>
           <div id="activityFeed"><div class="skeleton" style="height:40px;margin-bottom:6px"></div><div class="skeleton" style="height:40px;margin-bottom:6px"></div><div class="skeleton" style="height:40px"></div></div>
@@ -185,6 +202,23 @@
             <a href="jobs.html" class="btn btn-sm btn-secondary">Browse all</a>
           </div>
           <div id="jobMatches"><div class="skeleton" style="height:60px;margin-bottom:6px"></div><div class="skeleton" style="height:60px"></div></div>
+        </div>
+      </div>
+
+      <!-- Portfolio Strength + Upcoming Deadlines -->
+      <div class="grid-2">
+        <div class="card">
+          <div class="card-header">
+            <span class="card-title"><i class="fas fa-folder-open" style="color:var(--amber);margin-right:7px"></i>Portfolio Strength</span>
+            <a href="portfolio.html" class="btn btn-sm btn-secondary">Improve</a>
+          </div>
+          <div id="portfolioStrengthWidget"><div class="skeleton" style="height:70px"></div></div>
+        </div>
+        <div class="card">
+          <div class="card-header">
+            <span class="card-title"><i class="fas fa-calendar-check" style="color:var(--red);margin-right:7px"></i>Upcoming Deadlines</span>
+          </div>
+          <div id="upcomingDeadlines"><div class="skeleton" style="height:40px;margin-bottom:6px"></div><div class="skeleton" style="height:40px"></div></div>
         </div>
       </div>
     </div><!-- /page -->
@@ -281,6 +315,96 @@
               </div>`).join('')
           : '<div class="empty-state" style="padding:20px"><i class="fas fa-briefcase"></i><p>No job matches yet</p></div>';
       }
+
+      // Skill Path Progress widget
+      try {
+        const spR = await SkillHub._fetch('/skillpaths?enrolled=true&limit=3');
+        const paths = spR?.data || [];
+        document.getElementById('skillPathProgress').innerHTML = paths.length
+          ? paths.map(p => `
+              <div style="display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--line-2)">
+                <div style="width:36px;height:36px;border-radius:9px;background:var(--brand-bg);display:grid;place-items:center;flex-shrink:0;color:var(--brand)"><i class="fas fa-road"></i></div>
+                <div style="flex:1;min-width:0">
+                  <div style="font-size:13px;font-weight:600;color:var(--ink);margin-bottom:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(p.title)}</div>
+                  <div class="progress-bar" style="margin-bottom:2px"><div class="progress-fill" style="width:${p.progress||0}%"></div></div>
+                  <div style="font-size:11px;color:var(--muted)">${p.progress||0}% complete · ${p.completedCourses||0}/${p.totalCourses||0} courses</div>
+                </div>
+                <a href="skillpaths.html" class="btn btn-sm btn-secondary" style="flex-shrink:0">Continue</a>
+              </div>`).join('')
+          : '<div class="empty-state" style="padding:20px"><i class="fas fa-road"></i><p>No skill paths enrolled</p><a href="skillpaths.html" class="btn btn-sm btn-primary" style="margin-top:8px">Explore Paths</a></div>';
+      } catch(e) { document.getElementById('skillPathProgress').innerHTML = '<p style="padding:12px;color:var(--muted);font-size:13px">Could not load skill paths.</p>'; }
+
+      // Certificate Summary widget
+      try {
+        const certR = await SkillHub._fetch('/certificates');
+        const certs = certR?.data || [];
+        const verified = certs.filter(c => c.status === 'verified').length;
+        const pending  = certs.filter(c => c.status === 'pending').length;
+        const failed   = certs.filter(c => c.status === 'failed').length;
+        document.getElementById('certSummaryWidget').innerHTML = certs.length
+          ? `<div style="display:flex;gap:12px;margin-bottom:14px;flex-wrap:wrap">
+               <div style="flex:1;min-width:80px;background:var(--green-bg);border-radius:10px;padding:12px;text-align:center">
+                 <div style="font-family:'Syne',sans-serif;font-size:22px;font-weight:800;color:#15803d">${verified}</div>
+                 <div style="font-size:11px;color:#15803d">Verified</div>
+               </div>
+               <div style="flex:1;min-width:80px;background:var(--amber-bg);border-radius:10px;padding:12px;text-align:center">
+                 <div style="font-family:'Syne',sans-serif;font-size:22px;font-weight:800;color:#92400e">${pending}</div>
+                 <div style="font-size:11px;color:#92400e">Pending</div>
+               </div>
+               <div style="flex:1;min-width:80px;background:var(--red-bg);border-radius:10px;padding:12px;text-align:center">
+                 <div style="font-family:'Syne',sans-serif;font-size:22px;font-weight:800;color:var(--red)">${failed}</div>
+                 <div style="font-size:11px;color:var(--red)">Failed</div>
+               </div>
+             </div>
+             ${certs.slice(0,2).map(c=>`<div style="display:flex;align-items:center;gap:8px;font-size:13px;padding:6px 0;border-bottom:1px solid var(--line-2)">
+               <i class="fas fa-certificate" style="color:${c.status==='verified'?'var(--green)':c.status==='pending'?'var(--amber)':'var(--red)'}"></i>
+               <span style="flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(c.name)}</span>
+               <span class="chip chip-${c.status==='verified'?'green':c.status==='pending'?'amber':'red'}" style="font-size:10px">${c.status}</span>
+             </div>`).join('')}`
+          : '<div class="empty-state" style="padding:20px"><i class="fas fa-certificate"></i><p>No certificates yet</p><a href="certificates.html" class="btn btn-sm btn-primary" style="margin-top:8px">Upload Certificate</a></div>';
+      } catch(e) { document.getElementById('certSummaryWidget').innerHTML = '<p style="padding:12px;color:var(--muted);font-size:13px">Could not load certificates.</p>'; }
+
+      // Portfolio Strength widget
+      try {
+        const portR = await SkillHub._fetch('/portfolio');
+        const port = portR?.data || {};
+        const score = port.strengthScore || 0;
+        const items = [
+          { label:'Profile bio', done: !!port.bio },
+          { label:'Profile picture', done: !!port.avatar },
+          { label:'At least 1 project', done: (port.projects||[]).length > 0 },
+          { label:'Resume uploaded', done: !!port.resumeUrl },
+          { label:'Skills added', done: (port.skills||[]).length > 0 },
+        ];
+        document.getElementById('portfolioStrengthWidget').innerHTML = `
+          <div style="display:flex;align-items:center;gap:16px;margin-bottom:12px">
+            <div style="font-family:'Syne',sans-serif;font-size:36px;font-weight:800;color:var(--brand)">${score}%</div>
+            <div style="flex:1">
+              <div class="progress-bar"><div class="progress-fill" style="width:${score}%"></div></div>
+              <div style="font-size:12px;color:var(--muted);margin-top:4px">${score>=80?'Strong portfolio — employers will notice!':score>=50?'Good start, keep adding content':'Add more to stand out to employers'}</div>
+            </div>
+          </div>
+          <div style="display:flex;flex-wrap:wrap;gap:8px">
+            ${items.map(i=>`<span style="font-size:11px;display:flex;align-items:center;gap:4px;color:${i.done?'#15803d':'var(--muted)'}"><i class="fas fa-${i.done?'check-circle':'circle'}" style="color:${i.done?'var(--green)':'var(--line)'}"></i>${i.label}</span>`).join('')}
+          </div>`;
+      } catch(e) { document.getElementById('portfolioStrengthWidget').innerHTML = '<p style="padding:12px;color:var(--muted);font-size:13px">Could not load portfolio data.</p>'; }
+
+      // Upcoming Deadlines widget (skill path tasks + application follow-ups)
+      try {
+        const appsR = await SkillHub._fetch('/jobs/applications');
+        const apps = (appsR?.data || []).filter(a => a.status === 'shortlisted' || a.status === 'interview');
+        document.getElementById('upcomingDeadlines').innerHTML = apps.length
+          ? apps.slice(0,4).map(a => `
+              <div style="display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--line-2)">
+                <div style="width:32px;height:32px;border-radius:8px;background:var(--amber-bg);display:grid;place-items:center;flex-shrink:0"><i class="fas fa-calendar-alt" style="color:var(--amber);font-size:13px"></i></div>
+                <div style="flex:1;min-width:0">
+                  <div style="font-size:13px;font-weight:600;color:var(--ink)">${esc(a.job?.title||'Job')}</div>
+                  <div style="font-size:11px;color:var(--muted)">${esc(a.job?.company)} · <span class="chip chip-${a.status==='interview'?'green':'amber'}" style="font-size:10px">${a.status}</span></div>
+                </div>
+                <a href="jobs.html" class="btn btn-sm btn-secondary">View</a>
+              </div>`).join('')
+          : '<div class="empty-state" style="padding:16px"><i class="fas fa-calendar-check"></i><p style="margin-top:6px">No upcoming deadlines</p></div>';
+      } catch(e) { document.getElementById('upcomingDeadlines').innerHTML = '<p style="padding:12px;color:var(--muted);font-size:13px">Could not load deadlines.</p>'; }
 
     } catch(e) {
       console.error(e);
