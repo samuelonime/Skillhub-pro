@@ -1,4 +1,3 @@
-
 // ======================
 // STORAGE MANAGEMENT
 // ======================
@@ -1137,6 +1136,12 @@ function handleProfileFormSubmit(e) {
     const currentPassword = form.querySelector('#currentPassword').value;
     const newPassword = form.querySelector('#newPassword').value;
     const isChangingPassword = currentPassword && newPassword;
+
+    // Persist updated data back to defaultSettings so a subsequent Edit pre-fills correctly
+    defaultSettings.profile = {
+      ...defaultSettings.profile,
+      ...formData,
+    };
     
     // Simulate API call
     setTimeout(() => {
@@ -2319,11 +2324,123 @@ document.addEventListener('DOMContentLoaded', function() {
     // Initialize platform stats on load
     updatePlatformStats();
 });
-// ── SkillHub layout integration ──────────────────────────────────────────────
-(function() {
+// ── SkillHub layout integration + real user data ─────────────────────────────
+(function () {
   const user = SkillHub.requireAuth();
   if (!user) return;
   if (typeof buildLayout === 'function') {
     buildLayout({ page: 'settings', role: user.role, title: 'Settings' });
   }
+
+  // ── Load real profile data ────────────────────────────────────────────────
+  async function loadUserProfile() {
+    // 1. Populate immediately from the cached session token (instant, no flash)
+    populateProfileFromUser(user);
+
+    // 2. Fetch fresh data from the API and re-populate
+    try {
+      const res = await SkillHub.profile();
+      const fresh = res.data || res;
+      populateProfileFromUser(fresh);
+    } catch (e) {
+      console.warn('Could not refresh profile from API, using session cache.', e);
+    }
+  }
+
+  function populateProfileFromUser(u) {
+    if (!u) return;
+
+    const firstName  = u.firstName  || u.first_name  || (u.name ? u.name.split(' ')[0] : '') || '';
+    const lastName   = u.lastName   || u.last_name   || (u.name ? u.name.split(' ').slice(1).join(' ') : '') || '';
+    const fullName   = [firstName, lastName].filter(Boolean).join(' ') || u.name || '';
+    const email      = u.email      || '';
+    const phone      = u.phone      || u.phoneNumber || '';
+    const location   = u.location   || '';
+    const jobTitle   = u.jobTitle   || u.job_title   || u.title || '';
+    const bio        = u.bio        || '';
+    const avatarUrl  = u.avatar     || u.profilePicture || u.avatarUrl ||
+                       `https://ui-avatars.com/api/?name=${encodeURIComponent(fullName || 'User')}&background=4f46e5&color=fff&size=128`;
+
+    // Update the global profile picture variable so the edit form uses the right picture
+    currentProfilePicture = avatarUrl;
+
+    // ── Static display fields in Account Settings card ──
+    const nameEl     = document.querySelector('#account-section .info-group:nth-child(1) .info-value');
+    const emailEl    = document.querySelector('#account-section .info-group:nth-child(2) .info-value');
+    const phoneEl    = document.querySelector('#account-section .info-group:nth-child(3) .info-value');
+    const locationEl = document.querySelector('#account-section .info-group:nth-child(4) .info-value');
+    const titleEl    = document.querySelector('#account-section .info-group:nth-child(5) .info-value');
+
+    if (nameEl)     nameEl.textContent     = fullName   || '—';
+    if (emailEl)    emailEl.textContent    = email      || '—';
+    if (phoneEl)    phoneEl.textContent    = phone      || '—';
+    if (locationEl) locationEl.textContent = location   || '—';
+    if (titleEl)    titleEl.textContent    = jobTitle   || '—';
+
+    // ── Sidebar user card ──
+    const sidebarAvatar = document.querySelector('.settings-sidebar .user-info .user-avatar');
+    const sidebarName   = document.querySelector('.settings-sidebar .user-info h4');
+    const sidebarEmail  = document.querySelector('.settings-sidebar .user-info p');
+
+    if (sidebarAvatar) sidebarAvatar.src = avatarUrl;
+    if (sidebarName)   sidebarName.textContent  = fullName || 'Your Name';
+    if (sidebarEmail)  sidebarEmail.textContent = email    || '';
+
+    // ── Patch the edit form defaults so they pre-fill correctly ──
+    // Override defaultSettings.profile with real data
+    defaultSettings.profile = {
+      ...defaultSettings.profile,
+      firstName,
+      lastName,
+      email,
+      phone,
+      location,
+      jobTitle,
+      bio,
+      profilePicture: avatarUrl,
+      linkedin: u.linkedin || u.linkedinUrl || '',
+      github:   u.github   || u.githubUrl   || '',
+      website:  u.website  || u.websiteUrl  || '',
+    };
+  }
+
+  // ── Also patch handleEditProfile to use real data ─────────────────────────
+  const _origHandleEditProfile = handleEditProfile;
+  window.handleEditProfile = function () {
+    const profileCard = document.querySelector('#account-section .settings-card');
+    const cardBody    = profileCard ? profileCard.querySelector('.card-body') : null;
+    const editBtn     = document.getElementById('edit-profile');
+    if (!profileCard || !cardBody || !editBtn) return;
+
+    const d = defaultSettings.profile; // already patched with real data above
+    const originalContent = cardBody.innerHTML;
+    cardBody.setAttribute('data-original-content', originalContent);
+    cardBody.innerHTML = templates.profileForm(d);
+
+    editBtn.innerHTML = '<i class="fas fa-times"></i> Cancel Editing';
+    editBtn.classList.remove('btn-outline', 'btn-sm');
+    editBtn.classList.add('btn-danger');
+    editBtn.id = 'cancel-edit-profile';
+
+    const textarea   = cardBody.querySelector('#bio');
+    const charCounter = cardBody.querySelector('#bio-char-count');
+    if (textarea && charCounter) {
+      textarea.addEventListener('input', function () {
+        charCounter.textContent = this.value.length;
+        charCounter.classList.toggle('near-limit', this.value.length > 400);
+      });
+    }
+
+    initializeProfilePictureUpload();
+    initializePasswordFunctionality();
+
+    const form = cardBody.querySelector('#profile-edit-form');
+    if (form) form.addEventListener('submit', handleProfileFormSubmit);
+
+    addProfilePictureStyles();
+    addPasswordStyles();
+  };
+
+  // Run on page load
+  loadUserProfile();
 })();
