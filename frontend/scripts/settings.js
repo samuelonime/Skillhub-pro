@@ -2365,11 +2365,11 @@ document.addEventListener('DOMContentLoaded', function() {
     currentProfilePicture = avatarUrl;
 
     // ── Static display fields in Account Settings card ──
-    const nameEl     = document.querySelector('#account-section .info-group:nth-child(1) .info-value');
-    const emailEl    = document.querySelector('#account-section .info-group:nth-child(2) .info-value');
-    const phoneEl    = document.querySelector('#account-section .info-group:nth-child(3) .info-value');
-    const locationEl = document.querySelector('#account-section .info-group:nth-child(4) .info-value');
-    const titleEl    = document.querySelector('#account-section .info-group:nth-child(5) .info-value');
+    const nameEl     = document.getElementById('profile-name');
+    const emailEl    = document.getElementById('profile-email');
+    const phoneEl    = document.getElementById('profile-phone');
+    const locationEl = document.getElementById('profile-location');
+    const titleEl    = document.getElementById('profile-jobtitle');
 
     if (nameEl)     nameEl.textContent     = fullName   || '—';
     if (emailEl)    emailEl.textContent    = email      || '—';
@@ -2378,9 +2378,9 @@ document.addEventListener('DOMContentLoaded', function() {
     if (titleEl)    titleEl.textContent    = jobTitle   || '—';
 
     // ── Sidebar user card ──
-    const sidebarAvatar = document.querySelector('.settings-sidebar .user-info .user-avatar');
-    const sidebarName   = document.querySelector('.settings-sidebar .user-info h4');
-    const sidebarEmail  = document.querySelector('.settings-sidebar .user-info p');
+    const sidebarAvatar = document.getElementById('sidebar-avatar');
+    const sidebarName   = document.getElementById('sidebar-name');
+    const sidebarEmail  = document.getElementById('sidebar-email');
 
     if (sidebarAvatar) sidebarAvatar.src = avatarUrl;
     if (sidebarName)   sidebarName.textContent  = fullName || 'Your Name';
