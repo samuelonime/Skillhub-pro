@@ -255,7 +255,7 @@
       showAlert('Login successful! Redirecting…', 'ok');
       setTimeout(() => {
         const r = d.data.user.role;
-        window.location.href = r === 'employer' ? 'employer-dashboard.html' : r === 'admin' ? 'Admin.html' : 'index.html';
+        window.location.href = r === 'employer' ? 'employer-dashboard.html' : r === 'admin' ? 'Admin.html' : 'student.html';
       }, 800);
     } catch { showAlert('Cannot reach server. Start the backend on port 5000.'); }
     finally { setLoad('btnLogin', false); }
@@ -272,7 +272,7 @@
       localStorage.setItem('sh_refresh', d.data.refreshToken);
       localStorage.setItem('sh_user', JSON.stringify(d.data.user));
       showAlert('Account created! Redirecting…', 'ok');
-      setTimeout(() => { window.location.href = role === 'employer' ? 'employer-dashboard.html' : 'index.html'; }, 800);
+      setTimeout(() => { window.location.href = role === 'employer' ? 'employer-dashboard.html' : 'student.html'; }, 800);
     } catch { showAlert('Cannot reach server. Start the backend on port 5000.'); }
     finally { setLoad('btnReg', false); }
   }
@@ -281,7 +281,7 @@
   const _u = localStorage.getItem('sh_user');
   if (_u && localStorage.getItem('sh_token')) {
     const u = JSON.parse(_u);
-    window.location.href = u.role === 'employer' ? 'employer-dashboard.html' : u.role === 'admin' ? 'Admin.html' : 'index.html';
+    window.location.href = u.role === 'employer' ? 'employer-dashboard.html' : u.role === 'admin' ? 'Admin.html' : 'student.html';
   }
 </script>
 </body>
