@@ -65,6 +65,10 @@ app.use('/api/v1/rewards',      require('./routes/rewards'));
 app.use('/api/v1/settings',     require('./routes/settings'));
 app.use('/api/v1/admin',        require('./routes/admin'));
 app.use('/api/v1/payment',      require('./routes/payment'));
+app.use('/api/v1/skill-paths',  require('./routes/skillpaths'));
+app.use('/api/v1/talent',       require('./routes/talent'));
+app.use('/api/v1/resume',       require('./routes/resume'));
+app.use('/api/v1/skill-gap',    require('./routes/skillgap'));
 
 app.get('/health', async (_req, res) => {
   let db = 'ok';
@@ -96,7 +100,7 @@ async function start() {
     console.log(`📚 API index: http://localhost:${PORT}/api/v1`);
     console.log(`❤️  Health:   http://localhost:${PORT}/health`);
     console.log(`💳 Paystack: ${process.env.PAYSTACK_SECRET_KEY ? 'configured ✅' : 'not configured ⚠️'}`);
-    if (!IS_PROD) console.log('⚠️  Development mode\n');
+    if (!IS_PROD) console.log('⚠️  Production mode\n');
   });
 
   const shutdown = (sig) => {

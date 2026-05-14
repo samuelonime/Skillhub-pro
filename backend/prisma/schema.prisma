@@ -326,3 +326,100 @@ enum SubscriptionStatus {
   cancelled
   paused
 }
+
+// ── Skill Paths ───────────────────────────────────────────────────────────────
+
+model SkillPath {
+  id          String   @id @default(uuid())
+  title       String
+  description String
+  category    String
+  level       String   @default("Beginner")
+  thumbnail   String?
+  tags        String[] @default([])
+  published   Boolean  @default(false)
+  createdBy   String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  courses     SkillPathCourse[]
+  enrollments SkillPathEnrollment[]
+
+  @@map("skill_paths")
+}
+
+model SkillPathCourse {
+  id          String  @id @default(uuid())
+  pathId      String
+  title       String
+  provider    String
+  url         String
+  duration    String?
+  description String?
+  isRequired  Boolean @default(true)
+  order       Int     @default(0)
+
+  path                SkillPath                  @relation(fields: [pathId], references: [id], onDelete: Cascade)
+  completions         SkillPathCourseCompletion[]
+
+  @@map("skill_path_courses")
+}
+
+model SkillPathEnrollment {
+  id          String    @id @default(uuid())
+  userId      String
+  pathId      String
+  progress    Int       @default(0)
+  enrolledAt  DateTime  @default(now())
+  completedAt DateTime?
+
+  path             SkillPath                  @relation(fields: [pathId], references: [id], onDelete: Cascade)
+  completedCourses SkillPathCourseCompletion[]
+
+  @@unique([userId, pathId])
+  @@map("skill_path_enrollments")
+}
+
+model SkillPathCourseCompletion {
+  id           String   @id @default(uuid())
+  enrollmentId String
+  courseId     String
+  completedAt  DateTime @default(now())
+
+  enrollment SkillPathEnrollment @relation(fields: [enrollmentId], references: [id], onDelete: Cascade)
+  course     SkillPathCourse     @relation(fields: [courseId], references: [id], onDelete: Cascade)
+
+  @@unique([enrollmentId, courseId])
+  @@map("skill_path_course_completions")
+}
+
+// ── Talent Pool (Employer search) ─────────────────────────────────────────────
+
+model ResumeUpload {
+  id         String   @id @default(uuid())
+  userId     String   @unique
+  fileUrl    String
+  fileName   String
+  uploadedAt DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@map("resume_uploads")
+}
+
+// ── Talent Pool ───────────────────────────────────────────────────────────────
+
+model ShortlistedCandidate {
+  id          String   @id @default(uuid())
+  employerId  String
+  candidateId String
+  jobId       String?
+  note        String?
+  createdAt   DateTime @default(now())
+
+  employer  User  @relation("EmployerShortlists", fields: [employerId],  references: [id], onDelete: Cascade)
+  candidate User  @relation("CandidateShortlists", fields: [candidateId], references: [id], onDelete: Cascade)
+  job       Job?  @relation(fields: [jobId], references: [id], onDelete: SetNull)
+
+  @@unique([employerId, candidateId, jobId])
+  @@map("shortlisted_candidates")
+}

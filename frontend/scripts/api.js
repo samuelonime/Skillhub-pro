@@ -177,3 +177,32 @@ function relTime(d) {
   if (s < 86400) return `${Math.floor(s/3600)}h ago`;
   return `${Math.floor(s/86400)}d ago`;
 }
+
+// ── New feature API helpers (appended) ───────────────────────────────────────
+SkillHub.skillPaths         = (q = '')  => SkillHub.get(`/skill-paths${q}`);
+SkillHub.skillPath          = (id)      => SkillHub.get(`/skill-paths/${id}`);
+SkillHub.enrollPath         = (id)      => SkillHub.post(`/skill-paths/${id}/enroll`, {});
+SkillHub.completeCourse     = (id, cId) => SkillHub.post(`/skill-paths/${id}/complete-course`, { courseId: cId });
+SkillHub.myEnrolledPaths    = ()        => SkillHub.get('/skill-paths/my/enrolled');
+SkillHub.createSkillPath    = (b)       => SkillHub.post('/skill-paths', b);
+SkillHub.searchTalent       = (q = '')  => SkillHub.get(`/talent${q}`);
+SkillHub.candidateProfile   = (id)      => SkillHub.get(`/talent/${id}`);
+SkillHub.shortlistCandidate = (id, b)   => SkillHub.post(`/talent/${id}/shortlist`, b || {});
+SkillHub.myShortlisted      = ()        => SkillHub.get('/talent/my/shortlisted');
+SkillHub.getResume          = ()        => SkillHub.get('/resume');
+SkillHub.deleteResume       = ()        => SkillHub.del('/resume');
+SkillHub.getVisibility      = ()        => SkillHub.get('/resume/visibility');
+SkillHub.setVisibility      = (pub)     => SkillHub.put('/resume/visibility', { portfolioPublic: pub });
+SkillHub.skillGap           = (jobId)   => SkillHub.get(`/skill-gap/${jobId}`);
+SkillHub.marketGap          = ()        => SkillHub.get('/skill-gap/overview/market');
+SkillHub.uploadResume = async (file) => {
+  const form  = new FormData();
+  form.append('resume', file);
+  const token = SkillHub.getToken();
+  const res   = await fetch(`${window.API_BASE}/resume`, {
+    method:  'POST',
+    headers: token ? { Authorization: `Bearer ${token}` } : {},
+    body:    form,
+  });
+  return res.json();
+};

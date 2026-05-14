@@ -13,12 +13,14 @@ function buildLayout({ page, role = 'student', title = 'SkillHub' }) {
       { icon: 'fa-briefcase', label: 'Jobs',       href: 'jobs.html',               id: 'jobs' },
       { icon: 'fa-folder-open', label: 'Portfolio',href: 'portfolio.html',          id: 'portfolio' },
       { icon: 'fa-certificate', label: 'Certificates', href: 'certificates.html',   id: 'certificates' },
+      { icon: 'fa-road',  label: 'Skill Paths',    href: 'skillpaths.html',         id: 'skillpaths' },
       { icon: 'fa-coins', label: 'Rewards',        href: 'rewards.html',            id: 'rewards' },
     ],
     employer: [
-      { icon: 'fa-grid-2', label: 'Dashboard',    href: 'employer-dashboard.html', id: 'dashboard' },
-      { icon: 'fa-briefcase', label: 'Jobs',       href: 'jobs.html',               id: 'jobs' },
-      { icon: 'fa-users', label: 'Candidates',     href: 'candidates.html',         id: 'candidates' },
+      { icon: 'fa-grid-2',     label: 'Dashboard',    href: 'employer-dashboard.html', id: 'dashboard' },
+      { icon: 'fa-briefcase',  label: 'Jobs',          href: 'jobs.html',               id: 'jobs' },
+      { icon: 'fa-users',      label: 'Candidates',    href: 'candidates.html',         id: 'candidates' },
+      { icon: 'fa-magnifying-glass-plus', label: 'Talent Pool', href: 'talent.html',   id: 'talent' },
     ],
     admin: [
       { icon: 'fa-grid-2', label: 'Dashboard',    href: 'Admin.html',              id: 'dashboard' },
