@@ -247,6 +247,7 @@
     e.preventDefault(); clearAlert(); setLoad('btnLogin', true);
     try {
       const res = await fetch(`${API}/auth/login`, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ email: document.getElementById('lEmail').value, password: document.getElementById('lPwd').value }) });
+      if (res.status === 429) return showAlert('Too many login attempts. Please wait 15 minutes and try again.');
       const d = await res.json();
       if (!d.success) return showAlert(d.message || 'Login failed');
       localStorage.setItem('sh_token', d.data.accessToken);
@@ -257,7 +258,7 @@
         const r = d.data.user.role;
         window.location.href = r === 'employer' ? 'employer-dashboard.html' : r === 'admin' ? 'Admin.html' : 'student.html';
       }, 800);
-    } catch { showAlert('Cannot reach server. Start the backend on port 5000.'); }
+    } catch { showAlert('Cannot reach server. Please check your connection and try again.'); }
     finally { setLoad('btnLogin', false); }
   }
 
@@ -266,6 +267,7 @@
     try {
       const body = { firstName: document.getElementById('rFN').value, lastName: document.getElementById('rLN').value, email: document.getElementById('rEmail').value, password: document.getElementById('rPwd').value, role, company: document.getElementById('rCompany').value || undefined };
       const res = await fetch(`${API}/auth/register`, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(body) });
+      if (res.status === 429) return showAlert('Too many attempts. Please wait 15 minutes and try again.');
       const d = await res.json();
       if (!d.success) { const msg = d.errors ? d.errors.map(x => x.msg).join('. ') : (d.message || 'Registration failed'); return showAlert(msg); }
       localStorage.setItem('sh_token', d.data.accessToken);
@@ -273,7 +275,7 @@
       localStorage.setItem('sh_user', JSON.stringify(d.data.user));
       showAlert('Account created! Redirecting…', 'ok');
       setTimeout(() => { window.location.href = role === 'employer' ? 'employer-dashboard.html' : 'student.html'; }, 800);
-    } catch { showAlert('Cannot reach server. Start the backend on port 5000.'); }
+    } catch { showAlert('Cannot reach server. Please check your connection and try again.'); }
     finally { setLoad('btnReg', false); }
   }
 
