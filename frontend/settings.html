@@ -90,33 +90,33 @@
 
                 <div class="settings-grid">
                     <!-- Personal Information Card -->
-                    <div class="settings-card">
+                    <div class="settings-card profile-info-card">
                         <div class="card-header">
-                            <h3><i class="fas fa-user"></i> Personal Information</h3>
+                            <h3><i class="fas fa-id-card"></i> Personal Information</h3>
                             <button class="btn btn-sm btn-outline" id="edit-profile">
-                                <i class="fas fa-edit"></i> Edit
+                                <i class="fas fa-pencil-alt"></i> Edit Profile
                             </button>
+                        </div>
+                        <!-- Profile hero strip -->
+                        <div class="profile-card-hero">
+                            <div class="profile-hero-avatar-wrap">
+                                <img id="sidebar-avatar" src="https://ui-avatars.com/api/?name=User&background=4f46e5&color=fff&size=128" alt="Avatar" class="profile-hero-avatar">
+                                <span class="profile-hero-badge"><i class="fas fa-check"></i></span>
+                            </div>
+                            <div class="profile-hero-text">
+                                <h4 id="profile-name" class="profile-hero-name">Loading…</h4>
+                                <p id="profile-jobtitle" class="profile-hero-title">—</p>
+                                <p class="profile-hero-email"><i class="fas fa-envelope"></i> <span id="profile-email">Loading…</span></p>
+                            </div>
                         </div>
                         <div class="card-body">
                             <div class="info-group">
-                                <label>Full Name</label>
-                                <p class="info-value" id="profile-name">Loading…</p>
-                            </div>
-                            <div class="info-group">
-                                <label>Email Address</label>
-                                <p class="info-value" id="profile-email">Loading…</p>
-                            </div>
-                            <div class="info-group">
-                                <label>Phone Number</label>
+                                <label><i class="fas fa-phone-alt"></i> Phone</label>
                                 <p class="info-value" id="profile-phone">—</p>
                             </div>
                             <div class="info-group">
-                                <label>Location</label>
+                                <label><i class="fas fa-map-marker-alt"></i> Location</label>
                                 <p class="info-value" id="profile-location">—</p>
-                            </div>
-                            <div class="info-group">
-                                <label>Job Title</label>
-                                <p class="info-value" id="profile-jobtitle">—</p>
                             </div>
                         </div>
                     </div>

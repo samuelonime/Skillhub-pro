@@ -38,22 +38,22 @@ const SettingsStorage = {
 // ======================
 const defaultSettings = {
     profile: {
-        firstName: 'John',
-        lastName: 'Doe',
-        email: 'john.doe@email.com',
-        phone: '+1 (555) 123-4567',
-        location: 'San Francisco, CA',
-        jobTitle: 'Full Stack Developer',
-        bio: 'Passionate full-stack developer with 3+ years of experience building web applications. Specialized in React, Node.js, and cloud technologies.',
+        firstName: '',
+        lastName: '',
+        email: '',
+        phone: '',
+        location: '',
+        jobTitle: '',
+        bio: '',
         linkedin: '',
         github: '',
         website: '',
-        profilePicture: "https://ui-avatars.com/api/?name=John+Doe&background=4f46e5&color=fff&size=128"
+        profilePicture: "https://ui-avatars.com/api/?name=User&background=4f46e5&color=fff&size=128"
     },
     billing: {
-        billingName: 'John Doe',
-        company: 'N/A',
-        address: '123 Main St, San Francisco, CA 94105',
+        billingName: '',
+        company: '',
+        address: '',
         taxId: '',
         country: 'US',
         countryText: 'United States'
@@ -129,14 +129,14 @@ const templates = {
                     <div class="form-group">
                         <label class="required">First Name</label>
                         <div class="input-with-icon">
-                            <input type="text" id="firstName" class="form-control" value="${data.firstName || 'John'}" required>
+                            <input type="text" id="firstName" class="form-control" value="${data.firstName || ''}" required>
                             <i class="fas fa-user"></i>
                         </div>
                     </div>
                     <div class="form-group">
                         <label class="required">Last Name</label>
                         <div class="input-with-icon">
-                            <input type="text" id="lastName" class="form-control" value="${data.lastName || 'Doe'}" required>
+                            <input type="text" id="lastName" class="form-control" value="${data.lastName || ''}" required>
                             <i class="fas fa-user"></i>
                         </div>
                     </div>
@@ -145,7 +145,7 @@ const templates = {
                 <div class="form-group">
                     <label class="required">Email Address</label>
                     <div class="input-with-icon">
-                        <input type="email" id="email" class="form-control" value="${data.email || 'john.doe@email.com'}" required>
+                        <input type="email" id="email" class="form-control" value="${data.email || ''}" required>
                         <i class="fas fa-envelope"></i>
                     </div>
                 </div>
@@ -153,7 +153,7 @@ const templates = {
                 <div class="form-group">
                     <label>Phone Number</label>
                     <div class="input-with-icon">
-                        <input type="tel" id="phone" class="form-control" value="${data.phone || '+1 (555) 123-4567'}">
+                        <input type="tel" id="phone" class="form-control" value="${data.phone || ''}">
                         <i class="fas fa-phone"></i>
                     </div>
                     <div class="form-help">
@@ -165,7 +165,7 @@ const templates = {
                 <div class="form-group">
                     <label>Location</label>
                     <div class="input-with-icon">
-                        <input type="text" id="location" class="form-control" value="${data.location || 'San Francisco, CA'}">
+                        <input type="text" id="location" class="form-control" value="${data.location || ''}">
                         <i class="fas fa-map-marker-alt"></i>
                     </div>
                 </div>
@@ -173,16 +173,16 @@ const templates = {
                 <div class="form-group">
                     <label>Job Title</label>
                     <div class="input-with-icon">
-                        <input type="text" id="jobTitle" class="form-control" value="${data.jobTitle || 'Full Stack Developer'}">
+                        <input type="text" id="jobTitle" class="form-control" value="${data.jobTitle || ''}">
                         <i class="fas fa-briefcase"></i>
                     </div>
                 </div>
                 
                 <div class="form-group">
                     <label>Professional Bio</label>
-                    <textarea id="bio" class="form-control textarea" rows="4" placeholder="Describe your skills, experience, and achievements...">${data.bio || 'Passionate full-stack developer with 3+ years of experience building web applications. Specialized in React, Node.js, and cloud technologies.'}</textarea>
+                    <textarea id="bio" class="form-control textarea" rows="4" placeholder="Describe your skills, experience, and achievements...">${data.bio || ''}</textarea>
                     <div class="char-counter">
-                        <span id="bio-char-count">${(data.bio || 'Passionate full-stack developer with 3+ years of experience building web applications. Specialized in React, Node.js, and cloud technologies.').length}</span>/500 characters
+                        <span id="bio-char-count">${(data.bio || '').length}</span>/500 characters
                     </div>
                 </div>
                 
@@ -301,28 +301,28 @@ const templates = {
         </div>
         <div class="info-row">
             <div class="info-label">Full Name</div>
-            <div class="info-value">${data.firstName || 'John'} ${data.lastName || 'Doe'}</div>
+            <div class="info-value">${data.firstName || ''} ${data.lastName || ''}</div>
         </div>
         <div class="info-row">
             <div class="info-label">Email Address</div>
-            <div class="info-value">${data.email || 'john.doe@email.com'}</div>
+            <div class="info-value">${data.email || '—'}</div>
         </div>
         <div class="info-row">
             <div class="info-label">Phone Number</div>
-            <div class="info-value">${data.phone || '+1 (555) 123-4567'}</div>
+            <div class="info-value">${data.phone || '—'}</div>
         </div>
         <div class="info-row">
             <div class="info-label">Location</div>
-            <div class="info-value">${data.location || 'San Francisco, CA'}</div>
+            <div class="info-value">${data.location || '—'}</div>
         </div>
         <div class="info-row">
             <div class="info-label">Job Title</div>
-            <div class="info-value">${data.jobTitle || 'Full Stack Developer'}</div>
+            <div class="info-value">${data.jobTitle || '—'}</div>
         </div>
         <div class="info-row">
             <div class="info-label">Bio</div>
             <div class="info-value bio-text">
-                ${data.bio || 'Passionate full-stack developer with 3+ years of experience building web applications. Specialized in React, Node.js, and cloud technologies.'}
+                ${data.bio || '—'}
             </div>
         </div>
     `,
@@ -618,323 +618,11 @@ function checkPasswordMatch() {
 }
 
 // ======================
-// STYLE UTILITIES
+// STYLE UTILITIES  (styles now live in styles/settings.css)
 // ======================
-function addProfilePictureStyles() {
-    const style = document.createElement('style');
-    style.textContent = `
-        .profile-picture-section {
-            margin-bottom: 2rem;
-        }
-        
-        .profile-upload-card {
-            background: var(--card-bg);
-            border: 1px solid var(--border-color);
-            border-radius: 0.75rem;
-            padding: 1.5rem;
-        }
-        
-        .profile-preview-wrapper {
-            display: flex;
-            align-items: flex-start;
-            gap: 1.5rem;
-        }
-        
-        .profile-preview-circle {
-            width: 80px;
-            height: 80px;
-            border-radius: 50%;
-            overflow: hidden;
-            position: relative;
-            border: 3px solid var(--primary-color);
-            cursor: pointer;
-            flex-shrink: 0;
-        }
-        
-        .profile-preview-image {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-            transition: transform 0.3s ease;
-        }
-        
-        .profile-upload-overlay {
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: rgba(0, 0, 0, 0.6);
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            color: white;
-            opacity: 0;
-            transition: opacity 0.3s ease;
-            font-size: 0.75rem;
-        }
-        
-        .profile-preview-circle:hover .profile-upload-overlay {
-            opacity: 1;
-        }
-        
-        .profile-preview-circle:hover .profile-preview-image {
-            transform: scale(1.1);
-        }
-        
-       .profile-upload-overlay {
-        opacity: 0; 
-        transition: opacity 0.3s ease;
-    }
+function addProfilePictureStyles() { /* styles moved to settings.css */ }
 
-        .profile-upload-details h5 {
-            margin: 0 0 0.5rem 0;
-            font-size: 1rem;
-            font-weight: 600;
-            color: var(--text-primary);
-        }
-        
-        .upload-hint {
-            margin: 0 0 1rem 0;
-            font-size: 0.875rem;
-            color: var(--text-secondary);
-            line-height: 1.5;
-        }
-        
-        .profile-upload-controls {
-            display: flex;
-            gap: 0.75rem;
-            align-items: center;
-        }
-        
-        .btn-upload {
-            display: inline-flex;
-            align-items: center;
-            gap: 0.5rem;
-            padding: 0.5rem 1rem;
-            background: var(--primary-color);
-            color: black;
-            border-radius: 0.375rem;
-            font-size: 0.875rem;
-            font-weight: 500;
-            cursor: pointer;
-            transition: background-color 0.2s ease;
-            border: none;
-        }
-        
-        .btn-upload:hover {
-            background: var(--primary-dark);
-        }
-        
-        .btn-remove {
-            display: inline-flex;
-            align-items: center;
-            gap: 0.5rem;
-            padding: 0.5rem 0.3rem;
-            background: transparent;
-            color: var(--text-secondary);
-            border: 1px solid var(--border-color);
-            border-radius: 0.375rem;
-            font-size: 0.875rem;
-            font-weight: 500;
-            cursor: pointer;
-            transition: all 0.2s ease;
-        }
-        
-        .btn-remove:hover {
-            background: var(--danger-light);
-            color: var(--danger-color);
-            border-color: var(--danger-color);
-        }
-        
-        .file-input-hidden {
-            display: none;
-        }
-        
-        /* Profile Display Styles */
-        .profile-picture-display {
-            align-items: flex-start;
-        }
-        
-        .profile-display-wrapper {
-            display: flex;
-            align-items: center;
-            gap: 1rem;
-        }
-        
-        .profile-display-circle {
-            width: 60px;
-            height: 60px;
-            border-radius: 50%;
-            overflow: hidden;
-            border: 2px solid var(--border-color);
-            flex-shrink: 0;
-        }
-        
-        .profile-display-image {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-        }
-        
-        .profile-display-info {
-            display: flex;
-            flex-direction: column;
-        }
-        
-        .profile-info-text {
-            margin: 0;
-            font-size: 0.875rem;
-            color: var(--text-primary);
-            font-weight: 500;
-        }
-        
-        .profile-info-hint {
-            margin: 0.25rem 0 0 0;
-            font-size: 0.75rem;
-            color: var(--text-secondary);
-        }
-        
-        .bio-text {
-            line-height: 1.6;
-            color: var(--text-secondary);
-            font-size: 0.875rem;
-            margin-top: 0.25rem;
-        }
-    `;
-    document.head.appendChild(style);
-}
-
-function addPasswordStyles() {
-    const style = document.createElement('style');
-    style.textContent = `
-        .password-field {
-            position: relative;
-        }
-        
-        .toggle-password {
-            position: absolute;
-            right: 10px;
-            top: 50%;
-            transform: translateY(-50%);
-            background: none;
-            border: none;
-            color: var(--text-secondary);
-            cursor: pointer;
-            padding: 5px;
-            font-size: 0.9rem;
-        }
-        
-        .toggle-password:hover {
-            color: var(--text-primary);
-        }
-        
-        .password-strength {
-            margin-top: 0.5rem;
-        }
-        
-        .strength-meter {
-            height: 4px;
-            background: var(--border-color);
-            border-radius: 2px;
-            overflow: hidden;
-            margin-bottom: 0.25rem;
-        }
-        
-        .strength-bar {
-            height: 100%;
-            width: 0%;
-            background: var(--danger-color);
-            border-radius: 2px;
-            transition: all 0.3s ease;
-        }
-        
-        .strength-text {
-            font-size: 0.75rem;
-            color: var(--text-secondary);
-        }
-        
-        .strength-text span {
-            font-weight: 600;
-        }
-        
-        .password-requirements {
-            margin-top: 0.75rem;
-            padding: 0.75rem;
-            background: var(--card-bg);
-            border-radius: 0.5rem;
-            border: 1px solid var(--border-color);
-        }
-        
-        .requirement-title {
-            margin: 0 0 0.5rem 0;
-            font-size: 0.75rem;
-            font-weight: 600;
-            color: var(--text-secondary);
-        }
-        
-        .requirements-list {
-            margin: 0;
-            padding: 0;
-            list-style: none;
-        }
-        
-        .requirements-list li {
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-            font-size: 0.75rem;
-            color: var(--text-secondary);
-            margin-bottom: 0.25rem;
-        }
-        
-        .requirements-list li:last-child {
-            margin-bottom: 0;
-        }
-        
-        .requirements-list li i {
-            font-size: 0.5rem;
-        }
-        
-        .password-match {
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-            margin-top: 0.5rem;
-            font-size: 0.75rem;
-            color: var(--success-color);
-        }
-        
-        .password-match i {
-            font-size: 0.75rem;
-        }
-        
-        .password-masked {
-            font-family: monospace;
-            letter-spacing: 2px;
-            color: var(--text-secondary);
-            margin-right: 1rem;
-        }
-        
-        .btn-change-password {
-            padding: 0.25rem 0.75rem;
-            background: var(--primary-color);
-            color: white;
-            border: none;
-            border-radius: 0.375rem;
-            font-size: 0.75rem;
-            font-weight: 500;
-            cursor: pointer;
-            transition: background-color 0.2s ease;
-        }
-        
-        .btn-change-password:hover {
-            background: var(--primary-dark);
-        }
-    `;
-    document.head.appendChild(style);
-}
+function addPasswordStyles() { /* styles moved to settings.css */ }
 
 // ======================
 // PROFILE PICTURE HANDLING
@@ -1030,19 +718,8 @@ function handleEditProfile() {
     
     if (!profileCard || !cardBody || !editProfileBtn) return;
     
-    // Get current data
-    const currentData = {
-        firstName: 'John',
-        lastName: 'Doe',
-        email: 'john.doe@email.com',
-        phone: '+1 (555) 123-4567',
-        location: 'San Francisco, CA',
-        jobTitle: 'Full Stack Developer',
-        bio: 'Passionate full-stack developer with 3+ years of experience building web applications. Specialized in React, Node.js, and cloud technologies.',
-        linkedin: '',
-        github: '',
-        website: ''
-    };
+    // Get current data — use real profile data populated from the API
+    const currentData = { ...defaultSettings.profile };
     
     // Store current display content
     const originalContent = cardBody.innerHTML;
@@ -2386,6 +2063,16 @@ document.addEventListener('DOMContentLoaded', function() {
     if (sidebarName)   sidebarName.textContent  = fullName || 'Your Name';
     if (sidebarEmail)  sidebarEmail.textContent = email    || '';
 
+    // ── Hero card elements (new profile card UI) ──
+    const heroAvatar = document.getElementById('sidebar-avatar');
+    const heroName   = document.getElementById('profile-name');
+    const heroTitle  = document.getElementById('profile-jobtitle');
+    const heroEmail  = document.getElementById('profile-email');
+    if (heroAvatar && heroAvatar !== sidebarAvatar) heroAvatar.src = avatarUrl;
+    if (heroName  && !heroName.closest('.edit-form-container'))  heroName.textContent  = fullName  || '—';
+    if (heroTitle && !heroTitle.closest('.edit-form-container')) heroTitle.textContent = jobTitle  || '—';
+    if (heroEmail && !heroEmail.closest('.edit-form-container')) heroEmail.textContent = email     || '—';
+
     // ── Patch the edit form defaults so they pre-fill correctly ──
     // Override defaultSettings.profile with real data
     defaultSettings.profile = {
@@ -2444,4 +2131,3 @@ document.addEventListener('DOMContentLoaded', function() {
   // Run on page load
   loadUserProfile();
 })();
-
