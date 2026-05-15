@@ -69,6 +69,7 @@ app.use('/api/v1/skill-paths',  require('./routes/skillpaths'));
 app.use('/api/v1/talent',       require('./routes/talent'));
 app.use('/api/v1/resume',       require('./routes/resume'));
 app.use('/api/v1/skill-gap',    require('./routes/skillgap'));
+app.use('/api/v1/platforms',    require('./routes/platforms'));
 
 app.get('/health', async (_req, res) => {
   let db = 'ok';

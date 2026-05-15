@@ -42,6 +42,10 @@ model User {
   subscriptions Subscription[]
 
   // REQUIRED BACK RELATIONS
+  connectedPlatforms  ConnectedPlatform[]
+  externalCertificates ExternalCertificate[]
+  affiliateReferrals  AffiliateReferral[]
+  passwordResetTokens PasswordResetToken[]
   employerShortlists  ShortlistedCandidate[] @relation("EmployerShortlists")
   candidateShortlists ShortlistedCandidate[] @relation("CandidateShortlists")
 
@@ -428,4 +432,73 @@ model ShortlistedCandidate {
 
   @@unique([employerId, candidateId, jobId])
   @@map("shortlisted_candidates")
+}
+
+// ── External Platform Connections ─────────────────────────────────────────────
+
+model ConnectedPlatform {
+  id            String   @id @default(uuid())
+  userId        String
+  platform      String   // udemy | coursera | edx
+  referralCode  String?  // affiliate referral code used
+  connectedAt   DateTime @default(now())
+  lastSyncAt    DateTime?
+
+  user         User                      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  certificates ExternalCertificate[]
+  referrals    AffiliateReferral[]
+
+  @@unique([userId, platform])
+  @@map("connected_platforms")
+}
+
+model ExternalCertificate {
+  id           String   @id @default(uuid())
+  userId       String
+  platformId   String
+  title        String
+  platform     String
+  issuer       String
+  completedAt  DateTime
+  credentialUrl String?
+  thumbnailUrl  String?
+  skills       String[] @default([])
+  createdAt    DateTime @default(now())
+
+  user          User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  platformConn  ConnectedPlatform @relation(fields: [platformId], references: [id], onDelete: Cascade)
+
+  @@map("external_certificates")
+}
+
+model AffiliateReferral {
+  id          String   @id @default(uuid())
+  userId      String
+  platformId  String
+  platform    String
+  referralTag String
+  clickedAt   DateTime @default(now())
+  converted   Boolean  @default(false)
+  convertedAt DateTime?
+  commission  Float?
+
+  user         User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  platformConn ConnectedPlatform @relation(fields: [platformId], references: [id], onDelete: Cascade)
+
+  @@map("affiliate_referrals")
+}
+
+// ── Password Reset ─────────────────────────────────────────────────────────────
+
+model PasswordResetToken {
+  id        String   @id @default(uuid())
+  userId    String
+  token     String   @unique
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("password_reset_tokens")
 }

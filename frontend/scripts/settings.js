@@ -2138,3 +2138,191 @@ document.addEventListener('DOMContentLoaded', function() {
   // Run on page load
   loadUserProfile();
 })();
+// ── PLATFORM CONNECTIONS ──────────────────────────────────────────────────────
+
+const PLATFORM_DEFS = [
+  { id: 'udemy',    label: 'Udemy',    icon: 'fa-graduation-cap', color: '#a435f0', desc: 'World\'s largest online learning marketplace' },
+  { id: 'coursera', label: 'Coursera', icon: 'fa-university',     color: '#0056d2', desc: 'University-backed courses and specializations' },
+  { id: 'edx',      label: 'edX',      icon: 'fa-university',     color: '#02262b', desc: 'MIT, Harvard and top university courses' },
+];
+
+let connectedPlatforms = [];
+
+async function loadPlatformConnections() {
+  try {
+    const r = await SkillHub._fetch('/platforms');
+    connectedPlatforms = r?.data || [];
+
+    document.getElementById('connectedCount').textContent = connectedPlatforms.length + ' Connected';
+
+    const grid = document.getElementById('platformsGrid');
+    grid.innerHTML = PLATFORM_DEFS.map(p => {
+      const conn = connectedPlatforms.find(c => c.platform === p.id);
+      return `
+      <div class="platform-card ${conn ? 'connected' : 'available'}" id="pcard-${p.id}" data-platform="${p.id}">
+        <div class="platform-card-header">
+          <div class="platform-icon ${p.id} ${conn ? 'connected' : 'available'}">
+            <i class="fas ${p.icon}"></i>
+          </div>
+          <div class="platform-info">
+            <h4>${p.label}</h4>
+            <p>${p.desc}</p>
+          </div>
+          <div class="platform-status-badge">
+            <span class="status-badge ${conn ? 'connected' : 'available'}">
+              <i class="fas fa-${conn ? 'check-circle' : 'plug'}"></i> ${conn ? 'Connected' : 'Available'}
+            </span>
+          </div>
+        </div>
+        <div class="platform-card-body">
+          <div class="platform-stats">
+            <div class="stat-item"><i class="fas fa-certificate"></i>
+              <span>${conn ? (conn.courseCount || 0) + ' certificates' : 'Sign up & earn commission'}</span>
+            </div>
+            <div class="stat-item"><i class="fas fa-coins"></i>
+              <span>${conn ? 'SkillHub earns on referrals' : 'Free to connect'}</span>
+            </div>
+          </div>
+          <div class="platform-features">
+            <span class="feature-tag">Manual Import</span>
+            <span class="feature-tag">Affiliate Link</span>
+            <span class="feature-tag">Progress Tracking</span>
+          </div>
+        </div>
+        <div class="platform-card-actions">
+          ${conn
+            ? `<button class="btn btn-sm btn-outline" onclick="goToPlatform('${p.id}')"><i class="fas fa-external-link-alt"></i> Visit ${p.label}</button>
+               <button class="btn btn-sm btn-danger" onclick="disconnectPlatform('${p.id}')"><i class="fas fa-unlink"></i> Disconnect</button>`
+            : `<button class="btn btn-sm btn-primary" onclick="connectPlatform('${p.id}')"><i class="fas fa-plug"></i> Connect & Visit</button>`
+          }
+        </div>
+      </div>`;
+    }).join('');
+
+    // Show/hide import cards based on whether any platform is connected
+    const hasConnected = connectedPlatforms.length > 0;
+    document.getElementById('importCertCard').style.display = hasConnected ? 'block' : 'none';
+    document.getElementById('importedCertsCard').style.display = hasConnected ? 'block' : 'none';
+
+    if (hasConnected) {
+      // Populate platform dropdown in import form
+      const sel = document.getElementById('importPlatform');
+      sel.innerHTML = '<option value="">Select platform…</option>' +
+        connectedPlatforms.map(c => `<option value="${c.platform}">${PLATFORM_DEFS.find(p=>p.id===c.platform)?.label||c.platform}</option>`).join('');
+      loadImportedCertificates();
+    }
+  } catch(e) {
+    document.getElementById('platformsGrid').innerHTML = '<div style="padding:20px;color:var(--muted);font-size:13px">Failed to load platforms</div>';
+  }
+}
+
+async function connectPlatform(platformId) {
+  try {
+    const r = await SkillHub._fetch(`/platforms/${platformId}/connect`, { method: 'POST' });
+    if (!r?.success) return toast(r?.message || 'Connection failed', 'error');
+    toast(`Connected to ${PLATFORM_DEFS.find(p=>p.id===platformId)?.label}! Opening platform…`, 'success');
+    // Open affiliate URL in new tab
+    if (r.data?.affiliateUrl) window.open(r.data.affiliateUrl, '_blank');
+    loadPlatformConnections();
+  } catch { toast('Failed to connect platform', 'error'); }
+}
+
+async function disconnectPlatform(platformId) {
+  if (!confirm(`Disconnect ${PLATFORM_DEFS.find(p=>p.id===platformId)?.label}? Your imported certificates will also be removed.`)) return;
+  try {
+    const r = await SkillHub._fetch(`/platforms/${platformId}/disconnect`, { method: 'DELETE' });
+    if (r?.success) { toast('Platform disconnected', 'info'); loadPlatformConnections(); }
+    else toast(r?.message || 'Failed to disconnect', 'error');
+  } catch { toast('Failed to disconnect platform', 'error'); }
+}
+
+async function goToPlatform(platformId) {
+  try {
+    const r = await SkillHub._fetch(`/platforms/${platformId}/connect`, { method: 'POST' });
+    const url = r?.data?.affiliateUrl || PLATFORM_DEFS.find(p=>p.id===platformId)?.baseUrl || '#';
+    window.open(url, '_blank');
+  } catch { toast('Could not open platform', 'error'); }
+}
+
+async function importCertificate() {
+  const platform  = document.getElementById('importPlatform').value;
+  const title     = document.getElementById('importTitle').value.trim();
+  const date      = document.getElementById('importDate').value;
+  const url       = document.getElementById('importUrl').value.trim();
+  const skillsRaw = document.getElementById('importSkills').value.trim();
+
+  if (!platform) return toast('Please select a platform', 'error');
+  if (!title)    return toast('Certificate title is required', 'error');
+  if (!date)     return toast('Completion date is required', 'error');
+
+  const skills = skillsRaw ? skillsRaw.split(',').map(s => s.trim()).filter(Boolean) : [];
+
+  try {
+    const r = await SkillHub._fetch(`/platforms/${platform}/certificates`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ title, completedAt: date, credentialUrl: url || undefined, skills }),
+    });
+    if (!r?.success) return toast(r?.message || 'Import failed', 'error');
+    toast('Certificate imported! It will appear on your profile.', 'success');
+    // Clear form
+    ['importPlatform','importTitle','importDate','importUrl','importSkills'].forEach(id => {
+      const el = document.getElementById(id); if (el) el.value = '';
+    });
+    loadImportedCertificates();
+  } catch { toast('Failed to import certificate', 'error'); }
+}
+
+async function loadImportedCertificates() {
+  try {
+    const r = await SkillHub._fetch('/platforms/certificates');
+    const certs = r?.data || [];
+    const list = document.getElementById('importedCertsList');
+
+    if (!certs.length) {
+      list.innerHTML = '<div style="padding:20px;text-align:center;color:var(--muted);font-size:13px">No certificates imported yet. Import your first one above.</div>';
+      return;
+    }
+
+    list.innerHTML = certs.map(c => {
+      const p = PLATFORM_DEFS.find(x => x.id === c.platform);
+      return `
+      <div style="display:flex;align-items:flex-start;gap:12px;padding:14px 0;border-bottom:1px solid var(--line)">
+        <div style="width:36px;height:36px;border-radius:8px;background:#f4f2ff;display:grid;place-items:center;flex-shrink:0">
+          <i class="fas ${p?.icon || 'fa-certificate'}" style="color:${p?.color || 'var(--brand)'}"></i>
+        </div>
+        <div style="flex:1;min-width:0">
+          <div style="font-size:13px;font-weight:600;color:var(--ink)">${esc(c.title)}</div>
+          <div style="font-size:12px;color:var(--muted);margin-top:2px">${p?.label || c.platform} · ${new Date(c.completedAt).toLocaleDateString()}</div>
+          ${c.skills?.length ? `<div style="margin-top:6px;display:flex;flex-wrap:wrap;gap:4px">${c.skills.map(s=>`<span style="font-size:11px;padding:2px 8px;background:#f4f2ff;border-radius:20px;color:var(--brand)">${esc(s)}</span>`).join('')}</div>` : ''}
+        </div>
+        <div style="display:flex;gap:6px;flex-shrink:0">
+          ${c.credentialUrl ? `<a href="${esc(c.credentialUrl)}" target="_blank" class="btn btn-sm btn-outline" style="font-size:11px"><i class="fas fa-external-link-alt"></i></a>` : ''}
+          <button class="btn btn-sm btn-danger" style="font-size:11px" onclick="deleteCert('${c.id}')"><i class="fas fa-trash"></i></button>
+        </div>
+      </div>`;
+    }).join('');
+  } catch { }
+}
+
+async function deleteCert(id) {
+  if (!confirm('Remove this certificate?')) return;
+  try {
+    await SkillHub._fetch(`/platforms/certificates/${id}`, { method: 'DELETE' });
+    toast('Certificate removed', 'info');
+    loadImportedCertificates();
+  } catch { toast('Failed to remove certificate', 'error'); }
+}
+
+// Load platform connections when connections section is shown
+document.addEventListener('DOMContentLoaded', () => {
+  const observer = new MutationObserver(() => {
+    const section = document.getElementById('connections-section');
+    if (section && getComputedStyle(section).display !== 'none') loadPlatformConnections();
+  });
+  const mainContent = document.querySelector('.main-content') || document.body;
+  if (mainContent) observer.observe(mainContent, { attributes: true, subtree: true, attributeFilter: ['class','style'] });
+
+  // Also load if already visible on page load
+  if (window.location.hash === '#connections') loadPlatformConnections();
+});

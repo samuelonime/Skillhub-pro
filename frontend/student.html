@@ -340,12 +340,22 @@
 
       // Certificate Summary widget
       try {
-        const certR = await SkillHub._fetch('/certificates');
-        const certs = certR?.data || [];
+        const [certR, extCertR] = await Promise.all([
+          SkillHub._fetch('/certificates'),
+          SkillHub._fetch('/platforms/certificates'),
+        ]);
+        const certs    = certR?.data || [];
+        const extCerts = extCertR?.data || [];
         const verified = certs.filter(c => c.status === 'verified').length;
         const pending  = certs.filter(c => c.status === 'pending').length;
         const failed   = certs.filter(c => c.status === 'failed').length;
-        document.getElementById('certSummaryWidget').innerHTML = certs.length
+        const platformColors = { udemy:'#a435f0', coursera:'#0056d2', edx:'#02262b' };
+        const extHtml = extCerts.slice(0,2).map(c=>`<div style="display:flex;align-items:center;gap:8px;font-size:13px;padding:6px 0;border-bottom:1px solid var(--line-2)">
+          <i class="fas fa-graduation-cap" style="color:${platformColors[c.platform]||'var(--brand)'}"></i>
+          <span style="flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(c.title)}</span>
+          <span class="chip chip-brand" style="font-size:10px;text-transform:capitalize">${esc(c.platform)}</span>
+        </div>`).join('');
+        document.getElementById('certSummaryWidget').innerHTML = (certs.length || extCerts.length)
           ? `<div style="display:flex;gap:12px;margin-bottom:14px;flex-wrap:wrap">
                <div style="flex:1;min-width:80px;background:var(--green-bg);border-radius:10px;padding:12px;text-align:center">
                  <div style="font-family:'Syne',sans-serif;font-size:22px;font-weight:800;color:#15803d">${verified}</div>
@@ -355,16 +365,18 @@
                  <div style="font-family:'Syne',sans-serif;font-size:22px;font-weight:800;color:#92400e">${pending}</div>
                  <div style="font-size:11px;color:#92400e">Pending</div>
                </div>
-               <div style="flex:1;min-width:80px;background:var(--red-bg);border-radius:10px;padding:12px;text-align:center">
-                 <div style="font-family:'Syne',sans-serif;font-size:22px;font-weight:800;color:var(--red)">${failed}</div>
-                 <div style="font-size:11px;color:var(--red)">Failed</div>
+               <div style="flex:1;min-width:80px;background:#f4f2ff;border-radius:10px;padding:12px;text-align:center">
+                 <div style="font-family:'Syne',sans-serif;font-size:22px;font-weight:800;color:var(--brand)">${extCerts.length}</div>
+                 <div style="font-size:11px;color:var(--brand)">External</div>
                </div>
              </div>
              ${certs.slice(0,2).map(c=>`<div style="display:flex;align-items:center;gap:8px;font-size:13px;padding:6px 0;border-bottom:1px solid var(--line-2)">
                <i class="fas fa-certificate" style="color:${c.status==='verified'?'var(--green)':c.status==='pending'?'var(--amber)':'var(--red)'}"></i>
                <span style="flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(c.name)}</span>
                <span class="chip chip-${c.status==='verified'?'green':c.status==='pending'?'amber':'red'}" style="font-size:10px">${c.status}</span>
-             </div>`).join('')}`
+             </div>`).join('')}
+             ${extHtml}
+             ${extCerts.length > 0 ? `<a href="settings.html#connections" style="font-size:12px;color:var(--brand);display:block;margin-top:8px"><i class="fas fa-plug"></i> Manage platform imports</a>` : ''}`
           : '<div class="empty-state" style="padding:20px"><i class="fas fa-certificate"></i><p>No certificates yet</p><a href="certificates.html" class="btn btn-sm btn-primary" style="margin-top:8px">Upload Certificate</a></div>';
       } catch(e) { document.getElementById('certSummaryWidget').innerHTML = '<p style="padding:12px;color:var(--muted);font-size:13px">Could not load certificates.</p>'; }
 

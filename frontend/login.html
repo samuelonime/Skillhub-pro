@@ -8,6 +8,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,400&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
   <link rel="icon" type="image/png" href="images/meritlives_logo.png">
+  <script src="https://accounts.google.com/gsi/client" async defer></script>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     :root {
@@ -98,6 +99,12 @@
     .terms { font-size: 11px; color: var(--muted); text-align: center; margin-top: 14px; line-height: 1.5; }
     .terms a { color: var(--brand); text-decoration: none; }
 
+    .btn-google { width: 100%; padding: 12px; background: var(--white); color: var(--ink); border: 1.5px solid var(--line); border-radius: 12px; font-size: 14px; font-weight: 500; font-family: inherit; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 10px; transition: all .2s; }
+    .btn-google:hover { border-color: #4285f4; box-shadow: 0 2px 10px rgba(66,133,244,.15); background: #fafafe; }
+    .btn-google img { width: 18px; height: 18px; }
+    .or-divider { display: flex; align-items: center; gap: 10px; margin: 16px 0; color: var(--muted-2); font-size: 12px; }
+    .or-divider::before, .or-divider::after { content: ''; flex: 1; height: 1px; background: var(--line); }
+
     @media (max-width: 860px) {
       body { grid-template-columns: 1fr; overflow-y: auto; }
       .hero { display: none; }
@@ -173,9 +180,13 @@
         <button type="button" class="eye" onclick="togglePwd('lPwd',this)"><i class="fas fa-eye"></i></button>
       </div>
     </div>
-    <a class="forgot" href="#">Forgot password?</a>
+    <a class="forgot" href="#" onclick="showForgot();return false;">Forgot password?</a>
     <button type="submit" class="btn" id="btnLogin"><span class="lbl">Sign In</span><div class="spin"></div></button>
-
+    <div class="or-divider">or</div>
+    <button type="button" class="btn-google" onclick="googleSignIn()">
+      <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google" />
+      Continue with Google
+    </button>
   </form>
 
   <!-- REGISTER -->
@@ -192,14 +203,110 @@
     <div class="fg" id="companyFG" style="display:none"><label>Company Name</label><div class="inp-wrap"><i class="fas fa-briefcase ico"></i><input type="text" id="rCompany" placeholder="Your company" /></div></div>
     <div class="fg"><label>Email Address</label><div class="inp-wrap"><i class="fas fa-envelope ico"></i><input type="email" id="rEmail" placeholder="you@example.com" required /></div></div>
     <div class="fg"><label>Password</label><div class="inp-wrap"><i class="fas fa-lock ico"></i><input type="password" id="rPwd" placeholder="Min 8 chars, 1 uppercase, 1 number" required /><button type="button" class="eye" onclick="togglePwd('rPwd',this)"><i class="fas fa-eye"></i></button></div></div>
+    <div class="fg"><label>Confirm Password</label><div class="inp-wrap"><i class="fas fa-lock ico"></i><input type="password" id="rPwdConfirm" placeholder="Re-enter your password" required /><button type="button" class="eye" onclick="togglePwd('rPwdConfirm',this)"><i class="fas fa-eye"></i></button></div></div>
     <button type="submit" class="btn" id="btnReg"><span class="lbl">Create Account</span><div class="spin"></div></button>
+    <div class="or-divider">or</div>
+    <button type="button" class="btn-google" onclick="googleSignIn()">
+      <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google" />
+      Continue with Google
+    </button>
     <p class="terms">By creating an account you agree to our <a href="#">Terms of Service</a> and <a href="#">Privacy Policy</a>.</p>
+  </form>
+
+  <!-- FORGOT PASSWORD -->
+  <form id="fForgot" style="display:none" onsubmit="doForgot(event)">
+    <p style="font-size:13px;color:var(--muted);margin-bottom:20px">Enter your email and we'll send you a reset link.</p>
+    <div class="fg">
+      <label>Email address</label>
+      <div class="inp-wrap">
+        <i class="fas fa-envelope ico"></i>
+        <input type="email" id="fEmail" placeholder="you@example.com" required />
+      </div>
+    </div>
+    <button type="submit" class="btn" id="btnForgot"><span class="lbl">Send Reset Link</span><div class="spin"></div></button>
+    <div style="text-align:center;margin-top:14px"><a href="#" style="font-size:13px;color:var(--brand)" onclick="showTab('login');return false;">← Back to Sign In</a></div>
+  </form>
+
+  <!-- RESET PASSWORD -->
+  <form id="fReset" style="display:none" onsubmit="doReset(event)">
+    <p style="font-size:13px;color:var(--muted);margin-bottom:20px">Enter your new password below.</p>
+    <div class="fg">
+      <label>New Password</label>
+      <div class="inp-wrap">
+        <i class="fas fa-lock ico"></i>
+        <input type="password" id="newPwd" placeholder="Min 8 chars, 1 uppercase, 1 number" required />
+        <button type="button" class="eye" onclick="togglePwd('newPwd',this)"><i class="fas fa-eye"></i></button>
+      </div>
+    </div>
+    <div class="fg">
+      <label>Confirm New Password</label>
+      <div class="inp-wrap">
+        <i class="fas fa-lock ico"></i>
+        <input type="password" id="newPwdConfirm" placeholder="Re-enter new password" required />
+        <button type="button" class="eye" onclick="togglePwd('newPwdConfirm',this)"><i class="fas fa-eye"></i></button>
+      </div>
+    </div>
+    <button type="submit" class="btn" id="btnReset"><span class="lbl">Reset Password</span><div class="spin"></div></button>
   </form>
 </div>
 
 <script>
   const API = 'https://skillhub-u918.onrender.com/api/v1';
+  const GOOGLE_CLIENT_ID = 'YOUR_GOOGLE_CLIENT_ID'; // ← replace this
   let role = 'student';
+
+  // Initialise Google Identity Services
+  window.addEventListener('load', () => {
+    if (typeof google === 'undefined') return;
+    google.accounts.id.initialize({
+      client_id: GOOGLE_CLIENT_ID,
+      callback: handleGoogleCredential,
+      auto_select: false,
+    });
+  });
+
+  function googleSignIn() {
+    if (typeof google === 'undefined') {
+      showAlert('Google Sign-In is not available. Please try again.');
+      return;
+    }
+    google.accounts.id.prompt((notification) => {
+      if (notification.isSkippedMoment() || notification.isDismissedMoment()) {
+        // Fallback: open popup manually
+        google.accounts.oauth2.initTokenClient({
+          client_id: GOOGLE_CLIENT_ID,
+          scope: 'email profile',
+          callback: () => {},
+        });
+        google.accounts.id.renderButton(
+          document.createElement('div'),
+          { theme: 'outline', size: 'large' }
+        );
+      }
+    });
+  }
+
+  async function handleGoogleCredential(response) {
+    clearAlert();
+    try {
+      const res = await fetch(`${API}/auth/google`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ credential: response.credential, role }),
+      });
+      if (res.status === 429) return showAlert('Too many attempts. Please wait 15 minutes and try again.');
+      const d = await res.json();
+      if (!d.success) return showAlert(d.message || 'Google sign-in failed');
+      localStorage.setItem('sh_token', d.data.accessToken);
+      localStorage.setItem('sh_refresh', d.data.refreshToken);
+      localStorage.setItem('sh_user', JSON.stringify(d.data.user));
+      showAlert('Signed in with Google! Redirecting…', 'ok');
+      setTimeout(() => {
+        const r = d.data.user.role;
+        window.location.href = r === 'employer' ? 'employer-dashboard.html' : r === 'admin' ? 'Admin.html' : 'student.html';
+      }, 800);
+    } catch { showAlert('Cannot reach server. Please check your connection and try again.'); }
+  }
 
   // Auto-open register tab if URL hash is #register
   if (window.location.hash === '#register') showTab('reg');
@@ -208,12 +315,36 @@
     const login = t === 'login';
     document.getElementById('fLogin').style.display = login ? 'block' : 'none';
     document.getElementById('fReg').style.display = login ? 'none' : 'block';
+    document.getElementById('fForgot').style.display = 'none';
+    document.getElementById('fReset').style.display = 'none';
     document.getElementById('tLogin').classList.toggle('on', login);
     document.getElementById('tReg').classList.toggle('on', !login);
     document.getElementById('authH').textContent = login ? 'Welcome back' : 'Create your account';
     document.getElementById('authSub').textContent = login ? 'Sign in to your SkillHub account' : 'Join 50,000+ professionals on SkillHub';
     clearAlert();
   }
+
+  function showForgot() {
+    ['fLogin','fReg','fReset'].forEach(id => document.getElementById(id).style.display = 'none');
+    document.getElementById('fForgot').style.display = 'block';
+    document.getElementById('tLogin').classList.remove('on');
+    document.getElementById('tReg').classList.remove('on');
+    document.getElementById('authH').textContent = 'Forgot password?';
+    document.getElementById('authSub').textContent = 'We\'ll send a reset link to your inbox';
+    clearAlert();
+  }
+
+  function showReset() {
+    ['fLogin','fReg','fForgot'].forEach(id => document.getElementById(id).style.display = 'none');
+    document.getElementById('fReset').style.display = 'block';
+    document.getElementById('authH').textContent = 'Set new password';
+    document.getElementById('authSub').textContent = 'Choose a strong password for your account';
+    clearAlert();
+  }
+
+  // Auto-show reset form if ?reset=TOKEN in URL
+  const resetToken = new URLSearchParams(location.search).get('reset');
+  if (resetToken) showReset();
 
   function pickRole(el) {
     document.querySelectorAll('.role-card').forEach(c => c.classList.remove('on'));
@@ -264,8 +395,11 @@
 
   async function doRegister(e) {
     e.preventDefault(); clearAlert(); setLoad('btnReg', true);
+    const pwd = document.getElementById('rPwd').value;
+    const confirm = document.getElementById('rPwdConfirm').value;
+    if (pwd !== confirm) { setLoad('btnReg', false); return showAlert('Passwords do not match'); }
     try {
-      const body = { firstName: document.getElementById('rFN').value, lastName: document.getElementById('rLN').value, email: document.getElementById('rEmail').value, password: document.getElementById('rPwd').value, role, company: document.getElementById('rCompany').value || undefined };
+      const body = { firstName: document.getElementById('rFN').value, lastName: document.getElementById('rLN').value, email: document.getElementById('rEmail').value, password: pwd, role, company: document.getElementById('rCompany').value || undefined };
       const res = await fetch(`${API}/auth/register`, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(body) });
       if (res.status === 429) return showAlert('Too many attempts. Please wait 15 minutes and try again.');
       const d = await res.json();
@@ -277,6 +411,33 @@
       setTimeout(() => { window.location.href = role === 'employer' ? 'employer-dashboard.html' : 'student.html'; }, 800);
     } catch { showAlert('Cannot reach server. Please check your connection and try again.'); }
     finally { setLoad('btnReg', false); }
+  }
+
+  async function doForgot(e) {
+    e.preventDefault(); clearAlert(); setLoad('btnForgot', true);
+    try {
+      const res = await fetch(`${API}/auth/forgot-password`, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ email: document.getElementById('fEmail').value }) });
+      if (res.status === 429) return showAlert('Too many attempts. Please wait 15 minutes and try again.');
+      const d = await res.json();
+      showAlert(d.message || 'Reset link sent!', 'ok');
+    } catch { showAlert('Cannot reach server. Please check your connection and try again.'); }
+    finally { setLoad('btnForgot', false); }
+  }
+
+  async function doReset(e) {
+    e.preventDefault(); clearAlert(); setLoad('btnReset', true);
+    const pwd = document.getElementById('newPwd').value;
+    const confirm = document.getElementById('newPwdConfirm').value;
+    if (pwd !== confirm) { setLoad('btnReset', false); return showAlert('Passwords do not match'); }
+    try {
+      const res = await fetch(`${API}/auth/reset-password`, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ token: resetToken, password: pwd }) });
+      if (res.status === 429) return showAlert('Too many attempts. Please try again later.');
+      const d = await res.json();
+      if (!d.success) return showAlert(d.message || 'Reset failed');
+      showAlert('Password reset! Redirecting to login…', 'ok');
+      setTimeout(() => { window.location.href = 'login.html'; }, 1500);
+    } catch { showAlert('Cannot reach server. Please check your connection and try again.'); }
+    finally { setLoad('btnReset', false); }
   }
 
   // Auto-redirect if logged in
