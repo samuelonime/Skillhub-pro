@@ -8,7 +8,7 @@ function buildLayout({ page, role = 'student', title = 'SkillHub' }) {
 
   const navItems = {
     student: [
-      { icon: 'fa-grid-2', label: 'Dashboard',    href: 'student.html',              id: 'dashboard' },
+      { icon: 'fa-grid-2', label: 'Dashboard',    href: 'student.html',            id: 'dashboard' },
       { icon: 'fa-book-open', label: 'Courses',   href: 'courses.html',            id: 'courses' },
       { icon: 'fa-briefcase', label: 'Jobs',       href: 'jobs.html',               id: 'jobs' },
       { icon: 'fa-folder-open', label: 'Portfolio',href: 'portfolio.html',          id: 'portfolio' },

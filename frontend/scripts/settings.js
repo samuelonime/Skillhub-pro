@@ -2009,6 +2009,13 @@ document.addEventListener('DOMContentLoaded', function() {
     buildLayout({ page: 'settings', role: user.role, title: 'Settings' });
   }
 
+  // ── Wire back-button to the correct dashboard for this role ──────────────
+  const backBtn = document.querySelector('.back-btn');
+  if (backBtn) {
+    const dashMap = { employer: 'employer-dashboard.html', admin: 'Admin.html' };
+    backBtn.href = dashMap[user.role] || 'student.html';
+  }
+
   // ── Load real profile data ────────────────────────────────────────────────
   async function loadUserProfile() {
     // 1. Populate immediately from the cached session token (instant, no flash)
