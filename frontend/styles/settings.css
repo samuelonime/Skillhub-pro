@@ -1781,3 +1781,25 @@ input:checked + .slider::before { transform: translateX(20px); }
   font-size: 10px;
   color: var(--primary);
 }
+/* Live loading / empty states */
+.live-loading-row {
+  padding: 32px;
+  text-align: center;
+  color: #9ca3af;
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.live-empty-state {
+  padding: 24px;
+  text-align: center;
+  color: #9ca3af;
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}

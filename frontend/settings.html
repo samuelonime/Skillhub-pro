@@ -307,81 +307,27 @@
                         </div>
                     </div>
 
-                    <!-- Payment Methods Card -->
-                    <div class="payment-method enhanced default">
-                        <div class="method-icon enhanced visa">
-                            <i class="fab fa-cc-visa"></i>
+                    <!-- Payment Methods Card (live) -->
+                    <div class="settings-card" id="payment-methods-card">
+                        <div class="card-header">
+                            <h3><i class="fas fa-wallet"></i> Payment Method</h3>
                         </div>
-                        <div class="method-details">
-                            <h4>Visa ending in 4242</h4>
-                            <p>Expires 05/2025</p>
-                        </div>
-                        <div class="method-actions enhanced">
-                            <button class="btn-icon" title="Edit">
-                                <i class="fas fa-edit"></i>
-                            </button>
-                            <button class="btn-icon" title="Remove">
-                                <i class="fas fa-trash"></i>
-                            </button>
+                        <div class="card-body" id="payment-methods-body">
+                            <div class="live-loading-row"><i class="fas fa-spinner fa-spin"></i> Loading payment info…</div>
                         </div>
                     </div>
 
-                    <!-- Billing History Card -->
+                    <!-- Billing History Card (live) -->
                     <div class="settings-card">
                         <div class="card-header">
                             <h3><i class="fas fa-history"></i> Billing History</h3>
-                            <button class="btn btn-sm btn-outline" id="view-all-invoices">
-                                View All
-                            </button>
                         </div>
-                        <div class="card-body">
-                            <div class="billing-table enhanced">
-                                <table>
-                                    <thead>
-                                        <tr>
-                                            <th>Date</th>
-                                            <th>Description</th>
-                                            <th>Amount</th>
-                                            <th>Status</th>
-                                            <th>Invoice</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        <tr>
-                                            <td>Apr 1, 2024</td>
-                                            <td>Pro Plan - Monthly</td>
-                                            <td>$19.99</td>
-                                            <td><span class="status-badge paid">Paid</span></td>
-                                            <td><button class="btn-link">View</button></td>
-                                        </tr>
-                                        <tr>
-                                            <td>Mar 1, 2024</td>
-                                            <td>Pro Plan - Monthly</td>
-                                            <td>$19.99</td>
-                                            <td><span class="status-badge paid">Paid</span></td>
-                                            <td><button class="btn-link">View</button></td>
-                                        </tr>
-                                        <tr>
-                                            <td>Feb 1, 2024</td>
-                                            <td>Pro Plan - Monthly</td>
-                                            <td>$19.99</td>
-                                            <td><span class="status-badge paid">Paid</span></td>
-                                            <td><button class="btn-link">View</button></td>
-                                        </tr>
-                                        <tr>
-                                            <td>Jan 1, 2024</td>
-                                            <td>Basic to Pro Upgrade</td>
-                                            <td>$9.99</td>
-                                            <td><span class="status-badge paid">Paid</span></td>
-                                            <td><button class="btn-link">View</button></td>
-                                        </tr>
-                                    </tbody>
-                                </table>
-                            </div>
+                        <div class="card-body" id="billing-history-body">
+                            <div class="live-loading-row"><i class="fas fa-spinner fa-spin"></i> Loading billing history…</div>
                         </div>
                     </div>
 
-                    <!-- Billing Information Card -->
+                    <!-- Billing Information Card (live) -->
                     <div class="settings-card">
                         <div class="card-header">
                             <h3><i class="fas fa-file-invoice"></i> Billing Information</h3>
@@ -389,29 +335,8 @@
                                 <i class="fas fa-edit"></i> Edit
                             </button>
                         </div>
-                        <div class="card-body">
-                            <div class="billing-info enhanced">
-                                <div class="info-row">
-                                    <div class="info-label">Billing Name</div>
-                                    <div class="info-value">John Doe</div>
-                                </div>
-                                <div class="info-row">
-                                    <div class="info-label">Company</div>
-                                    <div class="info-value">N/A</div>
-                                </div>
-                                <div class="info-row">
-                                    <div class="info-label">Address</div>
-                                    <div class="info-value">123 Main St, San Francisco, CA 94105</div>
-                                </div>
-                                <div class="info-row">
-                                    <div class="info-label">Tax ID</div>
-                                    <div class="info-value">Not provided</div>
-                                </div>
-                                <div class="info-row">
-                                    <div class="info-label">Next Billing Date</div>
-                                    <div class="info-value">May 1, 2024</div>
-                                </div>
-                            </div>
+                        <div class="card-body" id="billing-info-body">
+                            <div class="live-loading-row"><i class="fas fa-spinner fa-spin"></i> Loading billing info…</div>
                         </div>
                     </div>
                 </div>
@@ -802,27 +727,9 @@
                         <div class="card-header">
                             <h3><i class="fas fa-history"></i> Active Sessions</h3>
                         </div>
-                        <div class="card-body">
-                            <div class="connection-status-grid">
-                                <div class="status-item">
-                                    <div class="status-indicator active"></div>
-                                    <div class="status-info">
-                                        <h5>Chrome on Mac — San Francisco, CA</h5>
-                                        <p>Current session · Active now</p>
-                                    </div>
-                                </div>
-                                <div class="status-item">
-                                    <div class="status-indicator active"></div>
-                                    <div class="status-info">
-                                        <h5>Safari on iPhone</h5>
-                                        <p>Last active 2 hours ago</p>
-                                    </div>
-                                    <div class="status-actions">
-                                        <button class="btn btn-xs btn-outline">Revoke</button>
-                                    </div>
-                                </div>
-                            </div>
-                            <button class="btn btn-outline btn-block mt-4"><i class="fas fa-sign-out-alt"></i> Revoke All Other Sessions</button>
+                        <div class="card-body" id="sessions-body">
+                            <div class="live-loading-row"><i class="fas fa-spinner fa-spin"></i> Loading sessions…</div>
+                            <button class="btn btn-outline btn-block mt-4" id="revoke-all-sessions" style="display:none"><i class="fas fa-sign-out-alt"></i> Revoke All Other Sessions</button>
                         </div>
                     </div>
                 </div>

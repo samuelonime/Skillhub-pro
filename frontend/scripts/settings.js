@@ -2326,3 +2326,249 @@ document.addEventListener('DOMContentLoaded', () => {
   // Also load if already visible on page load
   if (window.location.hash === '#connections') loadPlatformConnections();
 });
+// ======================
+// LIVE PAYMENT & BILLING LOADERS
+// ======================
+
+/** Format a currency amount (in kobo/cents or full dollars) */
+function fmtAmount(amount, currency = 'USD') {
+  // Paystack amounts are in kobo (smallest unit); if > 1000 treat as subunit
+  const val = amount > 1000 ? amount / 100 : amount;
+  try {
+    return new Intl.NumberFormat('en-US', { style: 'currency', currency }).format(val);
+  } catch {
+    return `$${val.toFixed(2)}`;
+  }
+}
+
+function fmtDate(dateStr) {
+  if (!dateStr) return '—';
+  try {
+    return new Date(dateStr).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
+  } catch { return dateStr; }
+}
+
+/** Load subscription plan info into Current Plan card */
+async function loadSubscriptionData() {
+  const planTitle     = document.querySelector('.plan-title');
+  const planPriceMain = document.querySelector('.plan-price-main');
+  const planBadge     = document.querySelector('.plan-badge');
+
+  try {
+    const res = await SkillHub.get('/payment/subscription');
+    const sub = res.data || res;
+    if (sub && sub.plan) {
+      if (planTitle)     planTitle.textContent     = sub.plan.charAt(0).toUpperCase() + sub.plan.slice(1) + ' Plan';
+      if (planPriceMain && sub.amount) planPriceMain.textContent = fmtAmount(sub.amount, sub.currency || 'USD');
+      if (planBadge)     planBadge.textContent     = sub.status === 'active' ? 'Active' : (sub.status || 'Inactive');
+      if (planBadge)     planBadge.className       = `plan-badge ${sub.status === 'active' ? '' : 'badge-warning'}`;
+    } else {
+      if (planTitle)     planTitle.textContent     = 'Free Plan';
+      if (planPriceMain) planPriceMain.textContent = '$0';
+      if (planBadge)     planBadge.textContent     = 'Free';
+    }
+  } catch (e) {
+    // No subscription or API not available — show free plan gracefully
+    if (planTitle)     planTitle.textContent     = 'Free Plan';
+    if (planPriceMain) planPriceMain.textContent = '$0.00';
+    if (planBadge)     planBadge.textContent     = 'Free';
+  }
+}
+
+/** Load payment method into the payment-methods-body container */
+async function loadPaymentMethod() {
+  const body = document.getElementById('payment-methods-body');
+  if (!body) return;
+  try {
+    const res = await SkillHub.get('/payment/subscription');
+    const sub = res.data || res;
+    if (sub && sub.authorizationCode) {
+      const card = sub.card || {};
+      body.innerHTML = `
+        <div class="payment-method enhanced default">
+          <div class="method-icon enhanced ${card.brand || 'visa'}">
+            <i class="fab fa-cc-${(card.brand || 'visa').toLowerCase()}"></i>
+          </div>
+          <div class="method-details">
+            <h4>${(card.brand || 'Card').charAt(0).toUpperCase() + (card.brand || 'card').slice(1)} ending in ${card.last4 || '••••'}</h4>
+            <p>Expires ${card.expMonth ? String(card.expMonth).padStart(2,'0') + '/' + card.expYear : '—'}</p>
+          </div>
+          <div class="method-actions enhanced">
+            <span class="badge-default-card" style="font-size:11px;background:#ecfdf5;color:#065f46;padding:3px 10px;border-radius:20px;font-weight:600">Default</span>
+          </div>
+        </div>`;
+    } else {
+      body.innerHTML = `<p class="live-empty-state"><i class="fas fa-credit-card"></i> No payment method on file. <a href="#" class="btn-link">Add one</a></p>`;
+    }
+  } catch {
+    body.innerHTML = `<p class="live-empty-state"><i class="fas fa-credit-card"></i> No payment method on file.</p>`;
+  }
+}
+
+/** Load billing history */
+async function loadBillingHistory() {
+  const body = document.getElementById('billing-history-body');
+  if (!body) return;
+  try {
+    const res = await SkillHub.get('/payment/history');
+    const payments = res.data || res || [];
+    if (!payments.length) {
+      body.innerHTML = `<p class="live-empty-state"><i class="fas fa-receipt"></i> No billing history yet.</p>`;
+      return;
+    }
+    const rows = payments.slice(0, 10).map(p => `
+      <tr>
+        <td>${fmtDate(p.createdAt || p.paidAt)}</td>
+        <td>${p.description || p.purpose || 'Payment'}</td>
+        <td>${fmtAmount(p.amount, p.currency)}</td>
+        <td><span class="status-badge ${p.status === 'success' || p.status === 'paid' ? 'paid' : 'pending'}">${p.status === 'success' ? 'Paid' : (p.status || 'Pending')}</span></td>
+        <td>${p.reference ? `<button class="btn-link" onclick="alert('Ref: ${p.reference}')">View</button>` : '—'}</td>
+      </tr>`).join('');
+    body.innerHTML = `
+      <div class="billing-table enhanced">
+        <table>
+          <thead><tr><th>Date</th><th>Description</th><th>Amount</th><th>Status</th><th>Invoice</th></tr></thead>
+          <tbody>${rows}</tbody>
+        </table>
+      </div>`;
+  } catch {
+    body.innerHTML = `<p class="live-empty-state"><i class="fas fa-receipt"></i> Could not load billing history.</p>`;
+  }
+}
+
+/** Load billing info from user profile */
+async function loadBillingInfo() {
+  const body = document.getElementById('billing-info-body');
+  if (!body) return;
+  try {
+    const res = await SkillHub.profile();
+    const u = res.data || res;
+    const sub = await SkillHub.get('/payment/subscription').catch(() => null);
+    const subData = sub?.data || sub;
+    const nextBilling = subData?.nextPaymentDate || subData?.currentPeriodEnd;
+    body.innerHTML = `
+      <div class="billing-info enhanced">
+        <div class="info-row">
+          <div class="info-label">Billing Name</div>
+          <div class="info-value" id="live-billing-name">${u.firstName && u.lastName ? u.firstName + ' ' + u.lastName : (u.name || '—')}</div>
+        </div>
+        <div class="info-row">
+          <div class="info-label">Email</div>
+          <div class="info-value">${u.email || '—'}</div>
+        </div>
+        <div class="info-row">
+          <div class="info-label">Company</div>
+          <div class="info-value">${u.company || 'N/A'}</div>
+        </div>
+        <div class="info-row">
+          <div class="info-label">Location</div>
+          <div class="info-value">${u.location || '—'}</div>
+        </div>
+        <div class="info-row">
+          <div class="info-label">Next Billing Date</div>
+          <div class="info-value">${nextBilling ? fmtDate(nextBilling) : (subData ? fmtDate(subData.createdAt) : 'N/A')}</div>
+        </div>
+      </div>`;
+  } catch {
+    document.getElementById('billing-info-body').innerHTML =
+      `<p class="live-empty-state"><i class="fas fa-file-invoice"></i> Could not load billing information.</p>`;
+  }
+}
+
+/** Load active sessions */
+async function loadActiveSessions() {
+  const body = document.getElementById('sessions-body');
+  const revokeBtn = document.getElementById('revoke-all-sessions');
+  if (!body) return;
+  try {
+    // Try to get sessions from API — fall back to current session only
+    const res = await SkillHub.get('/users/me/sessions').catch(() => null);
+    const sessions = res?.data || res || [];
+
+    if (!Array.isArray(sessions) || !sessions.length) {
+      // Show just current session info derived from browser
+      const ua = navigator.userAgent;
+      const browser = ua.includes('Chrome') ? 'Chrome' : ua.includes('Firefox') ? 'Firefox' : ua.includes('Safari') ? 'Safari' : 'Browser';
+      const os = ua.includes('Win') ? 'Windows' : ua.includes('Mac') ? 'Mac' : ua.includes('Linux') ? 'Linux' : 'Unknown OS';
+      body.querySelector('.live-loading-row') && (body.innerHTML = '');
+      body.insertAdjacentHTML('afterbegin', `
+        <div class="connection-status-grid">
+          <div class="status-item">
+            <div class="status-indicator active"></div>
+            <div class="status-info">
+              <h5>${browser} on ${os}</h5>
+              <p>Current session · Active now</p>
+            </div>
+          </div>
+        </div>`);
+      if (revokeBtn) revokeBtn.style.display = 'none';
+      return;
+    }
+
+    const rows = sessions.map((s, i) => `
+      <div class="status-item">
+        <div class="status-indicator ${s.current ? 'active' : ''}"></div>
+        <div class="status-info">
+          <h5>${s.device || s.userAgent || 'Unknown device'}</h5>
+          <p>${s.current ? 'Current session · Active now' : 'Last active ' + fmtDate(s.lastActive || s.createdAt)}</p>
+        </div>
+        ${!s.current ? `<div class="status-actions"><button class="btn btn-xs btn-outline" onclick="revokeSession('${s.id}')">Revoke</button></div>` : ''}
+      </div>`).join('');
+
+    body.innerHTML = `<div class="connection-status-grid">${rows}</div>`;
+    if (revokeBtn) revokeBtn.style.display = sessions.length > 1 ? '' : 'none';
+  } catch {
+    // Silent fail — leave loading state and show current browser session
+    const ua = navigator.userAgent;
+    const browser = ua.includes('Chrome') ? 'Chrome' : ua.includes('Firefox') ? 'Firefox' : 'Browser';
+    const os = ua.includes('Win') ? 'Windows' : ua.includes('Mac') ? 'Mac' : 'Device';
+    body.innerHTML = `
+      <div class="connection-status-grid">
+        <div class="status-item">
+          <div class="status-indicator active"></div>
+          <div class="status-info">
+            <h5>${browser} on ${os}</h5>
+            <p>Current session · Active now</p>
+          </div>
+        </div>
+      </div>`;
+    if (revokeBtn) revokeBtn.style.display = 'none';
+  }
+}
+
+async function revokeSession(sessionId) {
+  try {
+    await SkillHub._fetch(`/users/me/sessions/${sessionId}`, { method: 'DELETE' });
+    toast('Session revoked', 'success');
+    loadActiveSessions();
+  } catch { toast('Could not revoke session', 'error'); }
+}
+
+/** Boot all live sections when payment tab is opened */
+function initPaymentSection() {
+  loadSubscriptionData();
+  loadPaymentMethod();
+  loadBillingHistory();
+  loadBillingInfo();
+}
+
+function initSecuritySection() {
+  loadActiveSessions();
+}
+
+// Hook into section navigation
+document.addEventListener('DOMContentLoaded', () => {
+  // Load payment data when page loads if payment section might be visible
+  const hash = window.location.hash.replace('#','');
+  if (!hash || hash === 'payment') initPaymentSection();
+  if (hash === 'security') initSecuritySection();
+
+  // Re-load when user switches sections
+  document.querySelectorAll('.nav-item').forEach(item => {
+    item.addEventListener('click', function() {
+      const section = this.getAttribute('data-section');
+      if (section === 'payment')  initPaymentSection();
+      if (section === 'security') initSecuritySection();
+    });
+  });
+});
