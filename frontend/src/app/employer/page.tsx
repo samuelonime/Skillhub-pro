@@ -1,38 +1,25 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { SidebarLayout } from '@/components/layout/SidebarLayout';
+import { apiFetch } from '@/lib/api';
 
 const navItems = [
-  { href: '/employer', icon: 'fa-tachometer-alt', label: 'Dashboard' },
-  { href: '/employer/jobs', icon: 'fa-briefcase', label: 'Job Management' },
-  { href: '/employer/applicants', icon: 'fa-users', label: 'Applicants', badge: 5 },
-  { href: '/employer/talent', icon: 'fa-search', label: 'Talent Search' },
-  { href: '/employer/analytics', icon: 'fa-chart-bar', label: 'Analytics' },
-  { href: '/employer/company', icon: 'fa-building', label: 'Company' },
-  { href: '/employer/settings', icon: 'fa-gear', label: 'Settings' },
+  { href: '/employer',            icon: 'fa-tachometer-alt', label: 'Dashboard' },
+  { href: '/employer/jobs',       icon: 'fa-briefcase',      label: 'Job Management' },
+  { href: '/employer/applicants', icon: 'fa-users',          label: 'Applicants' },
+  { href: '/employer/talent',     icon: 'fa-search',         label: 'Talent Search' },
+  { href: '/employer/analytics',  icon: 'fa-chart-bar',      label: 'Analytics' },
+  { href: '/employer/company',    icon: 'fa-building',        label: 'Company' },
+  { href: '/employer/settings',   icon: 'fa-gear',           label: 'Settings' },
 ];
 
-function StatCard({ icon, iconBg, iconColor, value, label, delta, deltaUp }: any) {
-  return (
-    <div className="bg-white rounded-2xl p-5 border border-[#e8e8f0] shadow-[0_1px_3px_rgba(0,0,0,0.06)] flex items-center gap-3.5 hover:-translate-y-0.5 hover:shadow-[0_4px_16px_rgba(0,0,0,0.07)] transition-all">
-      <div className="w-11 h-11 rounded-xl grid place-items-center text-[17px] flex-shrink-0" style={{ background: iconBg, color: iconColor }}>
-        <i className={`fas ${icon}`} />
-      </div>
-      <div>
-        <div className="font-syne font-bold text-[22px] tracking-tight">{value}</div>
-        <div className="text-xs text-[#6b6b8a] mt-0.5">{label}</div>
-        {delta && <div className={`text-[11px] mt-0.5 ${deltaUp ? 'text-[#22c55e]' : 'text-[#ef4444]'}`}>{delta}</div>}
-      </div>
-    </div>
-  );
-}
-
-const MERIT_TIERS: Record<string, { label: string; icon: string; color: string; bg: string; minCoins: number }> = {
-  platinum: { label: 'Platinum', icon: '💎', color: '#7c3aed', bg: '#f4f2ff', minCoins: 5000 },
-  gold:     { label: 'Gold',     icon: '🥇', color: '#d97706', bg: '#fffbeb', minCoins: 2000 },
-  silver:   { label: 'Silver',   icon: '🥈', color: '#6b7280', bg: '#f5f5fb', minCoins: 500  },
-  bronze:   { label: 'Bronze',   icon: '🥉', color: '#92400e', bg: '#fef3c7', minCoins: 0    },
+/* ─── Merit Tier helpers ────────────────────────────────────────────────── */
+const TIERS: Record<string, { label: string; icon: string; color: string; bg: string }> = {
+  platinum: { label: 'Platinum', icon: '💎', color: '#7c3aed', bg: '#f4f2ff' },
+  gold:     { label: 'Gold',     icon: '🥇', color: '#d97706', bg: '#fffbeb' },
+  silver:   { label: 'Silver',   icon: '🥈', color: '#6b7280', bg: '#f5f5fb' },
+  bronze:   { label: 'Bronze',   icon: '🥉', color: '#92400e', bg: '#fef3c7' },
 };
 
 function getTier(coins: number) {
@@ -42,223 +29,510 @@ function getTier(coins: number) {
   return 'bronze';
 }
 
-// Extended applicant list with merit coins
-const APPLICANTS = [
-  { name: 'Amara Okafor',  role: 'Senior React Developer',  score: 94, status: 'shortlisted', avatar: 'AO', bg: '#5b4cf5', coins: 6200, certificates: 8, projects: 5, platforms: ['Udemy','Coursera'] },
-  { name: 'Kemi Adeyemi',  role: 'Data Analyst',            score: 88, status: 'reviewing',   avatar: 'KA', bg: '#10b981', coins: 3100, certificates: 5, projects: 3, platforms: ['edX'] },
-  { name: 'Chidi Nwosu',   role: 'Senior React Developer',  score: 82, status: 'reviewing',   avatar: 'CN', bg: '#f59e0b', coins: 1800, certificates: 4, projects: 2, platforms: ['Udemy'] },
-  { name: 'Fatima Hassan', role: 'DevOps Engineer',         score: 79, status: 'applied',     avatar: 'FH', bg: '#ef4444', coins: 720,  certificates: 3, projects: 1, platforms: [] },
-  { name: 'Taiwo Obi',     role: 'Data Analyst',            score: 76, status: 'applied',     avatar: 'TO', bg: '#8b5cf6', coins: 290,  certificates: 2, projects: 0, platforms: [] },
-  { name: 'Ngozi Eze',     role: 'UI/UX Designer',          score: 91, status: 'shortlisted', avatar: 'NE', bg: '#ec4899', coins: 5400, certificates: 7, projects: 6, platforms: ['Coursera','LinkedIn'] },
-];
-
-// Job posts with merit tier requirements
-const JOBS = [
-  { title: 'Senior React Developer',    type: 'Full-time', location: 'Remote',    applicants: 24, match: 91, status: 'active',  posted: '3 days ago',  minTier: 'gold',     salaryRange: '$4,000–$6,000/mo' },
-  { title: 'Data Analyst',              type: 'Full-time', location: 'Lagos',     applicants: 17, match: 87, status: 'active',  posted: '1 week ago',  minTier: 'silver',   salaryRange: '₦600k–₦900k/mo'  },
-  { title: 'DevOps Engineer',           type: 'Contract',  location: 'Hybrid',    applicants: 8,  match: 79, status: 'active',  posted: '2 weeks ago', minTier: 'gold',     salaryRange: '$3,500–$5,000/mo' },
-  { title: 'UI/UX Designer',            type: 'Part-time', location: 'Remote',    applicants: 31, match: 95, status: 'closed',  posted: '1 month ago', minTier: 'bronze',   salaryRange: '₦400k–₦600k/mo'  },
-  { title: 'VP of Engineering',         type: 'Full-time', location: 'Abuja',     applicants: 5,  match: 88, status: 'active',  posted: '5 days ago',  minTier: 'platinum', salaryRange: '$10,000+/mo'      },
-  { title: 'Machine Learning Engineer', type: 'Full-time', location: 'Remote',    applicants: 12, match: 83, status: 'active',  posted: '4 days ago',  minTier: 'platinum', salaryRange: '$6,000–$9,000/mo' },
-];
-
-const STATUS_COLORS: Record<string, [string, string]> = {
-  shortlisted: ['#f0fdf4', '#15803d'],
-  reviewing:   ['#fffbeb', '#92400e'],
-  applied:     ['#eff6ff', '#1d4ed8'],
-  active:      ['#f0fdf4', '#15803d'],
-  closed:      ['#f5f5fb', '#6b6b8a'],
-};
-
 function MeritBadge({ coins }: { coins: number }) {
-  const tier = MERIT_TIERS[getTier(coins)];
+  const t = TIERS[getTier(coins)];
   return (
-    <span className="inline-flex items-center gap-1 text-[11px] font-bold px-2 py-0.5 rounded-full" style={{ background: tier.bg, color: tier.color }}>
-      {tier.icon} {tier.label} · {coins.toLocaleString()}
+    <span className="inline-flex items-center gap-1 text-[11px] font-bold px-2 py-0.5 rounded-full"
+      style={{ background: t.bg, color: t.color }}>
+      {t.icon} {t.label} · {coins.toLocaleString()}
     </span>
   );
 }
 
-function TierBadge({ tier }: { tier: string }) {
-  const t = MERIT_TIERS[tier];
+function TierPill({ tier }: { tier: string }) {
+  const t = TIERS[tier];
   if (!t) return null;
   return (
-    <span className="inline-flex items-center gap-1 text-[10px] font-bold px-1.5 py-0.5 rounded-full" style={{ background: t.bg, color: t.color }}>
+    <span className="inline-flex items-center gap-0.5 text-[10px] font-bold px-1.5 py-0.5 rounded-full"
+      style={{ background: t.bg, color: t.color }}>
       {t.icon} {t.label}+
     </span>
   );
 }
 
+const STATUS_STYLE: Record<string, [string, string]> = {
+  applied:      ['#eff6ff', '#1d4ed8'],
+  reviewing:    ['#fffbeb', '#92400e'],
+  shortlisted:  ['#f0fdf4', '#15803d'],
+  interviewing: ['#f4f2ff', '#5b4cf5'],
+  hired:        ['#f0fdf4', '#15803d'],
+  rejected:     ['#fef2f2', '#dc2626'],
+};
+
+/* ─── Shared skeleton ────────────────────────────────────────────────────── */
+function Sk({ h = 'h-4', w = 'w-full', r = 'rounded' }: any) {
+  return <div className={`${h} ${w} ${r} bg-[#f0f0f8] animate-pulse`} />;
+}
+
+/* ─── Avatar ─────────────────────────────────────────────────────────────── */
+function Avatar({ name, avatar, size = 8 }: { name: string; avatar?: string; size?: number }) {
+  const initials = name.split(' ').map((n: string) => n[0]).join('').slice(0, 2).toUpperCase();
+  const colors = ['#5b4cf5','#10b981','#f59e0b','#3b82f6','#ef4444','#8b5cf6','#ec4899','#06b6d4'];
+  const color  = colors[initials.charCodeAt(0) % colors.length];
+  const cls    = `w-${size} h-${size} rounded-full flex-shrink-0 grid place-items-center font-syne font-bold text-white text-xs`;
+  return avatar
+    ? <img src={avatar} alt={name} className={`w-${size} h-${size} rounded-full object-cover flex-shrink-0`} />
+    : <div className={cls} style={{ background: color }}>{initials}</div>;
+}
+
+/* ─── Status dropdown ────────────────────────────────────────────────────── */
+function StatusSelect({ appId, current, onChange }: { appId: string; current: string; onChange: (id: string, status: string) => void }) {
+  const [loading, setLoading] = useState(false);
+  const options = ['reviewing', 'shortlisted', 'interviewing', 'hired', 'rejected'];
+  async function update(status: string) {
+    setLoading(true);
+    try {
+      await apiFetch(`/employer/applicants/${appId}/status`, { method: 'PATCH', body: JSON.stringify({ status }) });
+      onChange(appId, status);
+    } catch {}
+    finally { setLoading(false); }
+  }
+  const [sbg, sc] = STATUS_STYLE[current] || ['#f5f5fb', '#6b6b8a'];
+  return (
+    <div className="relative">
+      <select
+        value={current}
+        disabled={loading}
+        onChange={e => update(e.target.value)}
+        className="text-[11px] font-semibold px-2.5 py-1 rounded-full border-0 cursor-pointer outline-none appearance-none pr-5 disabled:opacity-50"
+        style={{ background: sbg, color: sc }}>
+        {options.map(o => <option key={o} value={o}>{o.charAt(0).toUpperCase() + o.slice(1)}</option>)}
+      </select>
+      {loading && <i className="fas fa-spinner fa-spin absolute right-1.5 top-1.5 text-[9px]" style={{ color: sc }} />}
+    </div>
+  );
+}
+
+/* ─── Candidate profile drawer ───────────────────────────────────────────── */
+function ProfileDrawer({ userId, onClose }: { userId: string | null; onClose: () => void }) {
+  const [profile, setProfile] = useState<any>(null);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (!userId) return;
+    setProfile(null);
+    setLoading(true);
+    apiFetch(`/employer/talent/${userId}`)
+      .then(r => { if (r.success) setProfile(r.data); })
+      .catch(() => {})
+      .finally(() => setLoading(false));
+  }, [userId]);
+
+  if (!userId) return null;
+
+  return (
+    <div className="fixed inset-0 z-50 flex" onClick={onClose}>
+      <div className="flex-1 bg-black/40 backdrop-blur-sm" />
+      <div className="w-full max-w-md bg-white h-full overflow-y-auto shadow-2xl" onClick={e => e.stopPropagation()}>
+        <div className="flex items-center justify-between p-5 border-b border-[#e8e8f0] sticky top-0 bg-white z-10">
+          <span className="font-syne font-bold text-[15px]">Candidate Profile</span>
+          <button onClick={onClose} className="w-8 h-8 rounded-xl bg-[#f5f5fb] border-0 cursor-pointer text-[#6b6b8a] hover:bg-[#f0f0f8] grid place-items-center">
+            <i className="fas fa-times text-xs" />
+          </button>
+        </div>
+
+        {loading ? (
+          <div className="p-5 flex flex-col gap-3">
+            <Sk h="h-20" r="rounded-2xl" />
+            {[1,2,3,4].map(i => <Sk key={i} h="h-12" r="rounded-xl" />)}
+          </div>
+        ) : profile ? (
+          <div className="p-5">
+            {/* Header */}
+            <div className="flex items-center gap-4 mb-5">
+              <Avatar name={profile.name} avatar={profile.avatar} size={14} />
+              <div>
+                <h2 className="font-syne font-bold text-[17px]">{profile.name}</h2>
+                <p className="text-sm text-[#6b6b8a]">{profile.title}</p>
+                <p className="text-xs text-[#9898b8]">{profile.location}</p>
+                <div className="mt-1.5"><MeritBadge coins={profile.meritCoins || 0} /></div>
+              </div>
+            </div>
+
+            {profile.bio && (
+              <p className="text-sm text-[#6b6b8a] leading-relaxed mb-5 p-3 bg-[#f5f5fb] rounded-xl">{profile.bio}</p>
+            )}
+
+            {/* Stats */}
+            <div className="grid grid-cols-3 gap-2 mb-5">
+              {[
+                { label: 'Skills',       value: profile.skills?.length || 0,           color: '#5b4cf5', bg: '#f4f2ff' },
+                { label: 'Certificates', value: profile.certificates?.length || 0,      color: '#22c55e', bg: '#f0fdf4' },
+                { label: 'Projects',     value: profile.projects?.length || 0,          color: '#f59e0b', bg: '#fffbeb' },
+              ].map(s => (
+                <div key={s.label} className="rounded-xl p-3 text-center" style={{ background: s.bg }}>
+                  <div className="font-syne font-bold text-[18px]" style={{ color: s.color }}>{s.value}</div>
+                  <div className="text-[10px] text-[#6b6b8a]">{s.label}</div>
+                </div>
+              ))}
+            </div>
+
+            {/* Skills */}
+            {profile.skills?.length > 0 && (
+              <div className="mb-5">
+                <div className="text-[11px] font-semibold text-[#6b6b8a] uppercase tracking-wide mb-2">Skills</div>
+                <div className="flex flex-wrap gap-1.5">
+                  {profile.skills.map((s: any) => (
+                    <span key={s.name} className="text-xs font-semibold px-2.5 py-1 rounded-lg bg-[#f4f2ff] text-[#5b4cf5]">
+                      {s.verified && <i className="fas fa-check-circle mr-1 text-[10px]" />}{s.name}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Certificates */}
+            {profile.certificates?.length > 0 && (
+              <div className="mb-5">
+                <div className="text-[11px] font-semibold text-[#6b6b8a] uppercase tracking-wide mb-2">Certificates</div>
+                {profile.certificates.map((c: any) => (
+                  <div key={c.id} className="flex items-center gap-2.5 py-2.5 border-b border-[#f0f0f8] last:border-0">
+                    <div className="w-7 h-7 rounded-lg bg-[#fffbeb] grid place-items-center text-sm flex-shrink-0">🏆</div>
+                    <div className="flex-1 min-w-0">
+                      <div className="text-[13px] font-semibold truncate">{c.title}</div>
+                      <div className="text-[11px] text-[#9898b8]">{c.provider}</div>
+                    </div>
+                    {c.credentialUrl && (
+                      <a href={c.credentialUrl} target="_blank" rel="noreferrer" className="text-[11px] text-[#5b4cf5] font-semibold no-underline">
+                        View <i className="fas fa-external-link-alt text-[9px]" />
+                      </a>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* Projects */}
+            {profile.projects?.length > 0 && (
+              <div className="mb-5">
+                <div className="text-[11px] font-semibold text-[#6b6b8a] uppercase tracking-wide mb-2">Projects</div>
+                {profile.projects.map((p: any) => (
+                  <div key={p.id} className="p-3 rounded-xl bg-[#f5f5fb] mb-2">
+                    <div className="font-semibold text-[13px] mb-1">{p.title}</div>
+                    <p className="text-[11px] text-[#6b6b8a] line-clamp-2 mb-2">{p.description}</p>
+                    <div className="flex gap-1 flex-wrap">
+                      {(p.techStack || []).slice(0, 4).map((t: string) => (
+                        <span key={t} className="text-[10px] px-1.5 py-0.5 rounded bg-white text-[#6b6b8a] border border-[#e8e8f0]">{t}</span>
+                      ))}
+                    </div>
+                    <div className="flex gap-2 mt-2">
+                      {p.liveUrl && <a href={p.liveUrl} target="_blank" rel="noreferrer" className="text-[11px] text-[#5b4cf5] font-semibold no-underline">Live ↗</a>}
+                      {p.githubUrl && <a href={p.githubUrl} target="_blank" rel="noreferrer" className="text-[11px] text-[#6b6b8a] font-semibold no-underline">GitHub ↗</a>}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* Platforms */}
+            {profile.platforms?.length > 0 && (
+              <div className="mb-5">
+                <div className="text-[11px] font-semibold text-[#6b6b8a] uppercase tracking-wide mb-2">Learning Platforms</div>
+                <div className="flex flex-wrap gap-1.5">
+                  {profile.platforms.map((p: string) => (
+                    <span key={p} className="text-[11px] font-semibold px-2.5 py-1 rounded-full bg-[#f0fdf4] text-[#22c55e]">
+                      <i className="fas fa-check-circle mr-1" />{p}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Resume */}
+            {profile.resume?.fileUrl && (
+              <a href={profile.resume.fileUrl} target="_blank" rel="noreferrer"
+                className="flex items-center gap-2 p-3 rounded-xl bg-[#f4f2ff] no-underline hover:bg-[#5b4cf5] hover:text-white transition-all group">
+                <i className="fas fa-file-pdf text-[#5b4cf5] group-hover:text-white" />
+                <span className="text-sm font-semibold text-[#5b4cf5] group-hover:text-white">Download Resume</span>
+              </a>
+            )}
+          </div>
+        ) : (
+          <div className="p-10 text-center text-[#9898b8]">Profile not available</div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   MAIN PAGE
+══════════════════════════════════════════════════════════════════════════ */
 export default function EmployerDashboardPage() {
-  const [activeTab, setActiveTab] = useState<'overview' | 'jobs' | 'applicants' | 'talent'>('overview');
-  const [coinFilter, setCoinFilter] = useState<'all' | 'platinum' | 'gold' | 'silver' | 'bronze'>('all');
-  const [jobTierFilter, setJobTierFilter] = useState<'all' | 'platinum' | 'gold' | 'silver' | 'bronze'>('all');
-  const [showFeaturedOnly, setShowFeaturedOnly] = useState(false);
+  const [tab, setTab]           = useState<'overview' | 'jobs' | 'applicants' | 'talent'>('overview');
+  const [overview, setOverview] = useState<any>(null);
+  const [jobs, setJobs]         = useState<any[] | null>(null);
+  const [applicants, setApplicants] = useState<any[] | null>(null);
+  const [talent, setTalent]     = useState<any[] | null>(null);
+  const [talentTotal, setTalentTotal] = useState(0);
 
-  const filteredApplicants = APPLICANTS.filter(a => {
-    if (coinFilter === 'all') return true;
-    return getTier(a.coins) === coinFilter;
-  });
+  // Filters
+  const [tierFilter, setTierFilter]     = useState('all');
+  const [jobFilter, setJobFilter]       = useState('');
+  const [statusFilter, setStatusFilter] = useState('');
+  const [talentTier, setTalentTier]     = useState('all');
+  const [talentSearch, setTalentSearch] = useState('');
+  const [jobStatusFilter, setJobStatusFilter] = useState('');
+  const [selectedUser, setSelectedUser] = useState<string | null>(null);
 
-  const sortedApplicants = [...filteredApplicants].sort((a, b) => b.coins - a.coins);
+  const loadOverview = useCallback(async () => {
+    try {
+      const r = await apiFetch('/employer/dashboard');
+      if (r.success) setOverview(r.data);
+    } catch {}
+  }, []);
 
-  // Platinum/gold applicants surface to top of talent tab
-  const topTalent = [...APPLICANTS].sort((a, b) => b.coins - a.coins);
-  const featuredTalent = topTalent.filter(a => a.coins >= 2000);
+  const loadJobs = useCallback(async () => {
+    try {
+      const params = new URLSearchParams();
+      if (jobStatusFilter) params.set('status', jobStatusFilter);
+      const r = await apiFetch(`/employer/jobs?${params}`);
+      if (r.success) setJobs(r.data);
+    } catch { setJobs([]); }
+  }, [jobStatusFilter]);
+
+  const loadApplicants = useCallback(async () => {
+    try {
+      const params = new URLSearchParams();
+      if (tierFilter !== 'all') params.set('tier', tierFilter);
+      if (statusFilter) params.set('status', statusFilter);
+      if (jobFilter) params.set('jobId', jobFilter);
+      const r = await apiFetch(`/employer/applicants?${params}&sort=coins`);
+      if (r.success) setApplicants(r.data);
+    } catch { setApplicants([]); }
+  }, [tierFilter, statusFilter, jobFilter]);
+
+  const loadTalent = useCallback(async () => {
+    try {
+      const params = new URLSearchParams();
+      if (talentTier !== 'all') params.set('tier', talentTier);
+      if (talentSearch) params.set('search', talentSearch);
+      const r = await apiFetch(`/employer/talent?${params}`);
+      if (r.success) { setTalent(r.data.users); setTalentTotal(r.data.total); }
+    } catch { setTalent([]); }
+  }, [talentTier, talentSearch]);
+
+  useEffect(() => { loadOverview(); }, [loadOverview]);
+  useEffect(() => { if (tab === 'jobs')       loadJobs();       }, [tab, loadJobs]);
+  useEffect(() => { if (tab === 'applicants') loadApplicants(); }, [tab, loadApplicants]);
+  useEffect(() => { if (tab === 'talent')     loadTalent();     }, [tab, loadTalent]);
+
+  function onStatusChange(appId: string, newStatus: string) {
+    setApplicants(prev => prev ? prev.map(a => a.applicationId === appId ? { ...a, status: newStatus } : a) : prev);
+    loadOverview(); // refresh stats
+  }
+
+  const stats = overview?.stats;
+  const pipeline = overview?.pipeline || [];
+  const tierBreak = overview?.tierBreakdown || {};
+  const recent = overview?.recentApplicants || [];
+
+  const PIPELINE_COLORS: Record<string, string> = {
+    applied: '#e8e8f0', reviewing: '#3b82f6', shortlisted: '#f59e0b', interviewing: '#5b4cf5', hired: '#22c55e',
+  };
 
   return (
     <SidebarLayout navItems={navItems} pageTitle="Employer Dashboard">
+      <ProfileDrawer userId={selectedUser} onClose={() => setSelectedUser(null)} />
+
       {/* Header */}
-      <div className="flex items-start justify-between mb-6 gap-4 flex-wrap">
+      <div className="flex items-center justify-between mb-5 flex-wrap gap-3">
         <div>
-          <h1 className="font-syne font-bold text-[21px] tracking-tight mb-0.5">Welcome back, Alex 👋</h1>
-          <p className="text-[13.5px] text-[#6b6b8a]">Here's what's happening with your hiring pipeline today.</p>
+          <h1 className="font-syne font-bold text-[21px] tracking-tight mb-0.5">Employer Dashboard</h1>
+          <p className="text-[13px] text-[#6b6b8a]">All data pulled live from your hiring pipeline.</p>
         </div>
-        <button className="inline-flex items-center gap-2 px-4 py-2.5 bg-[#5b4cf5] text-white rounded-xl text-sm font-semibold border-0 cursor-pointer hover:bg-[#7c6ff7] hover:-translate-y-px hover:shadow-[0_6px_20px_rgba(91,76,245,0.3)] transition-all">
+        <a href="/employer/jobs/new" className="inline-flex items-center gap-2 px-4 py-2.5 bg-[#5b4cf5] text-white rounded-xl text-sm font-semibold no-underline hover:bg-[#7c6ff7] hover:-translate-y-px hover:shadow-[0_6px_20px_rgba(91,76,245,0.3)] transition-all">
           <i className="fas fa-plus" /> Post a Job
-        </button>
+        </a>
       </div>
 
       {/* Tabs */}
-      <div className="flex gap-1 bg-[#f5f5fb] p-1 rounded-xl w-fit mb-6 border border-[#e8e8f0]">
-        {(['overview', 'jobs', 'applicants', 'talent'] as const).map(t => (
-          <button key={t} onClick={() => setActiveTab(t)} className={`px-5 py-2 rounded-[9px] text-sm font-medium font-[inherit] cursor-pointer capitalize transition-all border-0 ${activeTab === t ? 'bg-white text-[#0a0a0f] font-semibold shadow-[0_1px_5px_rgba(0,0,0,0.09)]' : 'bg-transparent text-[#6b6b8a]'}`}>
+      <div className="flex gap-1 bg-[#f5f5fb] p-1 rounded-xl w-fit mb-5 border border-[#e8e8f0]">
+        {(['overview','jobs','applicants','talent'] as const).map(t => (
+          <button key={t} onClick={() => setTab(t)}
+            className={`px-5 py-2 rounded-[9px] text-sm font-medium font-[inherit] cursor-pointer capitalize transition-all border-0 ${tab === t ? 'bg-white text-[#0a0a0f] font-semibold shadow-[0_1px_5px_rgba(0,0,0,0.09)]' : 'bg-transparent text-[#6b6b8a]'}`}>
             {t === 'talent' ? '⭐ Top Talent' : t}
           </button>
         ))}
       </div>
 
-      {/* OVERVIEW */}
-      {activeTab === 'overview' && (
+      {/* ══ OVERVIEW ══════════════════════════════════════════════════════ */}
+      {tab === 'overview' && (
         <>
-          <div className="grid grid-cols-4 gap-3.5 mb-5 max-md:grid-cols-2">
-            <StatCard icon="fa-briefcase" iconBg="#f4f2ff" iconColor="#5b4cf5" value="8" label="Active Jobs" delta="↑ 2 this month" deltaUp />
-            <StatCard icon="fa-users" iconBg="#f0fdf4" iconColor="#22c55e" value="127" label="Total Applicants" delta="↑ 23 this week" deltaUp />
-            <StatCard icon="fa-user-check" iconBg="#fffbeb" iconColor="#f59e0b" value="14" label="Shortlisted" delta="5 awaiting review" />
-            <StatCard icon="fa-handshake" iconBg="#eff6ff" iconColor="#3b82f6" value="3" label="Hired This Month" delta="↑ 1 vs last month" deltaUp />
-          </div>
-
-          {/* Merit Coin Insight Banner */}
-          <div className="rounded-2xl p-5 mb-5 relative overflow-hidden" style={{ background: 'linear-gradient(135deg, #0a0a0f 0%, #1a1a2e 100%)' }}>
-            <div className="absolute rounded-full pointer-events-none" style={{ top: -30, right: -30, width: 140, height: 140, background: 'rgba(91,76,245,0.15)' }} />
-            <div className="relative z-[1]">
-              <div className="flex items-start justify-between gap-4 flex-wrap">
-                <div>
-                  <div className="flex items-center gap-2 mb-2">
-                    <i className="fas fa-coins text-[#fbbf24]" />
-                    <span className="font-syne font-bold text-white text-[15px]">Merit Coin Hiring Intelligence</span>
-                  </div>
-                  <p className="text-white/60 text-xs mb-4">Candidates are ranked by Merit Coins — a verified score of learning achievement, course completions, and platform activity.</p>
-                  <div className="flex gap-3 flex-wrap">
-                    {Object.values(MERIT_TIERS).map(t => {
-                      const count = APPLICANTS.filter(a => getTier(a.coins) === Object.keys(MERIT_TIERS).find(k => MERIT_TIERS[k] === t)).length;
-                      return (
-                        <div key={t.label} className="px-3 py-2 rounded-xl" style={{ background: t.bg + '30', border: `1px solid ${t.color}30` }}>
-                          <div className="font-syne font-bold text-sm" style={{ color: t.color }}>{t.icon} {count}</div>
-                          <div className="text-[10px]" style={{ color: t.color + 'aa' }}>{t.label}</div>
-                        </div>
-                      );
-                    })}
-                  </div>
+          {/* Stats */}
+          <div className="grid grid-cols-4 gap-3 mb-4 max-md:grid-cols-2">
+            {[
+              { icon:'fa-briefcase',   bg:'#f4f2ff', color:'#5b4cf5', value: stats?.activeJobs,      label:'Active Jobs' },
+              { icon:'fa-users',       bg:'#f0fdf4', color:'#22c55e', value: stats?.totalApplicants,  label:'Total Applicants' },
+              { icon:'fa-user-check',  bg:'#fffbeb', color:'#f59e0b', value: stats?.shortlisted,      label:'Shortlisted' },
+              { icon:'fa-handshake',   bg:'#eff6ff', color:'#3b82f6', value: stats?.hiredThisMonth,   label:'Hired This Month' },
+            ].map(s => (
+              <div key={s.label} className="bg-white rounded-2xl p-5 border border-[#e8e8f0] flex items-center gap-3 hover:-translate-y-0.5 hover:shadow-[0_4px_16px_rgba(0,0,0,0.07)] transition-all">
+                <div className="w-11 h-11 rounded-xl grid place-items-center text-[17px] flex-shrink-0" style={{ background: s.bg, color: s.color }}>
+                  <i className={`fas ${s.icon}`} />
                 </div>
-                <div className="flex flex-col gap-2 text-xs text-white/60">
-                  <div className="flex items-center gap-2"><span className="w-2 h-2 rounded-full bg-[#7c3aed] flex-shrink-0" /><span>💎 Platinum — Top 2% of learners</span></div>
-                  <div className="flex items-center gap-2"><span className="w-2 h-2 rounded-full bg-[#d97706] flex-shrink-0" /><span>🥇 Gold — Senior-ready candidates</span></div>
-                  <div className="flex items-center gap-2"><span className="w-2 h-2 rounded-full bg-[#6b7280] flex-shrink-0" /><span>🥈 Silver — Mid-level candidates</span></div>
-                  <div className="flex items-center gap-2"><span className="w-2 h-2 rounded-full bg-[#92400e] flex-shrink-0" /><span>🥉 Bronze — Entry-level candidates</span></div>
+                <div>
+                  {s.value === undefined ? <Sk h="h-7" w="w-12" r="rounded" /> : (
+                    <div className="font-syne font-bold text-[22px]">{s.value ?? 0}</div>
+                  )}
+                  <div className="text-xs text-[#6b6b8a]">{s.label}</div>
                 </div>
               </div>
-            </div>
+            ))}
           </div>
 
           <div className="grid grid-cols-2 gap-4 mb-4 max-md:grid-cols-1">
-            {/* Hiring pipeline */}
-            <div className="bg-white rounded-2xl p-5 border border-[#e8e8f0] shadow-[0_1px_3px_rgba(0,0,0,0.06)]">
+            {/* Pipeline */}
+            <div className="bg-white rounded-2xl p-5 border border-[#e8e8f0]">
               <span className="font-syne font-bold text-[15px] block mb-4">Hiring Pipeline</span>
-              {[
-                { stage: 'Applied',      count: 127, pct: 100, color: '#e8e8f0', textColor: '#6b6b8a' },
-                { stage: 'Reviewing',    count: 48,  pct: 38,  color: '#3b82f6', textColor: '#1d4ed8' },
-                { stage: 'Shortlisted',  count: 14,  pct: 11,  color: '#f59e0b', textColor: '#92400e' },
-                { stage: 'Interviewing', count: 6,   pct: 5,   color: '#5b4cf5', textColor: '#4c1d95' },
-                { stage: 'Hired',        count: 3,   pct: 2,   color: '#22c55e', textColor: '#15803d' },
-              ].map(row => (
-                <div key={row.stage} className="flex items-center gap-3 mb-3 last:mb-0">
-                  <span className="text-[13px] text-[#6b6b8a] w-24 flex-shrink-0">{row.stage}</span>
+              {pipeline.length === 0 ? (
+                <div className="flex flex-col gap-3">{[1,2,3,4,5].map(i => <Sk key={i} h="h-7" r="rounded-xl" />)}</div>
+              ) : pipeline.map((stage: any) => (
+                <div key={stage.stage} className="flex items-center gap-3 mb-3 last:mb-0">
+                  <span className="text-[12px] text-[#6b6b8a] capitalize w-24 flex-shrink-0">{stage.stage}</span>
                   <div className="flex-1 h-2.5 bg-[#f0f0f8] rounded-full overflow-hidden">
-                    <div className="h-full rounded-full transition-all" style={{ width: `${row.pct}%`, background: row.color }} />
+                    <div className="h-full rounded-full transition-all" style={{ width: `${Math.max(stage.pct, 2)}%`, background: PIPELINE_COLORS[stage.stage] || '#e8e8f0' }} />
                   </div>
-                  <span className="text-[13px] font-semibold w-8 text-right" style={{ color: row.textColor }}>{row.count}</span>
+                  <span className="text-[12px] font-semibold w-6 text-right" style={{ color: PIPELINE_COLORS[stage.stage] || '#6b6b8a' }}>{stage.count}</span>
                 </div>
               ))}
             </div>
 
-            {/* Top Talent Preview */}
-            <div className="bg-white rounded-2xl p-5 border border-[#e8e8f0] shadow-[0_1px_3px_rgba(0,0,0,0.06)]">
-              <div className="flex items-center justify-between mb-4">
-                <span className="font-syne font-bold text-[15px]">⭐ Top Talent (by Merit Coins)</span>
-                <button onClick={() => setActiveTab('talent')} className="text-xs font-semibold text-[#5b4cf5] bg-[#f5f5fb] border border-[#e8e8f0] px-3 py-1.5 rounded-lg cursor-pointer hover:bg-[#f4f2ff] transition-all">
-                  View all
-                </button>
-              </div>
-              {topTalent.slice(0, 4).map(a => {
-                const tier = MERIT_TIERS[getTier(a.coins)];
-                return (
-                  <div key={a.name} className="flex items-center gap-3 py-2.5 border-b border-[#f0f0f8] last:border-0">
-                    <div className="w-8 h-8 rounded-full grid place-items-center font-syne font-bold text-xs text-white flex-shrink-0" style={{ background: a.bg }}>{a.avatar}</div>
-                    <div className="flex-1 min-w-0">
-                      <div className="text-[13px] font-semibold text-[#0a0a0f] truncate">{a.name}</div>
-                      <div className="text-[11px] text-[#9898b8] truncate">{a.role}</div>
+            {/* Merit coin intel */}
+            <div className="bg-white rounded-2xl p-5 border border-[#e8e8f0]">
+              <span className="font-syne font-bold text-[15px] block mb-1">Merit Coin Breakdown</span>
+              <p className="text-xs text-[#6b6b8a] mb-4">Distribution of applicants by learning achievement tier.</p>
+              {!stats ? (
+                <div className="flex flex-col gap-3">{[1,2,3,4].map(i => <Sk key={i} h="h-12" r="rounded-xl" />)}</div>
+              ) : (
+                <div className="grid grid-cols-2 gap-2">
+                  {Object.entries(TIERS).map(([key, t]) => (
+                    <div key={key} className="p-3 rounded-xl border border-[#e8e8f0]" style={{ background: t.bg + '60' }}>
+                      <div className="flex items-center justify-between mb-0.5">
+                        <span className="text-sm">{t.icon}</span>
+                        <span className="font-syne font-bold text-[18px]" style={{ color: t.color }}>{(tierBreak as any)[key] || 0}</span>
+                      </div>
+                      <div className="text-[11px] font-semibold" style={{ color: t.color }}>{t.label}</div>
                     </div>
-                    <MeritBadge coins={a.coins} />
-                  </div>
-                );
-              })}
+                  ))}
+                </div>
+              )}
             </div>
           </div>
 
           {/* Recent applicants */}
-          <div className="bg-white rounded-2xl p-5 border border-[#e8e8f0] shadow-[0_1px_3px_rgba(0,0,0,0.06)]">
+          <div className="bg-white rounded-2xl p-5 border border-[#e8e8f0]">
             <div className="flex items-center justify-between mb-4">
               <span className="font-syne font-bold text-[15px]">Recent Applicants</span>
-              <button onClick={() => setActiveTab('applicants')} className="text-xs font-semibold text-[#5b4cf5] bg-[#f5f5fb] border border-[#e8e8f0] px-3 py-1.5 rounded-lg cursor-pointer hover:bg-[#f4f2ff] transition-all">View all</button>
+              <button onClick={() => setTab('applicants')} className="text-xs font-semibold text-[#5b4cf5] bg-[#f5f5fb] px-3 py-1.5 rounded-lg hover:bg-[#f4f2ff] transition-all">
+                View all
+              </button>
             </div>
+            {recent.length === 0 && !overview ? (
+              <div className="flex flex-col gap-3">{[1,2,3,4,5].map(i => <Sk key={i} h="h-14" r="rounded-xl" />)}</div>
+            ) : recent.length === 0 ? (
+              <p className="text-sm text-[#9898b8] py-4 text-center">No applicants yet.</p>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm border-collapse">
+                  <thead>
+                    <tr>{['Candidate','Applied For','Merit Tier','Certs','Projects','Status','Action'].map(h => (
+                      <th key={h} className="py-2.5 px-4 text-left text-[11px] font-semibold text-[#6b6b8a] border-b border-[#e8e8f0] uppercase tracking-wide whitespace-nowrap">{h}</th>
+                    ))}</tr>
+                  </thead>
+                  <tbody>
+                    {recent.map((a: any) => (
+                      <tr key={a.applicationId} className="hover:bg-[#fafafd] transition-colors">
+                        <td className="py-3 px-4 border-b border-[#f0f0f8]">
+                          <div className="flex items-center gap-2.5">
+                            <Avatar name={a.name} avatar={a.avatar} />
+                            <span className="font-semibold text-[#0a0a0f] text-[13px]">{a.name}</span>
+                          </div>
+                        </td>
+                        <td className="py-3 px-4 border-b border-[#f0f0f8] text-[#6b6b8a] text-[12px]">{a.job?.title || '—'}</td>
+                        <td className="py-3 px-4 border-b border-[#f0f0f8]"><MeritBadge coins={a.meritCoins} /></td>
+                        <td className="py-3 px-4 border-b border-[#f0f0f8] font-semibold text-[13px]">{a.certCount}</td>
+                        <td className="py-3 px-4 border-b border-[#f0f0f8] font-semibold text-[13px]" style={{ color: a.projectCount > 0 ? '#22c55e' : '#9898b8' }}>{a.projectCount}</td>
+                        <td className="py-3 px-4 border-b border-[#f0f0f8]">
+                          <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full capitalize"
+                            style={{ background: (STATUS_STYLE[a.status] || ['#f5f5fb','#6b6b8a'])[0], color: (STATUS_STYLE[a.status] || ['#f5f5fb','#6b6b8a'])[1] }}>
+                            {a.status}
+                          </span>
+                        </td>
+                        <td className="py-3 px-4 border-b border-[#f0f0f8]">
+                          <button onClick={() => setSelectedUser(a.id)} className="text-[12px] font-semibold text-[#5b4cf5] bg-[#f4f2ff] px-2.5 py-1 rounded-lg border-0 cursor-pointer hover:bg-[#5b4cf5] hover:text-white transition-all">
+                            Profile
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+        </>
+      )}
+
+      {/* ══ JOBS ══════════════════════════════════════════════════════════ */}
+      {tab === 'jobs' && (
+        <div className="bg-white rounded-2xl p-5 border border-[#e8e8f0]">
+          <div className="flex items-center justify-between mb-4 flex-wrap gap-3">
+            <span className="font-syne font-bold text-[15px]">All Job Posts</span>
+            <div className="flex gap-2 flex-wrap">
+              <select value={jobStatusFilter} onChange={e => setJobStatusFilter(e.target.value)}
+                className="text-sm text-[#6b6b8a] border border-[#e8e8f0] rounded-lg px-3 py-2 bg-white outline-none font-[inherit] cursor-pointer">
+                <option value="">All Statuses</option>
+                <option value="active">Active</option>
+                <option value="closed">Closed</option>
+                <option value="draft">Draft</option>
+              </select>
+              <a href="/employer/jobs/new" className="inline-flex items-center gap-2 px-3.5 py-2 bg-[#5b4cf5] text-white text-sm font-semibold rounded-xl no-underline hover:bg-[#7c6ff7] transition-all">
+                <i className="fas fa-plus" /> New Job
+              </a>
+            </div>
+          </div>
+          {jobs === null ? (
+            <div className="flex flex-col gap-3">{[1,2,3,4].map(i => <Sk key={i} h="h-16" r="rounded-xl" />)}</div>
+          ) : jobs.length === 0 ? (
+            <div className="py-12 text-center">
+              <i className="fas fa-briefcase text-4xl text-[#e8e8f0] mb-3 block" />
+              <p className="text-sm text-[#9898b8] mb-3">No jobs posted yet.</p>
+              <a href="/employer/jobs/new" className="inline-flex items-center gap-2 px-4 py-2.5 bg-[#5b4cf5] text-white rounded-xl text-sm font-semibold no-underline hover:bg-[#7c6ff7] transition-all">
+                Post your first job
+              </a>
+            </div>
+          ) : (
             <div className="overflow-x-auto">
               <table className="w-full text-sm border-collapse">
                 <thead>
-                  <tr>
-                    {['Candidate','Applied For','Merit Tier','Match Score','Status','Action'].map(h => (
-                      <th key={h} className="py-2.5 px-4 text-left text-[11.5px] font-semibold text-[#6b6b8a] border-b border-[#e8e8f0] uppercase tracking-wide whitespace-nowrap">{h}</th>
-                    ))}
-                  </tr>
+                  <tr>{['Job Title','Type','Location','Min. Tier','Applicants','Status','Posted','Actions'].map(h => (
+                    <th key={h} className="py-2.5 px-4 text-left text-[11px] font-semibold text-[#6b6b8a] border-b border-[#e8e8f0] uppercase tracking-wide whitespace-nowrap">{h}</th>
+                  ))}</tr>
                 </thead>
                 <tbody>
-                  {[...APPLICANTS].sort((a, b) => b.coins - a.coins).slice(0, 5).map(a => {
-                    const [sbg, sc] = STATUS_COLORS[a.status] || ['#f5f5fb', '#6b6b8a'];
+                  {jobs.map((job: any) => {
+                    const [sbg, sc] = STATUS_STYLE[job.status] || ['#f5f5fb', '#6b6b8a'];
                     return (
-                      <tr key={a.name} className="hover:bg-[#fafafd] transition-colors">
+                      <tr key={job.id} className="hover:bg-[#fafafd] transition-colors">
                         <td className="py-3.5 px-4 border-b border-[#f0f0f8]">
-                          <div className="flex items-center gap-2.5">
-                            <div className="w-8 h-8 rounded-full grid place-items-center font-syne font-bold text-xs text-white flex-shrink-0" style={{ background: a.bg }}>{a.avatar}</div>
-                            <span className="font-semibold text-[#0a0a0f]">{a.name}</span>
-                          </div>
+                          <div className="font-semibold text-[#0a0a0f] text-[13px]">{job.title}</div>
+                          {job.salary && <div className="text-[11px] text-[#9898b8]">{job.salary}</div>}
                         </td>
-                        <td className="py-3.5 px-4 border-b border-[#f0f0f8] text-[#6b6b8a] text-[13px]">{a.role}</td>
-                        <td className="py-3.5 px-4 border-b border-[#f0f0f8]"><MeritBadge coins={a.coins} /></td>
+                        <td className="py-3.5 px-4 border-b border-[#f0f0f8] text-[#6b6b8a] text-[12px]">{job.type}</td>
+                        <td className="py-3.5 px-4 border-b border-[#f0f0f8] text-[#6b6b8a] text-[12px]">{job.location}</td>
+                        <td className="py-3.5 px-4 border-b border-[#f0f0f8]">{job.minTier ? <TierPill tier={job.minTier} /> : <span className="text-[11px] text-[#9898b8]">Any</span>}</td>
+                        <td className="py-3.5 px-4 border-b border-[#f0f0f8] font-semibold text-[#5b4cf5] text-[13px]">{job.applicantCount ?? 0}</td>
                         <td className="py-3.5 px-4 border-b border-[#f0f0f8]">
-                          <div className="flex items-center gap-2">
-                            <div className="flex-1 max-w-[80px] h-1.5 bg-[#e8e8f0] rounded-full overflow-hidden">
-                              <div className="h-full rounded-full bg-[#5b4cf5]" style={{ width: `${a.score}%` }} />
-                            </div>
-                            <span className="text-[13px] font-semibold text-[#5b4cf5]">{a.score}%</span>
-                          </div>
+                          <span className="text-[11px] font-semibold px-2.5 py-0.5 rounded-full capitalize" style={{ background: sbg, color: sc }}>{job.status}</span>
+                        </td>
+                        <td className="py-3.5 px-4 border-b border-[#f0f0f8] text-[#9898b8] text-[11px]">
+                          {job.createdAt ? new Date(job.createdAt).toLocaleDateString() : '—'}
                         </td>
                         <td className="py-3.5 px-4 border-b border-[#f0f0f8]">
-                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold capitalize" style={{ background: sbg, color: sc }}>{a.status}</span>
-                        </td>
-                        <td className="py-3.5 px-4 border-b border-[#f0f0f8]">
-                          <div className="flex items-center gap-1.5">
-                            <button className="text-[12px] font-semibold text-[#5b4cf5] bg-[#f4f2ff] px-2.5 py-1 rounded-lg border-0 cursor-pointer hover:bg-[#5b4cf5] hover:text-white transition-all">View</button>
-                            <button className="text-[12px] font-semibold text-[#22c55e] bg-[#f0fdf4] px-2.5 py-1 rounded-lg border-0 cursor-pointer hover:bg-[#22c55e] hover:text-white transition-all">Shortlist</button>
+                          <div className="flex gap-1.5">
+                            <a href={`/employer/jobs/${job.id}/edit`} className="text-[12px] font-semibold text-[#5b4cf5] bg-[#f4f2ff] px-2.5 py-1 rounded-lg no-underline hover:bg-[#5b4cf5] hover:text-white transition-all">Edit</a>
+                            <a href={`/employer/jobs/${job.id}`} className="text-[12px] font-semibold text-[#6b6b8a] bg-[#f5f5fb] px-2.5 py-1 rounded-lg no-underline hover:bg-[#e8e8f0] transition-all">View</a>
                           </div>
                         </td>
                       </tr>
@@ -267,236 +541,161 @@ export default function EmployerDashboardPage() {
                 </tbody>
               </table>
             </div>
-          </div>
-        </>
-      )}
-
-      {/* JOBS TAB */}
-      {activeTab === 'jobs' && (
-        <div className="bg-white rounded-2xl p-5 border border-[#e8e8f0] shadow-[0_1px_3px_rgba(0,0,0,0.06)]">
-          <div className="flex items-center justify-between mb-5 flex-wrap gap-3">
-            <span className="font-syne font-bold text-[15px]">All Job Posts</span>
-            <div className="flex items-center gap-2">
-              <select value={jobTierFilter} onChange={e => setJobTierFilter(e.target.value as any)}
-                className="text-sm text-[#6b6b8a] border border-[#e8e8f0] rounded-lg px-3 py-2 bg-white outline-none font-[inherit] cursor-pointer">
-                <option value="all">All Tiers</option>
-                <option value="bronze">🥉 Bronze+ Required</option>
-                <option value="silver">🥈 Silver+ Required</option>
-                <option value="gold">🥇 Gold+ Required</option>
-                <option value="platinum">💎 Platinum Required</option>
-              </select>
-              <button className="inline-flex items-center gap-2 px-3.5 py-2 bg-[#5b4cf5] text-white text-sm font-semibold rounded-xl border-0 cursor-pointer hover:bg-[#7c6ff7] transition-all">
-                <i className="fas fa-plus" /> New Job
-              </button>
-            </div>
-          </div>
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm border-collapse">
-              <thead>
-                <tr>
-                  {['Job Title','Type','Location','Min. Tier','Applicants','Status','Posted','Actions'].map(h => (
-                    <th key={h} className="py-2.5 px-4 text-left text-[11.5px] font-semibold text-[#6b6b8a] border-b border-[#e8e8f0] uppercase tracking-wide whitespace-nowrap">{h}</th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {JOBS.filter(j => jobTierFilter === 'all' || j.minTier === jobTierFilter).map(job => {
-                  const [sbg, sc] = STATUS_COLORS[job.status];
-                  return (
-                    <tr key={job.title} className="hover:bg-[#fafafd] transition-colors">
-                      <td className="py-3.5 px-4 border-b border-[#f0f0f8]">
-                        <div className="font-semibold text-[#0a0a0f]">{job.title}</div>
-                        <div className="text-[11px] text-[#9898b8] mt-0.5">{job.salaryRange}</div>
-                      </td>
-                      <td className="py-3.5 px-4 border-b border-[#f0f0f8] text-[#6b6b8a]">{job.type}</td>
-                      <td className="py-3.5 px-4 border-b border-[#f0f0f8] text-[#6b6b8a]">{job.location}</td>
-                      <td className="py-3.5 px-4 border-b border-[#f0f0f8]"><TierBadge tier={job.minTier} /></td>
-                      <td className="py-3.5 px-4 border-b border-[#f0f0f8] font-semibold text-[#5b4cf5]">{job.applicants}</td>
-                      <td className="py-3.5 px-4 border-b border-[#f0f0f8]">
-                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold capitalize" style={{ background: sbg, color: sc }}>{job.status}</span>
-                      </td>
-                      <td className="py-3.5 px-4 border-b border-[#f0f0f8] text-[#6b6b8a] text-[13px]">{job.posted}</td>
-                      <td className="py-3.5 px-4 border-b border-[#f0f0f8]">
-                        <div className="flex items-center gap-1.5">
-                          <button className="text-[12px] font-semibold text-[#5b4cf5] bg-[#f4f2ff] px-2.5 py-1 rounded-lg border-0 cursor-pointer hover:bg-[#5b4cf5] hover:text-white transition-all">Edit</button>
-                          <button className="text-[12px] font-semibold text-[#6b6b8a] bg-[#f5f5fb] px-2.5 py-1 rounded-lg border-0 cursor-pointer hover:bg-[#e8e8f0] transition-all">View</button>
-                        </div>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-          <div className="mt-4 p-4 bg-[#f5f5fb] rounded-xl">
-            <p className="text-xs text-[#6b6b8a]">
-              <i className="fas fa-info-circle text-[#5b4cf5] mr-1.5" />
-              <strong>Merit Tier Requirements</strong>: When posting a job, set a minimum tier. Students meeting or exceeding the requirement will see the job featured prominently in their dashboard. Platinum/Gold jobs are highlighted as premium opportunities.
-            </p>
-          </div>
+          )}
         </div>
       )}
 
-      {/* APPLICANTS TAB */}
-      {activeTab === 'applicants' && (
-        <div className="bg-white rounded-2xl p-5 border border-[#e8e8f0] shadow-[0_1px_3px_rgba(0,0,0,0.06)]">
-          <div className="flex items-center justify-between mb-5 flex-wrap gap-3">
-            <span className="font-syne font-bold text-[15px]">All Applicants</span>
+      {/* ══ APPLICANTS ════════════════════════════════════════════════════ */}
+      {tab === 'applicants' && (
+        <div className="bg-white rounded-2xl p-5 border border-[#e8e8f0]">
+          <div className="flex items-center justify-between mb-4 flex-wrap gap-3">
+            <span className="font-syne font-bold text-[15px]">All Applicants <span className="text-[#9898b8] text-sm font-normal">(sorted by Merit Coins)</span></span>
             <div className="flex gap-2 flex-wrap">
-              {/* Merit coin filter */}
+              {/* Tier filter */}
               <div className="flex gap-1 bg-[#f5f5fb] p-1 rounded-xl border border-[#e8e8f0]">
-                {(['all', 'platinum', 'gold', 'silver', 'bronze'] as const).map(tier => {
-                  const t = tier === 'all' ? null : MERIT_TIERS[tier];
-                  return (
-                    <button key={tier} onClick={() => setCoinFilter(tier)}
-                      className={`px-3 py-1.5 rounded-[8px] text-xs font-semibold border-0 cursor-pointer capitalize transition-all ${coinFilter === tier ? 'bg-white shadow-[0_1px_4px_rgba(0,0,0,0.08)] text-[#0a0a0f]' : 'bg-transparent text-[#6b6b8a]'}`}>
-                      {t ? `${t.icon} ${t.label}` : 'All'}
-                    </button>
-                  );
-                })}
+                {(['all','platinum','gold','silver','bronze'] as const).map(t => (
+                  <button key={t} onClick={() => setTierFilter(t)}
+                    className={`px-3 py-1.5 rounded-[8px] text-[11px] font-semibold border-0 cursor-pointer capitalize transition-all ${tierFilter === t ? 'bg-white shadow-[0_1px_4px_rgba(0,0,0,0.08)] text-[#0a0a0f]' : 'bg-transparent text-[#6b6b8a]'}`}>
+                    {t === 'all' ? 'All' : `${TIERS[t].icon} ${TIERS[t].label}`}
+                  </button>
+                ))}
               </div>
-              <select className="text-sm text-[#6b6b8a] border border-[#e8e8f0] rounded-lg px-3 py-2 bg-white outline-none font-[inherit] cursor-pointer">
-                <option>All Roles</option>
-                <option>Senior React Developer</option>
-                <option>Data Analyst</option>
-                <option>DevOps Engineer</option>
+              <select value={statusFilter} onChange={e => setStatusFilter(e.target.value)}
+                className="text-sm text-[#6b6b8a] border border-[#e8e8f0] rounded-lg px-3 py-2 bg-white outline-none font-[inherit] cursor-pointer">
+                <option value="">All Statuses</option>
+                {['applied','reviewing','shortlisted','interviewing','hired','rejected'].map(s => (
+                  <option key={s} value={s}>{s.charAt(0).toUpperCase() + s.slice(1)}</option>
+                ))}
               </select>
             </div>
           </div>
 
-          {coinFilter !== 'all' && (
-            <div className="mb-4 p-3.5 rounded-xl flex items-center gap-2.5" style={{ background: MERIT_TIERS[coinFilter]?.bg, border: `1px solid ${MERIT_TIERS[coinFilter]?.color}30` }}>
-              <span className="text-lg">{MERIT_TIERS[coinFilter]?.icon}</span>
-              <p className="text-sm font-semibold" style={{ color: MERIT_TIERS[coinFilter]?.color }}>
-                Showing {coinFilter} tier applicants — {sortedApplicants.length} result{sortedApplicants.length !== 1 ? 's' : ''}
-              </p>
+          {tierFilter !== 'all' && (
+            <div className="mb-4 p-3 rounded-xl text-[12px] font-semibold" style={{ background: TIERS[tierFilter]?.bg, color: TIERS[tierFilter]?.color }}>
+              {TIERS[tierFilter]?.icon} Showing {TIERS[tierFilter]?.label} tier — {applicants?.length ?? '…'} result{applicants?.length !== 1 ? 's' : ''}
             </div>
           )}
 
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm border-collapse">
-              <thead>
-                <tr>
-                  {['Candidate', 'Applied For', 'Merit Tier', 'Courses Done', 'Portfolio', 'Match', 'Status', 'Action'].map(h => (
-                    <th key={h} className="py-2.5 px-4 text-left text-[11.5px] font-semibold text-[#6b6b8a] border-b border-[#e8e8f0] uppercase tracking-wide whitespace-nowrap">{h}</th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {sortedApplicants.map(a => {
-                  const [sbg, sc] = STATUS_COLORS[a.status];
-                  return (
-                    <tr key={a.name} className={`hover:bg-[#fafafd] transition-colors ${a.coins >= 5000 ? 'bg-[#fafaff]' : ''}`}>
-                      <td className="py-3.5 px-4 border-b border-[#f0f0f8]">
-                        <div className="flex items-center gap-2.5">
-                          <div className="w-8 h-8 rounded-full grid place-items-center font-syne font-bold text-xs text-white flex-shrink-0 relative" style={{ background: a.bg }}>
-                            {a.avatar}
-                            {a.coins >= 5000 && <div className="absolute -top-0.5 -right-0.5 w-3 h-3 rounded-full bg-[#7c3aed] border border-white text-[7px] text-white grid place-items-center">💎</div>}
-                          </div>
-                          <span className="font-semibold text-[#0a0a0f]">{a.name}</span>
-                        </div>
-                      </td>
-                      <td className="py-3.5 px-4 border-b border-[#f0f0f8] text-[#6b6b8a] text-[13px]">{a.role}</td>
-                      <td className="py-3.5 px-4 border-b border-[#f0f0f8]"><MeritBadge coins={a.coins} /></td>
-                      <td className="py-3.5 px-4 border-b border-[#f0f0f8]">
-                        <div className="text-[13px] font-semibold text-[#0a0a0f]">{a.certificates}</div>
-                        {a.platforms.length > 0 && (
-                          <div className="flex gap-1 mt-0.5 flex-wrap">
-                            {a.platforms.map(p => <span key={p} className="text-[9px] text-[#5b4cf5] font-semibold">{p}</span>)}
-                          </div>
-                        )}
-                      </td>
-                      <td className="py-3.5 px-4 border-b border-[#f0f0f8]">
-                        <span className="text-[13px] font-semibold" style={{ color: a.projects > 0 ? '#22c55e' : '#9898b8' }}>
-                          {a.projects} project{a.projects !== 1 ? 's' : ''}
+          {applicants === null ? (
+            <div className="flex flex-col gap-3">{[1,2,3,4,5].map(i => <Sk key={i} h="h-16" r="rounded-xl" />)}</div>
+          ) : applicants.length === 0 ? (
+            <p className="text-sm text-[#9898b8] py-8 text-center">No applicants match these filters.</p>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm border-collapse">
+                <thead>
+                  <tr>{['#','Candidate','Applied For','Merit Tier','Skills','Certs','Projects','Status','Action'].map(h => (
+                    <th key={h} className="py-2.5 px-3 text-left text-[11px] font-semibold text-[#6b6b8a] border-b border-[#e8e8f0] uppercase tracking-wide whitespace-nowrap">{h}</th>
+                  ))}</tr>
+                </thead>
+                <tbody>
+                  {applicants.map((a: any, idx: number) => (
+                    <tr key={a.applicationId} className={`hover:bg-[#fafafd] transition-colors ${a.meritCoins >= 5000 ? 'bg-[#fafaff]' : ''}`}>
+                      <td className="py-3 px-3 border-b border-[#f0f0f8]">
+                        <span className={`w-6 h-6 rounded-full grid place-items-center text-[11px] font-bold ${idx===0?'bg-[#f59e0b] text-white':idx===1?'bg-[#9898b8] text-white':idx===2?'bg-[#cd7f32] text-white':'bg-[#f5f5fb] text-[#6b6b8a]'}`}>
+                          {idx+1}
                         </span>
                       </td>
-                      <td className="py-3.5 px-4 border-b border-[#f0f0f8]">
-                        <div className="flex items-center gap-2">
-                          <div className="flex-1 max-w-[80px] h-1.5 bg-[#e8e8f0] rounded-full overflow-hidden">
-                            <div className="h-full rounded-full bg-[#5b4cf5]" style={{ width: `${a.score}%` }} />
+                      <td className="py-3 px-3 border-b border-[#f0f0f8]">
+                        <div className="flex items-center gap-2.5">
+                          <Avatar name={a.name} avatar={a.avatar} />
+                          <div>
+                            <div className="font-semibold text-[#0a0a0f] text-[13px]">{a.name}</div>
+                            {a.title && <div className="text-[10px] text-[#9898b8]">{a.title}</div>}
                           </div>
-                          <span className="text-[13px] font-semibold text-[#5b4cf5]">{a.score}%</span>
                         </div>
                       </td>
-                      <td className="py-3.5 px-4 border-b border-[#f0f0f8]">
-                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold capitalize" style={{ background: sbg, color: sc }}>{a.status}</span>
-                      </td>
-                      <td className="py-3.5 px-4 border-b border-[#f0f0f8]">
-                        <div className="flex items-center gap-1.5">
-                          <button className="text-[12px] font-semibold text-[#5b4cf5] bg-[#f4f2ff] px-2.5 py-1 rounded-lg border-0 cursor-pointer hover:bg-[#5b4cf5] hover:text-white transition-all">Profile</button>
-                          <button className="text-[12px] font-semibold text-[#22c55e] bg-[#f0fdf4] px-2.5 py-1 rounded-lg border-0 cursor-pointer hover:bg-[#22c55e] hover:text-white transition-all">Shortlist</button>
+                      <td className="py-3 px-3 border-b border-[#f0f0f8] text-[#6b6b8a] text-[12px]">{a.job?.title || '—'}</td>
+                      <td className="py-3 px-3 border-b border-[#f0f0f8]"><MeritBadge coins={a.meritCoins} /></td>
+                      <td className="py-3 px-3 border-b border-[#f0f0f8]">
+                        <div className="flex flex-wrap gap-1 max-w-[140px]">
+                          {a.skills?.slice(0,3).map((s: any) => (
+                            <span key={s.name} className="text-[10px] px-1.5 py-0.5 rounded bg-[#f4f2ff] text-[#5b4cf5] font-semibold">{s.name}</span>
+                          ))}
+                          {a.skills?.length > 3 && <span className="text-[10px] text-[#9898b8]">+{a.skills.length - 3}</span>}
                         </div>
+                      </td>
+                      <td className="py-3 px-3 border-b border-[#f0f0f8] font-semibold text-[13px]">{a.certCount}</td>
+                      <td className="py-3 px-3 border-b border-[#f0f0f8] font-semibold text-[13px]" style={{ color: a.projectCount > 0 ? '#22c55e' : '#9898b8' }}>
+                        {a.projectCount}
+                      </td>
+                      <td className="py-3 px-3 border-b border-[#f0f0f8]">
+                        <StatusSelect appId={a.applicationId} current={a.status} onChange={onStatusChange} />
+                      </td>
+                      <td className="py-3 px-3 border-b border-[#f0f0f8]">
+                        <button onClick={() => setSelectedUser(a.id)} className="text-[12px] font-semibold text-[#5b4cf5] bg-[#f4f2ff] px-2.5 py-1 rounded-lg border-0 cursor-pointer hover:bg-[#5b4cf5] hover:text-white transition-all">
+                          Profile
+                        </button>
                       </td>
                     </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
         </div>
       )}
 
-      {/* TOP TALENT TAB */}
-      {activeTab === 'talent' && (
+      {/* ══ TOP TALENT ════════════════════════════════════════════════════ */}
+      {tab === 'talent' && (
         <>
           <div className="flex items-center justify-between mb-4 flex-wrap gap-3">
             <div>
-              <h2 className="font-syne font-bold text-[15px] mb-0.5">⭐ Top Talent — Sorted by Merit Coins</h2>
-              <p className="text-[13px] text-[#6b6b8a]">Platinum & Gold candidates are your highest-achieving applicants. They've completed the most courses and earned the most coins.</p>
+              <h2 className="font-syne font-bold text-[15px] mb-0.5">⭐ Top Talent — Ranked by Merit Coins</h2>
+              <p className="text-[12px] text-[#6b6b8a]">{talentTotal.toLocaleString()} verified candidates. Platinum & Gold are your highest-achieving learners.</p>
             </div>
-            <label className="flex items-center gap-2 cursor-pointer">
-              <div className={`w-10 h-5 rounded-full transition-colors relative ${showFeaturedOnly ? 'bg-[#5b4cf5]' : 'bg-[#e8e8f0]'}`} onClick={() => setShowFeaturedOnly(v => !v)}>
-                <div className={`w-4 h-4 rounded-full bg-white shadow absolute top-0.5 transition-all ${showFeaturedOnly ? 'right-0.5' : 'left-0.5'}`} />
+            <div className="flex gap-2 flex-wrap">
+              <input value={talentSearch} onChange={e => setTalentSearch(e.target.value)} onKeyDown={e => e.key === 'Enter' && loadTalent()}
+                placeholder="Search by name or title…"
+                className="px-3 py-2 border border-[#e8e8f0] rounded-xl text-sm font-[inherit] outline-none focus:border-[#5b4cf5] transition-all" />
+              <div className="flex gap-1 bg-[#f5f5fb] p-1 rounded-xl border border-[#e8e8f0]">
+                {(['all','platinum','gold','silver','bronze'] as const).map(t => (
+                  <button key={t} onClick={() => setTalentTier(t)}
+                    className={`px-3 py-1.5 rounded-[8px] text-[11px] font-semibold border-0 cursor-pointer capitalize transition-all ${talentTier === t ? 'bg-white shadow-[0_1px_4px_rgba(0,0,0,0.08)] text-[#0a0a0f]' : 'bg-transparent text-[#6b6b8a]'}`}>
+                    {t === 'all' ? 'All' : `${TIERS[t].icon} ${TIERS[t].label}`}
+                  </button>
+                ))}
               </div>
-              <span className="text-sm font-semibold text-[#6b6b8a]">Gold+ only</span>
-            </label>
+            </div>
           </div>
 
-          {/* Featured Platinum candidates */}
-          {!showFeaturedOnly && featuredTalent.some(a => a.coins >= 5000) && (
+          {/* Platinum featured cards */}
+          {talentTier === 'all' && talent && talent.some(u => u.meritCoins >= 5000) && (
             <div className="mb-5">
-              <div className="flex items-center gap-2 mb-3">
-                <span className="text-[11px] font-bold text-[#7c3aed] bg-[#f4f2ff] px-2.5 py-1 rounded-full">💎 PLATINUM CANDIDATES</span>
-              </div>
+              <div className="text-[11px] font-bold text-[#7c3aed] bg-[#f4f2ff] px-2.5 py-1 rounded-full w-fit mb-3">💎 PLATINUM — TOP TALENT</div>
               <div className="grid grid-cols-3 gap-4 max-md:grid-cols-1">
-                {topTalent.filter(a => a.coins >= 5000).map(a => (
-                  <div key={a.name} className="bg-white rounded-2xl p-5 border-2 border-[#7c3aed]/30 shadow-[0_4px_20px_rgba(124,58,237,0.08)] relative overflow-hidden">
+                {talent.filter(u => u.meritCoins >= 5000).slice(0, 3).map((u: any) => (
+                  <div key={u.id} className="bg-white rounded-2xl p-5 border-2 border-[#7c3aed]/25 relative overflow-hidden hover:-translate-y-0.5 hover:shadow-[0_8px_24px_rgba(124,58,237,0.12)] transition-all">
                     <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-[#5b4cf5] to-[#7c3aed]" />
                     <div className="flex items-center gap-3 mb-4">
-                      <div className="w-12 h-12 rounded-full grid place-items-center font-syne font-bold text-sm text-white relative" style={{ background: a.bg }}>
-                        {a.avatar}
-                        <div className="absolute -bottom-0.5 -right-0.5 w-5 h-5 rounded-full bg-[#7c3aed] border-2 border-white text-[10px] text-white grid place-items-center">💎</div>
-                      </div>
+                      <Avatar name={u.name} avatar={u.avatar} size={12} />
                       <div>
-                        <div className="font-syne font-bold text-[14px]">{a.name}</div>
-                        <div className="text-xs text-[#6b6b8a]">{a.role}</div>
+                        <div className="font-syne font-bold text-[14px]">{u.name}</div>
+                        <div className="text-xs text-[#6b6b8a]">{u.title || u.location}</div>
+                        <MeritBadge coins={u.meritCoins} />
                       </div>
                     </div>
                     <div className="grid grid-cols-3 gap-2 mb-4">
-                      <div className="text-center rounded-xl p-2 bg-[#f4f2ff]">
-                        <div className="font-syne font-bold text-[#7c3aed] text-sm">{a.coins.toLocaleString()}</div>
-                        <div className="text-[9px] text-[#9898b8]">Coins</div>
-                      </div>
-                      <div className="text-center rounded-xl p-2 bg-[#f0fdf4]">
-                        <div className="font-syne font-bold text-[#22c55e] text-sm">{a.certificates}</div>
-                        <div className="text-[9px] text-[#9898b8]">Certs</div>
-                      </div>
-                      <div className="text-center rounded-xl p-2 bg-[#fffbeb]">
-                        <div className="font-syne font-bold text-[#f59e0b] text-sm">{a.projects}</div>
-                        <div className="text-[9px] text-[#9898b8]">Projects</div>
-                      </div>
+                      {[
+                        { v: u.skills?.length || 0,  label:'Skills',       color:'#5b4cf5', bg:'#f4f2ff' },
+                        { v: u.certCount,             label:'Certs',        color:'#22c55e', bg:'#f0fdf4' },
+                        { v: u.projectCount,          label:'Projects',     color:'#f59e0b', bg:'#fffbeb' },
+                      ].map(s => (
+                        <div key={s.label} className="text-center rounded-xl p-2" style={{ background: s.bg }}>
+                          <div className="font-syne font-bold text-sm" style={{ color: s.color }}>{s.v}</div>
+                          <div className="text-[9px] text-[#9898b8]">{s.label}</div>
+                        </div>
+                      ))}
                     </div>
-                    {a.platforms.length > 0 && (
+                    {u.platforms?.length > 0 && (
                       <div className="flex flex-wrap gap-1 mb-4">
-                        {a.platforms.map(p => (
-                          <span key={p} className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-[#f5f5fb] text-[#5b4cf5]">{p}</span>
+                        {u.platforms.map((p: string) => (
+                          <span key={p} className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-[#f0fdf4] text-[#22c55e]">{p}</span>
                         ))}
                       </div>
                     )}
                     <div className="flex gap-2">
-                      <button className="flex-1 py-2 text-xs font-semibold text-white bg-[#5b4cf5] rounded-xl border-0 cursor-pointer hover:bg-[#7c6ff7] transition-all">View Profile</button>
-                      <button className="flex-1 py-2 text-xs font-semibold text-white bg-[#22c55e] rounded-xl border-0 cursor-pointer hover:bg-[#16a34a] transition-all">Shortlist</button>
+                      <button onClick={() => setSelectedUser(u.id)} className="flex-1 py-2 text-xs font-semibold text-white bg-[#5b4cf5] rounded-xl border-0 cursor-pointer hover:bg-[#7c6ff7] transition-all">View Profile</button>
                     </div>
                   </div>
                 ))}
@@ -504,58 +703,64 @@ export default function EmployerDashboardPage() {
             </div>
           )}
 
-          {/* All talent sorted by coins */}
+          {/* Full table */}
           <div className="bg-white rounded-2xl p-5 border border-[#e8e8f0]">
-            <div className="text-[12px] font-semibold text-[#6b6b8a] mb-3 uppercase tracking-wide">
-              {showFeaturedOnly ? 'Gold+ Candidates' : 'All Candidates'} — Ranked by Merit Coins
-            </div>
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm border-collapse">
-                <thead>
-                  <tr>
-                    {['#', 'Candidate', 'Role', 'Merit Tier', 'Certs', 'Projects', 'Platforms', 'Score', 'Action'].map(h => (
-                      <th key={h} className="py-2.5 px-4 text-left text-[11.5px] font-semibold text-[#6b6b8a] border-b border-[#e8e8f0] uppercase tracking-wide whitespace-nowrap">{h}</th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  {(showFeaturedOnly ? topTalent.filter(a => a.coins >= 2000) : topTalent).map((a, idx) => {
-                    const [sbg, sc] = STATUS_COLORS[a.status];
-                    return (
-                      <tr key={a.name} className={`hover:bg-[#fafafd] transition-colors ${a.coins >= 5000 ? 'bg-gradient-to-r from-[#fafaff] to-white' : ''}`}>
-                        <td className="py-3.5 px-4 border-b border-[#f0f0f8]">
-                          <span className={`w-6 h-6 rounded-full grid place-items-center text-xs font-bold ${idx === 0 ? 'bg-[#f59e0b] text-white' : idx === 1 ? 'bg-[#9898b8] text-white' : idx === 2 ? 'bg-[#cd7f32] text-white' : 'bg-[#f5f5fb] text-[#6b6b8a]'}`}>{idx + 1}</span>
+            {talent === null ? (
+              <div className="flex flex-col gap-3">{[1,2,3,4,5].map(i => <Sk key={i} h="h-14" r="rounded-xl" />)}</div>
+            ) : talent.length === 0 ? (
+              <p className="text-sm text-[#9898b8] py-8 text-center">No candidates found.</p>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm border-collapse">
+                  <thead>
+                    <tr>{['#','Candidate','Merit Tier','Skills','Certs','Projects','Platforms','Action'].map(h => (
+                      <th key={h} className="py-2.5 px-3 text-left text-[11px] font-semibold text-[#6b6b8a] border-b border-[#e8e8f0] uppercase tracking-wide whitespace-nowrap">{h}</th>
+                    ))}</tr>
+                  </thead>
+                  <tbody>
+                    {talent.map((u: any, idx: number) => (
+                      <tr key={u.id} className={`hover:bg-[#fafafd] transition-colors ${u.meritCoins >= 5000 ? 'bg-[#fafaff]' : ''}`}>
+                        <td className="py-3 px-3 border-b border-[#f0f0f8]">
+                          <span className={`w-6 h-6 rounded-full grid place-items-center text-[11px] font-bold ${idx===0?'bg-[#f59e0b] text-white':idx===1?'bg-[#9898b8] text-white':idx===2?'bg-[#cd7f32] text-white':'bg-[#f5f5fb] text-[#6b6b8a]'}`}>
+                            {idx+1}
+                          </span>
                         </td>
-                        <td className="py-3.5 px-4 border-b border-[#f0f0f8]">
+                        <td className="py-3 px-3 border-b border-[#f0f0f8]">
                           <div className="flex items-center gap-2.5">
-                            <div className="w-8 h-8 rounded-full grid place-items-center font-syne font-bold text-xs text-white flex-shrink-0" style={{ background: a.bg }}>{a.avatar}</div>
-                            <span className="font-semibold text-[#0a0a0f]">{a.name}</span>
+                            <Avatar name={u.name} avatar={u.avatar} />
+                            <div>
+                              <div className="font-semibold text-[13px]">{u.name}</div>
+                              {u.title && <div className="text-[10px] text-[#9898b8]">{u.title}</div>}
+                            </div>
                           </div>
                         </td>
-                        <td className="py-3.5 px-4 border-b border-[#f0f0f8] text-[#6b6b8a] text-[13px]">{a.role}</td>
-                        <td className="py-3.5 px-4 border-b border-[#f0f0f8]"><MeritBadge coins={a.coins} /></td>
-                        <td className="py-3.5 px-4 border-b border-[#f0f0f8] font-semibold text-[#0a0a0f]">{a.certificates}</td>
-                        <td className="py-3.5 px-4 border-b border-[#f0f0f8] font-semibold" style={{ color: a.projects > 0 ? '#22c55e' : '#9898b8' }}>{a.projects}</td>
-                        <td className="py-3.5 px-4 border-b border-[#f0f0f8]">
-                          {a.platforms.length > 0
-                            ? <span className="text-[11px] text-[#5b4cf5]">{a.platforms.join(', ')}</span>
-                            : <span className="text-[11px] text-[#9898b8]">None</span>}
-                        </td>
-                        <td className="py-3.5 px-4 border-b border-[#f0f0f8]">
-                          <span className="font-semibold text-[#5b4cf5]">{a.score}%</span>
-                        </td>
-                        <td className="py-3.5 px-4 border-b border-[#f0f0f8]">
-                          <div className="flex items-center gap-1.5">
-                            <button className="text-[12px] font-semibold text-[#5b4cf5] bg-[#f4f2ff] px-2.5 py-1 rounded-lg border-0 cursor-pointer hover:bg-[#5b4cf5] hover:text-white transition-all">View</button>
-                            <button className="text-[12px] font-semibold text-[#22c55e] bg-[#f0fdf4] px-2.5 py-1 rounded-lg border-0 cursor-pointer hover:bg-[#22c55e] hover:text-white transition-all">Hire</button>
+                        <td className="py-3 px-3 border-b border-[#f0f0f8]"><MeritBadge coins={u.meritCoins} /></td>
+                        <td className="py-3 px-3 border-b border-[#f0f0f8]">
+                          <div className="flex flex-wrap gap-1 max-w-[140px]">
+                            {u.skills?.slice(0,3).map((s: any) => (
+                              <span key={s.name} className="text-[10px] px-1.5 py-0.5 rounded bg-[#f4f2ff] text-[#5b4cf5] font-semibold">{s.name}</span>
+                            ))}
+                            {u.skills?.length > 3 && <span className="text-[10px] text-[#9898b8]">+{u.skills.length-3}</span>}
                           </div>
+                        </td>
+                        <td className="py-3 px-3 border-b border-[#f0f0f8] font-semibold text-[13px]">{u.certCount}</td>
+                        <td className="py-3 px-3 border-b border-[#f0f0f8] font-semibold text-[13px]" style={{ color: u.projectCount > 0 ? '#22c55e' : '#9898b8' }}>{u.projectCount}</td>
+                        <td className="py-3 px-3 border-b border-[#f0f0f8]">
+                          {u.platforms?.length > 0
+                            ? <span className="text-[11px] text-[#5b4cf5]">{u.platforms.slice(0,2).join(', ')}{u.platforms.length>2?` +${u.platforms.length-2}`:''}</span>
+                            : <span className="text-[11px] text-[#9898b8]">—</span>}
+                        </td>
+                        <td className="py-3 px-3 border-b border-[#f0f0f8]">
+                          <button onClick={() => setSelectedUser(u.id)} className="text-[12px] font-semibold text-[#5b4cf5] bg-[#f4f2ff] px-2.5 py-1 rounded-lg border-0 cursor-pointer hover:bg-[#5b4cf5] hover:text-white transition-all">
+                            Profile
+                          </button>
                         </td>
                       </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
           </div>
         </>
       )}

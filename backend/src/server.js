@@ -67,6 +67,7 @@ app.use('/api/v1/admin',        require('./routes/admin'));
 app.use('/api/v1/payment',      require('./routes/payment'));
 app.use('/api/v1/skill-paths',  require('./routes/skillpaths'));
 app.use('/api/v1/talent',       require('./routes/talent'));
+app.use('/api/v1/employer',     require('./routes/employer'));
 app.use('/api/v1/resume',       require('./routes/resume'));
 app.use('/api/v1/skill-gap',    require('./routes/skillgap'));
 app.use('/api/v1/platforms',    require('./routes/platforms'));
