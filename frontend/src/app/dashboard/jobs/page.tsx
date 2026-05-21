@@ -7,6 +7,8 @@ import { apiFetch } from '@/lib/api';
 const navItems = [
   { href: '/dashboard', icon: 'fa-home', label: 'Dashboard' },
   { href: '/dashboard/courses', icon: 'fa-book-open', label: 'Courses' },
+  { href: '/dashboard/portfolio', icon: 'fa-layer-group', label: 'Portfolio' },
+  { href: '/dashboard/platforms', icon: 'fa-graduation-cap', label: 'Learning Platforms' },
   { href: '/dashboard/jobs', icon: 'fa-briefcase', label: 'Jobs' },
   { href: '/dashboard/certificates', icon: 'fa-certificate', label: 'Certificates' },
   { href: '/dashboard/rewards', icon: 'fa-coins', label: 'Rewards' },
