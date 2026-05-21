@@ -128,3 +128,62 @@ router.post('/', authenticate, requireRole('employer', 'admin'), [
 });
 
 module.exports = router;
+
+// GET /jobs/featured — jobs unlocked based on user's merit coin tier
+// Students with higher coins see bigger/better jobs
+router.get('/featured', authenticate, async (req, res) => {
+  const userCoins = req.user.meritCoins || 0;
+
+  // Determine tier thresholds
+  const minSalaryBoost = userCoins >= 5000 ? 0    // platinum: all jobs
+                       : userCoins >= 2000 ? 50000  // gold: senior jobs (higher salary band)
+                       : userCoins >= 500  ? 20000  // silver: mid-level
+                       : 0;                         // bronze: entry-level
+
+  const tierLabel = userCoins >= 5000 ? 'platinum' : userCoins >= 2000 ? 'gold' : userCoins >= 500 ? 'silver' : 'bronze';
+
+  try {
+    const jobs = await prisma.job.findMany({
+      where: { status: 'active' },
+      include: {
+        applications: { where: { userId: req.user.id }, select: { id: true } },
+        savedBy:      { where: { userId: req.user.id }, select: { id: true } },
+        _count:       { select: { applications: true } },
+      },
+      orderBy: [
+        { salary: 'desc' },
+        { createdAt: 'desc' },
+      ],
+    });
+
+    const userSkills = req.user.skills || [];
+
+    // Filter and score jobs based on tier
+    const result = jobs
+      .map(j => ({
+        ...j,
+        applied: j.applications.length > 0,
+        saved: j.savedBy.length > 0,
+        applicationCount: j._count.applications,
+        match: Math.min(100, 40 + userSkills.filter(s =>
+          j.skills.some(js => js.toLowerCase().includes(s.toLowerCase()))
+        ).length * 20),
+        featured: userCoins >= 2000, // gold+ see featured badge
+        tierUnlocked: tierLabel,
+        applications: undefined, savedBy: undefined, _count: undefined,
+      }))
+      .filter(j => {
+        // Platinum sees all; lower tiers see progressively fewer premium jobs
+        if (userCoins >= 5000) return true;
+        if (userCoins >= 2000) return !j.isPremium || j.tier !== 'platinum';
+        if (userCoins >= 500)  return j.tier === 'bronze' || j.tier === 'silver' || !j.tier;
+        return !j.tier || j.tier === 'bronze';
+      })
+      .sort((a, b) => b.match - a.match);
+
+    return success(res, { jobs: result, userTier: tierLabel, userCoins });
+  } catch (err) {
+    console.error(err);
+    return error(res, 'Failed to fetch featured jobs');
+  }
+});

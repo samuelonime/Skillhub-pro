@@ -27,6 +27,41 @@ const PLATFORM_CONFIG = {
     affiliateUrl: (tag) => `https://www.edx.org/?utm_source=${tag}&utm_medium=referral`,
     color: '#02262b',
   },
+  linkedin: {
+    label: 'LinkedIn Learning',
+    affiliateTag: process.env.LINKEDIN_AFFILIATE_TAG || 'skillhub',
+    baseUrl: 'https://www.linkedin.com/learning',
+    affiliateUrl: (tag) => `https://www.linkedin.com/learning/?trk=${tag}`,
+    color: '#0077b5',
+  },
+  pluralsight: {
+    label: 'Pluralsight',
+    affiliateTag: process.env.PLURALSIGHT_AFFILIATE_TAG || 'skillhub',
+    baseUrl: 'https://www.pluralsight.com',
+    affiliateUrl: (tag) => `https://www.pluralsight.com/?utm_source=${tag}&utm_medium=referral`,
+    color: '#f15b2a',
+  },
+  skillshare: {
+    label: 'Skillshare',
+    affiliateTag: process.env.SKILLSHARE_AFFILIATE_TAG || 'skillhub',
+    baseUrl: 'https://www.skillshare.com',
+    affiliateUrl: (tag) => `https://www.skillshare.com/r/${tag}`,
+    color: '#00e676',
+  },
+  alison: {
+    label: 'Alison',
+    affiliateTag: process.env.ALISON_AFFILIATE_TAG || 'skillhub',
+    baseUrl: 'https://alison.com',
+    affiliateUrl: (tag) => `https://alison.com/?utm_source=${tag}&utm_medium=referral`,
+    color: '#7eb63e',
+  },
+  futurelearn: {
+    label: 'FutureLearn',
+    affiliateTag: process.env.FUTURELEARN_AFFILIATE_TAG || 'skillhub',
+    baseUrl: 'https://www.futurelearn.com',
+    affiliateUrl: (tag) => `https://www.futurelearn.com/?utm_source=${tag}&utm_medium=referral`,
+    color: '#d60303',
+  },
 };
 
 // GET /api/v1/platforms — list user's connected platforms
@@ -70,6 +105,13 @@ router.post('/:platform/connect', authenticate, async (req, res) => {
         referralTag: config.affiliateTag,
       },
     });
+
+    // Award merit coins for connecting a new platform (first time only)
+    const existingConns = await prisma.connectedPlatform.count({ where: { userId: req.user.id } });
+    if (existingConns <= 1) {
+      // First platform connection bonus
+      await prisma.user.update({ where: { id: req.user.id }, data: { meritCoins: { increment: 50 } } });
+    }
 
     const affiliateUrl = config.affiliateUrl(config.affiliateTag);
 
@@ -117,7 +159,11 @@ router.post('/:platform/certificates', authenticate, async (req, res) => {
         skills: skills || [],
       },
     });
-    return created(res, cert, 'Certificate imported');
+
+    // Award merit coins for completing an external course
+    await prisma.user.update({ where: { id: req.user.id }, data: { meritCoins: { increment: 75 } } });
+
+    return created(res, { ...cert, coinsEarned: 75 }, 'Certificate imported! +75 Merit Coins earned');
   } catch (err) {
     console.error(err);
     return error(res, 'Failed to import certificate');
@@ -134,6 +180,31 @@ router.get('/certificates', authenticate, async (req, res) => {
     return success(res, certs);
   } catch (err) {
     return error(res, 'Failed to fetch certificates');
+  }
+});
+
+// GET /api/v1/platforms/summary — aggregated study progress across all platforms
+router.get('/summary', authenticate, async (req, res) => {
+  try {
+    const [platforms, certs] = await Promise.all([
+      prisma.connectedPlatform.findMany({ where: { userId: req.user.id }, include: { certificates: true } }),
+      prisma.externalCertificate.findMany({ where: { userId: req.user.id } }),
+    ]);
+    const summary = {
+      totalPlatforms: platforms.length,
+      totalExternalCerts: certs.length,
+      totalExternalCoursesCompleted: certs.length,
+      coinsEarnedFromPlatforms: certs.length * 75,
+      platformBreakdown: platforms.map(p => ({
+        platform: p.platform,
+        label: PLATFORM_CONFIG[p.platform]?.label || p.platform,
+        certificatesImported: p.certificates.length,
+        connectedAt: p.connectedAt,
+      })),
+    };
+    return success(res, summary);
+  } catch (err) {
+    return error(res, 'Failed to fetch platform summary');
   }
 });
 
