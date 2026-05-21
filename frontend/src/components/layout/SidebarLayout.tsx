@@ -43,7 +43,9 @@ export function SidebarLayout({ children, navItems, pageTitle }: SidebarLayoutPr
 
         <nav className="flex-1 p-2.5 overflow-y-auto">
           {navItems.map(item => {
-            const active = pathname === item.href || pathname.startsWith(item.href + '/');
+            const active = item.href === '/dashboard'
+              ? pathname === '/dashboard'
+              : pathname === item.href || pathname.startsWith(item.href + '/');
             return (
               <Link key={item.href} href={item.href} className={`flex items-center gap-2.5 px-3 py-2.5 rounded-[10px] text-sm font-medium mb-0.5 no-underline transition-all ${active ? 'bg-[#5b4cf5] text-white' : 'text-white/52 hover:bg-white/[0.07] hover:text-white/88'}`}>
                 <i className={`fas ${item.icon} w-4 text-center text-[13px]`} />
