@@ -37,7 +37,7 @@ export function SidebarLayout({ children, navItems, pageTitle }: SidebarLayoutPr
       {/* Sidebar */}
       <aside className={`w-[252px] min-h-screen bg-[#0a0a0f] flex flex-col fixed top-0 left-0 z-[100] transition-transform duration-[0.28s] max-md:-translate-x-full ${mobileOpen ? 'translate-x-0' : ''}`} style={{ boxShadow: mobileOpen ? '8px 0 32px rgba(0,0,0,0.22)' : undefined }}>
         <div className="flex items-center gap-2.5 px-4 py-5" style={{ borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
-          <div className="w-9 h-9 bg-[#5b4cf5] rounded-[9px] grid place-items-center font-syne font-bold text-white text-sm">S</div>
+          <img src="/meritlives.svg" alt="MeritLives" style={{width:28,height:28}} />
           <span className="font-syne font-extrabold text-[19px] text-white tracking-tight">SkillHub</span>
         </div>
 
