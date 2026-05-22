@@ -270,7 +270,7 @@ router.get('/talent', ...guard, async (req, res) => {
   const skillList = skills ? String(skills).split(',').map(s => s.trim()).filter(Boolean) : [];
 
   try {
-    const where:{
+    const where={
       role: 'student',
       isActive: true,
       portfolioPublic: true,
