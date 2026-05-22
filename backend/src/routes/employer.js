@@ -261,7 +261,7 @@ router.get('/talent', ...guard, async (req, res) => {
   const { tier, skills, search, page = 1, limit = 20 } = req.query;
   const skip = (parseInt(String(page)) - 1) * parseInt(String(limit));
 
-  const coinFilter: Record<string, any> = {};
+  const coinFilter = {};
   if (tier === 'platinum') coinFilter.gte = 5000;
   else if (tier === 'gold')   coinFilter.gte = 2000;
   else if (tier === 'silver') { coinFilter.gte = 500; coinFilter.lt = 2000; }
