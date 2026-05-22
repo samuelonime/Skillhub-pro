@@ -513,7 +513,7 @@ function Navbar() {
   return (
     <nav className={`nav${scrolled ? ' scrolled' : ''}`}>
       <Link href="/" className="nav-logo">
-        <div className="nav-logo-mark">S</div>
+        <img src="/meritlives.svg" alt="MeritLives" style={{width:28,height:28}} />
         SkillHub
       </Link>
       <div className="nav-links">
@@ -566,7 +566,7 @@ function Hero() {
           <div className="dash-layout">
             <div className="dash-sidebar">
               <div className="dash-logo">
-                <div className="dash-logo-mark">S</div>
+                <img src="/meritlives.svg" alt="MeritLives" style={{width:28,height:28}} />
                 <span>SkillHub</span>
               </div>
               {[['Dashboard',true],['Courses',false],['Portfolio',false],['Jobs',false],['Rewards',false]].map(([l,a]) => (
@@ -801,7 +801,7 @@ function Footer() {
   return (
     <footer className="footer">
       <div className="footer-logo">
-        <div className="nav-logo-mark">S</div>
+        <img src="/meritlives.svg" alt="MeritLives" style={{width:28,height:28}} />
         SkillHub Pro
       </div>
       <span style={{fontSize:12,color:'var(--muted)'}}>© 2025 SkillHub Pro · Built for Africa's tech talent</span>
