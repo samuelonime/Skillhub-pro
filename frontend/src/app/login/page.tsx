@@ -7,7 +7,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 const API = 'https://skillhub-u918.onrender.com/api/v1';
 
 type Tab = 'login' | 'register' | 'forgot' | 'reset';
-type Role = 'student' | 'employer' | 'instructor';
+type Role = 'student' | 'employer';
 type AlertType = 'err' | 'ok';
 
 function Alert({ msg, type }: { msg: string; type: AlertType }) {
@@ -111,7 +111,7 @@ function RegisterForm({ onAlert }: { onAlert: (msg: string, type?: AlertType) =>
   const roles: { key: Role; icon: string; label: string }[] = [
     { key: 'student', icon: 'fa-user-graduate', label: 'Student' },
     { key: 'employer', icon: 'fa-building', label: 'Employer' },
-    { key: 'instructor', icon: 'fa-chalkboard-teacher', label: 'Instructor' },
+    
   ];
 
   return (
