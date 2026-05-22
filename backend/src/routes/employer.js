@@ -261,7 +261,7 @@ router.get('/talent', ...guard, async (req, res) => {
   const { tier, skills, search, page = 1, limit = 20 } = req.query;
   const skip = (parseInt(String(page)) - 1) * parseInt(String(limit));
 
-  const coinFilter = {};
+  const coinFilter= {};
   if (tier === 'platinum') coinFilter.gte = 5000;
   else if (tier === 'gold')   coinFilter.gte = 2000;
   else if (tier === 'silver') { coinFilter.gte = 500; coinFilter.lt = 2000; }
@@ -270,7 +270,7 @@ router.get('/talent', ...guard, async (req, res) => {
   const skillList = skills ? String(skills).split(',').map(s => s.trim()).filter(Boolean) : [];
 
   try {
-    const where= {
+    const where:{
       role: 'student',
       isActive: true,
       portfolioPublic: true,
@@ -362,3 +362,75 @@ router.get('/talent/:userId', ...guard, async (req, res) => {
 });
 
 module.exports = router;
+
+// ── GET /api/v1/employer/profile ─────────────────────────────────────────────
+router.get('/profile', ...guard, async (req, res) => {
+  try {
+    const user = await prisma.user.findUnique({
+      where: { id: req.user.id },
+      select: {
+        id: true, firstName: true, lastName: true, email: true,
+        avatar: true, phone: true, company: true, companyWebsite: true,
+        companySize: true, industry: true, location: true, bio: true,
+        role: true, createdAt: true,
+      },
+    });
+    return success(res, user);
+  } catch (err) { return error(res, 'Failed to fetch profile'); }
+});
+
+// ── PUT /api/v1/employer/profile ─────────────────────────────────────────────
+router.put('/profile', ...guard, async (req, res) => {
+  const { firstName, lastName, phone, company, companyWebsite, companySize, industry, location, bio } = req.body;
+  try {
+    const user = await prisma.user.update({
+      where: { id: req.user.id },
+      data: { firstName, lastName, phone, company, companyWebsite, companySize, industry, location, bio },
+      select: { id: true, firstName: true, lastName: true, email: true, company: true, avatar: true, phone: true, companyWebsite: true, companySize: true, industry: true, location: true, bio: true },
+    });
+    return success(res, user, 'Profile updated');
+  } catch (err) { return error(res, 'Failed to update profile'); }
+});
+
+// ── PUT /api/v1/employer/account/password ────────────────────────────────────
+router.put('/account/password', ...guard, async (req, res) => {
+  const bcrypt = require('bcryptjs');
+  const { currentPassword, newPassword } = req.body;
+  if (!currentPassword || !newPassword || newPassword.length < 8) return badRequest(res, 'Valid current and new password (8+ chars) required');
+  try {
+    const user = await prisma.user.findUnique({ where: { id: req.user.id } });
+    const valid = await bcrypt.compare(currentPassword, user.password);
+    if (!valid) return badRequest(res, 'Current password is incorrect');
+    const hashed = await bcrypt.hash(newPassword, 12);
+    await prisma.user.update({ where: { id: req.user.id }, data: { password: hashed } });
+    return success(res, null, 'Password updated');
+  } catch (err) { return error(res, 'Failed to update password'); }
+});
+
+// ── GET /api/v1/employer/analytics ──────────────────────────────────────────
+router.get('/analytics', ...guard, async (req, res) => {
+  try {
+    const employerId = req.user.id;
+    const now = new Date();
+    const months = Array.from({ length: 6 }, (_, i) => {
+      const d = new Date(now.getFullYear(), now.getMonth() - (5 - i), 1);
+      return { label: d.toLocaleString('default', { month: 'short' }), start: d, end: new Date(d.getFullYear(), d.getMonth() + 1, 1) };
+    });
+
+    const [jobsPerMonth, applicantsPerMonth, topJobs] = await Promise.all([
+      Promise.all(months.map(m => prisma.job.count({ where: { employerId, createdAt: { gte: m.start, lt: m.end } } }))),
+      Promise.all(months.map(m => prisma.application.count({ where: { job: { employerId }, appliedAt: { gte: m.start, lt: m.end } } }))),
+      prisma.job.findMany({
+        where: { employerId, status: 'active' },
+        include: { _count: { select: { applications: true } } },
+        orderBy: { applications: { _count: 'desc' } },
+        take: 5,
+      }),
+    ]);
+
+    return success(res, {
+      months: months.map((m, i) => ({ label: m.label, jobs: jobsPerMonth[i], applicants: applicantsPerMonth[i] })),
+      topJobs: topJobs.map(j => ({ id: j.id, title: j.title, applicants: j._count.applications })),
+    });
+  } catch (err) { return error(res, 'Failed to fetch analytics'); }
+});
