@@ -208,14 +208,14 @@ router.get('/applicants', ...guard, async (req, res) => {
         certificates:  a.user.certificates,
         projectCount:  a.user.projects.length,
         projects:      a.user.projects,
-        platforms:     (a.user.connectedPlatforms || []).map((p: any) => p.platform),
+        platforms:     (a.user.connectedPlatforms || []).map(p => p.platform),
       };
     });
 
-    if (tier && tier !== 'all') result = result.filter((r: any) => r.tier === tier);
-    if (sort === 'coins')  result.sort((a: any, b: any) => b.meritCoins - a.meritCoins);
-    if (sort === 'match')  result.sort((a: any, b: any) => b.profileStrength - a.profileStrength);
-    if (sort === 'recent') result.sort((a: any, b: any) => new Date(b.appliedAt).getTime() - new Date(a.appliedAt).getTime());
+    if (tier && tier !== 'all') result = result.filter(r => r.tier === tier);
+    if (sort === 'coins')  result.sort((a, b) => b.meritCoins - a.meritCoins);
+    if (sort === 'match')  result.sort((a, b) => b.profileStrength - a.profileStrength);
+    if (sort === 'recent') result.sort((a, b) => new Date(b.appliedAt).getTime() - new Date(a.appliedAt).getTime());
 
     return success(res, result);
   } catch (err) {
@@ -255,14 +255,14 @@ router.get('/talent', ...guard, async (req, res) => {
   const { tier, search, page = 1, limit = 20 } = req.query;
   const skip = (parseInt(String(page)) - 1) * parseInt(String(limit));
 
-  const coinFilter= {};
+  const coinFilter = {};
   if (tier === 'platinum') coinFilter.gte = 5000;
   else if (tier === 'gold')   { coinFilter.gte = 2000; coinFilter.lt = 5000; }
   else if (tier === 'silver') { coinFilter.gte = 500;  coinFilter.lt = 2000; }
   else if (tier === 'bronze') coinFilter.lt = 500;
 
   try {
-    const where= {
+    const where = {
       role: 'student',
       isActive: true,
       ...(Object.keys(coinFilter).length ? { meritCoins: coinFilter } : {}),
@@ -303,10 +303,10 @@ router.get('/talent', ...guard, async (req, res) => {
         meritCoins: coins,
         tier:       tierOf(coins),
         profileStrength: u.profileStrength,
-        skills:     (u.skills || []).map((s: string) => ({ name: s, verified: false })),
+        skills:     (u.skills || []).map((s) => ({ name: s, verified: false })),
         certCount:  u.certificates.length,
         projectCount: u.projects.length,
-        platforms:  (u.connectedPlatforms || []).map((p: any) => p.platform),
+        platforms:  (u.connectedPlatforms || []).map(p => p.platform),
       };
     });
 
@@ -344,10 +344,10 @@ router.get('/talent/:userId', ...guard, async (req, res) => {
       meritCoins: coins,
       tier:       tierOf(coins),
       profileStrength: user.profileStrength,
-      skills:     (user.skills || []).map((s: string) => ({ name: s, verified: false })),
+      skills:     (user.skills || []).map((s) => ({ name: s, verified: false })),
       certificates: user.certificates,
       projects:     user.projects,
-      platforms:    (user.connectedPlatforms || []).map((p: any) => p.platform),
+      platforms:    (user.connectedPlatforms || []).map(p => p.platform),
     });
   } catch (err) { return error(res, 'Failed to fetch candidate'); }
 });
