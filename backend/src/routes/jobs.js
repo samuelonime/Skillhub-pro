@@ -4,15 +4,14 @@ const prisma  = require('../config/database');
 const { authenticate, requireRole } = require('../middleware/auth');
 const { success, created, notFound, badRequest, error } = require('../utils/response');
 
-// Helper: compute match score between user skills and job skills
 function matchScore(userSkills, jobSkills) {
   if (!userSkills?.length || !jobSkills?.length) return 40;
-  return Math.min(100, 40 + userSkills.filter(s =>
+  const matched = userSkills.filter(s =>
     jobSkills.some(js => js.toLowerCase().includes(s.toLowerCase()))
-  ).length * 20);
+  ).length;
+  return Math.min(100, 40 + matched * 20);
 }
 
-// Helper: tier label from coins
 function tierOf(coins) {
   if (coins >= 5000) return 'platinum';
   if (coins >= 2000) return 'gold';
@@ -20,13 +19,17 @@ function tierOf(coins) {
   return 'bronze';
 }
 
+const tierRank = { bronze: 0, silver: 1, gold: 2, platinum: 3 };
+
+function meetsMinTier(userTier, jobMinTier) {
+  return (tierRank[userTier] || 0) >= (tierRank[jobMinTier || 'bronze'] || 0);
+}
+
 // ── GET /jobs/featured — tier-gated opportunity ads ──────────────────────────
-// Platinum users see ALL jobs including premium enterprise ones.
-// Gold sees featured + senior. Silver sees standard. Bronze sees entry-level only.
 router.get('/featured', authenticate, async (req, res) => {
-  const coins   = req.user.meritCoins || 0;
-  const tier    = tierOf(coins);
-  const skills  = (req.user.skills || []).map((s) => typeof s === 'string' ? s : s.name);
+  const coins  = req.user.meritCoins || 0;
+  const tier   = tierOf(coins);
+  const skills = req.user.skills || [];
 
   try {
     const jobs = await prisma.job.findMany({
@@ -34,83 +37,41 @@ router.get('/featured', authenticate, async (req, res) => {
       include: {
         applications: { where: { userId: req.user.id }, select: { id: true } },
         savedBy:      { where: { userId: req.user.id }, select: { id: true } },
-        employer:     { select: { firstName: true, lastName: true, avatar: true, company: true } },
+        employer: { select: { firstName: true, lastName: true, company: true, avatar: true } },
       },
       orderBy: [{ isPremium: 'desc' }, { createdAt: 'desc' }],
     });
 
     const result = jobs
-      .filter(j => {
-        // Filter by minTier: only show job if user meets the requirement
-        const req = j.minTier || 'bronze';
-        const tierRank = { bronze: 0, silver: 1, gold: 2, platinum: 3 };
-        return (tierRank[tier] || 0) >= (tierRank[req] || 0);
-      })
+      .filter(j => meetsMinTier(tier, j.minTier))
       .map(j => ({
-        ...j,
-        applied:    j.applications.length > 0,
-        saved:      j.savedBy.length > 0,
-        match:      matchScore(skills, j.skills || []),
-        adTier:     j.isPremium ? (j.minTier || 'gold') : 'standard',
-        companyName: j.company || j.employer?.company || `${j.employer?.firstName || 'Company'}'s Company`,
-        applications: undefined,
-        savedBy:      undefined,
+        id:          j.id,
+        title:       j.title,
+        company:     j.company,
+        companyName: j.company || (j.employer ? `${j.employer.firstName}'s Company` : 'Company'),
+        location:    j.location,
+        type:        j.type,
+        salary:      j.salary,
+        skills:      j.skills,
+        description: j.description,
+        status:      j.status,
+        minTier:     j.minTier,
+        isPremium:   j.isPremium,
+        createdAt:   j.createdAt,
+        applied:     j.applications.length > 0,
+        saved:       j.savedBy.length > 0,
+        match:       matchScore(skills, j.skills || []),
+        adTier:      j.isPremium ? (j.minTier || 'gold') : 'standard',
       }))
       .sort((a, b) => {
-        // Premium jobs first, then by match
         if (b.isPremium !== a.isPremium) return b.isPremium ? 1 : -1;
         return b.match - a.match;
       });
 
     return success(res, { jobs: result, userTier: tier, userCoins: coins });
   } catch (err) {
-    console.error(err);
+    console.error('Featured jobs error:', err);
     return error(res, 'Failed to fetch featured jobs');
-  }
-});
-
-// ── GET /jobs ────────────────────────────────────────────────────────────────
-router.get('/', authenticate, async (req, res) => {
-  const { type, location, search } = req.query;
-  const coins  = req.user.meritCoins || 0;
-  const tier   = tierOf(coins);
-  const skills = (req.user.skills || []).map((s) => typeof s === 'string' ? s : s.name);
-  const tierRank = { bronze: 0, silver: 1, gold: 2, platinum: 3 };
-
-  try {
-    const jobs = await prisma.job.findMany({
-      where: {
-        status: 'active',
-        ...(type     ? { type:     { equals: type,     mode: 'insensitive' } } : {}),
-        ...(location ? { location: { contains: location, mode: 'insensitive' } } : {}),
-        ...(search   ? { OR: [{ title: { contains: search, mode: 'insensitive' } }, { company: { contains: search, mode: 'insensitive' } }] } : {}),
-      },
-      include: {
-        applications: { where: { userId: req.user.id }, select: { id: true } },
-        savedBy:      { where: { userId: req.user.id }, select: { id: true } },
-        _count:       { select: { applications: true } },
-      },
-      orderBy: [{ isPremium: 'desc' }, { createdAt: 'desc' }],
-    });
-
-    const result = jobs
-      .filter(j => {
-        const req = j.minTier || 'bronze';
-        return (tierRank[tier] || 0) >= (tierRank[req] || 0);
-      })
-      .map(j => ({
-        ...j,
-        applied: j.applications.length > 0,
-        saved:   j.savedBy.length > 0,
-        applicationCount: j._count.applications,
-        match: matchScore(skills, j.skills || []),
-        applications: undefined, savedBy: undefined, _count: undefined,
-      }));
-
-    return success(res, result);
-  } catch (err) {
-    console.error(err);
-    return error(res, 'Failed to fetch jobs');
   }
 });
 
@@ -118,8 +79,7 @@ router.get('/', authenticate, async (req, res) => {
 router.get('/matches', authenticate, async (req, res) => {
   const coins  = req.user.meritCoins || 0;
   const tier   = tierOf(coins);
-  const skills = (req.user.skills || []).map((s) => typeof s === 'string' ? s : s.name);
-  const tierRank = { bronze: 0, silver: 1, gold: 2, platinum: 3 };
+  const skills = req.user.skills || [];
 
   try {
     const jobs = await prisma.job.findMany({
@@ -131,10 +91,7 @@ router.get('/matches', authenticate, async (req, res) => {
     });
 
     const result = jobs
-      .filter(j => {
-        const req = j.minTier || 'bronze';
-        return (tierRank[tier] || 0) >= (tierRank[req] || 0);
-      })
+      .filter(j => meetsMinTier(tier, j.minTier))
       .map(j => ({
         ...j,
         applied: j.applications.length > 0,
@@ -161,9 +118,51 @@ router.get('/saved', authenticate, async (req, res) => {
 // ── GET /jobs/applications ───────────────────────────────────────────────────
 router.get('/applications', authenticate, async (req, res) => {
   try {
-    const apps = await prisma.application.findMany({ where: { userId: req.user.id }, include: { job: true }, orderBy: { appliedAt: 'desc' } });
+    const apps = await prisma.application.findMany({
+      where: { userId: req.user.id },
+      include: { job: { select: { id: true, title: true, company: true, location: true } } },
+      orderBy: { appliedAt: 'desc' },
+    });
     return success(res, apps);
   } catch (err) { return error(res, 'Failed to fetch applications'); }
+});
+
+// ── GET /jobs ────────────────────────────────────────────────────────────────
+router.get('/', authenticate, async (req, res) => {
+  const { type, location, search } = req.query;
+  const coins  = req.user.meritCoins || 0;
+  const tier   = tierOf(coins);
+  const skills = req.user.skills || [];
+
+  try {
+    const jobs = await prisma.job.findMany({
+      where: {
+        status: 'active',
+        ...(type     ? { type: { equals: type, mode: 'insensitive' } } : {}),
+        ...(location ? { location: { contains: location, mode: 'insensitive' } } : {}),
+        ...(search   ? { OR: [{ title: { contains: search, mode: 'insensitive' } }, { company: { contains: search, mode: 'insensitive' } }] } : {}),
+      },
+      include: {
+        applications: { where: { userId: req.user.id }, select: { id: true } },
+        savedBy:      { where: { userId: req.user.id }, select: { id: true } },
+        _count:       { select: { applications: true } },
+      },
+      orderBy: [{ isPremium: 'desc' }, { createdAt: 'desc' }],
+    });
+
+    const result = jobs
+      .filter(j => meetsMinTier(tier, j.minTier))
+      .map(j => ({
+        ...j,
+        applied:          j.applications.length > 0,
+        saved:            j.savedBy.length > 0,
+        applicationCount: j._count.applications,
+        match:            matchScore(skills, j.skills || []),
+        applications: undefined, savedBy: undefined, _count: undefined,
+      }));
+
+    return success(res, result);
+  } catch (err) { console.error(err); return error(res, 'Failed to fetch jobs'); }
 });
 
 // ── GET /jobs/:id ────────────────────────────────────────────────────────────
@@ -171,7 +170,10 @@ router.get('/:id', authenticate, async (req, res) => {
   try {
     const job = await prisma.job.findUnique({
       where: { id: req.params.id },
-      include: { applications: { where: { userId: req.user.id } }, savedBy: { where: { userId: req.user.id } } },
+      include: {
+        applications: { where: { userId: req.user.id } },
+        savedBy:      { where: { userId: req.user.id } },
+      },
     });
     if (!job) return notFound(res, 'Job not found');
     return success(res, { ...job, applied: job.applications.length > 0, saved: job.savedBy.length > 0, applications: undefined, savedBy: undefined });
@@ -189,9 +191,13 @@ router.post('/:id/apply', authenticate, requireRole('student'), [
     if (!job) return notFound(res, 'Job not found');
     const existing = await prisma.application.findUnique({ where: { userId_jobId: { userId: req.user.id, jobId: job.id } } });
     if (existing) return badRequest(res, 'Already applied to this job');
-    const app = await prisma.application.create({ data: { userId: req.user.id, jobId: job.id, coverLetter: req.body.coverLetter || '' } });
-    await prisma.notification.create({ data: { userId: req.user.id, type: 'success', icon: 'briefcase', title: 'Application Submitted', message: `Applied to ${job.title} at ${job.company}` } });
-    return created(res, app, 'Application submitted successfully!');
+    const app = await prisma.application.create({
+      data: { userId: req.user.id, jobId: job.id, coverLetter: req.body.coverLetter || '', status: 'applied' },
+    });
+    await prisma.notification.create({
+      data: { userId: req.user.id, type: 'success', icon: 'briefcase', message: `Applied to ${job.title} at ${job.company}` },
+    });
+    return created(res, app, 'Application submitted!');
   } catch (err) { console.error(err); return error(res, 'Application failed'); }
 });
 
@@ -210,7 +216,7 @@ router.post('/:id/save', authenticate, async (req, res) => {
   } catch (err) { return error(res, 'Failed to save job'); }
 });
 
-// ── POST /jobs (employer post) ───────────────────────────────────────────────
+// ── POST /jobs — employer post ───────────────────────────────────────────────
 router.post('/', authenticate, requireRole('employer', 'admin'), [
   body('title').trim().isLength({ min: 3, max: 100 }),
   body('description').isLength({ min: 20 }),
@@ -219,16 +225,21 @@ router.post('/', authenticate, requireRole('employer', 'admin'), [
   const errors = validationResult(req);
   if (!errors.isEmpty()) return badRequest(res, 'Validation failed', errors.array());
   try {
-    const { skills, minTier, isPremium, ...rest } = req.body;
+    const { skills, minTier, isPremium, location, salary, type, title, description } = req.body;
+    const skillArr = Array.isArray(skills) ? skills : (skills || '').split(',').map(s => s.trim()).filter(Boolean);
     const job = await prisma.job.create({
       data: {
-        ...rest,
-        skills:    Array.isArray(skills) ? skills : (skills || '').split(',').map(s => s.trim()).filter(Boolean),
-        minTier:   minTier || null,
+        title,
+        description,
+        type,
+        location: location || 'Remote',
+        salary:   salary   || null,
+        skills:   skillArr,
+        minTier:  minTier  || null,
         isPremium: isPremium || false,
         employerId: req.user.id,
-        company:   req.user.company || `${req.user.firstName}'s Company`,
-        status:    'active',
+        company:    req.user.company || `${req.user.firstName}'s Company`,
+        status:     'active',
       },
     });
     return created(res, job, 'Job posted successfully!');
