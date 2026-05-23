@@ -203,7 +203,7 @@ router.get('/applicants', ...guard, async (req, res) => {
         meritCoins:    coins,
         tier:          tierOf(coins),
         profileStrength: a.user.profileStrength || 0,
-        skills:        (a.user.skills || []).map((s: string) => ({ name: s, verified: false })),
+        skills: (a.user.skills || []).map((s) => ({ name: s, verified: false })),
         certCount:     a.user.certificates.length,
         certificates:  a.user.certificates,
         projectCount:  a.user.projects.length,
