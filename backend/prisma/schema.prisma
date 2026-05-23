@@ -1,5 +1,4 @@
 // SkillHub Prisma Schema — PostgreSQL
-// npx prisma migrate dev --name init
 
 generator client {
   provider = "prisma-client-js"
@@ -11,43 +10,50 @@ datasource db {
 }
 
 model User {
-  id              String   @id @default(uuid())
-  email           String   @unique
-  password        String
-  firstName       String
-  lastName        String
-  role            Role     @default(student)
-  avatar          String?
-  title           String?
-  bio             String?
-  location        String?
-  company         String?
-  profileStrength Int      @default(20)
-  meritCoins      Int      @default(100)
-  skills          String[] @default([])
-  verified        Boolean  @default(false)
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  id               String   @id @default(uuid())
+  email            String   @unique
+  password         String
+  firstName        String
+  lastName         String
+  role             Role     @default(student)
+  avatar           String?
+  title            String?
+  bio              String?
+  location         String?
+  company          String?
+  companyWebsite   String?
+  companySize      String?
+  industry         String?
+  phone            String?
+  profileStrength  Int      @default(20)
+  meritCoins       Int      @default(100)
+  skills           String[] @default([])
+  portfolioPublic  Boolean  @default(true)
+  isActive         Boolean  @default(true)
+  verified         Boolean  @default(false)
+  minTier          String?
+  isPremium        Boolean  @default(false)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
 
-  refreshTokens RefreshToken[]
-  enrollments   Enrollment[]
-  applications  Application[]
-  savedJobs     SavedJob[]
-  certificates  Certificate[]
-  projects      Project[]
-  notifications Notification[]
-  transactions  Transaction[]
-  settings      UserSettings?
-  payments      Payment[]
-  subscriptions Subscription[]
-
-  // REQUIRED BACK RELATIONS
-  connectedPlatforms  ConnectedPlatform[]
+  refreshTokens        RefreshToken[]
+  enrollments          Enrollment[]
+  applications         Application[]
+  savedJobs            SavedJob[]
+  certificates         Certificate[]
+  projects             Project[]
+  notifications        Notification[]
+  transactions         Transaction[]
+  settings             UserSettings?
+  payments             Payment[]
+  subscriptions        Subscription[]
+  connectedPlatforms   ConnectedPlatform[]
   externalCertificates ExternalCertificate[]
-  affiliateReferrals  AffiliateReferral[]
-  passwordResetTokens PasswordResetToken[]
-  employerShortlists  ShortlistedCandidate[] @relation("EmployerShortlists")
-  candidateShortlists ShortlistedCandidate[] @relation("CandidateShortlists")
+  affiliateReferrals   AffiliateReferral[]
+  passwordResetTokens  PasswordResetToken[]
+  employerShortlists   ShortlistedCandidate[] @relation("EmployerShortlists")
+  candidateShortlists  ShortlistedCandidate[] @relation("CandidateShortlists")
+  postedJobs           Job[]                  @relation("EmployerJobs")
 
   @@map("users")
 }
@@ -122,12 +128,15 @@ model Job {
   skills      String[]  @default([])
   description String?
   status      JobStatus @default(active)
-  postedAt    DateTime  @default(now())
+  minTier     String?
+  isPremium   Boolean   @default(false)
+  employerId  String?
+  createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
 
+  employer     User?                  @relation("EmployerJobs", fields: [employerId], references: [id], onDelete: SetNull)
   applications Application[]
   savedBy      SavedJob[]
-
   shortlistedCandidates ShortlistedCandidate[]
 
   @@map("jobs")
@@ -144,7 +153,7 @@ model Application {
   userId      String
   jobId       String
   coverLetter String?
-  status      ApplicationStatus @default(pending)
+  status      ApplicationStatus @default(applied)
   appliedAt   DateTime          @default(now())
   updatedAt   DateTime          @updatedAt
 
@@ -156,11 +165,12 @@ model Application {
 }
 
 enum ApplicationStatus {
-  pending
-  reviewed
+  applied
+  reviewing
   shortlisted
+  interviewing
+  hired
   rejected
-  accepted
 }
 
 model SavedJob {
@@ -179,13 +189,15 @@ model SavedJob {
 model Certificate {
   id           String            @id @default(uuid())
   userId       String
-  name         String
-  issuer       String
-  issueDate    DateTime
+  title        String
+  provider     String
+  issueDate    DateTime?
   expiryDate   DateTime?
   status       CertificateStatus @default(pending)
   credentialId String?
+  credentialUrl String?
   fileUrl      String?
+  issuedAt     DateTime?
   verifiedAt   DateTime?
   verifiedBy   String?
   createdAt    DateTime          @default(now())
@@ -207,11 +219,13 @@ model Project {
   title        String
   description  String?
   technologies String[] @default([])
+  techStack    String[] @default([])
   liveUrl      String?
   githubUrl    String?
   thumbnail    String?
   score        Float    @default(8.0)
   views        Int      @default(0)
+  visibility   String   @default("public")
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
@@ -225,7 +239,7 @@ model Notification {
   userId    String
   type      String
   icon      String?
-  title     String
+  title     String   @default("")
   message   String
   read      Boolean  @default(false)
   createdAt DateTime @default(now())
@@ -337,8 +351,6 @@ enum SubscriptionStatus {
   paused
 }
 
-// ── Skill Paths ───────────────────────────────────────────────────────────────
-
 model SkillPath {
   id          String   @id @default(uuid())
   title       String
@@ -369,8 +381,8 @@ model SkillPathCourse {
   isRequired  Boolean @default(true)
   order       Int     @default(0)
 
-  path                SkillPath                  @relation(fields: [pathId], references: [id], onDelete: Cascade)
-  completions         SkillPathCourseCompletion[]
+  path        SkillPath                  @relation(fields: [pathId], references: [id], onDelete: Cascade)
+  completions SkillPathCourseCompletion[]
 
   @@map("skill_path_courses")
 }
@@ -403,8 +415,6 @@ model SkillPathCourseCompletion {
   @@map("skill_path_course_completions")
 }
 
-// ── Talent Pool (Employer search) ─────────────────────────────────────────────
-
 model ResumeUpload {
   id         String   @id @default(uuid())
   userId     String   @unique
@@ -416,8 +426,6 @@ model ResumeUpload {
   @@map("resume_uploads")
 }
 
-// ── Talent Pool ───────────────────────────────────────────────────────────────
-
 model ShortlistedCandidate {
   id          String   @id @default(uuid())
   employerId  String
@@ -426,7 +434,7 @@ model ShortlistedCandidate {
   note        String?
   createdAt   DateTime @default(now())
 
-  employer  User  @relation("EmployerShortlists", fields: [employerId],  references: [id], onDelete: Cascade)
+  employer  User  @relation("EmployerShortlists",  fields: [employerId],  references: [id], onDelete: Cascade)
   candidate User  @relation("CandidateShortlists", fields: [candidateId], references: [id], onDelete: Cascade)
   job       Job?  @relation(fields: [jobId], references: [id], onDelete: SetNull)
 
@@ -434,17 +442,15 @@ model ShortlistedCandidate {
   @@map("shortlisted_candidates")
 }
 
-// ── External Platform Connections ─────────────────────────────────────────────
-
 model ConnectedPlatform {
-  id            String   @id @default(uuid())
-  userId        String
-  platform      String   // udemy | coursera | edx
-  referralCode  String?  // affiliate referral code used
-  connectedAt   DateTime @default(now())
-  lastSyncAt    DateTime?
+  id           String    @id @default(uuid())
+  userId       String
+  platform     String
+  referralCode String?
+  connectedAt  DateTime  @default(now())
+  lastSyncAt   DateTime?
 
-  user         User                      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user         User                  @relation(fields: [userId], references: [id], onDelete: Cascade)
   certificates ExternalCertificate[]
   referrals    AffiliateReferral[]
 
@@ -453,32 +459,32 @@ model ConnectedPlatform {
 }
 
 model ExternalCertificate {
-  id           String   @id @default(uuid())
-  userId       String
-  platformId   String
-  title        String
-  platform     String
-  issuer       String
-  completedAt  DateTime
+  id            String   @id @default(uuid())
+  userId        String
+  platformId    String
+  title         String
+  platform      String
+  issuer        String
+  completedAt   DateTime
   credentialUrl String?
   thumbnailUrl  String?
-  skills       String[] @default([])
-  createdAt    DateTime @default(now())
+  skills        String[] @default([])
+  createdAt     DateTime @default(now())
 
-  user          User              @relation(fields: [userId], references: [id], onDelete: Cascade)
-  platformConn  ConnectedPlatform @relation(fields: [platformId], references: [id], onDelete: Cascade)
+  user         User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  platformConn ConnectedPlatform @relation(fields: [platformId], references: [id], onDelete: Cascade)
 
   @@map("external_certificates")
 }
 
 model AffiliateReferral {
-  id          String   @id @default(uuid())
+  id          String    @id @default(uuid())
   userId      String
   platformId  String
   platform    String
   referralTag String
-  clickedAt   DateTime @default(now())
-  converted   Boolean  @default(false)
+  clickedAt   DateTime  @default(now())
+  converted   Boolean   @default(false)
   convertedAt DateTime?
   commission  Float?
 
@@ -488,15 +494,13 @@ model AffiliateReferral {
   @@map("affiliate_referrals")
 }
 
-// ── Password Reset ─────────────────────────────────────────────────────────────
-
 model PasswordResetToken {
-  id        String   @id @default(uuid())
+  id        String    @id @default(uuid())
   userId    String
-  token     String   @unique
+  token     String    @unique
   expiresAt DateTime
   usedAt    DateTime?
-  createdAt DateTime @default(now())
+  createdAt DateTime  @default(now())
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
