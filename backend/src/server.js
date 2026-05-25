@@ -5,6 +5,7 @@ const helmet      = require('helmet');
 const compression = require('compression');
 const morgan      = require('morgan');
 const rateLimit   = require('express-rate-limit');
+const cookieParser = require('cookie-parser');
 const crypto      = require('crypto');
 const path        = require('path');
 const prisma      = require('./config/database');
@@ -27,7 +28,12 @@ const PORT    = parseInt(process.env.PORT, 10) || 5000;
 const app     = express();
 
 app.use((req, _res, next) => { req.id = crypto.randomUUID(); next(); });
-app.use(helmet({ crossOriginResourcePolicy: { policy: 'cross-origin' }, contentSecurityPolicy: IS_PROD ? undefined : false }));
+
+app.use(helmet({
+  crossOriginResourcePolicy: { policy: 'cross-origin' },
+  contentSecurityPolicy: IS_PROD ? undefined : false,
+}));
+
 app.use(compression());
 app.use(morgan(IS_PROD ? 'combined' : 'dev'));
 
@@ -35,11 +41,16 @@ const allowedOrigins = (process.env.FRONTEND_URL || '').split(',').map(s => s.tr
 if (!IS_PROD && !allowedOrigins.length) allowedOrigins.push('http://localhost:3000');
 
 app.use(cors({
-  origin: IS_PROD ? (o, cb) => (!o || allowedOrigins.includes(o) ? cb(null, true) : cb(new Error(`CORS: ${o} not allowed`))) : true,
-  methods: ['GET','POST','PUT','DELETE','OPTIONS'],
+  origin: IS_PROD
+    ? (o, cb) => (!o || allowedOrigins.includes(o) ? cb(null, true) : cb(new Error(`CORS: ${o} not allowed`)))
+    : true,
+  methods: ['GET','POST','PUT','PATCH','DELETE','OPTIONS'],
   allowedHeaders: ['Content-Type','Authorization'],
-  credentials: true,
+  credentials: true, // required for cookies to be sent cross-origin
 }));
+
+// ── cookie-parser must come BEFORE routes ──────────────────────────────────
+app.use(cookieParser(process.env.COOKIE_SECRET || process.env.JWT_SECRET));
 
 // Webhook MUST receive raw body for signature verification
 app.use('/api/v1/payment/webhook', express.raw({ type: 'application/json' }));
@@ -47,13 +58,17 @@ app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
 const authLimiter = rateLimit({ windowMs: 15 * 60 * 1000, max: 20, standardHeaders: true, legacyHeaders: false });
-const apiLimiter  = rateLimit({ windowMs: parseInt(process.env.RATE_LIMIT_WINDOW_MS) || 900000, max: parseInt(process.env.RATE_LIMIT_MAX) || 200, standardHeaders: true, legacyHeaders: false });
+const apiLimiter  = rateLimit({
+  windowMs: parseInt(process.env.RATE_LIMIT_WINDOW_MS) || 900000,
+  max:      parseInt(process.env.RATE_LIMIT_MAX) || 200,
+  standardHeaders: true, legacyHeaders: false,
+});
 app.use('/api/v1/auth', authLimiter);
 app.use('/api', apiLimiter);
 
 app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
 
-// Routes
+// ── Routes ─────────────────────────────────────────────────────────────────
 app.use('/api/v1/auth',         require('./routes/auth'));
 app.use('/api/v1/dashboard',    require('./routes/dashboard'));
 app.use('/api/v1/courses',      require('./routes/courses'));
@@ -99,10 +114,10 @@ async function start() {
 
   const server = app.listen(PORT, () => {
     console.log(`\n🚀 SkillHub API v2.0 running on http://localhost:${PORT}`);
-    console.log(`📚 API index: http://localhost:${PORT}/api/v1`);
     console.log(`❤️  Health:   http://localhost:${PORT}/health`);
+    console.log(`🍪 Cookies:  HttpOnly mode ${IS_PROD ? '(secure)' : '(dev — http allowed)'}`);
     console.log(`💳 Paystack: ${process.env.PAYSTACK_SECRET_KEY ? 'configured ✅' : 'not configured ⚠️'}`);
-    if (!IS_PROD) console.log('⚠️  Production mode\n');
+    if (!IS_PROD) console.log('⚠️  Running in development mode\n');
   });
 
   const shutdown = (sig) => {
