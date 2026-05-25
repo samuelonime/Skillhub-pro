@@ -242,7 +242,7 @@ export function SidebarLayout({ children, navItems, pageTitle }: SidebarLayoutPr
         style={{ boxShadow: mobileOpen ? '8px 0 32px rgba(0,0,0,0.22)' : undefined }}>
         {/* Logo */}
         <div className="flex items-center gap-2.5 px-4 py-5" style={{ borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
-          <div className="w-9 h-9 bg-[#5b4cf5] rounded-[9px] grid place-items-center font-syne font-bold text-white text-sm">S</div>
+          <img src="/meritlives.svg" alt="MeritLives" style={{width:28,height:28}} />
           <span className="font-syne font-extrabold text-[19px] text-white tracking-tight">SkillHub</span>
         </div>
 

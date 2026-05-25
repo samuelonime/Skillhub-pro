@@ -201,7 +201,7 @@ function LoginPageInner() {
         <div className="absolute rounded-full pointer-events-none" style={{ top: -180, left: -180, width: 560, height: 560, background: 'radial-gradient(circle, rgba(91,76,245,0.28) 0%, transparent 70%)' }} />
         <div className="absolute rounded-full pointer-events-none" style={{ bottom: -80, right: -80, width: 360, height: 360, background: 'radial-gradient(circle, rgba(124,111,247,0.14) 0%, transparent 70%)' }} />
         <div className="relative z-[2] flex items-center gap-2.5">
-          <div className="w-9 h-9 bg-[#5b4cf5] rounded-[10px] grid place-items-center font-syne font-bold text-white">S</div>
+          <img src="/meritlives.svg" alt="MeritLives" style={{width:28,height:28}} />
           <span className="font-syne font-extrabold text-[22px] tracking-tight">SkillHub</span>
         </div>
         <div className="relative z-[2]">
