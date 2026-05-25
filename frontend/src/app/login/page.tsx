@@ -2,12 +2,13 @@
 
 import { useState, useEffect, Suspense } from 'react';
 import Link from 'next/link';
+import { setCachedUser } from '@/lib/api';
 import { useRouter, useSearchParams } from 'next/navigation';
 
 const API = 'https://skillhub-u918.onrender.com/api/v1';
 
 type Tab = 'login' | 'register' | 'forgot' | 'reset';
-type Role = 'student' | 'employer';
+type Role = 'student' | 'employer' | 'instructor';
 type AlertType = 'err' | 'ok';
 
 function Alert({ msg, type }: { msg: string; type: AlertType }) {
@@ -35,13 +36,17 @@ function LoginForm({ onAlert }: { onAlert: (msg: string, type?: AlertType) => vo
     setLoading(true);
     onAlert('');
     try {
-      const res = await fetch(`${API}/auth/login`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email, password: pwd }) });
+      const res = await fetch(`${API}/auth/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password: pwd }),
+        credentials: 'include', // receive HttpOnly cookies
+      });
       if (res.status === 429) return onAlert('Too many login attempts. Please wait 15 minutes.');
       const d = await res.json();
       if (!d.success) return onAlert(d.message || 'Login failed');
-      localStorage.setItem('sh_token', d.data.accessToken);
-      localStorage.setItem('sh_refresh', d.data.refreshToken);
-      localStorage.setItem('sh_user', JSON.stringify(d.data.user));
+      // Only cache non-sensitive display data — tokens are in HttpOnly cookies
+      setCachedUser(d.data.user);
       onAlert('Login successful! Redirecting…', 'ok');
       const role = d.data.user.role;
       setTimeout(() => router.push(role === 'employer' ? '/employer' : role === 'admin' ? '/admin' : '/dashboard'), 800);
@@ -95,13 +100,17 @@ function RegisterForm({ onAlert }: { onAlert: (msg: string, type?: AlertType) =>
     try {
       const body: any = { firstName: fields.fn, lastName: fields.ln, email: fields.email, password: fields.pwd, role };
       if (role === 'employer' && fields.company) body.company = fields.company;
-      const res = await fetch(`${API}/auth/register`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+      const res = await fetch(`${API}/auth/register`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+        credentials: 'include', // receive HttpOnly cookies
+      });
       if (res.status === 429) return onAlert('Too many attempts. Please wait 15 minutes.');
       const d = await res.json();
       if (!d.success) { const msg = d.errors ? d.errors.map((x: any) => x.msg).join('. ') : (d.message || 'Registration failed'); return onAlert(msg); }
-      localStorage.setItem('sh_token', d.data.accessToken);
-      localStorage.setItem('sh_refresh', d.data.refreshToken);
-      localStorage.setItem('sh_user', JSON.stringify(d.data.user));
+      // Only cache non-sensitive display data — tokens are in HttpOnly cookies
+      setCachedUser(d.data.user);
       onAlert('Account created! Redirecting…', 'ok');
       setTimeout(() => router.push(role === 'employer' ? '/employer' : '/dashboard'), 800);
     } catch { onAlert('Cannot reach server. Please check your connection.'); }
@@ -111,7 +120,7 @@ function RegisterForm({ onAlert }: { onAlert: (msg: string, type?: AlertType) =>
   const roles: { key: Role; icon: string; label: string }[] = [
     { key: 'student', icon: 'fa-user-graduate', label: 'Student' },
     { key: 'employer', icon: 'fa-building', label: 'Employer' },
-    
+    { key: 'instructor', icon: 'fa-chalkboard-teacher', label: 'Instructor' },
   ];
 
   return (

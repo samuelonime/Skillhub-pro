@@ -3,14 +3,23 @@ const prisma = require('../config/database');
 const { unauthorized, forbidden } = require('../utils/response');
 
 const authenticate = async (req, res, next) => {
-  const header = req.headers.authorization;
-  if (!header || !header.startsWith('Bearer ')) return unauthorized(res, 'Access token required');
+  // Read from HttpOnly cookie first, fall back to Authorization header
+  let token = req.cookies?.sh_access;
 
-  const token = header.split(' ')[1];
+  if (!token) {
+    const header = req.headers.authorization;
+    if (header && header.startsWith('Bearer ')) {
+      token = header.split(' ')[1];
+    }
+  }
+
+  if (!token) return unauthorized(res, 'Access token required');
+
   try {
     const decoded = verifyAccessToken(token);
     const user    = await prisma.user.findUnique({ where: { id: decoded.id } });
-    if (!user) return unauthorized(res, 'User not found');
+    if (!user)        return unauthorized(res, 'User not found');
+    if (!user.isActive) return unauthorized(res, 'Account is deactivated');
     req.user = user;
     next();
   } catch {
