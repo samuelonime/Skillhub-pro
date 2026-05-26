@@ -100,7 +100,6 @@ router.get('/certificates', async (req, res) => {
     return success(res, { certs, pagination: { page: parseInt(page), limit: parseInt(limit), total, pages: Math.ceil(total / parseInt(limit)) } });
   } catch (err) { return error(res, 'Failed to fetch certificates'); }
 });
-});
 
 router.put('/certificates/:id/verify', async (req, res) => {
   try {
