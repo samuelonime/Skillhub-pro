@@ -13,28 +13,29 @@ const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
 /* ── Cookie helpers ────────────────────────────────────────────────────────── */
 const ACCESS_COOKIE_OPTS = {
-  httpOnly:  true,
-  secure:    IS_PROD,           // HTTPS only in prod
-  sameSite:  IS_PROD ? 'strict' : 'lax',
-  maxAge:    15 * 60 * 1000,   // 15 minutes
-  path:      '/',
+  httpOnly: true,
+  secure:   IS_PROD,
+  sameSite: IS_PROD ? 'none' : 'lax',
+  maxAge:   15 * 60 * 1000,
+  path:     '/',
 };
 const REFRESH_COOKIE_OPTS = {
-  httpOnly:  true,
-  secure:    IS_PROD,
-  sameSite:  IS_PROD ? 'strict' : 'lax',
-  maxAge:    30 * 24 * 60 * 60 * 1000, // 30 days
-  path:      '/',
+  httpOnly: true,
+  secure:   IS_PROD,
+  sameSite: IS_PROD ? 'none' : 'lax',
+  maxAge:   30 * 24 * 60 * 60 * 1000,
+  path:     '/',
 };
 
 function setAuthCookies(res, accessToken, refreshToken) {
-  res.cookie('sh_access', accessToken,  ACCESS_COOKIE_OPTS);
+  res.cookie('sh_access',  accessToken,  ACCESS_COOKIE_OPTS);
   res.cookie('sh_refresh', refreshToken, REFRESH_COOKIE_OPTS);
 }
 
 function clearAuthCookies(res) {
-  res.clearCookie('sh_access',  { path: '/' });
-  res.clearCookie('sh_refresh', { path: '/' });
+  const clearOpts = { httpOnly: true, secure: IS_PROD, sameSite: IS_PROD ? 'none' : 'lax', path: '/' };
+  res.clearCookie('sh_access',  clearOpts);
+  res.clearCookie('sh_refresh', clearOpts);
 }
 
 /* ── Email helper ──────────────────────────────────────────────────────────── */
@@ -73,7 +74,7 @@ router.post('/google', async (req, res) => {
 
     let user = await prisma.user.findUnique({ where: { email } });
     if (!user) {
-      const role = ['student','employer','instructor'].includes(requestedRole) ? requestedRole : 'student';
+      const role = ['student','employer'].includes(requestedRole) ? requestedRole : 'student';
       user = await prisma.user.create({
         data: {
           email,
@@ -158,7 +159,6 @@ router.post('/login', [
 
 /* ── REFRESH TOKEN ─────────────────────────────────────────────────────────── */
 router.post('/refresh', async (req, res) => {
-  // Read from cookie first, fall back to body (for backward compat)
   const token = req.cookies?.sh_refresh || req.body?.refreshToken;
   if (!token) return unauthorized(res, 'Refresh token required');
 

@@ -8,7 +8,13 @@
  * - Non-sensitive user data (name, role) is cached in localStorage for instant UI
  */
 
-export const API_BASE = process.env.NEXT_PUBLIC_API_URL || '/api/v1';
+// In production the frontend and backend are on different domains (e.g. Vercel + Render).
+// Set NEXT_PUBLIC_API_URL to the full backend URL e.g. https://skillhub-u918.onrender.com
+// In local dev it falls back to the relative path which next.config.ts proxies to localhost:5000.
+
+export const API_BASE = process.env.NEXT_PUBLIC_API_URL
+  ? `${process.env.NEXT_PUBLIC_API_URL}/api/v1`
+  : '/api/v1';
 
 export interface ApiResponse<T = any> {
   success: boolean;
@@ -30,22 +36,24 @@ export async function apiFetch<T = any>(
   const res = await fetch(url, {
     ...options,
     headers,
-    credentials: 'include', // sends HttpOnly cookies automatically
+    credentials: 'include',
   });
 
-  // Token expired — try silent refresh then retry once
   if (res.status === 401) {
     const refreshed = await silentRefresh();
     if (refreshed) {
       const retry = await fetch(url, { ...options, headers, credentials: 'include' });
       if (retry.ok) return retry.json();
+      if (retry.status === 401) {
+        clearCachedUser();
+        if (typeof window !== 'undefined') window.location.href = '/login';
+        throw new Error('Session expired. Please log in again.');
+      }
+    } else {
+      clearCachedUser();
+      if (typeof window !== 'undefined') window.location.href = '/login';
+      throw new Error('Session expired. Please log in again.');
     }
-    // Refresh failed — clear cached user and redirect to login
-    clearCachedUser();
-    if (typeof window !== 'undefined') {
-      window.location.href = '/login';
-    }
-    throw new Error('Session expired. Please log in again.');
   }
 
   if (!res.ok) {
@@ -56,10 +64,6 @@ export async function apiFetch<T = any>(
   return res.json();
 }
 
-/**
- * Ask the backend to refresh the access cookie using the refresh cookie.
- * Both cookies are HttpOnly so JS never touches the token values directly.
- */
 async function silentRefresh(): Promise<boolean> {
   try {
     const res = await fetch(`${API_BASE}/auth/refresh`, {
@@ -69,7 +73,6 @@ async function silentRefresh(): Promise<boolean> {
     });
     if (!res.ok) return false;
     const data = await res.json();
-    // If server returned fresh user data, update the UI cache
     if (data.data?.user) setCachedUser(data.data.user);
     return true;
   } catch {
@@ -77,13 +80,10 @@ async function silentRefresh(): Promise<boolean> {
   }
 }
 
-/* ── Non-sensitive user cache (name, role, avatar for instant UI display) ── */
-
 const USER_KEY = 'sh_user';
 
 export function setCachedUser(user: any) {
   if (typeof window === 'undefined') return;
-  // Only store safe, non-sensitive display fields
   const safe = {
     id:              user.id,
     firstName:       user.firstName,
@@ -113,9 +113,6 @@ export function clearCachedUser() {
   if (typeof window !== 'undefined') localStorage.removeItem(USER_KEY);
 }
 
-/**
- * Full logout — clears server-side cookies and local cache.
- */
 export async function logout() {
   try {
     await fetch(`${API_BASE}/auth/logout`, {
