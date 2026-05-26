@@ -73,7 +73,7 @@ router.post('/google', async (req, res) => {
 
     let user = await prisma.user.findUnique({ where: { email } });
     if (!user) {
-      const role = ['student','employer','instructor'].includes(requestedRole) ? requestedRole : 'student';
+      const role = ['student','employer',].includes(requestedRole) ? requestedRole : 'student';
       user = await prisma.user.create({
         data: {
           email,
@@ -119,7 +119,7 @@ router.post('/register', [
         email, password: hashed, firstName, lastName, role,
         company: company || null,
         avatar:  `https://ui-avatars.com/api/?name=${firstName}+${lastName}&background=4f46e5&color=fff&bold=true`,
-        title:   role === 'employer' ? 'Employer' : 'Learner',
+        title:   role === 'employer' ? 'Employer' : 'student',
       },
     });
 
