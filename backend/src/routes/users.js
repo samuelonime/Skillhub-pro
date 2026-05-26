@@ -7,7 +7,7 @@ const { success, badRequest, error } = require('../utils/response');
 
 router.get('/profile', authenticate, async (req, res) => {
   try {
-    const user = await prisma.user.findUnique({ where: { id: req.user.id }, select: { id: true, email: true, firstName: true, lastName: true, role: true, avatar: true, title: true, bio: true, location: true, company: true, skills: true, meritCoins: true, profileStrength: true, verified: true, createdAt: true } });
+    const user = await prisma.user.findUnique({ where: { id: req.user.id }, select: { id: true, email: true, firstName: true, lastName: true, role: true, avatar: true, title: true, bio: true, location: true, company: true, skills: { select: { id: true, name: true, level: true, verified: true } }, meritCoins: true, profileStrength: true, verified: true, createdAt: true } });
     return success(res, user);
   } catch (err) { return error(res, 'Failed to fetch profile'); }
 });

@@ -4,10 +4,12 @@ const prisma  = require('../config/database');
 const { authenticate, requireRole } = require('../middleware/auth');
 const { success, created, notFound, badRequest, error } = require('../utils/response');
 
+// userSkills is now UserSkill[] from the relation — extract names for comparison
 function matchScore(userSkills, jobSkills) {
   if (!userSkills?.length || !jobSkills?.length) return 40;
-  const matched = userSkills.filter(s =>
-    jobSkills.some(js => js.toLowerCase().includes(s.toLowerCase()))
+  const userSkillNames = userSkills.map(s => (typeof s === 'string' ? s : s.name).toLowerCase());
+  const matched = userSkillNames.filter(s =>
+    jobSkills.some(js => js.toLowerCase().includes(s))
   ).length;
   return Math.min(100, 40 + matched * 20);
 }

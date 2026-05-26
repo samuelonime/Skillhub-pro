@@ -17,8 +17,18 @@ const authenticate = async (req, res, next) => {
 
   try {
     const decoded = verifyAccessToken(token);
-    const user    = await prisma.user.findUnique({ where: { id: decoded.id } });
-    if (!user)        return unauthorized(res, 'User not found');
+    const user    = await prisma.user.findUnique({
+      where:   { id: decoded.id },
+      include: {
+        skills:       { select: { id: true, name: true, level: true, verified: true } },
+        resume:       { select: { fileUrl: true, fileName: true, updatedAt: true } },
+        enrolledPaths: {
+          select: { pathId: true, progress: true, completedAt: true,
+                    path: { select: { title: true, category: true, tags: true } } },
+        },
+      },
+    });
+    if (!user)          return unauthorized(res, 'User not found');
     if (!user.isActive) return unauthorized(res, 'Account is deactivated');
     req.user = user;
     next();

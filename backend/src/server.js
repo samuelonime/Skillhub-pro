@@ -66,6 +66,22 @@ const apiLimiter  = rateLimit({
 app.use('/api/v1/auth', authLimiter);
 app.use('/api', apiLimiter);
 
+// Resume files contain PII — serve them through an authenticated route that
+// verifies ownership. Other upload types (avatars, thumbnails) remain public.
+app.use('/uploads/resumes', require('./middleware/auth').authenticate, async (req, res, next) => {
+  const filename   = path.basename(req.path);
+  const ownerId    = filename.split('_')[1]; // filename: resume_<userId>_<timestamp>.ext
+  const isAdmin    = req.user.role === 'admin';
+  const isOwner    = req.user.id === ownerId;
+  const isEmployer = req.user.role === 'employer'; // employers can view resumes
+
+  if (!isOwner && !isAdmin && !isEmployer) {
+    return res.status(403).json({ success: false, message: 'Access denied' });
+  }
+  next();
+}, express.static(path.join(__dirname, '../uploads/resumes')));
+
+// Non-sensitive uploads (avatars, thumbnails) remain publicly accessible
 app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
 
 // ── Routes ─────────────────────────────────────────────────────────────────

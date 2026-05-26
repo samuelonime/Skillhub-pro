@@ -1,7 +1,7 @@
 const router = require('express').Router();
 const prisma  = require('../config/database');
 const { authenticate, requireRole } = require('../middleware/auth');
-const { success, notFound, error } = require('../utils/response');
+const { success, notFound, error, badRequest } = require('../utils/response');
 
 router.use(authenticate, requireRole('admin'));
 
@@ -36,23 +36,30 @@ router.get('/stats', async (req, res) => {
 });
 
 router.get('/users', async (req, res) => {
-  const { role, search } = req.query;
+  const { role, search, page = 1, limit = 50 } = req.query;
+  const skip = (parseInt(page) - 1) * parseInt(limit);
   try {
-    const users = await prisma.user.findMany({
-      where: {
-        ...(role ? { role } : {}),
-        ...(search ? { OR: [{ firstName: { contains: search, mode: 'insensitive' } }, { lastName: { contains: search, mode: 'insensitive' } }, { email: { contains: search, mode: 'insensitive' } }] } : {}),
-      },
-      select: { id: true, email: true, firstName: true, lastName: true, role: true, verified: true, meritCoins: true, createdAt: true, company: true },
-      orderBy: { createdAt: 'desc' },
-    });
-    return success(res, { users, total: users.length });
+    const where = {
+      ...(role ? { role } : {}),
+      ...(search ? { OR: [{ firstName: { contains: search, mode: 'insensitive' } }, { lastName: { contains: search, mode: 'insensitive' } }, { email: { contains: search, mode: 'insensitive' } }] } : {}),
+    };
+    const [users, total] = await Promise.all([
+      prisma.user.findMany({
+        where,
+        select:  { id: true, email: true, firstName: true, lastName: true, role: true, verified: true, meritCoins: true, createdAt: true, company: true },
+        orderBy: { createdAt: 'desc' },
+        skip,
+        take: parseInt(limit),
+      }),
+      prisma.user.count({ where }),
+    ]);
+    return success(res, { users, pagination: { page: parseInt(page), limit: parseInt(limit), total, pages: Math.ceil(total / parseInt(limit)) } });
   } catch (err) { return error(res, 'Failed to fetch users'); }
 });
 
 router.get('/users/:id', async (req, res) => {
   try {
-    const user = await prisma.user.findUnique({ where: { id: req.params.id }, select: { id: true, email: true, firstName: true, lastName: true, role: true, verified: true, meritCoins: true, createdAt: true, title: true, bio: true, skills: true } });
+    const user = await prisma.user.findUnique({ where: { id: req.params.id }, select: { id: true, email: true, firstName: true, lastName: true, role: true, verified: true, meritCoins: true, createdAt: true, title: true, bio: true, skills: { select: { id: true, name: true, level: true, verified: true } } } });
     if (!user) return notFound(res, 'User not found');
     return success(res, user);
   } catch (err) { return error(res, 'Failed to fetch user'); }
@@ -78,10 +85,21 @@ router.delete('/users/:id', async (req, res) => {
 });
 
 router.get('/certificates', async (req, res) => {
+  const { page = 1, limit = 50 } = req.query;
+  const skip = (parseInt(page) - 1) * parseInt(limit);
   try {
-    const certs = await prisma.certificate.findMany({ include: { user: { select: { id: true, firstName: true, lastName: true, email: true } } }, orderBy: { createdAt: 'desc' } });
-    return success(res, certs);
+    const [certs, total] = await Promise.all([
+      prisma.certificate.findMany({
+        include:  { user: { select: { id: true, firstName: true, lastName: true, email: true } } },
+        orderBy:  { createdAt: 'desc' },
+        skip,
+        take: parseInt(limit),
+      }),
+      prisma.certificate.count(),
+    ]);
+    return success(res, { certs, pagination: { page: parseInt(page), limit: parseInt(limit), total, pages: Math.ceil(total / parseInt(limit)) } });
   } catch (err) { return error(res, 'Failed to fetch certificates'); }
+});
 });
 
 router.put('/certificates/:id/verify', async (req, res) => {
@@ -97,15 +115,29 @@ router.put('/certificates/:id/verify', async (req, res) => {
 });
 
 router.get('/jobs', async (req, res) => {
+  const { page = 1, limit = 50 } = req.query;
+  const skip = (parseInt(page) - 1) * parseInt(limit);
   try {
-    const jobs = await prisma.job.findMany({ include: { _count: { select: { applications: true } } }, orderBy: { postedAt: 'desc' } });
-    return success(res, jobs);
+    const [jobs, total] = await Promise.all([
+      prisma.job.findMany({
+        include:  { _count: { select: { applications: true } } },
+        orderBy:  { createdAt: 'desc' },   // was postedAt — field does not exist in schema
+        skip,
+        take: parseInt(limit),
+      }),
+      prisma.job.count(),
+    ]);
+    return success(res, { jobs, pagination: { page: parseInt(page), limit: parseInt(limit), total, pages: Math.ceil(total / parseInt(limit)) } });
   } catch (err) { return error(res, 'Failed to fetch jobs'); }
 });
 
 router.put('/jobs/:id', async (req, res) => {
+  const ALLOWED = ['title', 'company', 'location', 'type', 'salary', 'skills', 'description', 'status', 'minTier', 'isPremium'];
+  const data = {};
+  ALLOWED.forEach(k => { if (req.body[k] !== undefined) data[k] = req.body[k]; });
+  if (!Object.keys(data).length) return badRequest(res, 'No updatable fields provided');
   try {
-    const job = await prisma.job.update({ where: { id: req.params.id }, data: req.body });
+    const job = await prisma.job.update({ where: { id: req.params.id }, data });
     return success(res, job, 'Job updated');
   } catch (err) { return notFound(res, 'Job not found'); }
 });

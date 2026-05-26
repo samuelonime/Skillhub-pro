@@ -27,7 +27,7 @@ model User {
   phone            String?
   profileStrength  Int      @default(20)
   meritCoins       Int      @default(100)
-  skills           String[] @default([])
+  skills           UserSkill[]
   portfolioPublic  Boolean  @default(true)
   isActive         Boolean  @default(true)
   verified         Boolean  @default(false)
@@ -38,6 +38,7 @@ model User {
 
   refreshTokens        RefreshToken[]
   enrollments          Enrollment[]
+  enrolledPaths        SkillPathEnrollment[]  @relation("UserSkillPathEnrollments")
   applications         Application[]
   savedJobs            SavedJob[]
   certificates         Certificate[]
@@ -51,6 +52,7 @@ model User {
   externalCertificates ExternalCertificate[]
   affiliateReferrals   AffiliateReferral[]
   passwordResetTokens  PasswordResetToken[]
+  resume               ResumeUpload?
   employerShortlists   ShortlistedCandidate[] @relation("EmployerShortlists")
   candidateShortlists  ShortlistedCandidate[] @relation("CandidateShortlists")
   postedJobs           Job[]                  @relation("EmployerJobs")
@@ -63,6 +65,23 @@ enum Role {
   employer
   instructor
   admin
+}
+
+model UserSkill {
+  id         String   @id @default(uuid())
+  userId     String
+  name       String
+  level      String   @default("beginner")  // beginner | intermediate | advanced | expert
+  verified   Boolean  @default(false)
+  verifiedAt DateTime?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, name])
+  @@index([userId])
+  @@map("user_skills")
 }
 
 model RefreshToken {
@@ -139,6 +158,7 @@ model Job {
   savedBy      SavedJob[]
   shortlistedCandidates ShortlistedCandidate[]
 
+  @@index([employerId, status])
   @@map("jobs")
 }
 
@@ -161,6 +181,8 @@ model Application {
   job  Job  @relation(fields: [jobId], references: [id], onDelete: Cascade)
 
   @@unique([userId, jobId])
+  @@index([status])
+  @@index([userId, status])
   @@map("applications")
 }
 
@@ -395,6 +417,7 @@ model SkillPathEnrollment {
   enrolledAt  DateTime  @default(now())
   completedAt DateTime?
 
+  user             User                       @relation("UserSkillPathEnrollments", fields: [userId], references: [id], onDelete: Cascade)
   path             SkillPath                  @relation(fields: [pathId], references: [id], onDelete: Cascade)
   completedCourses SkillPathCourseCompletion[]
 
@@ -422,6 +445,8 @@ model ResumeUpload {
   fileName   String
   uploadedAt DateTime @default(now())
   updatedAt  DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("resume_uploads")
 }
@@ -455,6 +480,7 @@ model ConnectedPlatform {
   referrals    AffiliateReferral[]
 
   @@unique([userId, platform])
+  @@index([userId, platform])
   @@map("connected_platforms")
 }
 

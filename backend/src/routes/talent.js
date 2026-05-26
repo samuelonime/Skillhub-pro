@@ -29,7 +29,8 @@ router.get('/', authenticate, requireRole('employer', 'admin'), async (req, res)
       where.meritCoins = { gte: parseInt(minCoins) };
     }
 
-    // Skills filter — match against userSkills relation
+    // Skills filter — User.skills is now a UserSkill relation (name, level, verified).
+    // Use relational filtering: skills.some { name: { in: ... } }
     const skillsFilter = skills
       ? skills.split(',').map(s => s.trim()).filter(Boolean)
       : [];
@@ -40,9 +41,7 @@ router.get('/', authenticate, requireRole('employer', 'admin'), async (req, res)
           ...where,
           ...(skillsFilter.length ? {
             skills: {
-              some: {
-                name: { in: skillsFilter, mode: 'insensitive' },
-              },
+              some: { name: { in: skillsFilter, mode: 'insensitive' } },
             },
           } : {}),
           ...(certified === 'true' ? {
@@ -60,7 +59,7 @@ router.get('/', authenticate, requireRole('employer', 'admin'), async (req, res)
           meritCoins:      true,
           createdAt:       true,
           skills: {
-            select: { id: true, name: true, level: true, verified: true },
+            select:  { id: true, name: true, level: true, verified: true },
             orderBy: { verified: 'desc' },
             take: 8,
           },
@@ -107,31 +106,27 @@ router.get('/', authenticate, requireRole('employer', 'admin'), async (req, res)
     const results = users.map(u => {
       let matchScore = 0;
 
-      // Skill match
+      // u.skills is UserSkill[] — compare by .name
       if (skillsFilter.length) {
         const candidateSkills = u.skills.map(s => s.name.toLowerCase());
         const matched = skillsFilter.filter(s => candidateSkills.includes(s.toLowerCase()));
         matchScore += Math.round((matched.length / skillsFilter.length) * 60);
       } else {
-        matchScore += 40; // base score when no skill filter
+        matchScore += 40;
       }
 
-      // Profile strength bonus
       matchScore += Math.round((u.profileStrength || 0) * 0.2);
-
-      // Verified certs bonus
       matchScore += Math.min(u.certificates.length * 5, 20);
-
-      matchScore = Math.min(matchScore, 100);
+      matchScore  = Math.min(matchScore, 100);
 
       return {
         ...u,
-        fullName:    `${u.firstName} ${u.lastName}`,
+        fullName:     `${u.firstName} ${u.lastName}`,
         matchScore,
-        certCount:   u._count.certificates,
-        projectCount:u._count.projects,
-        skillCount:  u._count.skills,
-        _count:      undefined,
+        skillCount:   u._count.skills,
+        certCount:    u._count.certificates,
+        projectCount: u._count.projects,
+        _count:       undefined,
       };
     });
 
@@ -180,7 +175,9 @@ router.get('/:id', authenticate, requireRole('employer', 'admin'), async (req, r
           where:  { completedAt: { not: null } },
           select: { path: { select: { title: true, category: true } }, completedAt: true },
         },
-        resume: { select: { fileUrl: true, fileName: true, updatedAt: true } },
+        resume: {
+          select: { fileUrl: true, fileName: true, updatedAt: true },
+        },
         _count: {
           select: { certificates: true, projects: true, skills: true },
         },
@@ -246,7 +243,11 @@ router.get('/my/shortlisted', authenticate, requireRole('employer', 'admin'), as
           select: {
             id: true, firstName: true, lastName: true, avatar: true,
             bio: true, location: true, profileStrength: true,
-            skills: { select: { name: true, level: true, verified: true }, take: 5 },
+            skills: {
+              select:  { name: true, level: true, verified: true },
+              orderBy: { verified: 'desc' },
+              take: 5,
+            },
             certificates: { where: { status: 'verified' }, select: { title: true }, take: 3 },
             resume: { select: { fileUrl: true } },
           },

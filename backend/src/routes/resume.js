@@ -51,11 +51,13 @@ router.post('/', authenticate, upload.single('resume'), async (req, res) => {
       update: { fileUrl, fileName: req.file.originalname, updatedAt: new Date() },
     });
 
-    // Boost profile strength for having a resume
-    await prisma.user.update({
-      where: { id: req.user.id },
-      data:  { profileStrength: { increment: 10 } },
-    });
+    // Boost profile strength for having a resume — capped at 100 to prevent
+    // runaway values from repeated upload/delete cycles.
+    await prisma.$executeRaw`
+      UPDATE users
+      SET    "profileStrength" = LEAST("profileStrength" + 10, 100)
+      WHERE  id = ${req.user.id}
+    `;
 
     // Award merit coins (first time only)
     if (!existing) {

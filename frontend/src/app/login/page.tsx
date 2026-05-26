@@ -2,10 +2,8 @@
 
 import { useState, useEffect, Suspense } from 'react';
 import Link from 'next/link';
-import { setCachedUser } from '@/lib/api';
+import { setCachedUser, apiFetch, API_BASE } from '@/lib/api';
 import { useRouter, useSearchParams } from 'next/navigation';
-
-const API = 'https://skillhub-u918.onrender.com/api/v1';
 
 type Tab = 'login' | 'register' | 'forgot' | 'reset';
 type Role = 'student' | 'employer' | 'instructor';
@@ -36,7 +34,7 @@ function LoginForm({ onAlert }: { onAlert: (msg: string, type?: AlertType) => vo
     setLoading(true);
     onAlert('');
     try {
-      const res = await fetch(`${API}/auth/login`, {
+      const res = await fetch(`${API_BASE}/auth/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password: pwd }),
@@ -100,7 +98,7 @@ function RegisterForm({ onAlert }: { onAlert: (msg: string, type?: AlertType) =>
     try {
       const body: any = { firstName: fields.fn, lastName: fields.ln, email: fields.email, password: fields.pwd, role };
       if (role === 'employer' && fields.company) body.company = fields.company;
-      const res = await fetch(`${API}/auth/register`, {
+      const res = await fetch(`${API_BASE}/auth/register`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(body),

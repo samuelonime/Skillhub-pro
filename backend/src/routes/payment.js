@@ -191,17 +191,20 @@ router.post('/verify/:reference', authenticate, async (req, res) => {
 
     if (payment.purpose === 'merit_coins') {
       const coins = payment.metadata?.coins ?? 0;
-      const user  = await prisma.user.findUnique({ where: { id: payment.userId } });
-      const newBalance = user.meritCoins + coins;
-
-      await prisma.user.update({ where: { id: payment.userId }, data: { meritCoins: newBalance } });
+      // Use an atomic increment to avoid a race condition where two concurrent
+      // requests both read the old balance and only one batch of coins is credited.
+      const updatedUser = await prisma.user.update({
+        where: { id: payment.userId },
+        data:  { meritCoins: { increment: coins } },
+        select: { meritCoins: true },
+      });
       await prisma.transaction.create({
         data: {
           userId:      payment.userId,
           type:        'purchase',
           amount:      coins,
           description: `Purchased ${coins} Merit Coins`,
-          balanceAfter: newBalance,
+          balanceAfter: updatedUser.meritCoins,
         },
       });
       await notify(payment.userId, 'success', 'coins', 'Merit Coins Added!', `+${coins} Merit Coins added to your wallet.`);
@@ -218,17 +221,25 @@ router.post('/verify/:reference', authenticate, async (req, res) => {
 // Paystack sends events here — MUST be publicly accessible, no auth middleware
 // Set this URL in your Paystack dashboard: https://yourdomain.com/api/v1/payment/webhook
 router.post('/webhook', async (req, res) => {
-  // Validate signature
+  // Validate signature — req.body is a raw Buffer (see server.js express.raw config).
+  // We must hash the raw bytes, NOT JSON.stringify(Buffer), which would produce the
+  // wrong string and cause every webhook to fail with 401.
   const hash = crypto
     .createHmac('sha512', PAYSTACK_SECRET)
-    .update(JSON.stringify(req.body))
+    .update(req.body)           // raw Buffer — matches what Paystack signed
     .digest('hex');
 
   if (hash !== req.headers['x-paystack-signature']) {
     return res.status(401).json({ message: 'Invalid signature' });
   }
 
-  const event = req.body;
+  // Parse the raw Buffer into a JS object for event handling
+  let event;
+  try {
+    event = JSON.parse(req.body.toString('utf8'));
+  } catch {
+    return res.status(400).json({ message: 'Invalid JSON payload' });
+  }
   console.log(`[Paystack Webhook] ${event.event}`);
 
   try {
@@ -248,11 +259,13 @@ router.post('/webhook', async (req, res) => {
 
       if (payment.purpose === 'merit_coins') {
         const coins = payment.metadata?.coins ?? 0;
-        const user  = await prisma.user.findUnique({ where: { id: payment.userId } });
-        const newBalance = user.meritCoins + coins;
-        await prisma.user.update({ where: { id: payment.userId }, data: { meritCoins: newBalance } });
+        const updatedUser = await prisma.user.update({
+          where: { id: payment.userId },
+          data:  { meritCoins: { increment: coins } },
+          select: { meritCoins: true },
+        });
         await prisma.transaction.create({
-          data: { userId: payment.userId, type: 'purchase', amount: coins, description: `Purchased ${coins} Merit Coins`, balanceAfter: newBalance },
+          data: { userId: payment.userId, type: 'purchase', amount: coins, description: `Purchased ${coins} Merit Coins`, balanceAfter: updatedUser.meritCoins },
         });
         await notify(payment.userId, 'success', 'coins', 'Merit Coins Added!', `+${coins} Merit Coins added to your wallet.`);
       }
@@ -275,10 +288,22 @@ router.post('/webhook', async (req, res) => {
     }
 
     if (event.event === 'subscription.disable') {
-      // Paystack subscription cancelled
-      const code = event.data?.subscription_code;
-      if (code) {
-        await prisma.subscription.updateMany({ where: { status: 'active' }, data: { status: 'cancelled' } });
+      // Cancel only the specific user's active subscription, scoped by their email.
+      // Previously this had no WHERE clause and cancelled every active subscription
+      // in the database whenever a single Paystack event fired.
+      const customerEmail = event.data?.customer?.email;
+      if (customerEmail) {
+        const user = await prisma.user.findUnique({
+          where:  { email: customerEmail },
+          select: { id: true },
+        });
+        if (user) {
+          await prisma.subscription.updateMany({
+            where: { userId: user.id, status: 'active' },
+            data:  { status: 'cancelled' },
+          });
+          await notify(user.id, 'info', 'bell', 'Subscription Cancelled', 'Your subscription has been cancelled.');
+        }
       }
     }
   } catch (err) {
