@@ -8,7 +8,7 @@
  * - Non-sensitive user data (name, role) is cached in localStorage for instant UI
  */
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || '/api/v1';
+export const API_BASE = process.env.NEXT_PUBLIC_API_URL || '/api/v1';
 
 export interface ApiResponse<T = any> {
   success: boolean;
