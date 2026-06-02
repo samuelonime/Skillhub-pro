@@ -1,8 +1,5 @@
 import type { NextConfig } from "next";
 
-// NOTE: /api/v1/* requests are handled by src/app/api/v1/[...path]/route.ts
-// which proxies to BACKEND_URL at request time. No rewrite needed here.
-
 const nextConfig: NextConfig = {
   // Allow images from the external sources used in the app
   images: {
@@ -12,6 +9,18 @@ const nextConfig: NextConfig = {
       { protocol: 'https', hostname: 'res.cloudinary.com' },
       { protocol: 'https', hostname: 'placehold.co' },
     ],
+  },
+
+  // ✅ ADD THIS: Proxy API requests to your backend
+  async rewrites() {
+    const backendUrl = process.env.BACKEND_URL || 'http://localhost:5000';
+    
+    return [
+      {
+        source: '/api/v1/:path*',
+        destination: `${backendUrl}/api/v1/:path*`,
+      },
+    ];
   },
 
   // Security headers
