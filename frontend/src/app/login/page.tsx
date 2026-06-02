@@ -22,7 +22,7 @@ function Spinner() {
   return <div className="w-[17px] h-[17px] border-2 border-white/30 border-t-white rounded-full mx-auto" style={{ animation: 'spin 0.7s linear infinite' }} />;
 }
 
-function LoginForm({ onAlert }: { onAlert: (msg: string, type?: AlertType) => void }) {
+function LoginForm({ onAlert, redirectTo }: { onAlert: (msg: string, type?: AlertType) => void; redirectTo?: string }) {
   const router = useRouter();
   const [email, setEmail] = useState('');
   const [pwd, setPwd] = useState('');
@@ -47,7 +47,10 @@ function LoginForm({ onAlert }: { onAlert: (msg: string, type?: AlertType) => vo
       setCachedUser(d.data.user);
       onAlert('Login successful! Redirecting…', 'ok');
       const role = d.data.user.role;
-      setTimeout(() => router.push(role === 'employer' ? '/employer' : role === 'admin' ? '/admin' : '/dashboard'), 800);
+      const defaultDest = role === 'employer' ? '/employer' : role === 'admin' ? '/admin' : '/dashboard';
+      // Honour the ?redirect= param set by middleware, but only allow internal paths
+      const dest = redirectTo && redirectTo.startsWith('/') ? redirectTo : defaultDest;
+      setTimeout(() => router.push(dest), 800);
     } catch { onAlert('Cannot reach server. Please check your connection.'); }
     finally { setLoading(false); }
   }
@@ -83,7 +86,7 @@ function LoginForm({ onAlert }: { onAlert: (msg: string, type?: AlertType) => vo
   );
 }
 
-function RegisterForm({ onAlert }: { onAlert: (msg: string, type?: AlertType) => void }) {
+function RegisterForm({ onAlert, redirectTo }: { onAlert: (msg: string, type?: AlertType) => void; redirectTo?: string }) {
   const router = useRouter();
   const [role, setRole] = useState<Role>('student');
   const [fields, setFields] = useState({ fn: '', ln: '', email: '', pwd: '', pwdC: '', company: '' });
@@ -110,7 +113,9 @@ function RegisterForm({ onAlert }: { onAlert: (msg: string, type?: AlertType) =>
       // Only cache non-sensitive display data — tokens are in HttpOnly cookies
       setCachedUser(d.data.user);
       onAlert('Account created! Redirecting…', 'ok');
-      setTimeout(() => router.push(role === 'employer' ? '/employer' : '/dashboard'), 800);
+      const defaultDest = role === 'employer' ? '/employer' : '/dashboard';
+      const dest = redirectTo && redirectTo.startsWith('/') ? redirectTo : defaultDest;
+      setTimeout(() => router.push(dest), 800);
     } catch { onAlert('Cannot reach server. Please check your connection.'); }
     finally { setLoading(false); }
   }
@@ -178,6 +183,7 @@ function RegisterForm({ onAlert }: { onAlert: (msg: string, type?: AlertType) =>
 function LoginPageInner() {
   const searchParams = useSearchParams();
   const initTab: Tab = (searchParams.get('tab') as Tab) === 'register' ? 'register' : 'login';
+  const redirectTo = searchParams.get('redirect') || undefined;
   const [tab, setTab] = useState<Tab>(initTab);
   const [alert, setAlert] = useState<{ msg: string; type: AlertType }>({ msg: '', type: 'err' });
 
@@ -251,8 +257,8 @@ function LoginPageInner() {
 
         <Alert msg={alert.msg} type={alert.type} />
 
-        {tab === 'login' && <LoginForm onAlert={onAlert} />}
-        {tab === 'register' && <RegisterForm onAlert={onAlert} />}
+        {tab === 'login' && <LoginForm onAlert={onAlert} redirectTo={redirectTo} />}
+        {tab === 'register' && <RegisterForm onAlert={onAlert} redirectTo={redirectTo} />}
       </div>
     </div>
   );
