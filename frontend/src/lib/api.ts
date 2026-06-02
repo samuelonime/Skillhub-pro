@@ -8,7 +8,9 @@
  * - Non-sensitive user data (name, role) is cached in localStorage for instant UI
  */
 
-export const API_BASE = process.env.NEXT_PUBLIC_API_URL || '/api/v1';
+// Always use the same-origin proxy path — Next.js rewrites /api/v1/* to the backend.
+// Never set NEXT_PUBLIC_API_URL; use BACKEND_URL (server-side) in next.config.ts instead.
+export const API_BASE = '/api/v1';
 
 export interface ApiResponse<T = any> {
   success: boolean;
