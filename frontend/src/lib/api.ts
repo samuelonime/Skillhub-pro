@@ -35,15 +35,20 @@ export async function apiFetch<T = any>(
 
   // Token expired — try silent refresh then retry once
   if (res.status === 401) {
-    const refreshed = await silentRefresh();
-    if (refreshed) {
-      const retry = await fetch(url, { ...options, headers, credentials: 'include' });
-      if (retry.ok) return retry.json();
+    // Don't attempt refresh for the refresh endpoint itself (avoid loop)
+    const isRefreshEndpoint = endpoint.includes('/auth/refresh');
+    if (!isRefreshEndpoint) {
+      const refreshed = await silentRefresh();
+      if (refreshed) {
+        const retry = await fetch(url, { ...options, headers, credentials: 'include' });
+        if (retry.ok) return retry.json();
+      }
     }
     // Refresh failed — clear cached user and redirect to login
     clearCachedUser();
     if (typeof window !== 'undefined') {
-      window.location.href = '/login';
+      // Small delay so any in-flight requests can settle before redirect
+      setTimeout(() => { window.location.href = '/login'; }, 100);
     }
     throw new Error('Session expired. Please log in again.');
   }
