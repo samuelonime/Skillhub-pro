@@ -6,7 +6,7 @@ import { setCachedUser, apiFetch, API_BASE } from '@/lib/api';
 import { useRouter, useSearchParams } from 'next/navigation';
 
 type Tab = 'login' | 'register' | 'forgot' | 'reset';
-type Role = 'student' | 'employer' | 'instructor';
+type Role = 'student' | 'employer';
 type AlertType = 'err' | 'ok';
 
 function Alert({ msg, type }: { msg: string; type: AlertType }) {
