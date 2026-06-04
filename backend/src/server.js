@@ -102,6 +102,7 @@ app.use('/api/v1/employer',     require('./routes/employer'));
 app.use('/api/v1/resume',       require('./routes/resume'));
 app.use('/api/v1/skill-gap',    require('./routes/skillgap'));
 app.use('/api/v1/platforms',    require('./routes/platforms'));
+app.use('/api/v1/community',    require('./routes/community'));
 
 app.get('/health', async (_req, res) => {
   let db = 'ok';

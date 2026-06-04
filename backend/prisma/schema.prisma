@@ -532,3 +532,68 @@ model PasswordResetToken {
 
   @@map("password_reset_tokens")
 }
+
+model CommunityPost {
+  id         String   @id @default(uuid())
+  authorId   String
+  title      String
+  body       String
+  type       PostType @default(discussion)
+  tags       String[] @default([])
+  imageUrl   String?
+  projectUrl String?
+  likes      Int      @default(0)
+  views      Int      @default(0)
+  isPinned   Boolean  @default(false)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  author   User              @relation("AuthorPosts",    fields: [authorId], references: [id], onDelete: Cascade)
+  comments CommunityComment[]
+  postLikes CommunityLike[]
+
+  @@index([authorId])
+  @@index([type])
+  @@map("community_posts")
+}
+
+model CommunityComment {
+  id        String   @id @default(uuid())
+  postId    String
+  authorId  String
+  body      String
+  likes     Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  post   CommunityPost @relation(fields: [postId],   references: [id], onDelete: Cascade)
+  author User          @relation("AuthorComments",   fields: [authorId], references: [id], onDelete: Cascade)
+  commentLikes CommunityLike[]
+
+  @@index([postId])
+  @@map("community_comments")
+}
+
+model CommunityLike {
+  id        String   @id @default(uuid())
+  userId    String
+  postId    String?
+  commentId String?
+  createdAt DateTime @default(now())
+
+  user    User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  post    CommunityPost?    @relation(fields: [postId],    references: [id], onDelete: Cascade)
+  comment CommunityComment? @relation(fields: [commentId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, postId])
+  @@unique([userId, commentId])
+  @@map("community_likes")
+}
+
+enum PostType {
+  discussion
+  project
+  resource
+  question
+  showcase
+}
