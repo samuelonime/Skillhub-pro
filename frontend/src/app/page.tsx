@@ -405,11 +405,12 @@ const CSS = `
     border: 1px solid var(--border); border-radius: 12px; overflow: hidden;
   }
   @media (max-width: 900px) {
-    .pricing-grid { grid-template-columns: 1fr; }
+    .pricing-grid { grid-template-columns: 1fr; max-width: 420px; margin-left: auto; margin-right: auto; }
     .pricing-card.featured { border-left: none; border-right: none; order: -1; }
     .pricing-card:last-child { border-left: none; border-top: 1px solid var(--border); }
   }
-  .pricing-card { background: var(--surface); padding: 36px 32px; position: relative; }
+  .pricing-card { background: var(--surface); padding: 24px 20px; position: relative; }
+  @media (min-width: 480px) { .pricing-card { padding: 36px 32px; } }
   .pricing-card.featured { background: #141d2e; border-left: 1px solid var(--border); border-right: 1px solid var(--border); }
   @media (max-width: 900px) {
     .pricing-card + .pricing-card { border-top: 1px solid var(--border); }
@@ -419,11 +420,12 @@ const CSS = `
     letter-spacing: 1px; text-transform: uppercase; color: var(--muted); margin-bottom: 14px;
   }
   .pricing-amount {
-    font-family: 'DM Mono', monospace; font-size: 36px; font-weight: 500;
-    color: var(--white); letter-spacing: -2px; margin-bottom: 4px;
+    font-family: 'DM Mono', monospace; font-size: 28px; font-weight: 500;
+    color: var(--white); letter-spacing: -1px; margin-bottom: 4px;
   }
+  @media (min-width: 480px) { .pricing-amount { font-size: 36px; letter-spacing: -2px; } }
   .pricing-amount sub { font-size: 14px; color: var(--muted); vertical-align: baseline; }
-  .pricing-period { font-size: 12px; color: var(--muted); margin-bottom: 24px; }
+  .pricing-period { font-size: 12px; color: var(--muted); margin-bottom: 24px; line-height: 1.6; }
   .pricing-divider { height: 1px; background: var(--border); margin-bottom: 20px; }
   .pricing-feature { display: flex; align-items: center; gap: 9px; font-size: 13px; color: var(--sub); margin-bottom: 10px; }
   .pricing-feature.off { opacity: 0.3; }
@@ -618,7 +620,7 @@ function Hero() {
 }
 
 function StatsBand() {
-  const stats = [['12K+','Active learners'],['95%','Job placement'],['500+','Hiring partners'],['50+','Courses'],['₦0','To get started']];
+  const stats = [['12K+','Active learners'],['95%','Job placement'],['500+','Hiring partners'],['50+','Courses'],['$0','To get started']];
   return (
     <div className="stats-band">
       {stats.map(([n,l]) => (
@@ -713,7 +715,7 @@ function Pricing() {
       <div className="pricing-grid">
         <div className="pricing-card">
           <div className="pricing-plan">Free</div>
-          <div className="pricing-amount">₦0</div>
+          <div className="pricing-amount">₦0 <span style={{fontSize:'16px',fontWeight:500,color:'#9898b8'}}>/ Free</span></div>
           <div className="pricing-period">Forever free</div>
           <div className="pricing-divider"/>
           {[[true,'Access 30+ free courses'],[true,'Basic job matching'],[true,'Portfolio builder'],[true,'Merit Coins rewards'],[false,'Premium courses'],[false,'Priority job matching']].map(([y,t]) => (
@@ -728,7 +730,7 @@ function Pricing() {
           <span className="featured-badge">Most popular</span>
           <div className="pricing-plan">Pro</div>
           <div className="pricing-amount">₦5,000<sub>/mo</sub></div>
-          <div className="pricing-period">or ₦45,000/year — save 25%</div>
+          <div className="pricing-period" style={{color:'#9898b8',fontSize:'13px',marginTop:'2px'}}>~$3.13/mo · or ₦45,000/year — save 25%</div>
           <div className="pricing-divider"/>
           {['Everything in Free','All premium courses','Priority job matching','Featured profile badge','Resume review','Mock interviews','2× Merit Coin earn rate'].map(t => (
             <div key={t} className="pricing-feature">
@@ -741,7 +743,7 @@ function Pricing() {
         <div className="pricing-card">
           <div className="pricing-plan">Employer</div>
           <div className="pricing-amount">₦15,000<sub>/mo</sub></div>
-          <div className="pricing-period">or ₦135,000/year</div>
+          <div className="pricing-period" style={{color:'#9898b8',fontSize:'13px',marginTop:'2px'}}>~$9.38/mo · or ₦135,000/year</div>
           <div className="pricing-divider"/>
           {[[true,'Post unlimited jobs'],[true,'Search verified candidates'],[true,'Employer dashboard'],[true,'Application tracking'],[true,'Skill-matched shortlists'],[true,'Priority support'],[false,'Course hosting']].map(([y,t]) => (
             <div key={String(t)} className={`pricing-feature${y?'':' off'}`}>

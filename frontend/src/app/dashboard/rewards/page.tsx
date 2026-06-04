@@ -7,7 +7,6 @@ import { apiFetch } from '@/lib/api';
 const navItems = [
   { href: '/dashboard', icon: 'fa-home', label: 'Dashboard' },
   { href: '/dashboard/courses', icon: 'fa-book-open', label: 'Courses' },
-  { href: '/dashboard/community', icon: 'fa-users', label: 'Community' },
   { href: '/dashboard/portfolio', icon: 'fa-layer-group', label: 'Portfolio' },
   { href: '/dashboard/platforms', icon: 'fa-graduation-cap', label: 'Learning Platforms' },
   { href: '/dashboard/jobs', icon: 'fa-briefcase', label: 'Jobs' },
@@ -22,10 +21,11 @@ const REWARD_COLORS: Record<string, string> = {
   'user-tie': '#8b5cf6', linkedin: '#3b82f6',
 };
 
+// Prices: NGN processed via Paystack · USD shown as ~equivalent at ₦1,600/USD
 const COIN_BUNDLES = [
-  { key: 'coins_500',  coins: 500,  price: '₦1,000',  amount: 100000, label: 'Starter Pack',    popular: false, bonus: '',        color: '#6b6b8a', desc: 'Perfect for getting started' },
-  { key: 'coins_1500', coins: 1500, price: '₦2,500',  amount: 250000, label: 'Growth Pack',     popular: true,  bonus: '+50 free', color: '#5b4cf5', desc: 'Most popular — best value' },
-  { key: 'coins_5000', coins: 5000, price: '₦7,000',  amount: 700000, label: 'Premium Pack',    popular: false, bonus: '+300 free', color: '#f59e0b', desc: 'Unlocks all job opportunities' },
+  { key: 'coins_500',  coins: 500,  priceNGN: '₦1,000',  priceUSD: '~$0.63', amount: 100000, label: 'Starter Pack',    popular: false, bonus: '',         color: '#6b6b8a', desc: 'Perfect for getting started' },
+  { key: 'coins_1500', coins: 1500, priceNGN: '₦2,500',  priceUSD: '~$1.56', amount: 250000, label: 'Growth Pack',     popular: true,  bonus: '+50 free',  color: '#5b4cf5', desc: 'Most popular — best value' },
+  { key: 'coins_5000', coins: 5000, priceNGN: '₦7,000',  priceUSD: '~$4.38', amount: 700000, label: 'Premium Pack',    popular: false, bonus: '+300 free', color: '#f59e0b', desc: 'Unlocks all job opportunities' },
 ];
 
 const MERIT_TIERS = [
@@ -77,7 +77,7 @@ function BuyCoinsModal({ onClose, onSuccess, userEmail }: any) {
 
   return (
     <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4" onClick={onClose}>
-      <div className="bg-white rounded-2xl p-6 w-full max-w-lg shadow-2xl" onClick={e => e.stopPropagation()}>
+      <div className="bg-white rounded-2xl p-6 w-full max-w-lg shadow-2xl overflow-y-auto max-h-[90vh]" onClick={e => e.stopPropagation()}>
         <div className="flex items-center justify-between mb-2">
           <h3 className="font-syne font-bold text-[17px]">Buy Merit Coins</h3>
           <button onClick={onClose} className="w-8 h-8 rounded-xl bg-[#f5f5fb] border-0 cursor-pointer text-[#6b6b8a] hover:bg-[#f4f2ff] hover:text-[#5b4cf5] transition-all grid place-items-center">
@@ -95,7 +95,7 @@ function BuyCoinsModal({ onClose, onSuccess, userEmail }: any) {
               onClick={() => setSelected(bundle.key)}
               className={`w-full p-4 rounded-2xl border-2 text-left cursor-pointer transition-all font-[inherit] ${selected === bundle.key ? 'border-[#5b4cf5] bg-[#f4f2ff]' : 'border-[#e8e8f0] bg-white hover:border-[#5b4cf5]/40'}`}
             >
-              <div className="flex items-center justify-between">
+              <div className="flex items-center justify-between gap-2 flex-wrap sm:flex-nowrap">
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 rounded-xl grid place-items-center" style={{ background: bundle.color + '18' }}>
                     <i className="fas fa-coins text-lg" style={{ color: bundle.color }} />
@@ -110,7 +110,8 @@ function BuyCoinsModal({ onClose, onSuccess, userEmail }: any) {
                   </div>
                 </div>
                 <div className="text-right">
-                  <div className="font-syne font-bold text-[16px]" style={{ color: bundle.color }}>{bundle.price}</div>
+                  <div className="font-syne font-bold text-[16px]" style={{ color: bundle.color }}>{bundle.priceNGN}</div>
+                  <div className="text-[11px] text-[#9898b8] font-medium">{bundle.priceUSD}</div>
                   <div className="text-[10px] text-[#9898b8]">one-time</div>
                 </div>
               </div>
@@ -199,7 +200,7 @@ export default function RewardsPage() {
 
       <div className="flex items-start justify-between mb-6 gap-4 flex-wrap">
         <div>
-          <h1 className="font-syne font-bold text-[21px] tracking-tight mb-0.5">Merit Coins & Rewards</h1>
+          <h1 className="font-syne font-bold text-[18px] sm:text-[21px] tracking-tight mb-0.5">Merit Coins & Rewards</h1>
           <p className="text-[13.5px] text-[#6b6b8a]">Earn coins by learning, buy more, and unlock top job opportunities.</p>
         </div>
         <button
@@ -219,11 +220,11 @@ export default function RewardsPage() {
             <p className="text-white/70 text-sm mb-1">Your Merit Coin Balance</p>
             <div className="flex items-center gap-2.5">
               <i className="fas fa-coins text-[#fbbf24] text-4xl" />
-              <span className="font-syne font-extrabold text-[52px] text-white tracking-tight leading-none">
+              <span className="font-syne font-extrabold text-[36px] sm:text-[52px] text-white tracking-tight leading-none">
                 {loading ? '—' : balance.toLocaleString()}
               </span>
             </div>
-            <p className="text-white/60 text-xs mt-1">≈ ₦{(balance * 5).toLocaleString()} in value</p>
+            <p className="text-white/60 text-xs mt-1">≈ ₦{(balance * 5).toLocaleString()} · ~${((balance * 5) / 1600).toFixed(2)} USD in value</p>
             <div className="mt-3 inline-flex items-center gap-2 px-3 py-1.5 rounded-full" style={{ background: 'rgba(255,255,255,0.18)' }}>
               <span className="text-lg">{currentTier.icon}</span>
               <span className="text-white font-bold text-sm">{currentTier.label} Tier</span>
@@ -254,10 +255,10 @@ export default function RewardsPage() {
       </div>
 
       {/* Tabs */}
-      <div className="flex gap-1 bg-[#f5f5fb] p-1 rounded-xl w-fit mb-6 border border-[#e8e8f0]">
+      <div className="flex gap-1 bg-[#f5f5fb] p-1 rounded-xl w-full sm:w-fit mb-6 border border-[#e8e8f0] overflow-x-auto">
         {([['redeem', 'Redeem Rewards'], ['buy', 'Buy Coins'], ['tiers', 'Merit Tiers']] as const).map(([t, label]) => (
           <button key={t} onClick={() => setActiveTab(t as any)}
-            className={`px-5 py-2 rounded-[9px] text-sm font-medium font-[inherit] cursor-pointer transition-all border-0 ${activeTab === t ? 'bg-white text-[#0a0a0f] font-semibold shadow-[0_1px_5px_rgba(0,0,0,0.09)]' : 'bg-transparent text-[#6b6b8a]'}`}>
+            className={`flex-1 sm:flex-none px-4 sm:px-5 py-2 rounded-[9px] text-sm font-medium font-[inherit] cursor-pointer transition-all border-0 whitespace-nowrap ${activeTab === t ? 'bg-white text-[#0a0a0f] font-semibold shadow-[0_1px_5px_rgba(0,0,0,0.09)]' : 'bg-transparent text-[#6b6b8a]'}`}>
             {label}
           </button>
         ))}
@@ -271,10 +272,10 @@ export default function RewardsPage() {
         <>
           {/* Redeem Tab */}
           {activeTab === 'redeem' && (
-            <div className="grid grid-cols-[1fr_320px] gap-4 max-[1100px]:grid-cols-1">
+            <div className="grid grid-cols-1 xl:grid-cols-[1fr_320px] gap-4">
               <div>
                 <h2 className="font-syne font-bold text-[15px] mb-4">Redeem Rewards</h2>
-                <div className="grid grid-cols-2 gap-3 max-md:grid-cols-1">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   {catalog.map((r: any) => {
                     const canAfford = balance >= r.cost;
                     const color = REWARD_COLORS[r.icon] || '#5b4cf5';
@@ -332,7 +333,7 @@ export default function RewardsPage() {
             <div className="max-w-2xl">
               <h2 className="font-syne font-bold text-[15px] mb-2">Buy Merit Coins via Paystack</h2>
               <p className="text-sm text-[#6b6b8a] mb-5">Coins are added instantly after Paystack confirms your payment. No subscriptions — one-time purchases.</p>
-              <div className="grid grid-cols-3 gap-4 mb-6 max-md:grid-cols-1">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
                 {COIN_BUNDLES.map(bundle => (
                   <div key={bundle.key} className={`bg-white rounded-2xl p-5 border-2 ${bundle.popular ? 'border-[#5b4cf5]' : 'border-[#e8e8f0]'} relative overflow-hidden hover:-translate-y-0.5 hover:shadow-[0_8px_24px_rgba(0,0,0,0.08)] transition-all`}>
                     {bundle.popular && (
@@ -351,7 +352,8 @@ export default function RewardsPage() {
                       {bundle.bonus && <span className="text-[10px] font-bold text-white px-1.5 py-0.5 rounded-full bg-[#22c55e]">{bundle.bonus}</span>}
                     </div>
                     <p className="text-xs text-[#6b6b8a] mb-4">{bundle.desc}</p>
-                    <div className="font-syne font-bold text-xl mb-4" style={{ color: bundle.color }}>{bundle.price}</div>
+                    <div className="font-syne font-bold text-xl" style={{ color: bundle.color }}>{bundle.priceNGN}</div>
+                    <div className="text-sm font-semibold text-[#9898b8] mb-4">{bundle.priceUSD} USD</div>
                     <button
                       onClick={() => setBuyModal(true)}
                       className="w-full py-2.5 text-sm font-semibold rounded-xl border-0 cursor-pointer transition-all hover:-translate-y-px text-white"
@@ -366,7 +368,7 @@ export default function RewardsPage() {
                 <i className="fas fa-shield-alt text-[#5b4cf5] text-2xl flex-shrink-0" />
                 <div>
                   <div className="font-syne font-bold text-[14px] mb-0.5">Secure payments via Paystack</div>
-                  <p className="text-xs text-[#6b6b8a]">All transactions are SSL-encrypted and processed by Paystack, Nigeria's leading payment gateway. Coins are credited instantly after payment confirmation.</p>
+                  <p className="text-xs text-[#6b6b8a]">All transactions are SSL-encrypted and processed by Paystack in NGN. USD prices shown are approximate at ₦1,600/USD. Coins are credited instantly after payment confirmation.</p>
                 </div>
               </div>
             </div>
@@ -377,7 +379,7 @@ export default function RewardsPage() {
             <div>
               <h2 className="font-syne font-bold text-[15px] mb-2">Merit Tiers & Job Unlocks</h2>
               <p className="text-sm text-[#6b6b8a] mb-5">Students with higher Merit Coins are automatically shown bigger and better job opportunities in their dashboard.</p>
-              <div className="grid grid-cols-2 gap-4 max-md:grid-cols-1">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 {MERIT_TIERS.map(tier => {
                   const isCurrent = balance >= tier.min && balance <= tier.max;
                   return (

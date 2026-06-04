@@ -1,5 +1,6 @@
 // SkillHub — Paystack Payment Routes
 // Handles: initiate payment, verify webhook, subscriptions, merit coin purchases
+// Dual-currency: NGN (Paystack/kobo) + USD display prices shown alongside ₦
 const router = require('express').Router();
 const crypto = require('crypto');
 const { body, validationResult } = require('express-validator');
@@ -10,18 +11,35 @@ const { success, created, badRequest, error } = require('../utils/response');
 const PAYSTACK_SECRET = process.env.PAYSTACK_SECRET_KEY;
 const PAYSTACK_BASE   = 'https://api.paystack.co';
 
+// ─── Exchange rate helper ─────────────────────────────────────────────────────
+// Approximate NGN → USD display rate (1 USD ≈ 1,600 NGN).
+// Update USD_DISPLAY_RATE if the naira rate shifts significantly.
+// Payments are always processed in NGN (kobo) via Paystack — USD is display-only.
+const USD_DISPLAY_RATE = 1600; // NGN per 1 USD
+
+function koboToUsd(kobo) {
+  const naira = kobo / 100;
+  return (naira / USD_DISPLAY_RATE).toFixed(2);
+}
+
+function nairaToUsd(naira) {
+  return (naira / USD_DISPLAY_RATE).toFixed(2);
+}
+
 // ─── Plan catalogue ───────────────────────────────────────────────────────────
+// amount is in kobo (₦1 = 100 kobo) — required by Paystack
+// usdDisplay is the approximate USD equivalent shown to users
 const PLANS = {
-  pro_monthly:      { label: 'Pro Monthly',      amount: 500000,  coins: 0,    period: 30  },  // ₦5,000
-  pro_annual:       { label: 'Pro Annual',        amount: 4500000, coins: 0,    period: 365 },  // ₦45,000
-  employer_monthly: { label: 'Employer Monthly',  amount: 1500000, coins: 0,    period: 30  },  // ₦15,000
-  employer_annual:  { label: 'Employer Annual',   amount: 13500000,coins: 0,    period: 365 },  // ₦135,000
+  pro_monthly:      { label: 'Pro Monthly',     amount: 500000,   usdDisplay: koboToUsd(500000),   period: 30  },  // ₦5,000 ≈ $3.13
+  pro_annual:       { label: 'Pro Annual',       amount: 4500000,  usdDisplay: koboToUsd(4500000),  period: 365 },  // ₦45,000 ≈ $28.13
+  employer_monthly: { label: 'Employer Monthly', amount: 1500000,  usdDisplay: koboToUsd(1500000),  period: 30  },  // ₦15,000 ≈ $9.38
+  employer_annual:  { label: 'Employer Annual',  amount: 13500000, usdDisplay: koboToUsd(13500000), period: 365 },  // ₦135,000 ≈ $84.38
 };
 
 const COIN_BUNDLES = {
-  coins_500:  { label: '500 Merit Coins',  amount: 100000, coins: 500  },  // ₦1,000
-  coins_1500: { label: '1500 Merit Coins', amount: 250000, coins: 1500 },  // ₦2,500
-  coins_5000: { label: '5000 Merit Coins', amount: 700000, coins: 5000 },  // ₦7,000
+  coins_500:  { label: '500 Merit Coins',  amount: 100000, usdDisplay: koboToUsd(100000), coins: 500  },  // ₦1,000 ≈ $0.63
+  coins_1500: { label: '1500 Merit Coins', amount: 250000, usdDisplay: koboToUsd(250000), coins: 1500 },  // ₦2,500 ≈ $1.56
+  coins_5000: { label: '5000 Merit Coins', amount: 700000, usdDisplay: koboToUsd(700000), coins: 5000 },  // ₦7,000 ≈ $4.38
 };
 
 // ─── Helper: call Paystack API ────────────────────────────────────────────────
@@ -38,9 +56,34 @@ async function paystackRequest(method, path, body = null) {
 }
 
 // ─── GET /payment/plans ───────────────────────────────────────────────────────
-// Returns subscription plans and coin bundles with prices
+// Returns subscription plans and coin bundles with NGN + USD display prices
 router.get('/plans', authenticate, (_req, res) => {
-  return success(res, { plans: PLANS, coinBundles: COIN_BUNDLES });
+  // Augment each plan with a formatted display object for the frontend
+  const plansWithDisplay = Object.fromEntries(
+    Object.entries(PLANS).map(([key, plan]) => [
+      key,
+      {
+        ...plan,
+        nairaDisplay: `₦${(plan.amount / 100).toLocaleString('en-NG')}`,
+        usdDisplay: `$${plan.usdDisplay}`,
+      },
+    ])
+  );
+  const bundlesWithDisplay = Object.fromEntries(
+    Object.entries(COIN_BUNDLES).map(([key, bundle]) => [
+      key,
+      {
+        ...bundle,
+        nairaDisplay: `₦${(bundle.amount / 100).toLocaleString('en-NG')}`,
+        usdDisplay: `$${bundle.usdDisplay}`,
+      },
+    ])
+  );
+  return success(res, {
+    plans: plansWithDisplay,
+    coinBundles: bundlesWithDisplay,
+    exchangeRateNote: `Prices shown in USD are approximate at ₦${USD_DISPLAY_RATE}/USD. Payment is processed in NGN via Paystack.`,
+  });
 });
 
 // ─── GET /payment/subscription ───────────────────────────────────────────────
@@ -72,19 +115,21 @@ router.post('/initiate', authenticate, [
   const { purpose, planOrBundle, callbackUrl } = req.body;
   const user = req.user;
 
-  let amount, description, metadata;
+  let amount, description, metadata, usdDisplay;
 
   if (purpose === 'subscription') {
     const plan = PLANS[planOrBundle];
     if (!plan) return badRequest(res, 'Invalid subscription plan');
     amount      = plan.amount;
     description = plan.label;
+    usdDisplay  = plan.usdDisplay;
     metadata    = { plan: planOrBundle, period: plan.period };
   } else if (purpose === 'merit_coins') {
     const bundle = COIN_BUNDLES[planOrBundle];
     if (!bundle) return badRequest(res, 'Invalid coin bundle');
     amount      = bundle.amount;
     description = bundle.label;
+    usdDisplay  = bundle.usdDisplay;
     metadata    = { bundle: planOrBundle, coins: bundle.coins };
   } else {
     return badRequest(res, 'Purpose not yet supported via this endpoint');
@@ -103,7 +148,11 @@ router.post('/initiate', authenticate, [
         status:      'pending',
         paystackRef: reference,
         purpose,
-        metadata,
+        metadata: {
+          ...metadata,
+          usdEquivalent: usdDisplay,        // stored for receipts / history display
+          exchangeRateUsed: USD_DISPLAY_RATE,
+        },
       },
     });
 
@@ -130,6 +179,8 @@ router.post('/initiate', authenticate, [
       authorizationUrl: psRes.data.authorization_url,
       reference,
       amount,
+      amountNaira:  amount / 100,
+      amountUsd:    usdDisplay,
       description,
     }, 'Payment initiated');
   } catch (err) {
@@ -222,18 +273,15 @@ router.post('/verify/:reference', authenticate, async (req, res) => {
 // Set this URL in your Paystack dashboard: https://yourdomain.com/api/v1/payment/webhook
 router.post('/webhook', async (req, res) => {
   // Validate signature — req.body is a raw Buffer (see server.js express.raw config).
-  // We must hash the raw bytes, NOT JSON.stringify(Buffer), which would produce the
-  // wrong string and cause every webhook to fail with 401.
   const hash = crypto
     .createHmac('sha512', PAYSTACK_SECRET)
-    .update(req.body)           // raw Buffer — matches what Paystack signed
+    .update(req.body)
     .digest('hex');
 
   if (hash !== req.headers['x-paystack-signature']) {
     return res.status(401).json({ message: 'Invalid signature' });
   }
 
-  // Parse the raw Buffer into a JS object for event handling
   let event;
   try {
     event = JSON.parse(req.body.toString('utf8'));
@@ -249,7 +297,7 @@ router.post('/webhook', async (req, res) => {
 
       const payment = await prisma.payment.findUnique({ where: { paystackRef: reference } });
       if (!payment || payment.status === 'success') {
-        return res.sendStatus(200); // already handled or unknown
+        return res.sendStatus(200);
       }
 
       await prisma.payment.update({
@@ -288,9 +336,6 @@ router.post('/webhook', async (req, res) => {
     }
 
     if (event.event === 'subscription.disable') {
-      // Cancel only the specific user's active subscription, scoped by their email.
-      // Previously this had no WHERE clause and cancelled every active subscription
-      // in the database whenever a single Paystack event fired.
       const customerEmail = event.data?.customer?.email;
       if (customerEmail) {
         const user = await prisma.user.findUnique({
@@ -321,7 +366,13 @@ router.get('/history', authenticate, async (req, res) => {
       orderBy: { createdAt: 'desc' },
       take: 50,
     });
-    return success(res, payments);
+    // Augment each record with USD display for the frontend
+    const withUsd = payments.map(p => ({
+      ...p,
+      amountNaira:  p.amount / 100,
+      amountUsd:    `$${nairaToUsd(p.amount / 100)}`,
+    }));
+    return success(res, withUsd);
   } catch (err) {
     return error(res, 'Failed to fetch payment history');
   }
