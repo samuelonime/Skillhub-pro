@@ -56,6 +56,9 @@ model User {
   employerShortlists   ShortlistedCandidate[] @relation("EmployerShortlists")
   candidateShortlists  ShortlistedCandidate[] @relation("CandidateShortlists")
   postedJobs           Job[]                  @relation("EmployerJobs")
+  communityPosts       CommunityPost[]        @relation("AuthorPosts")
+  communityComments    CommunityComment[]     @relation("AuthorComments")
+  communityLikes       CommunityLike[]
 
   @@map("users")
 }
