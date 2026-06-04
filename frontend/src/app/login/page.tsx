@@ -72,6 +72,11 @@ function GoogleButton({ onAlert, role, label = 'Continue with Google' }: {
           });
           const d = await res.json();
           if (!d.success) {
+            if (d.message === 'Google account not registered') {
+              onAlert('Google account not found. Please sign up with Google.', 'err');
+              router.push('/login?tab=register');
+              return;
+            }
             onAlert(d.message || 'Google sign-in failed');
             return;
           }

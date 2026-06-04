@@ -73,7 +73,11 @@ router.post('/google', async (req, res) => {
 
     let user = await prisma.user.findUnique({ where: { email } });
     if (!user) {
-      const role = ['student','employer',].includes(requestedRole) ? requestedRole : 'student';
+      if (!requestedRole) {
+        return unauthorized(res, 'Google account not registered');
+      }
+
+      const role = ['student','employer'].includes(requestedRole) ? requestedRole : 'student';
       user = await prisma.user.create({
         data: {
           email,
