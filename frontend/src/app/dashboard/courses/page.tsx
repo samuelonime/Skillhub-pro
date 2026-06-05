@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { SidebarLayout } from '@/components/layout/SidebarLayout';
 import { apiFetch } from '@/lib/api';
 
@@ -24,6 +24,16 @@ function colorFor(id: string) {
   return COLORS[Math.abs(h) % COLORS.length];
 }
 
+const SORT_OPTIONS = [
+  { value: 'default', label: 'Default' },
+  { value: 'title_asc', label: 'Title: A → Z' },
+  { value: 'title_desc', label: 'Title: Z → A' },
+  { value: 'progress_desc', label: 'Most Progress' },
+  { value: 'coins_desc', label: 'Most Coins' },
+];
+
+const LEVELS = ['All Levels', 'Beginner', 'Intermediate', 'Advanced'];
+
 export default function CoursesPage() {
   const [courses, setCourses] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -32,6 +42,9 @@ export default function CoursesPage() {
   const [category, setCategory] = useState('All');
   const [categories, setCategories] = useState<string[]>(['All']);
   const [toast, setToast] = useState('');
+  const [search, setSearch] = useState('');
+  const [level, setLevel] = useState('All Levels');
+  const [sort, setSort] = useState('default');
 
   async function loadCourses() {
     setLoading(true);
@@ -64,12 +77,40 @@ export default function CoursesPage() {
     finally { setEnrolling(null); }
   }
 
-  const visible = courses.filter(c => {
-    if (filter === 'enrolled' && !c.enrolled) return false;
-    if (filter === 'available' && c.enrolled) return false;
-    if (category !== 'All' && c.category !== category) return false;
-    return true;
-  });
+  function clearFilters() {
+    setSearch('');
+    setFilter('all');
+    setCategory('All');
+    setLevel('All Levels');
+    setSort('default');
+  }
+
+  const hasActiveFilters = search || filter !== 'all' || category !== 'All' || level !== 'All Levels' || sort !== 'default';
+
+  const visible = useMemo(() => {
+    let result = courses.filter(c => {
+      if (filter === 'enrolled' && !c.enrolled) return false;
+      if (filter === 'available' && c.enrolled) return false;
+      if (category !== 'All' && c.category !== category) return false;
+      if (level !== 'All Levels' && c.level !== level) return false;
+      if (search.trim()) {
+        const q = search.trim().toLowerCase();
+        if (
+          !c.title?.toLowerCase().includes(q) &&
+          !c.category?.toLowerCase().includes(q) &&
+          !c.level?.toLowerCase().includes(q)
+        ) return false;
+      }
+      return true;
+    });
+
+    if (sort === 'title_asc') result = [...result].sort((a, b) => a.title?.localeCompare(b.title));
+    else if (sort === 'title_desc') result = [...result].sort((a, b) => b.title?.localeCompare(a.title));
+    else if (sort === 'progress_desc') result = [...result].sort((a, b) => (b.progress ?? 0) - (a.progress ?? 0));
+    else if (sort === 'coins_desc') result = [...result].sort((a, b) => (b.coins ?? 0) - (a.coins ?? 0));
+
+    return result;
+  }, [courses, filter, category, level, search, sort]);
 
   return (
     <SidebarLayout navItems={navItems} pageTitle="Courses">
@@ -86,7 +127,68 @@ export default function CoursesPage() {
         </div>
       </div>
 
-      {/* Filters */}
+      {/* Search + Sort row */}
+      <div className="flex items-center gap-3 mb-4 flex-wrap">
+        {/* Search */}
+        <div className="relative flex-1 min-w-[200px] max-w-sm">
+          <i className="fas fa-search absolute left-3.5 top-1/2 -translate-y-1/2 text-[#9898b8] text-xs pointer-events-none" />
+          <input
+            type="text"
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+            placeholder="Search courses…"
+            className="w-full pl-9 pr-9 py-2.5 rounded-xl border border-[#e8e8f0] bg-white text-sm text-[#0a0a0f] placeholder-[#9898b8] focus:outline-none focus:border-[#5b4cf5] focus:ring-1 focus:ring-[#5b4cf5]/20 transition-all"
+          />
+          {search && (
+            <button
+              onClick={() => setSearch('')}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-[#9898b8] hover:text-[#0a0a0f] cursor-pointer border-0 bg-transparent p-0 leading-none"
+            >
+              <i className="fas fa-times text-xs" />
+            </button>
+          )}
+        </div>
+
+        {/* Level filter */}
+        <div className="relative">
+          <select
+            value={level}
+            onChange={e => setLevel(e.target.value)}
+            className="appearance-none pl-3.5 pr-8 py-2.5 rounded-xl border border-[#e8e8f0] bg-white text-sm font-medium text-[#0a0a0f] focus:outline-none focus:border-[#5b4cf5] cursor-pointer transition-all"
+            style={{ color: level !== 'All Levels' ? '#5b4cf5' : undefined, borderColor: level !== 'All Levels' ? '#5b4cf5' : undefined }}
+          >
+            {LEVELS.map(l => <option key={l} value={l}>{l}</option>)}
+          </select>
+          <i className="fas fa-chevron-down absolute right-3 top-1/2 -translate-y-1/2 text-[#9898b8] text-[10px] pointer-events-none" />
+        </div>
+
+        {/* Sort */}
+        <div className="relative">
+          <select
+            value={sort}
+            onChange={e => setSort(e.target.value)}
+            className="appearance-none pl-3.5 pr-8 py-2.5 rounded-xl border border-[#e8e8f0] bg-white text-sm font-medium text-[#0a0a0f] focus:outline-none focus:border-[#5b4cf5] cursor-pointer transition-all"
+            style={{ color: sort !== 'default' ? '#5b4cf5' : undefined, borderColor: sort !== 'default' ? '#5b4cf5' : undefined }}
+          >
+            {SORT_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+          </select>
+          <i className="fas fa-arrow-up-down absolute right-3 top-1/2 -translate-y-1/2 text-[#9898b8] text-[10px] pointer-events-none" />
+        </div>
+
+        {/* Clear filters */}
+        {hasActiveFilters && (
+          <button
+            onClick={clearFilters}
+            className="flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl text-sm font-medium text-[#ef4444] border border-[#ef4444]/30 bg-[#ef4444]/5 hover:bg-[#ef4444]/10 cursor-pointer transition-all border-0"
+            style={{ border: '1px solid rgba(239,68,68,0.3)' }}
+          >
+            <i className="fas fa-times text-xs" />
+            Clear
+          </button>
+        )}
+      </div>
+
+      {/* Enrollment status + category filters */}
       <div className="flex items-center gap-3 mb-6 flex-wrap">
         <div className="flex gap-1 bg-[#f5f5fb] p-1 rounded-xl border border-[#e8e8f0]">
           {(['all', 'enrolled', 'available'] as const).map(f => (
@@ -103,6 +205,14 @@ export default function CoursesPage() {
           ))}
         </div>
       </div>
+
+      {/* Results count */}
+      {!loading && (
+        <p className="text-[12.5px] text-[#9898b8] mb-4">
+          {visible.length} course{visible.length !== 1 ? 's' : ''} found
+          {hasActiveFilters && <span className="ml-1">— filters active</span>}
+        </p>
+      )}
 
       {loading ? (
         <div className="flex items-center justify-center h-64">
@@ -184,7 +294,15 @@ export default function CoursesPage() {
         <div className="text-center py-16">
           <i className="fas fa-book text-[38px] text-[#9898b8] block mb-3" />
           <h3 className="font-syne font-bold text-[16px] text-[#2d2d42] mb-1.5">No courses found</h3>
-          <p className="text-[13.5px] text-[#6b6b8a]">Try adjusting your filters to see more results.</p>
+          <p className="text-[13.5px] text-[#6b6b8a] mb-4">Try adjusting your filters to see more results.</p>
+          {hasActiveFilters && (
+            <button
+              onClick={clearFilters}
+              className="px-5 py-2.5 rounded-xl text-sm font-semibold text-white bg-[#5b4cf5] border-0 cursor-pointer hover:-translate-y-px transition-all shadow-[0_4px_14px_rgba(91,76,245,0.35)]"
+            >
+              Clear all filters
+            </button>
+          )}
         </div>
       )}
     </SidebarLayout>
