@@ -1,9 +1,31 @@
 const router = require('express').Router();
+const multer  = require('multer');
+const path    = require('path');
+const fs      = require('fs');
 const prisma  = require('../config/database');
 const { authenticate, requireRole, requireEmployerAccess } = require('../middleware/auth');
 const { success, error, notFound, badRequest } = require('../utils/response');
 
 const guard = [authenticate, requireRole('employer', 'admin'), requireEmployerAccess];
+
+// ── Company logo upload setup ──────────────────────────────────────────────────
+const logoDir = path.join(__dirname, '../../uploads/logos');
+if (!fs.existsSync(logoDir)) fs.mkdirSync(logoDir, { recursive: true });
+
+const logoStorage = multer.diskStorage({
+  destination: (_req, _file, cb) => cb(null, logoDir),
+  filename:    (req, _file, cb)  => cb(null, `logo-${req.user.id}-${Date.now()}.jpg`),
+});
+
+const logoUpload = multer({
+  storage: logoStorage,
+  limits:  { fileSize: 3 * 1024 * 1024 }, // 3 MB
+  fileFilter: (_req, file, cb) => {
+    const allowed = ['image/jpeg', 'image/png', 'image/webp'];
+    if (allowed.includes(file.mimetype)) cb(null, true);
+    else cb(new Error('Only JPEG, PNG and WebP images are allowed'));
+  },
+});
 
 function tierOf(coins) {
   if (coins >= 5000) return 'platinum';
@@ -386,6 +408,42 @@ router.get('/analytics', ...guard, async (req, res) => {
   } catch (err) { return error(res, 'Failed to fetch analytics'); }
 });
 
+// ── POST /employer/logo — upload company logo ──────────────────────────────────
+router.post('/logo', ...guard, logoUpload.single('logo'), async (req, res) => {
+  if (!req.file) return badRequest(res, 'No image uploaded');
+  try {
+    // Delete old logo file if it exists
+    const existing = await prisma.user.findUnique({ where: { id: req.user.id }, select: { companyLogo: true } });
+    if (existing?.companyLogo) {
+      const oldPath = path.join(logoDir, path.basename(existing.companyLogo));
+      if (fs.existsSync(oldPath)) fs.unlinkSync(oldPath);
+    }
+
+    const companyLogo = `/uploads/logos/${req.file.filename}`;
+    await prisma.user.update({ where: { id: req.user.id }, data: { companyLogo } });
+    return success(res, { companyLogo }, 'Company logo updated');
+  } catch (err) {
+    if (req.file) fs.unlinkSync(req.file.path);
+    console.error(err);
+    return error(res, 'Failed to update company logo');
+  }
+});
+
+// ── DELETE /employer/logo — remove company logo ────────────────────────────────
+router.delete('/logo', ...guard, async (req, res) => {
+  try {
+    const existing = await prisma.user.findUnique({ where: { id: req.user.id }, select: { companyLogo: true } });
+    if (existing?.companyLogo) {
+      const oldPath = path.join(logoDir, path.basename(existing.companyLogo));
+      if (fs.existsSync(oldPath)) fs.unlinkSync(oldPath);
+    }
+    await prisma.user.update({ where: { id: req.user.id }, data: { companyLogo: null } });
+    return success(res, null, 'Company logo removed');
+  } catch (err) {
+    return error(res, 'Failed to remove company logo');
+  }
+});
+
 // ── GET /employer/access-status ──────────────────────────────────────────────
 // Returns trial / subscription status for the authenticated employer.
 // Used by EmployerAccessGuard (frontend) and the subscribe page.
@@ -442,6 +500,14 @@ router.get('/access-status', authenticate, requireRole('employer', 'admin'), asy
     console.error('access-status error:', err);
     return error(res, 'Failed to fetch access status');
   }
+});
+
+// ── Multer error handler ───────────────────────────────────────────────────────
+router.use((err, req, res, next) => {
+  if (err instanceof multer.MulterError || err.message) {
+    return badRequest(res, err.message || 'File upload error');
+  }
+  next(err);
 });
 
 module.exports = router;

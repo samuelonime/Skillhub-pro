@@ -1,9 +1,67 @@
 const router = require('express').Router();
 const bcrypt  = require('bcryptjs');
+const multer  = require('multer');
+const path    = require('path');
+const fs      = require('fs');
 const { body, validationResult } = require('express-validator');
 const prisma  = require('../config/database');
 const { authenticate } = require('../middleware/auth');
 const { success, badRequest, error } = require('../utils/response');
+
+// ── Avatar upload setup ────────────────────────────────────────────────────────
+const avatarDir = path.join(__dirname, '../../uploads/avatars');
+if (!fs.existsSync(avatarDir)) fs.mkdirSync(avatarDir, { recursive: true });
+
+const avatarStorage = multer.diskStorage({
+  destination: (_req, _file, cb) => cb(null, avatarDir),
+  filename:    (req, _file, cb) => cb(null, `avatar-${req.user.id}-${Date.now()}.jpg`),
+});
+
+const avatarUpload = multer({
+  storage: avatarStorage,
+  limits:  { fileSize: 3 * 1024 * 1024 }, // 3 MB
+  fileFilter: (_req, file, cb) => {
+    const allowed = ['image/jpeg', 'image/png', 'image/webp'];
+    if (allowed.includes(file.mimetype)) cb(null, true);
+    else cb(new Error('Only JPEG, PNG and WebP images are allowed'));
+  },
+});
+
+// ── POST /users/avatar — upload profile picture ────────────────────────────────
+router.post('/avatar', authenticate, avatarUpload.single('avatar'), async (req, res) => {
+  if (!req.file) return badRequest(res, 'No image uploaded');
+  try {
+    // Delete old avatar file if it exists
+    const existing = await prisma.user.findUnique({ where: { id: req.user.id }, select: { avatar: true } });
+    if (existing?.avatar) {
+      const oldPath = path.join(avatarDir, path.basename(existing.avatar));
+      if (fs.existsSync(oldPath)) fs.unlinkSync(oldPath);
+    }
+
+    const avatarUrl = `/uploads/avatars/${req.file.filename}`;
+    await prisma.user.update({ where: { id: req.user.id }, data: { avatar: avatarUrl } });
+    return success(res, { avatarUrl }, 'Profile picture updated');
+  } catch (err) {
+    if (req.file) fs.unlinkSync(req.file.path);
+    console.error(err);
+    return error(res, 'Failed to update profile picture');
+  }
+});
+
+// ── DELETE /users/avatar — remove profile picture ──────────────────────────────
+router.delete('/avatar', authenticate, async (req, res) => {
+  try {
+    const existing = await prisma.user.findUnique({ where: { id: req.user.id }, select: { avatar: true } });
+    if (existing?.avatar) {
+      const oldPath = path.join(avatarDir, path.basename(existing.avatar));
+      if (fs.existsSync(oldPath)) fs.unlinkSync(oldPath);
+    }
+    await prisma.user.update({ where: { id: req.user.id }, data: { avatar: null } });
+    return success(res, null, 'Profile picture removed');
+  } catch (err) {
+    return error(res, 'Failed to remove profile picture');
+  }
+});
 
 router.get('/profile', authenticate, async (req, res) => {
   try {
@@ -41,6 +99,14 @@ router.put('/password', authenticate, [
     await prisma.refreshToken.deleteMany({ where: { userId: req.user.id } });
     return success(res, null, 'Password updated. Please log in again.');
   } catch (err) { return error(res, 'Failed to update password'); }
+});
+
+// ── Multer error handler ───────────────────────────────────────────────────────
+router.use((err, req, res, next) => {
+  if (err instanceof multer.MulterError || err.message) {
+    return badRequest(res, err.message || 'File upload error');
+  }
+  next(err);
 });
 
 module.exports = router;

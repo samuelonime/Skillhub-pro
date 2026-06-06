@@ -21,6 +21,7 @@ model User {
   bio              String?
   location         String?
   company          String?
+  companyLogo      String?
   companyWebsite   String?
   companySize      String?
   industry         String?
