@@ -1,33 +1,20 @@
 // routes/resume.js — Resume upload + Portfolio visibility toggle
 const router  = require('express').Router();
 const multer  = require('multer');
-const path    = require('path');
-const fs      = require('fs');
 const prisma  = require('../config/database');
 const { authenticate } = require('../middleware/auth');
+const { uploadRaw, deleteFile } = require('../utils/cloudinary');
 const { success, created, error, badRequest } = require('../utils/response');
 
-// ── Multer config ─────────────────────────────────────────────────────────────
-const uploadDir = path.join(__dirname, '../../uploads/resumes');
-if (!fs.existsSync(uploadDir)) fs.mkdirSync(uploadDir, { recursive: true });
-
-const storage = multer.diskStorage({
-  destination: (_req, _file, cb) => cb(null, uploadDir),
-  filename:    (req, file, cb) => {
-    const ext  = path.extname(file.originalname);
-    const name = `resume_${req.user.id}_${Date.now()}${ext}`;
-    cb(null, name);
-  },
-});
-
+// ── Multer config — memory storage, buffer goes straight to Cloudinary ─────────
 const upload = multer({
-  storage,
-  limits: { fileSize: 5 * 1024 * 1024 }, // 5MB
+  storage: multer.memoryStorage(),
+  limits:  { fileSize: 5 * 1024 * 1024 }, // 5 MB
   fileFilter: (_req, file, cb) => {
-    const allowed = ['.pdf', '.doc', '.docx'];
-    const ext = path.extname(file.originalname).toLowerCase();
-    if (allowed.includes(ext)) return cb(null, true);
-    cb(new Error('Only PDF, DOC, DOCX files are allowed'));
+    const allowed = ['application/pdf', 'application/msword',
+                     'application/vnd.openxmlformats-officedocument.wordprocessingml.document'];
+    if (allowed.includes(file.mimetype)) cb(null, true);
+    else cb(new Error('Only PDF, DOC and DOCX files are allowed'));
   },
 });
 
@@ -36,23 +23,17 @@ router.post('/', authenticate, upload.single('resume'), async (req, res) => {
   if (!req.file) return badRequest(res, 'No file uploaded');
 
   try {
-    // Delete old resume file if exists
+    const fileUrl = await uploadRaw(req.file.buffer, 'skillhub/resumes', `resume-${req.user.id}`);
+
     const existing = await prisma.resumeUpload.findUnique({ where: { userId: req.user.id } });
-    if (existing) {
-      const oldPath = path.join(uploadDir, path.basename(existing.fileUrl));
-      if (fs.existsSync(oldPath)) fs.unlinkSync(oldPath);
-    }
 
-    const fileUrl = `/uploads/resumes/${req.file.filename}`;
-
-    const resume = await prisma.resumeUpload.upsert({
+    await prisma.resumeUpload.upsert({
       where:  { userId: req.user.id },
       create: { userId: req.user.id, fileUrl, fileName: req.file.originalname },
       update: { fileUrl, fileName: req.file.originalname, updatedAt: new Date() },
     });
 
-    // Boost profile strength for having a resume — capped at 100 to prevent
-    // runaway values from repeated upload/delete cycles.
+    // Boost profile strength — capped at 100
     await prisma.$executeRaw`
       UPDATE users
       SET    "profileStrength" = LEAST("profileStrength" + 10, 100)
@@ -78,9 +59,7 @@ router.post('/', authenticate, upload.single('resume'), async (req, res) => {
 
     return created(res, { fileUrl, fileName: req.file.originalname }, 'Resume uploaded successfully');
   } catch (err) {
-    console.error(err);
-    // Clean up uploaded file on error
-    if (req.file) fs.unlinkSync(req.file.path);
+    console.error('Resume upload error:', err);
     return error(res, 'Failed to save resume');
   }
 });
@@ -101,12 +80,8 @@ router.delete('/', authenticate, async (req, res) => {
     const resume = await prisma.resumeUpload.findUnique({ where: { userId: req.user.id } });
     if (!resume) return badRequest(res, 'No resume found');
 
-    // Delete file
-    const filePath = path.join(__dirname, '../../', resume.fileUrl);
-    if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
-
+    await deleteFile(`skillhub/resumes/resume-${req.user.id}`, 'raw');
     await prisma.resumeUpload.delete({ where: { userId: req.user.id } });
-
     return success(res, null, 'Resume deleted');
   } catch (err) {
     return error(res, 'Failed to delete resume');
@@ -119,13 +94,8 @@ router.put('/visibility', authenticate, async (req, res) => {
   if (typeof portfolioPublic !== 'boolean') {
     return badRequest(res, 'portfolioPublic must be a boolean');
   }
-
   try {
-    await prisma.user.update({
-      where: { id: req.user.id },
-      data:  { portfolioPublic },
-    });
-
+    await prisma.user.update({ where: { id: req.user.id }, data: { portfolioPublic } });
     return success(res, { portfolioPublic }, `Portfolio is now ${portfolioPublic ? 'public' : 'private'}`);
   } catch (err) {
     return error(res, 'Failed to update visibility');

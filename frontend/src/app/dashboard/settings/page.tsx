@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { SidebarLayout } from '@/components/layout/SidebarLayout';
 import { apiFetch } from '@/lib/api';
 
@@ -42,6 +42,10 @@ export default function SettingsPage() {
   const [toast, setToast] = useState('');
   const [toastType, setToastType] = useState<'ok' | 'err'>('ok');
 
+  // Avatar upload
+  const avatarInputRef = useRef<HTMLInputElement>(null);
+  const [avatarUploading, setAvatarUploading] = useState(false);
+
   // Password change
   const [pwForm, setPwForm] = useState({ currentPassword: '', newPassword: '', confirmPassword: '' });
   const [pwSaving, setPwSaving] = useState(false);
@@ -52,6 +56,50 @@ export default function SettingsPage() {
   function showToast(msg: string, type: 'ok' | 'err' = 'ok') {
     setToast(msg); setToastType(type);
     setTimeout(() => setToast(''), 3000);
+  }
+
+  async function handleAvatarChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setAvatarUploading(true);
+    try {
+      const formData = new FormData();
+      formData.append('avatar', file);
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/users/avatar`, {
+        method:      'POST',
+        credentials: 'include',
+        body:        formData,
+      });
+      const data = await res.json();
+      if (data.success) {
+        setProfile((p: any) => ({ ...p, avatar: data.data.avatarUrl }));
+        showToast('Profile picture updated!');
+      } else {
+        showToast(data.message || 'Upload failed', 'err');
+      }
+    } catch {
+      showToast('Upload failed. Please try again.', 'err');
+    } finally {
+      setAvatarUploading(false);
+      if (avatarInputRef.current) avatarInputRef.current.value = '';
+    }
+  }
+
+  async function handleAvatarRemove() {
+    setAvatarUploading(true);
+    try {
+      const res = await apiFetch('/users/avatar', { method: 'DELETE' });
+      if (res.success) {
+        setProfile((p: any) => ({ ...p, avatar: null }));
+        showToast('Profile picture removed.');
+      } else {
+        showToast('Failed to remove picture.', 'err');
+      }
+    } catch {
+      showToast('Failed to remove picture.', 'err');
+    } finally {
+      setAvatarUploading(false);
+    }
   }
 
   useEffect(() => {
@@ -194,14 +242,54 @@ export default function SettingsPage() {
                 <h2 className="font-syne font-bold text-[17px] mb-5">Profile Information</h2>
                 {/* Avatar */}
                 <div className="flex items-center gap-4 mb-6 pb-6 border-b border-[#e8e8f0]">
-                  {profile.avatar ? (
-                    <img src={profile.avatar} alt="" className="w-16 h-16 rounded-full object-cover" />
-                  ) : (
-                    <div className="w-16 h-16 rounded-full bg-[#5b4cf5] grid place-items-center font-syne font-bold text-xl text-white">{initials}</div>
-                  )}
+                  {/* Hidden file input */}
+                  <input
+                    ref={avatarInputRef}
+                    type="file"
+                    accept="image/jpeg,image/png,image/webp"
+                    className="hidden"
+                    onChange={handleAvatarChange}
+                  />
+
+                  {/* Avatar circle — click to upload */}
+                  <div className="relative group cursor-pointer flex-shrink-0" onClick={() => !avatarUploading && avatarInputRef.current?.click()}>
+                    {profile.avatar ? (
+                      <img src={profile.avatar} alt="" className="w-16 h-16 rounded-full object-cover" />
+                    ) : (
+                      <div className="w-16 h-16 rounded-full bg-[#5b4cf5] grid place-items-center font-syne font-bold text-xl text-white">{initials}</div>
+                    )}
+                    {/* Hover overlay */}
+                    <div className="absolute inset-0 rounded-full bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                      {avatarUploading
+                        ? <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                        : <i className="fas fa-camera text-white text-sm" />}
+                    </div>
+                  </div>
+
                   <div>
                     <p className="text-sm font-semibold text-[#0a0a0f] mb-1">{profile.firstName} {profile.lastName}</p>
-                    <p className="text-xs text-[#6b6b8a]">{profile.email}</p>
+                    <p className="text-xs text-[#6b6b8a] mb-2">{profile.email}</p>
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={() => !avatarUploading && avatarInputRef.current?.click()}
+                        disabled={avatarUploading}
+                        className="text-xs font-medium text-[#5b4cf5] hover:underline border-0 bg-transparent cursor-pointer p-0 disabled:opacity-50"
+                      >
+                        {avatarUploading ? 'Uploading…' : 'Upload photo'}
+                      </button>
+                      {profile.avatar && !avatarUploading && (
+                        <>
+                          <span className="text-[#e8e8f0]">·</span>
+                          <button
+                            onClick={handleAvatarRemove}
+                            className="text-xs font-medium text-[#ef4444] hover:underline border-0 bg-transparent cursor-pointer p-0"
+                          >
+                            Remove
+                          </button>
+                        </>
+                      )}
+                    </div>
+                    <p className="text-[11px] text-[#9898b8] mt-1">JPEG, PNG or WebP · max 3 MB</p>
                   </div>
                 </div>
 
