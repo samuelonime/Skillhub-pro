@@ -396,6 +396,24 @@ router.get('/access-status', authenticate, requireRole('employer', 'admin'), asy
     const user = req.user;
     const now  = new Date();
 
+    // ── Check global billing toggle ────────────────────────────────────────
+    const billingSetting = await prisma.systemSetting.findUnique({
+      where: { key: 'employer_billing_enabled' },
+    });
+    const billingEnabled = billingSetting?.value === 'true';
+
+    // If billing is off, everyone has free access — no trial/subscription needed
+    if (!billingEnabled) {
+      return success(res, {
+        hasAccess:      true,
+        billingEnabled: false,
+        trialActive:    false,
+        trialEndsAt:    null,
+        trialDaysLeft:  0,
+        subscription:   null,
+      });
+    }
+
     const trialEndsAt   = user.trialEndsAt ? new Date(user.trialEndsAt) : null;
     const trialActive   = !!(trialEndsAt && trialEndsAt > now);
     const trialDaysLeft = trialActive
@@ -413,11 +431,12 @@ router.get('/access-status', authenticate, requireRole('employer', 'admin'), asy
     });
 
     return success(res, {
-      hasAccess:    trialActive || !!subscription,
+      hasAccess:      trialActive || !!subscription,
+      billingEnabled: true,
       trialActive,
-      trialEndsAt:  trialEndsAt?.toISOString() ?? null,
+      trialEndsAt:    trialEndsAt?.toISOString() ?? null,
       trialDaysLeft,
-      subscription: subscription ?? null,
+      subscription:   subscription ?? null,
     });
   } catch (err) {
     console.error('access-status error:', err);

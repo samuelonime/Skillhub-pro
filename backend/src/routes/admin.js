@@ -152,4 +152,43 @@ router.get('/payments', async (req, res) => {
   } catch (err) { return error(res, 'Failed to fetch payments'); }
 });
 
+// ── GET /admin/settings/billing ───────────────────────────────────────────────
+// Returns current billing toggle state.
+router.get('/settings/billing', async (req, res) => {
+  try {
+    const setting = await prisma.systemSetting.findUnique({
+      where: { key: 'employer_billing_enabled' },
+    });
+    return success(res, {
+      employer_billing_enabled: setting?.value === 'true',
+    });
+  } catch (err) {
+    console.error(err);
+    return error(res, 'Failed to fetch billing settings');
+  }
+});
+
+// ── PUT /admin/settings/billing ───────────────────────────────────────────────
+// Toggles employer billing on or off.
+// Body: { enabled: boolean }
+router.put('/settings/billing', async (req, res) => {
+  const { enabled } = req.body;
+  if (typeof enabled !== 'boolean') {
+    return badRequest(res, '`enabled` must be a boolean');
+  }
+  try {
+    const setting = await prisma.systemSetting.upsert({
+      where:  { key: 'employer_billing_enabled' },
+      update: { value: String(enabled), updatedBy: req.user.id },
+      create: { key: 'employer_billing_enabled', value: String(enabled), updatedBy: req.user.id },
+    });
+    return success(res, {
+      employer_billing_enabled: setting.value === 'true',
+    }, `Employer billing ${enabled ? 'enabled' : 'disabled'} successfully`);
+  } catch (err) {
+    console.error(err);
+    return error(res, 'Failed to update billing settings');
+  }
+});
+
 module.exports = router;

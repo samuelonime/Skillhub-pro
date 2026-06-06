@@ -46,8 +46,9 @@ const requireRole = (...roles) => (req, res, next) => {
  * requireEmployerAccess
  * ---------------------
  * Checks that the authenticated employer either:
- *   (a) is still within their 7-day free trial, OR
- *   (b) has an active subscription that has not expired.
+ *   (a) billing is disabled globally (admin toggle), OR
+ *   (b) is still within their 7-day free trial, OR
+ *   (c) has an active subscription that has not expired.
  *
  * Attaches `req.employerAccess` with details about current access state
  * so routes / the frontend can show contextual messaging.
@@ -60,6 +61,17 @@ const requireEmployerAccess = async (req, res, next) => {
     // Admins always have access
     if (req.user.role === 'admin') {
       req.employerAccess = { type: 'admin', active: true };
+      return next();
+    }
+
+    // ── 0. Check global billing toggle ────────────────────────────────────
+    const billingSetting = await prisma.systemSetting.findUnique({
+      where: { key: 'employer_billing_enabled' },
+    });
+    const billingEnabled = billingSetting?.value === 'true';
+
+    if (!billingEnabled) {
+      req.employerAccess = { type: 'free', active: true };
       return next();
     }
 
