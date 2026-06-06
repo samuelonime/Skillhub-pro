@@ -1,9 +1,9 @@
 const router = require('express').Router();
 const prisma  = require('../config/database');
-const { authenticate, requireRole } = require('../middleware/auth');
+const { authenticate, requireRole, requireEmployerAccess } = require('../middleware/auth');
 const { success, error, notFound, badRequest } = require('../utils/response');
 
-const guard = [authenticate, requireRole('employer', 'admin')];
+const guard = [authenticate, requireRole('employer', 'admin'), requireEmployerAccess];
 
 function tierOf(coins) {
   if (coins >= 5000) return 'platinum';
@@ -384,6 +384,45 @@ router.get('/analytics', ...guard, async (req, res) => {
       topJobs: topJobs.map(j => ({ id: j.id, title: j.title, applicants: j._count.applications })),
     });
   } catch (err) { return error(res, 'Failed to fetch analytics'); }
+});
+
+// ── GET /employer/access-status ──────────────────────────────────────────────
+// Returns trial / subscription status for the authenticated employer.
+// Used by EmployerAccessGuard (frontend) and the subscribe page.
+// NOTE: uses authenticate + requireRole only — NOT requireEmployerAccess —
+// so users with expired access can still query their status without a 402.
+router.get('/access-status', authenticate, requireRole('employer', 'admin'), async (req, res) => {
+  try {
+    const user = req.user;
+    const now  = new Date();
+
+    const trialEndsAt   = user.trialEndsAt ? new Date(user.trialEndsAt) : null;
+    const trialActive   = !!(trialEndsAt && trialEndsAt > now);
+    const trialDaysLeft = trialActive
+      ? Math.ceil((trialEndsAt.getTime() - now.getTime()) / (1000 * 60 * 60 * 24))
+      : 0;
+
+    const subscription = await prisma.subscription.findFirst({
+      where: {
+        userId:  user.id,
+        status:  'active',
+        plan:    { in: ['employer_monthly', 'employer_annual'] },
+        endDate: { gt: now },
+      },
+      orderBy: { endDate: 'desc' },
+    });
+
+    return success(res, {
+      hasAccess:    trialActive || !!subscription,
+      trialActive,
+      trialEndsAt:  trialEndsAt?.toISOString() ?? null,
+      trialDaysLeft,
+      subscription: subscription ?? null,
+    });
+  } catch (err) {
+    console.error('access-status error:', err);
+    return error(res, 'Failed to fetch access status');
+  }
 });
 
 module.exports = router;

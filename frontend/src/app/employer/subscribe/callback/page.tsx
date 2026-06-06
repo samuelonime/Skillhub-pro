@@ -25,7 +25,10 @@ export default function SubscribeCallbackPage() {
         const res = await apiFetch(`/payment/verify/${reference}`, { method: 'POST' });
         if (res.success) {
           setStatus('success');
-          const meta = (res.data as any)?.metadata;
+          const raw  = res.data as any;
+          const meta = typeof raw?.metadata === 'string'
+            ? JSON.parse(raw.metadata)
+            : raw?.metadata;
           if (meta?.plan) setPlan(meta.plan.replace('_', ' '));
           setMessage('Payment verified! Your subscription is now active.');
           setTimeout(() => router.push('/employer'), 3000);

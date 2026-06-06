@@ -242,10 +242,13 @@ router.post('/verify/:reference', authenticate, async (req, res) => {
       const plan    = PLANS[meta.plan];
       const endDate = new Date();
       endDate.setDate(endDate.getDate() + plan.period);
-      await prisma.subscription.create({
-        data: { userId: payment.userId, paymentId: updatedPayment.id, plan: meta.plan, status: 'active', endDate },
-      });
-      await notify(payment.userId, 'success', 'star', 'Subscription Activated!', `Your ${plan.label} plan is now active.`);
+      const exists = await prisma.subscription.findUnique({ where: { paymentId: updatedPayment.id } });
+      if (!exists) {
+        await prisma.subscription.create({
+          data: { userId: payment.userId, paymentId: updatedPayment.id, plan: meta.plan, status: 'active', endDate },
+        });
+        await notify(payment.userId, 'success', 'star', 'Subscription Activated!', `Your ${plan.label} plan is now active.`);
+      }
     }
 
     if (payment.purpose === 'merit_coins') {

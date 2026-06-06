@@ -3,7 +3,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { SidebarLayout } from '@/components/layout/SidebarLayout';
 import { apiFetch } from '@/lib/api';
 import { employerNavItems } from '@/lib/employerNav';
-import { EmployerAccessGuard } from '@/components/employer/EmployerAccessGuard';
+import { EmployerAccessGuard } from '@/app/employer/EmployerAccessGuard';
 
 const TIERS: Record<string,{label:string;icon:string;color:string;bg:string}> = {
   platinum:{label:'Platinum',icon:'💎',color:'#7c3aed',bg:'#f4f2ff'},
@@ -58,6 +58,7 @@ export default function ApplicantsPage() {
   function onStatusChange(appId:string,newStatus:string){ setApplicants(prev=>prev?prev.map(a=>a.applicationId===appId?{...a,status:newStatus}:a):prev); }
 
   return (
+    <EmployerAccessGuard>
     <SidebarLayout navItems={employerNavItems} pageTitle="Applicants">
       <div className="flex items-center justify-between mb-5 flex-wrap gap-3">
         <div><h1 className="font-syne font-bold text-[21px] tracking-tight">Applicants</h1><p className="text-[13px] text-[#6b6b8a]">All candidates sorted by Merit Coins — highest achievers first.</p></div>
@@ -125,5 +126,6 @@ export default function ApplicantsPage() {
         )}
       </div>
     </SidebarLayout>
+    </EmployerAccessGuard>
   );
 }

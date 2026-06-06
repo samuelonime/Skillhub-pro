@@ -19,6 +19,9 @@ import { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { apiFetch } from '@/lib/api';
 
+// Keep in sync with PLANS.employer_monthly.amount in backend/src/routes/payment.js
+const EMPLOYER_MONTHLY_DISPLAY = '₦10,000';
+
 interface AccessStatus {
   hasAccess:      boolean;
   trialActive:    boolean;
@@ -118,7 +121,7 @@ function Paywall({ trialExpired }: { trialExpired: boolean }) {
         View Plans & Subscribe
       </button>
       <p className="text-[12px] text-[#9898b8] mt-4">
-        Monthly from ₦10,000 · Cancel anytime
+        Monthly from {EMPLOYER_MONTHLY_DISPLAY} · Cancel anytime
       </p>
     </div>
   );

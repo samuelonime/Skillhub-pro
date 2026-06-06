@@ -3,7 +3,7 @@ import { useState, useEffect } from 'react';
 import { SidebarLayout } from '@/components/layout/SidebarLayout';
 import { apiFetch } from '@/lib/api';
 import { employerNavItems } from '@/lib/employerNav';
-import { EmployerAccessGuard } from '@/components/employer/EmployerAccessGuard';
+import { EmployerAccessGuard } from '@/app/employer/EmployerAccessGuard';
 
 function Sk({h='h-4',w='w-full',r='rounded'}:any){return <div className={`${h} ${w} ${r} bg-[#f0f0f8] animate-pulse`}/>;}
 
@@ -43,6 +43,7 @@ export default function CompanyPage(){
   ];
 
   return (
+    <EmployerAccessGuard>
     <SidebarLayout navItems={employerNavItems} pageTitle="Company Profile">
       {toast&&<div className="fixed top-5 right-5 z-50 bg-[#0a0a0f] text-white text-sm font-semibold px-5 py-3 rounded-xl shadow-xl flex items-center gap-2"><i className="fas fa-check-circle text-[#22c55e]"/>{toast}</div>}
 
@@ -125,5 +126,6 @@ export default function CompanyPage(){
         </div>
       </div>
     </SidebarLayout>
+    </EmployerAccessGuard>
   );
 }

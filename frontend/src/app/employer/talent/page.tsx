@@ -3,7 +3,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { SidebarLayout } from '@/components/layout/SidebarLayout';
 import { apiFetch } from '@/lib/api';
 import { employerNavItems } from '@/lib/employerNav';
-import { EmployerAccessGuard } from '@/components/employer/EmployerAccessGuard';
+import { EmployerAccessGuard } from '@/app/employer/EmployerAccessGuard';
 
 const TIERS:Record<string,{label:string;icon:string;color:string;bg:string;border:string}> = {
   platinum:{label:'Platinum',icon:'💎',color:'#7c3aed',bg:'#f4f2ff',border:'#c4b5fd'},
@@ -84,6 +84,7 @@ export default function TalentPage(){
   useEffect(()=>{load();},[load]);
 
   return (
+    <EmployerAccessGuard>
     <SidebarLayout navItems={employerNavItems} pageTitle="Talent Search">
       <ProfileDrawer userId={selectedUser} onClose={()=>setSelectedUser(null)}/>
       <div className="flex items-center justify-between mb-5 flex-wrap gap-3">
@@ -145,5 +146,6 @@ export default function TalentPage(){
         </table></div>}
       </div>
     </SidebarLayout>
+    </EmployerAccessGuard>
   );
 }

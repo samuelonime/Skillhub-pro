@@ -3,7 +3,7 @@ import { useState, useEffect } from 'react';
 import { SidebarLayout } from '@/components/layout/SidebarLayout';
 import { apiFetch } from '@/lib/api';
 import { employerNavItems } from '@/lib/employerNav';
-import { EmployerAccessGuard } from '@/components/employer/EmployerAccessGuard';
+import { EmployerAccessGuard } from '@/app/employer/EmployerAccessGuard';
 
 function Sk({h='h-4',w='w-full',r='rounded'}:any){return <div className={`${h} ${w} ${r} bg-[#f0f0f8] animate-pulse`}/>;}
 
@@ -41,6 +41,7 @@ export default function AnalyticsPage(){
   const avgPerJob       = totalJobs>0?Math.round(totalApplicants/totalJobs):0;
 
   return (
+    <EmployerAccessGuard>
     <SidebarLayout navItems={employerNavItems} pageTitle="Analytics">
       <div className="mb-5">
         <h1 className="font-syne font-bold text-[21px] tracking-tight">Analytics</h1>
@@ -104,5 +105,6 @@ export default function AnalyticsPage(){
         })}
       </div>
     </SidebarLayout>
+    </EmployerAccessGuard>
   );
 }

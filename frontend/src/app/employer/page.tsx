@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { SidebarLayout } from '@/components/layout/SidebarLayout';
 import { apiFetch } from '@/lib/api';
 import { employerNavItems } from '@/lib/employerNav';
-import { EmployerAccessGuard } from '@/components/employer/EmployerAccessGuard';
+import { EmployerAccessGuard } from '@/app/employer/EmployerAccessGuard';
 
 /* ─── Tier helpers ─────────────────────────────────────────────────────── */
 const TIERS: Record<string, { label: string; icon: string; color: string; bg: string }> = {
@@ -140,6 +140,7 @@ export default function EmployerDashboardPage() {
   const PIPE_COLORS: Record<string,string> = { applied:'#e8e8f0', reviewing:'#3b82f6', shortlisted:'#f59e0b', interviewing:'#5b4cf5', hired:'#22c55e' };
 
   return (
+    <EmployerAccessGuard>
     <SidebarLayout navItems={employerNavItems} pageTitle="Dashboard">
       {toast && (
         <div className="fixed top-5 right-5 z-50 bg-[#0a0a0f] text-white text-sm font-semibold px-5 py-3 rounded-xl shadow-xl flex items-center gap-2">
@@ -287,5 +288,6 @@ export default function EmployerDashboardPage() {
         )}
       </div>
     </SidebarLayout>
+    </EmployerAccessGuard>
   );
 }
