@@ -1,10 +1,10 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { apiFetch } from '@/lib/api';
 
-export default function SubscribeCallbackPage() {
+function CallbackContent() {
   const router       = useRouter();
   const searchParams = useSearchParams();
   const reference    = searchParams.get('reference') || searchParams.get('trxref');
@@ -96,5 +96,17 @@ export default function SubscribeCallbackPage() {
         )}
       </div>
     </div>
+  );
+}
+
+export default function SubscribeCallbackPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-[#f5f5fb] flex items-center justify-center">
+        <div className="w-10 h-10 border-[3px] border-[#e8e8f0] border-t-[#5b4cf5] rounded-full animate-spin" />
+      </div>
+    }>
+      <CallbackContent />
+    </Suspense>
   );
 }
