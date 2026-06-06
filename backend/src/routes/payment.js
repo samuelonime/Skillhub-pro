@@ -142,11 +142,13 @@ router.post('/initiate', authenticate, [
   body('purpose').isIn(['subscription', 'merit_coins', 'course', 'featured_profile']),
   body('planOrBundle').notEmpty(),
   body('callbackUrl').isURL(),
+  // paymentMode: 'ngn_card' | 'ngn_transfer' | 'usd_card'
+  body('paymentMode').optional().isIn(['ngn_card', 'ngn_transfer', 'usd_card']),
 ], async (req, res) => {
   const errs = validationResult(req);
   if (!errs.isEmpty()) return badRequest(res, 'Validation failed', errs.array());
 
-  const { purpose, planOrBundle, callbackUrl } = req.body;
+  const { purpose, planOrBundle, callbackUrl, paymentMode = 'ngn_card' } = req.body;
   const user = req.user;
 
   let amount, description, metadata;
@@ -172,12 +174,24 @@ router.post('/initiate', authenticate, [
   const usdDisplay = (naira / rate).toFixed(2);
   const reference  = `SH-${Date.now()}-${crypto.randomBytes(4).toString('hex').toUpperCase()}`;
 
+  // ── Currency & channel mapping ───────────────────────────────────────────
+  // ngn_card     → NGN, card only
+  // ngn_transfer → NGN, bank_transfer only (Paystack Dedicated Virtual Accounts)
+  // usd_card     → USD, card only — Paystack converts at their live FX rate
+  //                amount must be sent in USD cents when currency = 'USD'
+  const modeConfig = {
+    ngn_card:     { currency: 'NGN', channels: ['card'],          paystackAmount: amount },
+    ngn_transfer: { currency: 'NGN', channels: ['bank_transfer'], paystackAmount: amount },
+    usd_card:     { currency: 'USD', channels: ['card'],          paystackAmount: Math.round(parseFloat(usdDisplay) * 100) },
+  };
+  const { currency, channels, paystackAmount } = modeConfig[paymentMode];
+
   try {
     await prisma.payment.create({
       data: {
         userId:      user.id,
-        amount,
-        currency:    'NGN',
+        amount,                  // always stored in kobo (NGN basis)
+        currency:    'NGN',      // DB record is always NGN basis
         status:      'pending',
         paystackRef: reference,
         purpose,
@@ -185,13 +199,16 @@ router.post('/initiate', authenticate, [
           ...metadata,
           usdEquivalent:    usdDisplay,
           exchangeRateUsed: rate,
+          paymentMode,
         },
       },
     });
 
     const psRes = await paystackRequest('POST', '/transaction/initialize', {
-      email:     user.email,
-      amount,
+      email:        user.email,
+      amount:       paystackAmount,   // kobo for NGN, cents for USD
+      currency,
+      channels,
       reference,
       callback_url: callbackUrl,
       metadata: { userId: user.id, purpose, ...metadata, cancel_action: callbackUrl },

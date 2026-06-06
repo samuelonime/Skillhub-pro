@@ -44,14 +44,23 @@ function timeAgo(dateStr: string) {
   return `${Math.floor(days / 7)} week${Math.floor(days / 7) > 1 ? 's' : ''} ago`;
 }
 
+type PaymentMode = 'ngn_card' | 'ngn_transfer' | 'usd_card';
+
+const PAYMENT_MODES: { key: PaymentMode; icon: string; label: string; sub: string; color: string }[] = [
+  { key: 'ngn_card',     icon: 'fa-credit-card',     label: 'Pay in Naira — Card',     sub: 'Debit/credit card, charged in ₦',       color: '#5b4cf5' },
+  { key: 'ngn_transfer', icon: 'fa-university',       label: 'Pay in Naira — Transfer',  sub: 'Bank transfer to virtual account in ₦',  color: '#10b981' },
+  { key: 'usd_card',     icon: 'fa-dollar-sign',      label: 'Pay in USD — Card',        sub: 'International card, charged in $',       color: '#f59e0b' },
+];
+
 function BuyCoinsModal({ onClose, onSuccess, userEmail }: any) {
   const [selected, setSelected] = useState<string | null>(null);
+  const [paymentMode, setPaymentMode] = useState<PaymentMode>('ngn_card');
+  const [step, setStep] = useState<'bundle' | 'method'>('bundle');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
   async function purchase() {
     if (!selected) return;
-    const bundle = COIN_BUNDLES.find(b => b.key === selected)!;
     setLoading(true);
     setError('');
     try {
@@ -60,6 +69,7 @@ function BuyCoinsModal({ onClose, onSuccess, userEmail }: any) {
         body: JSON.stringify({
           purpose: 'merit_coins',
           planOrBundle: selected,
+          paymentMode,
           callbackUrl: `${window.location.origin}/dashboard/rewards?payment=success`,
         }),
       });
@@ -75,62 +85,149 @@ function BuyCoinsModal({ onClose, onSuccess, userEmail }: any) {
     }
   }
 
+  const selectedBundle = COIN_BUNDLES.find(b => b.key === selected);
+  const selectedMode   = PAYMENT_MODES.find(m => m.key === paymentMode)!;
+
   return (
     <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4" onClick={onClose}>
       <div className="bg-white rounded-2xl p-6 w-full max-w-lg shadow-2xl overflow-y-auto max-h-[90vh]" onClick={e => e.stopPropagation()}>
-        <div className="flex items-center justify-between mb-2">
-          <h3 className="font-syne font-bold text-[17px]">Buy Merit Coins</h3>
+
+        {/* Header */}
+        <div className="flex items-center justify-between mb-1">
+          <div className="flex items-center gap-2">
+            {step === 'method' && (
+              <button onClick={() => setStep('bundle')} className="w-7 h-7 rounded-lg bg-[#f5f5fb] border-0 cursor-pointer text-[#6b6b8a] hover:bg-[#f4f2ff] grid place-items-center transition-all">
+                <i className="fas fa-arrow-left text-xs" />
+              </button>
+            )}
+            <h3 className="font-syne font-bold text-[17px]">
+              {step === 'bundle' ? 'Buy Merit Coins' : 'Choose Payment Method'}
+            </h3>
+          </div>
           <button onClick={onClose} className="w-8 h-8 rounded-xl bg-[#f5f5fb] border-0 cursor-pointer text-[#6b6b8a] hover:bg-[#f4f2ff] hover:text-[#5b4cf5] transition-all grid place-items-center">
             <i className="fas fa-times" />
           </button>
         </div>
-        <p className="text-sm text-[#6b6b8a] mb-5">Secure payment via Paystack. Coins are added instantly after payment confirmation.</p>
+
+        {/* Step pills */}
+        <div className="flex items-center gap-2 mb-5">
+          <span className={`text-xs font-semibold px-2.5 py-1 rounded-full ${step === 'bundle' ? 'bg-[#5b4cf5] text-white' : 'bg-[#f5f5fb] text-[#6b6b8a]'}`}>1 · Select Bundle</span>
+          <i className="fas fa-chevron-right text-[#c8c8d8] text-[9px]" />
+          <span className={`text-xs font-semibold px-2.5 py-1 rounded-full ${step === 'method' ? 'bg-[#5b4cf5] text-white' : 'bg-[#f5f5fb] text-[#6b6b8a]'}`}>2 · Payment Method</span>
+        </div>
 
         {error && <div className="mb-4 p-3 bg-[#fef2f2] text-[#ef4444] text-sm rounded-xl">{error}</div>}
 
-        <div className="flex flex-col gap-3 mb-5">
-          {COIN_BUNDLES.map(bundle => (
-            <button
-              key={bundle.key}
-              onClick={() => setSelected(bundle.key)}
-              className={`w-full p-4 rounded-2xl border-2 text-left cursor-pointer transition-all font-[inherit] ${selected === bundle.key ? 'border-[#5b4cf5] bg-[#f4f2ff]' : 'border-[#e8e8f0] bg-white hover:border-[#5b4cf5]/40'}`}
-            >
-              <div className="flex items-center justify-between gap-2 flex-wrap sm:flex-nowrap">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-xl grid place-items-center" style={{ background: bundle.color + '18' }}>
-                    <i className="fas fa-coins text-lg" style={{ color: bundle.color }} />
-                  </div>
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <span className="font-syne font-bold text-[15px]">{bundle.coins.toLocaleString()} Coins</span>
-                      {bundle.bonus && <span className="text-[10px] font-bold text-white px-1.5 py-0.5 rounded-full bg-[#22c55e]">{bundle.bonus}</span>}
-                      {bundle.popular && <span className="text-[10px] font-bold text-white px-1.5 py-0.5 rounded-full bg-[#5b4cf5]">Popular</span>}
+        {/* ── Step 1: Bundle selection ── */}
+        {step === 'bundle' && (
+          <>
+            <p className="text-sm text-[#6b6b8a] mb-4">Choose how many coins you want to buy.</p>
+            <div className="flex flex-col gap-3 mb-5">
+              {COIN_BUNDLES.map(bundle => (
+                <button
+                  key={bundle.key}
+                  onClick={() => setSelected(bundle.key)}
+                  className={`w-full p-4 rounded-2xl border-2 text-left cursor-pointer transition-all font-[inherit] ${selected === bundle.key ? 'border-[#5b4cf5] bg-[#f4f2ff]' : 'border-[#e8e8f0] bg-white hover:border-[#5b4cf5]/40'}`}
+                >
+                  <div className="flex items-center justify-between gap-2 flex-wrap sm:flex-nowrap">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-xl grid place-items-center" style={{ background: bundle.color + '18' }}>
+                        <i className="fas fa-coins text-lg" style={{ color: bundle.color }} />
+                      </div>
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <span className="font-syne font-bold text-[15px]">{bundle.coins.toLocaleString()} Coins</span>
+                          {bundle.bonus && <span className="text-[10px] font-bold text-white px-1.5 py-0.5 rounded-full bg-[#22c55e]">{bundle.bonus}</span>}
+                          {bundle.popular && <span className="text-[10px] font-bold text-white px-1.5 py-0.5 rounded-full bg-[#5b4cf5]">Popular</span>}
+                        </div>
+                        <div className="text-xs text-[#6b6b8a]">{bundle.label} — {bundle.desc}</div>
+                      </div>
                     </div>
-                    <div className="text-xs text-[#6b6b8a]">{bundle.label} — {bundle.desc}</div>
+                    <div className="text-right">
+                      <div className="font-syne font-bold text-[16px]" style={{ color: bundle.color }}>{bundle.priceNGN}</div>
+                      <div className="text-[11px] text-[#9898b8] font-medium">{bundle.priceUSD} USD</div>
+                      <div className="text-[10px] text-[#9898b8]">one-time</div>
+                    </div>
                   </div>
-                </div>
-                <div className="text-right">
-                  <div className="font-syne font-bold text-[16px]" style={{ color: bundle.color }}>{bundle.priceNGN}</div>
-                  <div className="text-[11px] text-[#9898b8] font-medium">{bundle.priceUSD}</div>
-                  <div className="text-[10px] text-[#9898b8]">one-time</div>
-                </div>
-              </div>
+                </button>
+              ))}
+            </div>
+            <button
+              disabled={!selected}
+              onClick={() => setStep('method')}
+              className="w-full py-3 bg-[#5b4cf5] text-white rounded-xl font-semibold text-sm border-0 cursor-pointer hover:bg-[#7c6ff7] transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              Continue →
             </button>
-          ))}
-        </div>
+          </>
+        )}
 
-        <div className="flex items-center gap-2 mb-4 p-3 bg-[#f5f5fb] rounded-xl">
-          <i className="fas fa-lock text-[#22c55e] text-sm" />
-          <span className="text-xs text-[#6b6b8a]">Secured by <strong>Paystack</strong> · SSL encrypted · Instant delivery</span>
-        </div>
+        {/* ── Step 2: Payment method ── */}
+        {step === 'method' && selectedBundle && (
+          <>
+            {/* Selected bundle recap */}
+            <div className="flex items-center gap-3 p-3 bg-[#f5f5fb] rounded-xl mb-5">
+              <div className="w-9 h-9 rounded-lg grid place-items-center" style={{ background: selectedBundle.color + '18' }}>
+                <i className="fas fa-coins" style={{ color: selectedBundle.color }} />
+              </div>
+              <div className="flex-1">
+                <div className="font-syne font-bold text-[14px]">{selectedBundle.coins.toLocaleString()} Coins — {selectedBundle.label}</div>
+                <div className="text-xs text-[#6b6b8a]">{selectedBundle.priceNGN} · {selectedBundle.priceUSD} USD</div>
+              </div>
+              <button onClick={() => setStep('bundle')} className="text-xs text-[#5b4cf5] font-semibold cursor-pointer bg-transparent border-0">Change</button>
+            </div>
 
-        <button
-          disabled={!selected || loading}
-          onClick={purchase}
-          className="w-full py-3 bg-[#5b4cf5] text-white rounded-xl font-semibold text-sm border-0 cursor-pointer hover:bg-[#7c6ff7] transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          {loading ? <span><i className="fas fa-spinner fa-spin mr-2" />Processing…</span> : 'Pay with Paystack →'}
-        </button>
+            <p className="text-sm text-[#6b6b8a] mb-4">How would you like to pay?</p>
+
+            <div className="flex flex-col gap-3 mb-5">
+              {PAYMENT_MODES.map(mode => (
+                <button
+                  key={mode.key}
+                  onClick={() => setPaymentMode(mode.key)}
+                  className={`w-full p-4 rounded-2xl border-2 text-left cursor-pointer transition-all font-[inherit] ${paymentMode === mode.key ? 'border-[#5b4cf5] bg-[#f4f2ff]' : 'border-[#e8e8f0] bg-white hover:border-[#5b4cf5]/40'}`}
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-xl grid place-items-center flex-shrink-0" style={{ background: mode.color + '18' }}>
+                      <i className={`fas ${mode.icon}`} style={{ color: mode.color }} />
+                    </div>
+                    <div>
+                      <div className="font-syne font-bold text-[14px]">{mode.label}</div>
+                      <div className="text-xs text-[#6b6b8a]">{mode.sub}</div>
+                    </div>
+                    {paymentMode === mode.key && (
+                      <i className="fas fa-check-circle text-[#5b4cf5] ml-auto" />
+                    )}
+                  </div>
+                </button>
+              ))}
+            </div>
+
+            {/* Amount preview */}
+            <div className="flex items-center justify-between p-3 bg-[#f5f5fb] rounded-xl mb-4">
+              <span className="text-sm text-[#6b6b8a]">You will be charged</span>
+              <span className="font-syne font-bold text-[15px]">
+                {paymentMode === 'usd_card' ? selectedBundle.priceUSD.replace('~', '') + ' USD' : selectedBundle.priceNGN + ' NGN'}
+              </span>
+            </div>
+
+            <div className="flex items-center gap-2 mb-4 p-3 bg-[#f5f5fb] rounded-xl">
+              <i className="fas fa-lock text-[#22c55e] text-sm" />
+              <span className="text-xs text-[#6b6b8a]">Secured by <strong>Paystack</strong> · SSL encrypted · Instant delivery</span>
+            </div>
+
+            <button
+              disabled={loading}
+              onClick={purchase}
+              className="w-full py-3 rounded-xl font-semibold text-sm border-0 cursor-pointer transition-all disabled:opacity-50 disabled:cursor-not-allowed text-white"
+              style={{ background: selectedMode.color }}
+            >
+              {loading
+                ? <span><i className="fas fa-spinner fa-spin mr-2" />Processing…</span>
+                : `Pay ${paymentMode === 'usd_card' ? selectedBundle.priceUSD.replace('~', '') + ' USD' : selectedBundle.priceNGN} via Paystack →`
+              }
+            </button>
+          </>
+        )}
       </div>
     </div>
   );
