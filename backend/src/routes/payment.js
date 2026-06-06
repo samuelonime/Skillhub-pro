@@ -1,6 +1,6 @@
 // SkillHub — Paystack Payment Routes
 // Handles: initiate payment, verify webhook, subscriptions, merit coin purchases
-// Dual-currency: NGN (Paystack/kobo) + USD display prices shown alongside ₦
+// Dual-currency: NGN (Paystack/kobo) + USD live rate fetched from ExchangeRate-API (free tier)
 const router = require('express').Router();
 const crypto = require('crypto');
 const { body, validationResult } = require('express-validator');
@@ -11,35 +11,54 @@ const { success, created, badRequest, error } = require('../utils/response');
 const PAYSTACK_SECRET = process.env.PAYSTACK_SECRET_KEY;
 const PAYSTACK_BASE   = 'https://api.paystack.co';
 
-// ─── Exchange rate helper ─────────────────────────────────────────────────────
-// Approximate NGN → USD display rate (1 USD ≈ 1,600 NGN).
-// Update USD_DISPLAY_RATE if the naira rate shifts significantly.
-// Payments are always processed in NGN (kobo) via Paystack — USD is display-only.
-const USD_DISPLAY_RATE = 1600; // NGN per 1 USD
+// ─── Live exchange rate (USD/NGN) ─────────────────────────────────────────────
+// We cache the rate for 1 hour to avoid hammering the free-tier API.
+// Source: open.er-api.com (no key required, 1,500 req/month free)
+// If the fetch fails we fall back to a hardcoded fallback rate.
+const FALLBACK_RATE   = 1600;    // NGN per 1 USD — updated fallback
+let   cachedRate      = FALLBACK_RATE;
+let   rateLastFetched = 0;
+const RATE_TTL_MS     = 60 * 60 * 1000; // 1 hour
 
-function koboToUsd(kobo) {
-  const naira = kobo / 100;
-  return (naira / USD_DISPLAY_RATE).toFixed(2);
+async function getLiveRate() {
+  const now = Date.now();
+  if (now - rateLastFetched < RATE_TTL_MS) return cachedRate;
+  try {
+    const r    = await fetch('https://open.er-api.com/v6/latest/USD');
+    const data = await r.json();
+    if (data?.result === 'success' && data.rates?.NGN) {
+      cachedRate      = Math.round(data.rates.NGN);
+      rateLastFetched = now;
+      console.log(`[Exchange rate] 1 USD = ₦${cachedRate} (live)`);
+    }
+  } catch (err) {
+    console.warn('[Exchange rate] Fetch failed, using fallback ₦' + FALLBACK_RATE, err.message);
+  }
+  return cachedRate;
 }
 
-function nairaToUsd(naira) {
-  return (naira / USD_DISPLAY_RATE).toFixed(2);
+async function nairaToUsd(naira) {
+  const rate = await getLiveRate();
+  return (naira / rate).toFixed(2);
+}
+async function koboToUsd(kobo) {
+  return nairaToUsd(kobo / 100);
 }
 
 // ─── Plan catalogue ───────────────────────────────────────────────────────────
 // amount is in kobo (₦1 = 100 kobo) — required by Paystack
-// usdDisplay is the approximate USD equivalent shown to users
+// Employer monthly: ₦10,000 | Employer annual: ₦90,000
 const PLANS = {
-  pro_monthly:      { label: 'Pro Monthly',     amount: 500000,   usdDisplay: koboToUsd(500000),   period: 30  },  // ₦5,000 ≈ $3.13
-  pro_annual:       { label: 'Pro Annual',       amount: 4500000,  usdDisplay: koboToUsd(4500000),  period: 365 },  // ₦45,000 ≈ $28.13
-  employer_monthly: { label: 'Employer Monthly', amount: 1500000,  usdDisplay: koboToUsd(1500000),  period: 30  },  // ₦15,000 ≈ $9.38
-  employer_annual:  { label: 'Employer Annual',  amount: 13500000, usdDisplay: koboToUsd(13500000), period: 365 },  // ₦135,000 ≈ $84.38
+  pro_monthly:      { label: 'Pro Monthly',     amount: 500000,   period: 30  },  // ₦5,000
+  pro_annual:       { label: 'Pro Annual',       amount: 4500000,  period: 365 },  // ₦45,000
+  employer_monthly: { label: 'Employer Monthly', amount: 1000000,  period: 30  },  // ₦10,000
+  employer_annual:  { label: 'Employer Annual',  amount: 9000000,  period: 365 },  // ₦90,000
 };
 
 const COIN_BUNDLES = {
-  coins_500:  { label: '500 Merit Coins',  amount: 100000, usdDisplay: koboToUsd(100000), coins: 500  },  // ₦1,000 ≈ $0.63
-  coins_1500: { label: '1500 Merit Coins', amount: 250000, usdDisplay: koboToUsd(250000), coins: 1500 },  // ₦2,500 ≈ $1.56
-  coins_5000: { label: '5000 Merit Coins', amount: 700000, usdDisplay: koboToUsd(700000), coins: 5000 },  // ₦7,000 ≈ $4.38
+  coins_500:  { label: '500 Merit Coins',  amount: 100000, coins: 500  },  // ₦1,000
+  coins_1500: { label: '1500 Merit Coins', amount: 250000, coins: 1500 },  // ₦2,500
+  coins_5000: { label: '5000 Merit Coins', amount: 700000, coins: 5000 },  // ₦7,000
 };
 
 // ─── Helper: call Paystack API ────────────────────────────────────────────────
@@ -56,33 +75,49 @@ async function paystackRequest(method, path, body = null) {
 }
 
 // ─── GET /payment/plans ───────────────────────────────────────────────────────
-// Returns subscription plans and coin bundles with NGN + USD display prices
-router.get('/plans', authenticate, (_req, res) => {
-  // Augment each plan with a formatted display object for the frontend
+// Returns subscription plans and coin bundles with NGN + live USD display prices
+router.get('/plans', authenticate, async (_req, res) => {
+  const rate = await getLiveRate();
+
   const plansWithDisplay = Object.fromEntries(
-    Object.entries(PLANS).map(([key, plan]) => [
-      key,
-      {
-        ...plan,
-        nairaDisplay: `₦${(plan.amount / 100).toLocaleString('en-NG')}`,
-        usdDisplay: `$${plan.usdDisplay}`,
-      },
-    ])
+    await Promise.all(
+      Object.entries(PLANS).map(async ([key, plan]) => {
+        const naira   = plan.amount / 100;
+        const usd     = (naira / rate).toFixed(2);
+        return [key, {
+          ...plan,
+          naira,
+          nairaDisplay: `₦${naira.toLocaleString('en-NG')}`,
+          usd:          parseFloat(usd),
+          usdDisplay:   `$${usd}`,
+          exchangeRate: rate,
+        }];
+      })
+    )
   );
+
   const bundlesWithDisplay = Object.fromEntries(
-    Object.entries(COIN_BUNDLES).map(([key, bundle]) => [
-      key,
-      {
-        ...bundle,
-        nairaDisplay: `₦${(bundle.amount / 100).toLocaleString('en-NG')}`,
-        usdDisplay: `$${bundle.usdDisplay}`,
-      },
-    ])
+    await Promise.all(
+      Object.entries(COIN_BUNDLES).map(async ([key, bundle]) => {
+        const naira = bundle.amount / 100;
+        const usd   = (naira / rate).toFixed(2);
+        return [key, {
+          ...bundle,
+          naira,
+          nairaDisplay: `₦${naira.toLocaleString('en-NG')}`,
+          usd:          parseFloat(usd),
+          usdDisplay:   `$${usd}`,
+          exchangeRate: rate,
+        }];
+      })
+    )
   );
+
   return success(res, {
-    plans: plansWithDisplay,
+    plans:      plansWithDisplay,
     coinBundles: bundlesWithDisplay,
-    exchangeRateNote: `Prices shown in USD are approximate at ₦${USD_DISPLAY_RATE}/USD. Payment is processed in NGN via Paystack.`,
+    exchangeRate: rate,
+    exchangeRateNote: `USD prices are live at ₦${rate}/USD. Payments are processed in NGN via Paystack.`,
   });
 });
 
@@ -103,7 +138,6 @@ router.get('/subscription', authenticate, async (req, res) => {
 });
 
 // ─── POST /payment/initiate ───────────────────────────────────────────────────
-// Kicks off a Paystack payment — returns an authorization_url to redirect to
 router.post('/initiate', authenticate, [
   body('purpose').isIn(['subscription', 'merit_coins', 'course', 'featured_profile']),
   body('planOrBundle').notEmpty(),
@@ -115,31 +149,30 @@ router.post('/initiate', authenticate, [
   const { purpose, planOrBundle, callbackUrl } = req.body;
   const user = req.user;
 
-  let amount, description, metadata, usdDisplay;
+  let amount, description, metadata;
+  const rate = await getLiveRate();
 
   if (purpose === 'subscription') {
     const plan = PLANS[planOrBundle];
     if (!plan) return badRequest(res, 'Invalid subscription plan');
     amount      = plan.amount;
     description = plan.label;
-    usdDisplay  = plan.usdDisplay;
     metadata    = { plan: planOrBundle, period: plan.period };
   } else if (purpose === 'merit_coins') {
     const bundle = COIN_BUNDLES[planOrBundle];
     if (!bundle) return badRequest(res, 'Invalid coin bundle');
     amount      = bundle.amount;
     description = bundle.label;
-    usdDisplay  = bundle.usdDisplay;
     metadata    = { bundle: planOrBundle, coins: bundle.coins };
   } else {
     return badRequest(res, 'Purpose not yet supported via this endpoint');
   }
 
-  // Generate a unique reference
-  const reference = `SH-${Date.now()}-${crypto.randomBytes(4).toString('hex').toUpperCase()}`;
+  const naira      = amount / 100;
+  const usdDisplay = (naira / rate).toFixed(2);
+  const reference  = `SH-${Date.now()}-${crypto.randomBytes(4).toString('hex').toUpperCase()}`;
 
   try {
-    // Store pending payment in DB first (so webhook can match it)
     await prisma.payment.create({
       data: {
         userId:      user.id,
@@ -150,24 +183,18 @@ router.post('/initiate', authenticate, [
         purpose,
         metadata: {
           ...metadata,
-          usdEquivalent: usdDisplay,        // stored for receipts / history display
-          exchangeRateUsed: USD_DISPLAY_RATE,
+          usdEquivalent:    usdDisplay,
+          exchangeRateUsed: rate,
         },
       },
     });
 
-    // Call Paystack to create the transaction
     const psRes = await paystackRequest('POST', '/transaction/initialize', {
       email:     user.email,
-      amount,                      // in kobo
+      amount,
       reference,
       callback_url: callbackUrl,
-      metadata: {
-        userId:      user.id,
-        purpose,
-        ...metadata,
-        cancel_action: callbackUrl,
-      },
+      metadata: { userId: user.id, purpose, ...metadata, cancel_action: callbackUrl },
     });
 
     if (!psRes.status) {
@@ -179,8 +206,9 @@ router.post('/initiate', authenticate, [
       authorizationUrl: psRes.data.authorization_url,
       reference,
       amount,
-      amountNaira:  amount / 100,
+      amountNaira:  naira,
       amountUsd:    usdDisplay,
+      exchangeRate: rate,
       description,
     }, 'Payment initiated');
   } catch (err) {
@@ -190,73 +218,45 @@ router.post('/initiate', authenticate, [
 });
 
 // ─── POST /payment/verify/:reference ─────────────────────────────────────────
-// Called by the frontend after redirect back from Paystack
 router.post('/verify/:reference', authenticate, async (req, res) => {
   const { reference } = req.params;
-
   try {
-    // Verify with Paystack
     const psRes = await paystackRequest('GET', `/transaction/verify/${reference}`);
-
     if (!psRes.status || psRes.data.status !== 'success') {
-      await prisma.payment.updateMany({
-        where: { paystackRef: reference },
-        data:  { status: 'failed' },
-      });
+      await prisma.payment.updateMany({ where: { paystackRef: reference }, data: { status: 'failed' } });
       return badRequest(res, 'Payment was not successful');
     }
 
     const payment = await prisma.payment.findUnique({ where: { paystackRef: reference } });
-    if (!payment) return badRequest(res, 'Payment record not found');
-    if (payment.userId !== req.user.id) return badRequest(res, 'Payment does not belong to this user');
-    if (payment.status === 'success') return success(res, payment, 'Payment already processed');
+    if (!payment)                         return badRequest(res, 'Payment record not found');
+    if (payment.userId !== req.user.id)   return badRequest(res, 'Payment does not belong to this user');
+    if (payment.status === 'success')     return success(res, payment, 'Payment already processed');
 
-    // Mark payment successful
     const updatedPayment = await prisma.payment.update({
       where: { paystackRef: reference },
-      data: {
-        status:        'success',
-        paystackTrxRef: String(psRes.data.id),
-        paidAt:        new Date(),
-      },
+      data:  { status: 'success', paystackTrxRef: String(psRes.data.id), paidAt: new Date() },
     });
 
-    // Fulfil based on purpose
     if (payment.purpose === 'subscription') {
-      const meta   = payment.metadata;
-      const plan   = PLANS[meta.plan];
+      const meta    = payment.metadata;
+      const plan    = PLANS[meta.plan];
       const endDate = new Date();
       endDate.setDate(endDate.getDate() + plan.period);
-
       await prisma.subscription.create({
-        data: {
-          userId:    payment.userId,
-          paymentId: updatedPayment.id,
-          plan:      meta.plan,
-          status:    'active',
-          endDate,
-        },
+        data: { userId: payment.userId, paymentId: updatedPayment.id, plan: meta.plan, status: 'active', endDate },
       });
       await notify(payment.userId, 'success', 'star', 'Subscription Activated!', `Your ${plan.label} plan is now active.`);
     }
 
     if (payment.purpose === 'merit_coins') {
       const coins = payment.metadata?.coins ?? 0;
-      // Use an atomic increment to avoid a race condition where two concurrent
-      // requests both read the old balance and only one batch of coins is credited.
       const updatedUser = await prisma.user.update({
         where: { id: payment.userId },
         data:  { meritCoins: { increment: coins } },
         select: { meritCoins: true },
       });
       await prisma.transaction.create({
-        data: {
-          userId:      payment.userId,
-          type:        'purchase',
-          amount:      coins,
-          description: `Purchased ${coins} Merit Coins`,
-          balanceAfter: updatedUser.meritCoins,
-        },
+        data: { userId: payment.userId, type: 'purchase', amount: coins, description: `Purchased ${coins} Merit Coins`, balanceAfter: updatedUser.meritCoins },
       });
       await notify(payment.userId, 'success', 'coins', 'Merit Coins Added!', `+${coins} Merit Coins added to your wallet.`);
     }
@@ -269,36 +269,24 @@ router.post('/verify/:reference', authenticate, async (req, res) => {
 });
 
 // ─── POST /payment/webhook ────────────────────────────────────────────────────
-// Paystack sends events here — MUST be publicly accessible, no auth middleware
-// Set this URL in your Paystack dashboard: https://yourdomain.com/api/v1/payment/webhook
 router.post('/webhook', async (req, res) => {
-  // Validate signature — req.body is a raw Buffer (see server.js express.raw config).
   const hash = crypto
     .createHmac('sha512', PAYSTACK_SECRET)
     .update(req.body)
     .digest('hex');
-
-  if (hash !== req.headers['x-paystack-signature']) {
-    return res.status(401).json({ message: 'Invalid signature' });
-  }
+  if (hash !== req.headers['x-paystack-signature']) return res.status(401).json({ message: 'Invalid signature' });
 
   let event;
-  try {
-    event = JSON.parse(req.body.toString('utf8'));
-  } catch {
-    return res.status(400).json({ message: 'Invalid JSON payload' });
-  }
+  try { event = JSON.parse(req.body.toString('utf8')); }
+  catch { return res.status(400).json({ message: 'Invalid JSON payload' }); }
   console.log(`[Paystack Webhook] ${event.event}`);
 
   try {
     if (event.event === 'charge.success') {
       const data      = event.data;
       const reference = data.reference;
-
-      const payment = await prisma.payment.findUnique({ where: { paystackRef: reference } });
-      if (!payment || payment.status === 'success') {
-        return res.sendStatus(200);
-      }
+      const payment   = await prisma.payment.findUnique({ where: { paystackRef: reference } });
+      if (!payment || payment.status === 'success') return res.sendStatus(200);
 
       await prisma.payment.update({
         where: { paystackRef: reference },
@@ -308,27 +296,21 @@ router.post('/webhook', async (req, res) => {
       if (payment.purpose === 'merit_coins') {
         const coins = payment.metadata?.coins ?? 0;
         const updatedUser = await prisma.user.update({
-          where: { id: payment.userId },
-          data:  { meritCoins: { increment: coins } },
-          select: { meritCoins: true },
+          where: { id: payment.userId }, data: { meritCoins: { increment: coins } }, select: { meritCoins: true },
         });
-        await prisma.transaction.create({
-          data: { userId: payment.userId, type: 'purchase', amount: coins, description: `Purchased ${coins} Merit Coins`, balanceAfter: updatedUser.meritCoins },
-        });
+        await prisma.transaction.create({ data: { userId: payment.userId, type: 'purchase', amount: coins, description: `Purchased ${coins} Merit Coins`, balanceAfter: updatedUser.meritCoins } });
         await notify(payment.userId, 'success', 'coins', 'Merit Coins Added!', `+${coins} Merit Coins added to your wallet.`);
       }
 
       if (payment.purpose === 'subscription') {
-        const meta    = payment.metadata;
-        const plan    = PLANS[meta?.plan];
+        const meta  = payment.metadata;
+        const plan  = PLANS[meta?.plan];
         if (plan) {
           const endDate = new Date();
           endDate.setDate(endDate.getDate() + plan.period);
           const exists = await prisma.subscription.findUnique({ where: { paymentId: payment.id } });
           if (!exists) {
-            await prisma.subscription.create({
-              data: { userId: payment.userId, paymentId: payment.id, plan: meta.plan, status: 'active', endDate },
-            });
+            await prisma.subscription.create({ data: { userId: payment.userId, paymentId: payment.id, plan: meta.plan, status: 'active', endDate } });
             await notify(payment.userId, 'success', 'star', 'Subscription Activated!', `Your ${plan.label} plan is now active.`);
           }
         }
@@ -338,15 +320,9 @@ router.post('/webhook', async (req, res) => {
     if (event.event === 'subscription.disable') {
       const customerEmail = event.data?.customer?.email;
       if (customerEmail) {
-        const user = await prisma.user.findUnique({
-          where:  { email: customerEmail },
-          select: { id: true },
-        });
+        const user = await prisma.user.findUnique({ where: { email: customerEmail }, select: { id: true } });
         if (user) {
-          await prisma.subscription.updateMany({
-            where: { userId: user.id, status: 'active' },
-            data:  { status: 'cancelled' },
-          });
+          await prisma.subscription.updateMany({ where: { userId: user.id, status: 'active' }, data: { status: 'cancelled' } });
           await notify(user.id, 'info', 'bell', 'Subscription Cancelled', 'Your subscription has been cancelled.');
         }
       }
@@ -361,21 +337,34 @@ router.post('/webhook', async (req, res) => {
 // ─── GET /payment/history ─────────────────────────────────────────────────────
 router.get('/history', authenticate, async (req, res) => {
   try {
+    const rate     = await getLiveRate();
     const payments = await prisma.payment.findMany({
-      where: { userId: req.user.id },
+      where:   { userId: req.user.id },
       orderBy: { createdAt: 'desc' },
-      take: 50,
+      take:    50,
     });
-    // Augment each record with USD display for the frontend
     const withUsd = payments.map(p => ({
       ...p,
       amountNaira:  p.amount / 100,
-      amountUsd:    `$${nairaToUsd(p.amount / 100)}`,
+      amountUsd:    `$${(p.amount / 100 / rate).toFixed(2)}`,
+      exchangeRate: rate,
     }));
     return success(res, withUsd);
   } catch (err) {
     return error(res, 'Failed to fetch payment history');
   }
+});
+
+// ─── GET /payment/exchange-rate ───────────────────────────────────────────────
+// Returns the current live NGN/USD exchange rate for frontend display
+router.get('/exchange-rate', authenticate, async (_req, res) => {
+  const rate = await getLiveRate();
+  return success(res, {
+    rate,
+    display:   `₦${rate.toLocaleString('en-NG')} = $1.00`,
+    updatedAt: new Date(rateLastFetched || Date.now()).toISOString(),
+    source:    'open.er-api.com',
+  });
 });
 
 // ─── Internal helper ─────────────────────────────────────────────────────────

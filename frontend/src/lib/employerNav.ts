@@ -6,4 +6,5 @@ export const employerNavItems = [
   { href: '/employer/analytics',   icon: 'fa-chart-bar',      label: 'Analytics' },
   { href: '/employer/company',     icon: 'fa-building',       label: 'Company Profile' },
   { href: '/employer/settings',    icon: 'fa-gear',           label: 'Settings' },
+  { href: '/employer/subscribe',   icon: 'fa-crown',          label: 'Subscription' },
 ];

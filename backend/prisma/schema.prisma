@@ -33,6 +33,7 @@ model User {
   verified         Boolean  @default(false)
   minTier          String?
   isPremium        Boolean  @default(false)
+  trialEndsAt      DateTime?
   createdAt        DateTime @default(now())
   updatedAt        DateTime @updatedAt
 

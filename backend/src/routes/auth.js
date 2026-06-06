@@ -78,6 +78,9 @@ router.post('/google', async (req, res) => {
       }
 
       const role = ['student','employer'].includes(requestedRole) ? requestedRole : 'student';
+      const trialEndsAt = role === 'employer'
+        ? new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
+        : null;
       user = await prisma.user.create({
         data: {
           email,
@@ -88,9 +91,13 @@ router.post('/google', async (req, res) => {
           avatar:    picture || `https://ui-avatars.com/api/?name=${given_name}+${family_name}&background=4f46e5&color=fff&bold=true`,
           title:     role === 'employer' ? 'Employer' : 'Learner',
           verified:  true,
+          trialEndsAt,
         },
       });
-      await prisma.notification.create({ data: { userId: user.id, type: 'success', icon: 'star', message: 'Welcome to SkillHub! Start exploring courses and opportunities.' } });
+      const welcomeMsg = role === 'employer'
+        ? 'Welcome to SkillHub! You have a 7-day free trial. Explore all employer features before your subscription begins.'
+        : 'Welcome to SkillHub! Start exploring courses and opportunities.';
+      await prisma.notification.create({ data: { userId: user.id, type: 'success', icon: 'star', message: welcomeMsg } });
     }
 
     await issueTokens(res, user);
@@ -118,16 +125,26 @@ router.post('/register', [
     if (existing) return badRequest(res, 'Email already registered');
 
     const hashed = await bcrypt.hash(password, 12);
+
+    // Employers get a 7-day free trial starting from account creation.
+    const trialEndsAt = role === 'employer'
+      ? new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
+      : null;
+
     const user   = await prisma.user.create({
       data: {
         email, password: hashed, firstName, lastName, role,
         company: company || null,
         avatar:  `https://ui-avatars.com/api/?name=${firstName}+${lastName}&background=4f46e5&color=fff&bold=true`,
         title:   role === 'employer' ? 'Employer' : 'student',
+        trialEndsAt,
       },
     });
 
-    await prisma.notification.create({ data: { userId: user.id, type: 'success', icon: 'star', message: 'Welcome to SkillHub! Start exploring courses and opportunities.' } });
+    const welcomeMsg = role === 'employer'
+      ? 'Welcome to SkillHub! You have a 7-day free trial. Explore all employer features before your subscription begins.'
+      : 'Welcome to SkillHub! Start exploring courses and opportunities.';
+    await prisma.notification.create({ data: { userId: user.id, type: 'success', icon: 'star', message: welcomeMsg } });
     await issueTokens(res, user);
     return created(res, { user: sanitizeUser(user) }, 'Account created successfully');
   } catch (err) {
