@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { SidebarLayout } from '@/components/layout/SidebarLayout';
 import { apiFetch } from '@/lib/api';
 import { employerNavItems } from '@/lib/employerNav';
+import { EmployerAccessGuard } from '@/components/employer/EmployerAccessGuard';
 
 /* ─── Tier helpers ─────────────────────────────────────────────────────── */
 const TIERS: Record<string, { label: string; icon: string; color: string; bg: string }> = {

@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react';
 import { SidebarLayout } from '@/components/layout/SidebarLayout';
 import { apiFetch } from '@/lib/api';
 import { employerNavItems } from '@/lib/employerNav';
+import { EmployerAccessGuard } from '@/components/employer/EmployerAccessGuard';
 
 function Sk({h='h-4',w='w-full',r='rounded'}:any){return <div className={`${h} ${w} ${r} bg-[#f0f0f8] animate-pulse`}/>;}
 
