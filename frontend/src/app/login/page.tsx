@@ -111,6 +111,110 @@ function GoogleButton({ onAlert, role, label = 'Continue with Google' }: {
   );
 }
 
+/* ── Apple Sign-In Button ───────────────────────────────────────────────── */
+declare global {
+  interface Window {
+    AppleID?: {
+      auth: {
+        init: (config: object) => void;
+        signIn: () => Promise<{ authorization: { id_token: string }; user?: { name?: { firstName?: string; lastName?: string } } }>;
+      };
+    };
+  }
+}
+
+function AppleButton({ onAlert, role, label = 'Continue with Apple' }: {
+  onAlert: (msg: string, type?: AlertType) => void;
+  role?: Role;
+  label?: string;
+}) {
+  const router = useRouter();
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (document.querySelector('script[src="https://appleid.cdn-apple.com/appleauth/static/jsapi/appleid/1/en_US/appleid.auth.js"]')) return;
+    const script = document.createElement('script');
+    script.src = 'https://appleid.cdn-apple.com/appleauth/static/jsapi/appleid/1/en_US/appleid.auth.js';
+    script.async = true;
+    script.defer = true;
+    document.body.appendChild(script);
+  }, []);
+
+  const handleApple = useCallback(async () => {
+    onAlert('');
+    setLoading(true);
+    try {
+      if (!window.AppleID) throw new Error('Apple JS not loaded. Please refresh and try again.');
+
+      window.AppleID.auth.init({
+        clientId:     process.env.NEXT_PUBLIC_APPLE_CLIENT_ID || 'com.skillhub.web',
+        scope:        'name email',
+        redirectURI:  window.location.origin + '/login',
+        usePopup:     true,
+      });
+
+      const response = await window.AppleID.auth.signIn();
+      const id_token  = response.authorization.id_token;
+      const appleUser = response.user; // only present on first login
+
+      const body: Record<string, any> = { id_token };
+      if (role)      body.role = role;
+      if (appleUser) body.user = appleUser;
+
+      const res = await fetch(`${API_BASE}/auth/apple`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+        credentials: 'include',
+      });
+      const d = await res.json();
+
+      if (!d.success) {
+        if (d.message?.includes('not registered')) {
+          onAlert('Apple account not found. Please sign up first.', 'err');
+          router.push('/login?tab=register');
+          return;
+        }
+        onAlert(d.message || 'Apple sign-in failed');
+        return;
+      }
+
+      setCachedUser(d.data.user);
+      onAlert('Apple sign-in successful! Redirecting…', 'ok');
+      const userRole = d.data.user.role;
+      setTimeout(() => router.push(userRole === 'employer' ? '/employer' : userRole === 'admin' ? '/admin' : '/dashboard'), 800);
+    } catch (err: any) {
+      // Apple popup closed by user — don't show an error
+      if (err?.error === 'popup_closed_by_user' || err?.error === 'user_cancelled_authorize') {
+        setLoading(false);
+        return;
+      }
+      onAlert(err.message || 'Apple sign-in failed. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  }, [role, onAlert, router]);
+
+  return (
+    <button
+      type="button"
+      onClick={handleApple}
+      disabled={loading}
+      className="w-full py-3 bg-[#0a0a0f] text-white border border-[#0a0a0f] rounded-xl text-sm font-medium font-[inherit] cursor-pointer flex items-center justify-center gap-2.5 hover:bg-[#1a1a2e] hover:shadow-[0_2px_10px_rgba(0,0,0,0.25)] disabled:opacity-60 disabled:cursor-not-allowed transition-all"
+    >
+      {loading ? (
+        <div className="w-[17px] h-[17px] border-2 border-white/30 border-t-white rounded-full" style={{ animation: 'spin 0.7s linear infinite' }} />
+      ) : (
+        /* Apple logo SVG — using the official  mark */
+        <svg width="17" height="17" viewBox="0 0 814 1000" fill="white" xmlns="http://www.w3.org/2000/svg">
+          <path d="M788.1 340.9c-5.8 4.5-108.2 62.2-108.2 190.5 0 148.4 130.3 200.9 134.2 202.2-.6 3.2-20.7 71.9-68.7 141.9-42.8 61.6-87.5 123.1-155.5 123.1s-85.5-39.5-164-39.5c-76 0-103.7 40.8-165.9 40.8s-105-42.4-145.5-100.5C92.8 790.4 51.3 699.2 51.3 612.5c0-151.3 104.6-231.6 206.7-231.6 55.4 0 101.4 37.4 136.5 37.4 33.5 0 85.8-39.6 149.1-39.6 24.2 0 108.2 2.6 168.6 71.4zm-109.4-194.5c31.4-37.4 53.9-89.6 53.9-141.9 0-7.1-.6-14.3-1.9-20.1-50.6 1.9-110.4 33.5-146.5 75.3-28.2 32.2-55.4 84.4-55.4 137.4 0 7.8 1.3 15.6 1.9 18.1 3.2.6 8.4 1.3 13.6 1.3 45.4 0 102.5-30.4 134.4-69.4z"/>
+        </svg>
+      )}
+      {label}
+    </button>
+  );
+}
+
 function LoginForm({ onAlert }: { onAlert: (msg: string, type?: AlertType) => void }) {
   const router = useRouter();
   const [email, setEmail] = useState('');
@@ -163,8 +267,11 @@ function LoginForm({ onAlert }: { onAlert: (msg: string, type?: AlertType) => vo
       <button type="submit" disabled={loading} className="w-full py-3.5 bg-[#5b4cf5] text-white rounded-xl text-[15px] font-semibold font-[inherit] cursor-pointer hover:bg-[#7c6ff7] hover:-translate-y-px hover:shadow-[0_6px_18px_rgba(91,76,245,0.33)] disabled:opacity-60 disabled:cursor-not-allowed transition-all">
         {loading ? <Spinner /> : 'Sign In'}
       </button>
-      <div className="flex items-center gap-2.5 my-4 text-[#9898b8] text-xs"><div className="flex-1 h-px bg-[#e8e8f0]" />or<div className="flex-1 h-px bg-[#e8e8f0]" /></div>
-      <GoogleButton onAlert={onAlert} />
+      <div className="flex items-center gap-2.5 my-4 text-[#9898b8] text-xs"><div className="flex-1 h-px bg-[#e8e8f0]" />or continue with<div className="flex-1 h-px bg-[#e8e8f0]" /></div>
+      <div className="flex flex-col gap-2.5">
+        <GoogleButton onAlert={onAlert} />
+        <AppleButton onAlert={onAlert} />
+      </div>
     </form>
   );
 }
@@ -251,8 +358,11 @@ function RegisterForm({ onAlert }: { onAlert: (msg: string, type?: AlertType) =>
       <button type="submit" disabled={loading} className="w-full py-3.5 bg-[#5b4cf5] text-white rounded-xl text-[15px] font-semibold font-[inherit] cursor-pointer hover:bg-[#7c6ff7] hover:-translate-y-px hover:shadow-[0_6px_18px_rgba(91,76,245,0.33)] disabled:opacity-60 disabled:cursor-not-allowed transition-all mb-4">
         {loading ? <Spinner /> : 'Create Account'}
       </button>
-      <div className="flex items-center gap-2.5 mb-4 text-[#9898b8] text-xs"><div className="flex-1 h-px bg-[#e8e8f0]" />or<div className="flex-1 h-px bg-[#e8e8f0]" /></div>
-      <GoogleButton onAlert={onAlert} role={role} label="Sign up with Google" />
+      <div className="flex items-center gap-2.5 mb-4 text-[#9898b8] text-xs"><div className="flex-1 h-px bg-[#e8e8f0]" />or continue with<div className="flex-1 h-px bg-[#e8e8f0]" /></div>
+      <div className="flex flex-col gap-2.5">
+        <GoogleButton onAlert={onAlert} role={role} label="Sign up with Google" />
+        <AppleButton onAlert={onAlert} role={role} label="Sign up with Apple" />
+      </div>
       <p className="text-xs text-[#6b6b8a] text-center leading-relaxed mt-3.5">By creating an account you agree to our <a href="#" className="text-[#5b4cf5]">Terms of Service</a> and <a href="#" className="text-[#5b4cf5]">Privacy Policy</a>.</p>
     </form>
   );

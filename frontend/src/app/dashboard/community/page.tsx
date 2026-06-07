@@ -654,6 +654,173 @@ function StatsBar({ stats }: { stats: any }) {
   );
 }
 
+/* ── Seed portfolio data shown when API returns nothing ──────────────────── */
+const SEED_PORTFOLIOS = [
+  {
+    id: 'pu1',
+    firstName: 'Amara', lastName: 'Osei',
+    title: 'Full-Stack Developer',
+    avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=amara&backgroundColor=b6e3f4',
+    skills: ['React', 'Node.js', 'TypeScript', 'PostgreSQL'],
+    bio: 'Building products that scale. Open to remote roles.',
+    location: 'Lagos, Nigeria',
+    projects: [
+      { id: 'pp1', title: 'JobBoard Pro', description: 'Full-stack job board with real-time alerts and resume parsing.', technologies: ['Next.js', 'Prisma', 'Redis'], thumbnail: 'https://images.unsplash.com/photo-1555066931-4365d14bab8c?w=400&q=80', liveUrl: '#', score: 9.2, views: 340 },
+      { id: 'pp2', title: 'DevTrack', description: 'Developer task manager with GitHub integration.', technologies: ['React', 'Node.js', 'MongoDB'], thumbnail: 'https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?w=400&q=80', liveUrl: '#', score: 8.7, views: 210 },
+    ],
+  },
+  {
+    id: 'pu2',
+    firstName: 'Chidi', lastName: 'Nwosu',
+    title: 'Staff Engineer @ Flutterwave',
+    avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=chidi&backgroundColor=c0aede',
+    skills: ['System Design', 'Go', 'Kubernetes', 'AWS'],
+    bio: 'Distributed systems, open-source contributor, speaker.',
+    location: 'Abuja, Nigeria',
+    projects: [
+      { id: 'pp3', title: 'MicroFlow', description: 'Event-driven microservices orchestration framework.', technologies: ['Go', 'Kafka', 'Docker'], thumbnail: 'https://images.unsplash.com/photo-1618477388954-7852f32655ec?w=400&q=80', liveUrl: '#', score: 9.5, views: 890 },
+    ],
+  },
+  {
+    id: 'pu3',
+    firstName: 'Ngozi', lastName: 'Eze',
+    title: 'Open Source Maintainer',
+    avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=ngozi&backgroundColor=ffd5dc',
+    skills: ['React', 'Storybook', 'CSS', 'Figma'],
+    bio: 'I build UI systems that teams love. 1k⭐ on GitHub.',
+    location: 'Port Harcourt, Nigeria',
+    projects: [
+      { id: 'pp4', title: 'PetalUI', description: 'Accessible React component library with 50+ components.', technologies: ['React', 'TypeScript', 'Rollup'], thumbnail: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&q=80', liveUrl: '#', score: 9.1, views: 1200 },
+      { id: 'pp5', title: 'ColorSage', description: 'AI-powered color palette generator for designers.', technologies: ['React', 'OpenAI', 'Tailwind'], thumbnail: 'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=400&q=80', liveUrl: '#', score: 8.8, views: 430 },
+    ],
+  },
+];
+
+/* ── Portfolio Spotlights ────────────────────────────────────────────────── */
+function PortfolioSpotlights({ onMessage }: { onMessage: (user: any) => void }) {
+  const [portfolios, setPortfolios] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [collapsed, setCollapsed] = useState(false);
+
+  useEffect(() => {
+    apiFetch('/portfolio/community-feed?limit=6')
+      .then(r => {
+        if (r.success && r.data.users.length > 0) setPortfolios(r.data.users);
+        else setPortfolios(SEED_PORTFOLIOS);
+      })
+      .catch(() => setPortfolios(SEED_PORTFOLIOS))
+      .finally(() => setLoading(false));
+  }, []);
+
+  const TECH_COLORS: Record<string, string> = {
+    React: '#61dafb', TypeScript: '#3178c6', Python: '#3776ab', 'Node.js': '#339933',
+    Go: '#00add8', Kubernetes: '#326ce5', AWS: '#ff9900', Docker: '#2496ed',
+  };
+
+  if (loading) return (
+    <div className="bg-white rounded-2xl border border-[#e8e8f0] p-5 mb-5 animate-pulse">
+      <div className="h-4 bg-[#f0f0f8] rounded w-40 mb-4" />
+      <div className="grid grid-cols-3 gap-3">
+        {[1,2,3].map(i => <div key={i} className="h-44 bg-[#f0f0f8] rounded-xl" />)}
+      </div>
+    </div>
+  );
+
+  if (portfolios.length === 0) return null;
+
+  return (
+    <div className="bg-white rounded-2xl border border-[#e8e8f0] mb-5 overflow-hidden">
+      {/* Header */}
+      <div className="flex items-center justify-between px-5 py-4 border-b border-[#f0f0f8]">
+        <div className="flex items-center gap-2.5">
+          <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-[#5b4cf5] to-[#7c3aed] grid place-items-center text-white text-[13px]">
+            <i className="fas fa-layer-group" />
+          </div>
+          <div>
+            <h3 className="font-syne font-bold text-[14px] text-[#0a0a0f]">Portfolio Spotlights</h3>
+            <p className="text-[11px] text-[#9898b8]">Members sharing their work with the community</p>
+          </div>
+        </div>
+        <div className="flex items-center gap-2">
+          <a href="/dashboard/portfolio" className="text-[11.5px] font-semibold text-[#5b4cf5] bg-[#f4f2ff] px-3 py-1.5 rounded-lg no-underline hover:bg-[#5b4cf5] hover:text-white transition-all">
+            Share yours
+          </a>
+          <button onClick={() => setCollapsed(v => !v)}
+            className="w-7 h-7 rounded-lg bg-[#f5f5fb] border-0 cursor-pointer text-[#9898b8] grid place-items-center hover:bg-[#f0f0f8] transition-all text-[11px]">
+            <i className={`fas fa-chevron-${collapsed ? 'down' : 'up'}`} />
+          </button>
+        </div>
+      </div>
+
+      {!collapsed && (
+        <div className="p-4 grid grid-cols-3 gap-3 max-[900px]:grid-cols-2 max-md:grid-cols-1">
+          {portfolios.map(u => (
+            <div key={u.id} className="border border-[#f0f0f8] rounded-xl overflow-hidden hover:border-[#5b4cf5]/30 hover:shadow-[0_4px_16px_rgba(91,76,245,0.08)] transition-all group">
+              {/* Top project thumbnail */}
+              <div className="relative h-24 bg-gradient-to-br from-[#f4f2ff] to-[#e8e8f0] overflow-hidden">
+                {u.projects[0]?.thumbnail ? (
+                  <img src={u.projects[0].thumbnail} alt="" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+                ) : (
+                  <div className="w-full h-full grid place-items-center text-[#5b4cf5]/30 text-3xl">
+                    <i className="fas fa-code" />
+                  </div>
+                )}
+                <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
+                <div className="absolute bottom-2 left-2.5 right-2.5">
+                  <div className="text-white font-semibold text-[11px] truncate">{u.projects[0]?.title || 'Project'}</div>
+                </div>
+                {u.projects[0]?.score && (
+                  <div className="absolute top-2 right-2 bg-white/90 text-[#5b4cf5] text-[10px] font-bold px-1.5 py-0.5 rounded-md">
+                    ★ {u.projects[0].score}
+                  </div>
+                )}
+              </div>
+
+              {/* User info */}
+              <div className="p-3">
+                <div className="flex items-center gap-2 mb-2">
+                  <div className="relative">
+                    <Avatar user={u} size={7} />
+                    <div className="absolute -bottom-0.5 -right-0.5 w-2 h-2 bg-[#10b981] rounded-full border border-white" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="font-semibold text-[12px] text-[#0a0a0f] truncate">{u.firstName} {u.lastName}</div>
+                    <div className="text-[10.5px] text-[#9898b8] truncate">{u.title}</div>
+                  </div>
+                </div>
+
+                {/* Skills */}
+                <div className="flex flex-wrap gap-1 mb-2.5">
+                  {(u.skills || []).slice(0, 3).map((skill: string) => (
+                    <span key={skill} className="text-[9.5px] font-semibold px-1.5 py-0.5 rounded-md"
+                      style={{ background: (TECH_COLORS[skill] || '#5b4cf5') + '18', color: TECH_COLORS[skill] || '#5b4cf5' }}>
+                      {skill}
+                    </span>
+                  ))}
+                  {(u.skills || []).length > 3 && (
+                    <span className="text-[9.5px] text-[#9898b8]">+{u.skills.length - 3}</span>
+                  )}
+                </div>
+
+                {/* Projects count + message */}
+                <div className="flex items-center justify-between">
+                  <span className="text-[10.5px] text-[#9898b8]">
+                    <i className="fas fa-layer-group mr-1" />{u.projects.length} project{u.projects.length !== 1 ? 's' : ''}
+                  </span>
+                  <button onClick={() => onMessage(u)}
+                    className="flex items-center gap-1 text-[10.5px] font-semibold text-[#5b4cf5] bg-[#f4f2ff] px-2 py-1 rounded-lg border-0 cursor-pointer hover:bg-[#5b4cf5] hover:text-white transition-all">
+                    <i className="fas fa-paper-plane text-[9px]" />Message
+                  </button>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 /* ── Online Members Strip ────────────────────────────────────────────────── */
 const ONLINE_MEMBERS = [
   { firstName: 'Amara',  lastName: 'O', avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=amara&backgroundColor=b6e3f4' },
@@ -800,6 +967,9 @@ export default function CommunityPage() {
 
       {/* Online members */}
       <OnlineMembersBar onMessage={setChatUser} />
+
+      {/* Portfolio Spotlights */}
+      <PortfolioSpotlights onMessage={setChatUser} />
 
       {/* Controls */}
       <div className="flex flex-wrap items-center gap-3 mb-5">

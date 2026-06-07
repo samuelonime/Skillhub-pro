@@ -277,4 +277,103 @@ router.post('/reset-password', async (req, res) => {
   }
 });
 
+/* ── APPLE SIGN-IN ─────────────────────────────────────────────────────────
+ *
+ *  Apple sends an id_token (JWT) signed with Apple's public keys.
+ *  We verify it, then upsert the user the same way we do for Google.
+ *
+ *  Required env vars:
+ *    APPLE_CLIENT_ID   – your Services ID (e.g. com.yourapp.web)
+ *
+ *  Apple only sends the user's name on the VERY FIRST login.
+ *  The client must forward the `user` object from the Apple JS SDK
+ *  in the request body alongside `id_token`.
+ * ─────────────────────────────────────────────────────────────────────── */
+router.post('/apple', async (req, res) => {
+  const { id_token, user: appleUser, role: requestedRole } = req.body;
+  if (!id_token) return badRequest(res, 'Apple id_token required');
+
+  try {
+    /* ── 1. Fetch Apple's public keys and verify the JWT ── */
+    const appleKeysRes = await fetch('https://appleid.apple.com/auth/keys');
+    const { keys } = await appleKeysRes.json();
+
+    // Decode header to find which key to use
+    const [headerB64] = id_token.split('.');
+    const header = JSON.parse(Buffer.from(headerB64, 'base64').toString('utf8'));
+    const appleKey = keys.find((k) => k.kid === header.kid);
+    if (!appleKey) return unauthorized(res, 'Apple public key not found');
+
+    // Build PEM from JWK components (RSA)
+    const { createPublicKey, verify: cryptoVerify } = require('crypto');
+    const jwkToPem = (jwk) => {
+      // Use Node's built-in JWK import (Node ≥ 15)
+      const keyObj = createPublicKey({ key: jwk, format: 'jwk' });
+      return keyObj.export({ type: 'spki', format: 'pem' });
+    };
+    const pem = jwkToPem(appleKey);
+
+    // Manually verify the JWT (avoid heavy deps)
+    const [h, p, sig] = id_token.split('.');
+    const data = `${h}.${p}`;
+    const signature = Buffer.from(sig, 'base64url');
+    const isValid = cryptoVerify('sha256', Buffer.from(data), { key: pem, padding: crypto.constants?.RSA_PKCS1_PADDING ?? 1 }, signature);
+    if (!isValid) return unauthorized(res, 'Invalid Apple token signature');
+
+    // Decode payload
+    const payload = JSON.parse(Buffer.from(p, 'base64').toString('utf8'));
+
+    // Validate claims
+    if (payload.iss !== 'https://appleid.apple.com') return unauthorized(res, 'Invalid Apple token issuer');
+    if (payload.exp < Math.floor(Date.now() / 1000))  return unauthorized(res, 'Apple token expired');
+    const appleId = payload.sub; // stable unique ID
+    const email   = payload.email || `${appleId}@privaterelay.appleid.com`;
+
+    /* ── 2. Upsert user ── */
+    let user = await prisma.user.findFirst({
+      where: { OR: [{ email }, { googleId: appleId }] },   // reuse googleId col to store appleId
+    });
+
+    if (!user) {
+      if (!requestedRole) return unauthorized(res, 'Apple account not registered. Please sign up first.');
+
+      const firstName = appleUser?.name?.firstName || email.split('@')[0];
+      const lastName  = appleUser?.name?.lastName  || '';
+      const role      = ['student', 'employer'].includes(requestedRole) ? requestedRole : 'student';
+      const trialEndsAt = role === 'employer' ? new Date(Date.now() + 7 * 24 * 60 * 60 * 1000) : null;
+
+      user = await prisma.user.create({
+        data: {
+          email,
+          password:  await bcrypt.hash(appleId + process.env.JWT_SECRET, 12),
+          firstName,
+          lastName,
+          role,
+          googleId:  appleId,   // store Apple's `sub` here
+          avatar:    `https://ui-avatars.com/api/?name=${encodeURIComponent(firstName + ' ' + lastName)}&background=000000&color=fff&bold=true`,
+          title:     role === 'employer' ? 'Employer' : 'Learner',
+          verified:  true,      // Apple verifies email itself
+          trialEndsAt,
+        },
+      });
+      await prisma.notification.create({
+        data: {
+          userId:  user.id,
+          type:    'success',
+          icon:    'star',
+          message: role === 'employer'
+            ? 'Welcome to SkillHub! You have a 7-day free trial.'
+            : 'Welcome to SkillHub! Start exploring courses and opportunities.',
+        },
+      });
+    }
+
+    await issueTokens(res, user);
+    return success(res, { user: sanitizeUser(user) }, 'Apple sign-in successful');
+  } catch (err) {
+    console.error('Apple auth error:', err.message);
+    return unauthorized(res, 'Apple sign-in failed. Please try again.');
+  }
+});
+
 module.exports = router;

@@ -22,31 +22,49 @@ const TECH_COLORS: Record<string, string> = {
   PostgreSQL: '#4169e1', MongoDB: '#47a248', AWS: '#ff9900', Docker: '#2496ed',
   TailwindCSS: '#06b6d4', GraphQL: '#e10098', Next: '#000000', Figma: '#f24e1e',
 };
-
-function getTechColor(tech: string) {
-  return TECH_COLORS[tech] || '#5b4cf5';
-}
+function getTechColor(tech: string) { return TECH_COLORS[tech] || '#5b4cf5'; }
 
 function ScoreRing({ score }: { score: number }) {
-  const r = 22;
-  const circ = 2 * Math.PI * r;
+  const r = 22; const circ = 2 * Math.PI * r;
   const fill = (score / 10) * circ;
   const color = score >= 9 ? '#22c55e' : score >= 7.5 ? '#5b4cf5' : '#f59e0b';
   return (
     <svg width="56" height="56" viewBox="0 0 56 56">
       <circle cx="28" cy="28" r={r} fill="none" stroke="#e8e8f0" strokeWidth="4" />
       <circle cx="28" cy="28" r={r} fill="none" stroke={color} strokeWidth="4"
-        strokeDasharray={`${fill} ${circ}`} strokeLinecap="round"
-        transform="rotate(-90 28 28)" />
+        strokeDasharray={`${fill} ${circ}`} strokeLinecap="round" transform="rotate(-90 28 28)" />
       <text x="28" y="33" textAnchor="middle" fontSize="12" fontWeight="700" fill={color}>{score}</text>
     </svg>
   );
 }
 
-function ProjectCard({ project, onEdit, onDelete }: any) {
-  const [expanded, setExpanded] = useState(false);
+/* ── Toggle Switch ──────────────────────────────────────────────────────── */
+function Toggle({ on, onChange, loading }: { on: boolean; onChange: (v: boolean) => void; loading?: boolean }) {
   return (
-    <div className="bg-white rounded-2xl border border-[#e8e8f0] overflow-hidden hover:-translate-y-0.5 hover:shadow-[0_8px_24px_rgba(0,0,0,0.08)] transition-all group">
+    <button
+      onClick={() => !loading && onChange(!on)}
+      disabled={loading}
+      className={`relative w-11 h-6 rounded-full border-0 cursor-pointer transition-all flex-shrink-0 ${on ? 'bg-[#5b4cf5]' : 'bg-[#e8e8f0]'} ${loading ? 'opacity-60' : ''}`}
+      style={{ padding: 0 }}>
+      <div className={`absolute top-0.5 w-5 h-5 bg-white rounded-full shadow-sm transition-all ${on ? 'left-[22px]' : 'left-0.5'}`} />
+    </button>
+  );
+}
+
+/* ── Project Card ───────────────────────────────────────────────────────── */
+function ProjectCard({ project, onEdit, onDelete, onToggleCommunity }: any) {
+  const [expanded, setExpanded] = useState(false);
+  const [toggling, setToggling] = useState(false);
+  const shared = project.visibility === 'community';
+
+  async function handleToggleCommunity() {
+    setToggling(true);
+    await onToggleCommunity(project.id, !shared);
+    setToggling(false);
+  }
+
+  return (
+    <div className={`bg-white rounded-2xl border overflow-hidden hover:-translate-y-0.5 hover:shadow-[0_8px_24px_rgba(0,0,0,0.08)] transition-all group ${shared ? 'border-[#5b4cf5]/40 ring-1 ring-[#5b4cf5]/20' : 'border-[#e8e8f0]'}`}>
       <div className="relative h-40 bg-gradient-to-br from-[#f4f2ff] to-[#e8e8f0] overflow-hidden">
         {project.thumbnail ? (
           <img src={project.thumbnail} alt={project.title} className="w-full h-full object-cover" />
@@ -58,6 +76,11 @@ function ProjectCard({ project, onEdit, onDelete }: any) {
         <div className="absolute top-3 right-3">
           <ScoreRing score={parseFloat(project.score) || 8.0} />
         </div>
+        {shared && (
+          <div className="absolute top-3 left-3 flex items-center gap-1.5 bg-[#5b4cf5] text-white text-[10px] font-bold px-2.5 py-1 rounded-full shadow-md">
+            <i className="fas fa-users text-[9px]" />Community
+          </div>
+        )}
         <div className="absolute bottom-0 left-0 right-0 h-16 bg-gradient-to-t from-black/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-end gap-2 px-3 pb-3">
           {project.liveUrl && (
             <a href={project.liveUrl} target="_blank" rel="noreferrer"
@@ -96,7 +119,7 @@ function ProjectCard({ project, onEdit, onDelete }: any) {
           </button>
         )}
 
-        <div className="flex flex-wrap gap-1.5">
+        <div className="flex flex-wrap gap-1.5 mb-3">
           {(project.technologies || []).slice(0, 5).map((t: string) => (
             <span key={t} className="text-[10.5px] font-semibold px-2 py-0.5 rounded-full"
               style={{ background: getTechColor(t) + '18', color: getTechColor(t) }}>
@@ -108,17 +131,24 @@ function ProjectCard({ project, onEdit, onDelete }: any) {
           )}
         </div>
 
-        <div className="flex items-center justify-between mt-3 pt-3 border-t border-[#f0f0f8]">
+        {/* Community share toggle per project */}
+        <div className={`flex items-center justify-between pt-3 border-t ${shared ? 'border-[#5b4cf5]/20' : 'border-[#f0f0f8]'}`}>
+          <div className="flex items-center gap-2">
+            <Toggle on={shared} onChange={() => handleToggleCommunity()} loading={toggling} />
+            <span className="text-[11.5px] font-medium text-[#6b6b8a]">
+              {shared ? <span className="text-[#5b4cf5] font-semibold">Shared to feed</span> : 'Share to feed'}
+            </span>
+          </div>
           <div className="flex items-center gap-3 text-xs text-[#9898b8]">
             <span><i className="fas fa-eye mr-1" />{project.views || 0}</span>
           </div>
-          <span className="text-[11px] text-[#9898b8]">{project.createdAt ? new Date(project.createdAt).toLocaleDateString() : ''}</span>
         </div>
       </div>
     </div>
   );
 }
 
+/* ── Project Modal ──────────────────────────────────────────────────────── */
 function ProjectModal({ project, onClose, onSaved }: any) {
   const [form, setForm] = useState({
     title: project?.title || '',
@@ -156,9 +186,7 @@ function ProjectModal({ project, onClose, onSaved }: any) {
             <i className="fas fa-times" />
           </button>
         </div>
-
         {error && <div className="mb-4 p-3 bg-[#fef2f2] text-[#ef4444] text-sm rounded-xl">{error}</div>}
-
         <div className="flex flex-col gap-3">
           {[
             { label: 'Project Title *', key: 'title', placeholder: 'e.g. E-commerce Dashboard' },
@@ -181,11 +209,8 @@ function ProjectModal({ project, onClose, onSaved }: any) {
               className="w-full px-3.5 py-2.5 border border-[#e8e8f0] rounded-xl text-sm font-[inherit] outline-none focus:border-[#5b4cf5] focus:shadow-[0_0_0_3px_rgba(91,76,245,0.12)] transition-all resize-none" />
           </div>
         </div>
-
         <div className="flex gap-2.5 mt-5">
-          <button onClick={onClose} className="flex-1 py-2.5 border border-[#e8e8f0] rounded-xl text-sm font-semibold text-[#6b6b8a] bg-white cursor-pointer hover:bg-[#f5f5fb] transition-all">
-            Cancel
-          </button>
+          <button onClick={onClose} className="flex-1 py-2.5 border border-[#e8e8f0] rounded-xl text-sm font-semibold text-[#6b6b8a] bg-white cursor-pointer hover:bg-[#f5f5fb] transition-all">Cancel</button>
           <button onClick={submit} disabled={saving}
             className="flex-1 py-2.5 bg-[#5b4cf5] text-white rounded-xl text-sm font-semibold border-0 cursor-pointer hover:bg-[#7c6ff7] transition-all disabled:opacity-60">
             {saving ? 'Saving…' : project?.id ? 'Update Project' : 'Add Project (+25 coins)'}
@@ -196,15 +221,67 @@ function ProjectModal({ project, onClose, onSaved }: any) {
   );
 }
 
+/* ── Community Visibility Banner ────────────────────────────────────────── */
+function CommunityVisibilityBanner({ portfolioPublic, onToggle, sharedCount, totalCount }: {
+  portfolioPublic: boolean; onToggle: (v: boolean) => void;
+  sharedCount: number; totalCount: number;
+}) {
+  const [toggling, setToggling] = useState(false);
+
+  async function handle(v: boolean) {
+    setToggling(true);
+    await onToggle(v);
+    setToggling(false);
+  }
+
+  return (
+    <div className={`rounded-2xl p-5 mb-6 border flex items-center gap-4 transition-all ${portfolioPublic ? 'bg-gradient-to-r from-[#f4f2ff] to-[#eff6ff] border-[#5b4cf5]/25' : 'bg-[#f8f8fc] border-[#e8e8f0]'}`}>
+      <div className={`w-11 h-11 rounded-xl grid place-items-center flex-shrink-0 text-lg transition-all ${portfolioPublic ? 'bg-[#5b4cf5] text-white shadow-[0_4px_14px_rgba(91,76,245,0.35)]' : 'bg-white text-[#9898b8] border border-[#e8e8f0]'}`}>
+        <i className="fas fa-users" />
+      </div>
+      <div className="flex-1 min-w-0">
+        <div className="flex items-center gap-2 mb-0.5">
+          <span className="font-syne font-bold text-[14px] text-[#0a0a0f]">Community Portfolio Feed</span>
+          {portfolioPublic && (
+            <span className="text-[10px] font-bold text-[#5b4cf5] bg-[#5b4cf5]/10 px-2 py-0.5 rounded-full">VISIBLE</span>
+          )}
+        </div>
+        <p className="text-[12px] text-[#6b6b8a] leading-relaxed">
+          {portfolioPublic
+            ? `Your profile is visible in the community feed. ${sharedCount} of ${totalCount} projects are shared.`
+            : 'Enable to let fellow learners discover your work and projects in the Community tab.'}
+        </p>
+        {portfolioPublic && sharedCount === 0 && totalCount > 0 && (
+          <p className="text-[11.5px] text-[#d97706] mt-1">
+            <i className="fas fa-info-circle mr-1" />Toggle individual projects below to show them in the feed.
+          </p>
+        )}
+      </div>
+      <div className="flex items-center gap-3 flex-shrink-0">
+        {portfolioPublic && (
+          <div className="text-right hidden sm:block">
+            <div className="font-syne font-bold text-[18px] text-[#5b4cf5]">{sharedCount}</div>
+            <div className="text-[10.5px] text-[#9898b8]">shared</div>
+          </div>
+        )}
+        <Toggle on={portfolioPublic} onChange={handle} loading={toggling} />
+      </div>
+    </div>
+  );
+}
+
+/* ── Main Page ──────────────────────────────────────────────────────────── */
 export default function PortfolioPage() {
-  const [data, setData] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
-  const [modal, setModal] = useState<any>(null);
-  const [toast, setToast] = useState('');
-  const [activeTab, setActiveTab] = useState<'projects' | 'skills' | 'certificates'>('projects');
+  const [data, setData]               = useState<any>(null);
+  const [loading, setLoading]         = useState(true);
+  const [modal, setModal]             = useState<any>(null);
+  const [toast, setToast]             = useState('');
+  const [toastType, setToastType]     = useState<'success'|'info'>('success');
+  const [activeTab, setActiveTab]     = useState<'projects' | 'skills' | 'certificates'>('projects');
   const [editingSkills, setEditingSkills] = useState(false);
-  const [skillInput, setSkillInput] = useState('');
-  const [skills, setSkills] = useState<string[]>([]);
+  const [skillInput, setSkillInput]   = useState('');
+  const [skills, setSkills]           = useState<string[]>([]);
+  const [portfolioPublic, setPortfolioPublic] = useState(false);
 
   async function load() {
     setLoading(true);
@@ -213,6 +290,7 @@ export default function PortfolioPage() {
       if (res.success) {
         setData(res.data);
         setSkills(res.data.user?.skills || []);
+        setPortfolioPublic(res.data.user?.portfolioPublic ?? false);
       }
     } catch {}
     finally { setLoading(false); }
@@ -220,7 +298,35 @@ export default function PortfolioPage() {
 
   useEffect(() => { load(); }, []);
 
-  function showToast(msg: string) { setToast(msg); setTimeout(() => setToast(''), 3500); }
+  function showToast(msg: string, type: 'success' | 'info' = 'success') {
+    setToast(msg); setToastType(type);
+    setTimeout(() => setToast(''), 3500);
+  }
+
+  async function handleVisibilityToggle(v: boolean) {
+    try {
+      const res = await apiFetch('/portfolio/visibility', { method: 'PUT', body: JSON.stringify({ portfolioPublic: v }) });
+      if (res.success) { setPortfolioPublic(v); showToast(res.message, 'info'); }
+    } catch {}
+  }
+
+  async function handleToggleCommunity(projectId: string, showInCommunity: boolean) {
+    try {
+      const res = await apiFetch(`/portfolio/projects/${projectId}/community`, {
+        method: 'PUT',
+        body: JSON.stringify({ showInCommunity }),
+      });
+      if (res.success) {
+        setData((prev: any) => ({
+          ...prev,
+          projects: prev.projects.map((p: any) =>
+            p.id === projectId ? { ...p, visibility: showInCommunity ? 'community' : 'public' } : p
+          ),
+        }));
+        showToast(res.message, 'info');
+      }
+    } catch {}
+  }
 
   async function deleteProject(id: string) {
     if (!confirm('Delete this project?')) return;
@@ -243,10 +349,11 @@ export default function PortfolioPage() {
     setSkillInput('');
   }
 
-  const stats = data?.stats;
-  const projects = data?.projects || [];
+  const stats      = data?.stats;
+  const projects   = data?.projects || [];
   const certificates = data?.certificates || [];
-  const user = data?.user;
+  const user       = data?.user;
+  const sharedCount = projects.filter((p: any) => p.visibility === 'community').length;
 
   if (loading) {
     return (
@@ -260,21 +367,18 @@ export default function PortfolioPage() {
 
   return (
     <SidebarLayout navItems={navItems} pageTitle="Portfolio">
+      {/* Toast */}
       {toast && (
-        <div className="fixed top-5 right-5 z-50 bg-[#0a0a0f] text-white text-sm font-semibold px-5 py-3 rounded-xl shadow-xl flex items-center gap-2">
-          <i className="fas fa-check-circle text-[#22c55e]" />{toast}
+        <div className={`fixed top-5 right-5 z-50 text-sm font-semibold px-5 py-3 rounded-xl shadow-xl flex items-center gap-2 ${toastType === 'info' ? 'bg-[#5b4cf5] text-white' : 'bg-[#0a0a0f] text-white'}`}>
+          <i className={`fas ${toastType === 'info' ? 'fa-users' : 'fa-check-circle text-[#22c55e]'}`} />{toast}
         </div>
       )}
       {modal !== null && (
-        <ProjectModal
-          project={modal}
-          onClose={() => setModal(null)}
-          onSaved={(msg: string) => { showToast(msg); load(); }}
-        />
+        <ProjectModal project={modal} onClose={() => setModal(null)} onSaved={(msg: string) => { showToast(msg); load(); }} />
       )}
 
       {/* Profile header */}
-      <div className="rounded-2xl p-6 mb-6 bg-white border border-[#e8e8f0] shadow-[0_1px_3px_rgba(0,0,0,0.06)]">
+      <div className="rounded-2xl p-6 mb-5 bg-white border border-[#e8e8f0] shadow-[0_1px_3px_rgba(0,0,0,0.06)]">
         <div className="flex items-center gap-5 flex-wrap">
           <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-[#5b4cf5] to-[#7c3aed] grid place-items-center font-syne font-bold text-white text-2xl flex-shrink-0">
             {user?.name?.charAt(0) || 'U'}
@@ -300,12 +404,23 @@ export default function PortfolioPage() {
         </div>
       </div>
 
+      {/* Community Visibility Banner */}
+      <CommunityVisibilityBanner
+        portfolioPublic={portfolioPublic}
+        onToggle={handleVisibilityToggle}
+        sharedCount={sharedCount}
+        totalCount={projects.length}
+      />
+
       {/* Tabs */}
       <div className="flex gap-1 bg-[#f5f5fb] p-1 rounded-xl w-fit mb-6 border border-[#e8e8f0]">
         {(['projects', 'skills', 'certificates'] as const).map(t => (
           <button key={t} onClick={() => setActiveTab(t)}
             className={`px-5 py-2 rounded-[9px] text-sm font-medium font-[inherit] cursor-pointer capitalize transition-all border-0 ${activeTab === t ? 'bg-white text-[#0a0a0f] font-semibold shadow-[0_1px_5px_rgba(0,0,0,0.09)]' : 'bg-transparent text-[#6b6b8a]'}`}>
             {t}
+            {t === 'projects' && sharedCount > 0 && portfolioPublic && (
+              <span className="ml-1.5 text-[9px] font-bold text-[#5b4cf5] bg-[#5b4cf5]/10 px-1.5 py-0.5 rounded-full align-middle">{sharedCount}</span>
+            )}
           </button>
         ))}
       </div>
@@ -314,7 +429,14 @@ export default function PortfolioPage() {
       {activeTab === 'projects' && (
         <>
           <div className="flex items-center justify-between mb-4">
-            <h2 className="font-syne font-bold text-[15px]">My Projects</h2>
+            <div>
+              <h2 className="font-syne font-bold text-[15px]">My Projects</h2>
+              {portfolioPublic && (
+                <p className="text-[12px] text-[#9898b8] mt-0.5">
+                  Toggle <i className="fas fa-users text-[10px] text-[#5b4cf5]" /> on each project to share it to the Community feed
+                </p>
+              )}
+            </div>
             <button onClick={() => setModal({})}
               className="inline-flex items-center gap-2 px-4 py-2.5 bg-[#5b4cf5] text-white rounded-xl text-sm font-semibold border-0 cursor-pointer hover:bg-[#7c6ff7] hover:-translate-y-px hover:shadow-[0_6px_20px_rgba(91,76,245,0.3)] transition-all">
               <i className="fas fa-plus" />Add Project
@@ -335,7 +457,13 @@ export default function PortfolioPage() {
           ) : (
             <div className="grid grid-cols-3 gap-4 max-[1200px]:grid-cols-2 max-md:grid-cols-1">
               {projects.map((p: any) => (
-                <ProjectCard key={p.id} project={p} onEdit={setModal} onDelete={deleteProject} />
+                <ProjectCard
+                  key={p.id}
+                  project={p}
+                  onEdit={setModal}
+                  onDelete={deleteProject}
+                  onToggleCommunity={portfolioPublic ? handleToggleCommunity : () => showToast('Enable Community Portfolio Feed first', 'info')}
+                />
               ))}
             </div>
           )}
@@ -355,17 +483,12 @@ export default function PortfolioPage() {
             ) : (
               <div className="flex gap-2">
                 <button onClick={() => { setEditingSkills(false); setSkills(user?.skills || []); }}
-                  className="px-3.5 py-2 text-sm font-semibold text-[#6b6b8a] bg-[#f5f5fb] rounded-xl border-0 cursor-pointer hover:bg-[#e8e8f0] transition-all">
-                  Cancel
-                </button>
+                  className="px-3.5 py-2 text-sm font-semibold text-[#6b6b8a] bg-[#f5f5fb] rounded-xl border-0 cursor-pointer hover:bg-[#e8e8f0] transition-all">Cancel</button>
                 <button onClick={saveSkills}
-                  className="px-3.5 py-2 text-sm font-semibold text-white bg-[#5b4cf5] rounded-xl border-0 cursor-pointer hover:bg-[#7c6ff7] transition-all">
-                  Save
-                </button>
+                  className="px-3.5 py-2 text-sm font-semibold text-white bg-[#5b4cf5] rounded-xl border-0 cursor-pointer hover:bg-[#7c6ff7] transition-all">Save</button>
               </div>
             )}
           </div>
-
           {editingSkills && (
             <div className="mb-5 flex gap-2">
               <input value={skillInput} onChange={e => setSkillInput(e.target.value)}
@@ -373,12 +496,9 @@ export default function PortfolioPage() {
                 placeholder="Type a skill and press Enter…"
                 className="flex-1 px-3.5 py-2.5 border border-[#e8e8f0] rounded-xl text-sm font-[inherit] outline-none focus:border-[#5b4cf5] focus:shadow-[0_0_0_3px_rgba(91,76,245,0.12)] transition-all" />
               <button onClick={() => addSkill(skillInput)}
-                className="px-4 py-2.5 bg-[#5b4cf5] text-white text-sm font-semibold rounded-xl border-0 cursor-pointer hover:bg-[#7c6ff7] transition-all">
-                Add
-              </button>
+                className="px-4 py-2.5 bg-[#5b4cf5] text-white text-sm font-semibold rounded-xl border-0 cursor-pointer hover:bg-[#7c6ff7] transition-all">Add</button>
             </div>
           )}
-
           {skills.length === 0 ? (
             <div className="py-10 text-center text-[#9898b8]">
               <i className="fas fa-tools text-3xl mb-3 block" />
@@ -407,18 +527,14 @@ export default function PortfolioPage() {
         <div>
           <div className="flex items-center justify-between mb-4">
             <h2 className="font-syne font-bold text-[15px]">Earned Certificates</h2>
-            <a href="/dashboard/certificates" className="text-xs font-semibold text-[#5b4cf5] bg-[#f5f5fb] border border-[#e8e8f0] px-3 py-1.5 rounded-lg no-underline hover:bg-[#f4f2ff] transition-all">
-              View all
-            </a>
+            <a href="/dashboard/certificates" className="text-xs font-semibold text-[#5b4cf5] bg-[#f5f5fb] border border-[#e8e8f0] px-3 py-1.5 rounded-lg no-underline hover:bg-[#f4f2ff] transition-all">View all</a>
           </div>
           {certificates.length === 0 ? (
             <div className="bg-white rounded-2xl p-12 border border-[#e8e8f0] text-center">
               <i className="fas fa-certificate text-4xl text-[#f59e0b] mb-4 block" />
               <h3 className="font-syne font-bold text-[15px] mb-2">No certificates yet</h3>
               <p className="text-sm text-[#6b6b8a] mb-5">Complete courses to earn certificates that display here.</p>
-              <a href="/dashboard/courses" className="inline-flex items-center gap-2 px-5 py-2.5 bg-[#5b4cf5] text-white rounded-xl text-sm font-semibold no-underline hover:bg-[#7c6ff7] transition-all">
-                Browse Courses
-              </a>
+              <a href="/dashboard/courses" className="inline-flex items-center gap-2 px-5 py-2.5 bg-[#5b4cf5] text-white rounded-xl text-sm font-semibold no-underline hover:bg-[#7c6ff7] transition-all">Browse Courses</a>
             </div>
           ) : (
             <div className="grid grid-cols-3 gap-4 max-md:grid-cols-1">
@@ -427,9 +543,7 @@ export default function PortfolioPage() {
                   <div className="w-12 h-12 rounded-xl bg-[#fffbeb] grid place-items-center text-2xl mb-3">🏆</div>
                   <h3 className="font-syne font-bold text-[14px] mb-0.5">{cert.title}</h3>
                   <p className="text-xs text-[#6b6b8a] mb-3">{cert.issuer || cert.course?.title}</p>
-                  <div className="text-[11px] text-[#9898b8]">
-                    {cert.issuedAt ? new Date(cert.issuedAt).toLocaleDateString() : ''}
-                  </div>
+                  <div className="text-[11px] text-[#9898b8]">{cert.issuedAt ? new Date(cert.issuedAt).toLocaleDateString() : ''}</div>
                 </div>
               ))}
             </div>
