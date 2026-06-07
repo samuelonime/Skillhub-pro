@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import Link from 'next/link';
 import { SidebarLayout } from '@/components/layout/SidebarLayout';
 import { apiFetch, getCachedUser } from '@/lib/api';
@@ -18,12 +18,12 @@ const navItems = [
 ];
 
 const POST_TYPES = [
-  { value: '',           label: 'All',        icon: 'fa-globe',         color: '#6b6b8a' },
-  { value: 'discussion', label: 'Discussion', icon: 'fa-comments',      color: '#5b4cf5' },
-  { value: 'project',    label: 'Project',    icon: 'fa-code',          color: '#10b981' },
-  { value: 'resource',   label: 'Resource',   icon: 'fa-link',          color: '#3b82f6' },
+  { value: '',           label: 'All',        icon: 'fa-globe',           color: '#6b6b8a' },
+  { value: 'discussion', label: 'Discussion', icon: 'fa-comments',        color: '#5b4cf5' },
+  { value: 'project',    label: 'Project',    icon: 'fa-code',            color: '#10b981' },
+  { value: 'resource',   label: 'Resource',   icon: 'fa-link',            color: '#3b82f6' },
   { value: 'question',   label: 'Question',   icon: 'fa-question-circle', color: '#f59e0b' },
-  { value: 'showcase',   label: 'Showcase',   icon: 'fa-star',          color: '#ef4444' },
+  { value: 'showcase',   label: 'Showcase',   icon: 'fa-star',            color: '#ef4444' },
 ];
 
 const TYPE_COLORS: Record<string, { bg: string; color: string; icon: string }> = {
@@ -32,6 +32,108 @@ const TYPE_COLORS: Record<string, { bg: string; color: string; icon: string }> =
   resource:   { bg: '#eff6ff', color: '#3b82f6', icon: 'fa-link' },
   question:   { bg: '#fffbeb', color: '#d97706', icon: 'fa-question-circle' },
   showcase:   { bg: '#fef2f2', color: '#ef4444', icon: 'fa-star' },
+};
+
+// ── Rich seed posts with images/GIFs and conversations ──────────────────────
+const SEED_POSTS = [
+  {
+    id: 'seed-1',
+    title: 'Just launched my full-stack job board — built with Next.js 15 + Hono + Prisma 🚀',
+    body: 'Been grinding on this for 3 months. It has real-time job alerts, a resume parser, and company profiles. Would love feedback from fellow devs!',
+    type: 'showcase',
+    tags: ['nextjs', 'prisma', 'typescript', 'fullstack'],
+    likes: 142,
+    views: 2340,
+    isPinned: true,
+    likedByMe: false,
+    createdAt: new Date(Date.now() - 1000 * 60 * 47).toISOString(),
+    mediaUrl: 'https://images.unsplash.com/photo-1555066931-4365d14bab8c?w=800&q=80',
+    mediaType: 'image',
+    projectUrl: 'https://github.com/example/jobboard',
+    author: { firstName: 'Amara', lastName: 'Osei', title: 'Full-Stack Developer', avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=amara&backgroundColor=b6e3f4' },
+    _count: { comments: 18 },
+  },
+  {
+    id: 'seed-2',
+    title: 'Hot take: Tailwind CSS is making junior devs worse at CSS fundamentals 🔥',
+    body: "I've interviewed 30+ junior devs this year and most can't explain the box model or write a CSS grid without Tailwind. Are we trading understanding for speed?",
+    type: 'discussion',
+    tags: ['css', 'tailwind', 'career', 'opinion'],
+    likes: 89,
+    views: 3120,
+    isPinned: false,
+    likedByMe: true,
+    createdAt: new Date(Date.now() - 1000 * 60 * 60 * 3).toISOString(),
+    mediaUrl: 'https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExcDhsZnBuNnNua3N5NXhxZTRuZGthZHZucm01MGd3amY4NzZoNHZmdCZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/du3J3cXyzhj75IOgvA/giphy.gif',
+    mediaType: 'gif',
+    projectUrl: null,
+    author: { firstName: 'Kemi', lastName: 'Adeyemi', title: 'Senior Frontend Engineer', avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=kemi&backgroundColor=ffdfbf' },
+    _count: { comments: 54 },
+  },
+  {
+    id: 'seed-3',
+    title: 'Free resource: I compiled 200+ system design interview questions with answers',
+    body: 'Took 6 months of prep and actual interviews at FAANG companies. Covers distributed systems, databases, caching, load balancing and more. All free, no paywall.',
+    type: 'resource',
+    tags: ['system-design', 'interviews', 'career', 'free'],
+    likes: 317,
+    views: 8900,
+    isPinned: false,
+    likedByMe: false,
+    createdAt: new Date(Date.now() - 1000 * 60 * 60 * 6).toISOString(),
+    mediaUrl: 'https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?w=800&q=80',
+    mediaType: 'image',
+    projectUrl: 'https://github.com/example/system-design-guide',
+    author: { firstName: 'Chidi', lastName: 'Nwosu', title: 'Staff Engineer @ Flutterwave', avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=chidi&backgroundColor=c0aede' },
+    _count: { comments: 41 },
+  },
+  {
+    id: 'seed-4',
+    title: 'How do I stop over-engineering everything? Every side project turns into a microservices nightmare 😅',
+    body: "I started building a simple todo app and somehow ended up with Kafka, Redis, 4 microservices, and a Kubernetes cluster. How do you all resist the urge to add more abstraction?",
+    type: 'question',
+    tags: ['architecture', 'beginners', 'help', 'overengineering'],
+    likes: 203,
+    views: 4500,
+    isPinned: false,
+    likedByMe: false,
+    createdAt: new Date(Date.now() - 1000 * 60 * 60 * 11).toISOString(),
+    mediaUrl: 'https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExbXF3ZThwN2R1NzFlYWYxbmhudnlwbGR4OXllMG83dWk1N2cxaXUwdCZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/a9xhxAxaqOfQs/giphy.gif',
+    mediaType: 'gif',
+    projectUrl: null,
+    author: { firstName: 'Tolu', lastName: 'Bankole', title: 'Backend Developer', avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=tolu&backgroundColor=d1d4f9' },
+    _count: { comments: 37 },
+  },
+  {
+    id: 'seed-5',
+    title: 'My open-source React component library just hit 1,000 GitHub stars ⭐',
+    body: "Started it as a personal utility library 8 months ago, never expected this. The community contributions have been incredible. Here's what the dashboard looks like now:",
+    type: 'project',
+    tags: ['react', 'opensource', 'components', 'milestone'],
+    likes: 256,
+    views: 5600,
+    isPinned: false,
+    likedByMe: false,
+    createdAt: new Date(Date.now() - 1000 * 60 * 60 * 18).toISOString(),
+    mediaUrl: 'https://images.unsplash.com/photo-1618477388954-7852f32655ec?w=800&q=80',
+    mediaType: 'image',
+    projectUrl: 'https://github.com/example/react-lib',
+    author: { firstName: 'Ngozi', lastName: 'Eze', title: 'Open Source Maintainer', avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=ngozi&backgroundColor=ffd5dc' },
+    _count: { comments: 29 },
+  },
+];
+
+const SEED_CONVERSATIONS: Record<string, any[]> = {
+  'seed-1': [
+    { id: 'c1', body: "This is incredible! The resume parser feature alone would save hours. What tech did you use for it?", likes: 24, likedByMe: false, createdAt: new Date(Date.now() - 1000*60*40).toISOString(), author: { firstName: 'Dami', lastName: 'Adebayo', title: 'React Developer', avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=dami' } },
+    { id: 'c2', body: "Used OpenAI function calling + a custom PDF parser I built with pdf-lib. Happy to share the code if interested!", likes: 18, likedByMe: false, createdAt: new Date(Date.now() - 1000*60*35).toISOString(), author: { firstName: 'Amara', lastName: 'Osei', title: 'Full-Stack Developer', avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=amara&backgroundColor=b6e3f4' } },
+    { id: 'c3', body: "The real-time alerts — are you using WebSockets or SSE? I tried SSE with Next.js and had a horrible time with deployment 😅", likes: 12, likedByMe: true, createdAt: new Date(Date.now() - 1000*60*30).toISOString(), author: { firstName: 'Emeka', lastName: 'Obi', title: 'Node.js Dev', avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=emeka' } },
+  ],
+  'seed-2': [
+    { id: 'c4', body: "Hard agree. I teach CSS and the number of students who can't debug layout issues without dev tools suggesting Tailwind classes is alarming.", likes: 45, likedByMe: false, createdAt: new Date(Date.now() - 1000*60*60*2.5).toISOString(), author: { firstName: 'Funmi', lastName: 'Akinola', title: 'CSS Educator', avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=funmi' } },
+    { id: 'c5', body: "Respectfully disagree. Tailwind utility classes ARE CSS. The abstraction is minimal. We don't say \"Bootstrap made devs worse\" in 2015.", likes: 38, likedByMe: false, createdAt: new Date(Date.now() - 1000*60*60*2).toISOString(), author: { firstName: 'Seun', lastName: 'Martins', title: 'Frontend Architect', avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=seun' } },
+    { id: 'c6', body: "The real issue is skipping fundamentals entirely. Tailwind is fine once you understand the cascade, specificity, and layout models.", likes: 62, likedByMe: true, createdAt: new Date(Date.now() - 1000*60*60*1.5).toISOString(), author: { firstName: 'Kemi', lastName: 'Adeyemi', title: 'Senior Frontend Engineer', avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=kemi&backgroundColor=ffdfbf' } },
+  ],
 };
 
 function timeAgo(d: string) {
@@ -48,7 +150,7 @@ function Avatar({ user, size = 9 }: { user: any; size?: number }) {
   const colors   = ['#5b4cf5', '#10b981', '#f59e0b', '#3b82f6', '#ef4444', '#8b5cf6'];
   const color    = colors[(initials.charCodeAt(0) || 0) % colors.length];
   if (user?.avatar) {
-    return <img src={user.avatar} alt={name} className={`w-${size} h-${size} rounded-full object-cover flex-shrink-0`} />;
+    return <img src={user.avatar} alt={name} className={`w-${size} h-${size} rounded-full object-cover flex-shrink-0 border-2 border-white`} />;
   }
   return (
     <div className={`w-${size} h-${size} rounded-full flex-shrink-0 grid place-items-center font-bold text-white text-xs`} style={{ background: color }}>
@@ -57,15 +159,91 @@ function Avatar({ user, size = 9 }: { user: any; size?: number }) {
   );
 }
 
+/* ── Media Preview ──────────────────────────────────────────────────────── */
+function MediaPreview({ url, type }: { url: string; type: string }) {
+  if (!url) return null;
+  if (type === 'gif') {
+    return (
+      <div className="mt-3 rounded-xl overflow-hidden border border-[#f0f0f8]">
+        <img src={url} alt="GIF" className="w-full max-h-72 object-cover" />
+      </div>
+    );
+  }
+  if (type === 'image') {
+    return (
+      <div className="mt-3 rounded-xl overflow-hidden border border-[#f0f0f8]">
+        <img src={url} alt="Post image" className="w-full max-h-72 object-cover" />
+      </div>
+    );
+  }
+  if (type === 'video') {
+    return (
+      <div className="mt-3 rounded-xl overflow-hidden border border-[#f0f0f8]">
+        <video src={url} controls className="w-full max-h-72" />
+      </div>
+    );
+  }
+  return null;
+}
+
+/* ── Mini conversation strip ─────────────────────────────────────────────── */
+function ConversationStrip({ postId, count }: { postId: string; count: number }) {
+  const [open, setOpen] = useState(false);
+  const convos = SEED_CONVERSATIONS[postId] || [];
+  if (convos.length === 0) return (
+    <Link href={`/dashboard/community/post/${postId}`}
+      className="flex items-center gap-1.5 text-[12px] font-medium text-[#9898b8] hover:text-[#5b4cf5] no-underline transition-all">
+      <i className="far fa-comment" />{count}
+    </Link>
+  );
+
+  return (
+    <div className="w-full">
+      <button
+        onClick={() => setOpen(v => !v)}
+        className="flex items-center gap-1.5 text-[12px] font-medium text-[#9898b8] hover:text-[#5b4cf5] transition-all bg-transparent border-0 cursor-pointer p-0">
+        <i className="far fa-comment" />{count}
+        <i className={`fas fa-chevron-${open ? 'up' : 'down'} text-[9px] ml-0.5`} />
+      </button>
+      {open && (
+        <div className="mt-3 space-y-2.5 border-t border-[#f0f0f8] pt-3">
+          {convos.map(c => (
+            <div key={c.id} className="flex gap-2.5">
+              <Avatar user={c.author} size={7} />
+              <div className="flex-1 bg-[#f8f8fc] rounded-xl px-3 py-2">
+                <div className="flex items-center gap-1.5 mb-0.5">
+                  <span className="font-semibold text-[11.5px] text-[#0a0a0f]">{c.author.firstName}</span>
+                  <span className="text-[10px] text-[#c8c8d8]">{timeAgo(c.createdAt)}</span>
+                </div>
+                <p className="text-[12.5px] text-[#4b4b6a] leading-relaxed">{c.body}</p>
+                <button className={`mt-1.5 flex items-center gap-1 text-[10.5px] font-medium border-0 bg-transparent cursor-pointer transition-colors ${c.likedByMe ? 'text-[#ef4444]' : 'text-[#c8c8d8] hover:text-[#ef4444]'}`}>
+                  <i className={`${c.likedByMe ? 'fas' : 'far'} fa-heart`} />{c.likes}
+                </button>
+              </div>
+            </div>
+          ))}
+          <Link href={`/dashboard/community/post/${postId}`}
+            className="block text-center text-[11.5px] text-[#5b4cf5] font-semibold no-underline hover:underline pt-1">
+            View all {count} replies →
+          </Link>
+        </div>
+      )}
+    </div>
+  );
+}
+
 /* ── Post Card ─────────────────────────────────────────────────────────── */
-function PostCard({ post, onLike }: { post: any; onLike: (id: string) => void }) {
+function PostCard({ post, onLike, onMessage }: { post: any; onLike: (id: string) => void; onMessage: (user: any) => void }) {
   const tc = TYPE_COLORS[post.type] || TYPE_COLORS.discussion;
   return (
     <div className="bg-white border border-[#e8e8f0] rounded-2xl p-5 hover:shadow-[0_4px_20px_rgba(0,0,0,0.07)] hover:-translate-y-0.5 transition-all">
       {/* Header */}
       <div className="flex items-start justify-between gap-3 mb-3">
         <div className="flex items-center gap-2.5">
-          <Avatar user={post.author} size={9} />
+          <div className="relative cursor-pointer" onClick={() => onMessage(post.author)}>
+            <Avatar user={post.author} size={10} />
+            <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-[#10b981] rounded-full border-2 border-white" />
+          </div>
           <div>
             <div className="font-semibold text-[13px] text-[#0a0a0f]">
               {post.author.firstName} {post.author.lastName}
@@ -85,6 +263,12 @@ function PostCard({ post, onLike }: { post: any; onLike: (id: string) => void })
               <i className="fas fa-thumbtack mr-1" />Pinned
             </span>
           )}
+          <button
+            onClick={() => onMessage(post.author)}
+            className="w-7 h-7 rounded-lg bg-[#f4f2ff] text-[#5b4cf5] border-0 cursor-pointer hover:bg-[#5b4cf5] hover:text-white transition-all grid place-items-center text-[11px]"
+            title={`Message ${post.author.firstName}`}>
+            <i className="fas fa-paper-plane" />
+          </button>
         </div>
       </div>
 
@@ -95,6 +279,9 @@ function PostCard({ post, onLike }: { post: any; onLike: (id: string) => void })
         </h3>
         <p className="text-[13px] text-[#6b6b8a] leading-relaxed line-clamp-2">{post.body}</p>
       </Link>
+
+      {/* Media */}
+      {post.mediaUrl && <MediaPreview url={post.mediaUrl} type={post.mediaType} />}
 
       {/* Tags */}
       {post.tags?.length > 0 && (
@@ -125,11 +312,7 @@ function PostCard({ post, onLike }: { post: any; onLike: (id: string) => void })
             <i className={`${post.likedByMe ? 'fas' : 'far'} fa-heart`} />
             {post.likes}
           </button>
-          <Link href={`/dashboard/community/post/${post.id}`}
-            className="flex items-center gap-1.5 text-[12px] font-medium text-[#9898b8] hover:text-[#5b4cf5] no-underline transition-all">
-            <i className="far fa-comment" />
-            {post._count?.comments ?? 0}
-          </Link>
+          <ConversationStrip postId={post.id} count={post._count?.comments ?? 0} />
           <span className="flex items-center gap-1.5 text-[12px] text-[#c8c8d8]">
             <i className="far fa-eye" />
             {post.views}
@@ -141,11 +324,39 @@ function PostCard({ post, onLike }: { post: any; onLike: (id: string) => void })
   );
 }
 
-/* ── New Post Modal ────────────────────────────────────────────────────── */
+/* ── New Post Modal with Media Upload ───────────────────────────────────── */
 function NewPostModal({ onClose, onCreated }: { onClose: () => void; onCreated: (post: any) => void }) {
-  const [form, setForm]   = useState({ title: '', body: '', type: 'discussion', tags: '', projectUrl: '' });
-  const [saving, setSaving] = useState(false);
-  const [err, setErr]     = useState('');
+  const [form, setForm]       = useState({ title: '', body: '', type: 'discussion', tags: '', projectUrl: '', imageUrl: '' });
+  const [saving, setSaving]   = useState(false);
+  const [err, setErr]         = useState('');
+  const [mediaPreview, setMediaPreview] = useState<{ url: string; type: string } | null>(null);
+  const [mediaTab, setMediaTab] = useState<'url' | 'upload'>('url');
+  const [mediaUrl, setMediaUrl] = useState('');
+  const fileRef = useRef<HTMLInputElement>(null);
+
+  function handleMediaUrl() {
+    if (!mediaUrl.trim()) return;
+    const isGif = mediaUrl.toLowerCase().includes('.gif') || mediaUrl.includes('giphy');
+    const isVideo = /\.(mp4|webm|mov)/.test(mediaUrl.toLowerCase());
+    setMediaPreview({ url: mediaUrl, type: isGif ? 'gif' : isVideo ? 'video' : 'image' });
+    setForm(f => ({ ...f, imageUrl: mediaUrl }));
+  }
+
+  function handleFileUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const url = URL.createObjectURL(file);
+    const type = file.type.startsWith('video') ? 'video' : file.type.includes('gif') ? 'gif' : 'image';
+    setMediaPreview({ url, type });
+    setForm(f => ({ ...f, imageUrl: url }));
+  }
+
+  function removeMedia() {
+    setMediaPreview(null);
+    setMediaUrl('');
+    setForm(f => ({ ...f, imageUrl: '' }));
+    if (fileRef.current) fileRef.current.value = '';
+  }
 
   async function submit() {
     if (!form.title.trim() || !form.body.trim()) { setErr('Title and body are required.'); return; }
@@ -154,7 +365,7 @@ function NewPostModal({ onClose, onCreated }: { onClose: () => void; onCreated: 
       const tags = form.tags.split(',').map(t => t.trim()).filter(Boolean).slice(0, 5);
       const res  = await apiFetch('/community', {
         method: 'POST',
-        body: JSON.stringify({ ...form, tags, projectUrl: form.projectUrl || undefined }),
+        body: JSON.stringify({ ...form, tags, imageUrl: form.imageUrl || undefined, projectUrl: form.projectUrl || undefined }),
       });
       if (res.success) { onCreated(res.data); onClose(); }
       else setErr(res.message || 'Failed to create post');
@@ -167,7 +378,7 @@ function NewPostModal({ onClose, onCreated }: { onClose: () => void; onCreated: 
 
   return (
     <div className="fixed inset-0 bg-[#0a0a0f]/60 backdrop-blur-sm z-[300] flex items-center justify-center p-4" onClick={onClose}>
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg p-6" onClick={e => e.stopPropagation()}>
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto p-6" onClick={e => e.stopPropagation()}>
         <div className="flex items-center justify-between mb-5">
           <h2 className="font-syne font-bold text-[17px]">New Post</h2>
           <button onClick={onClose} className="w-8 h-8 rounded-xl bg-[#f5f5fb] border-0 cursor-pointer text-[#6b6b8a] grid place-items-center hover:bg-[#f0f0f8] transition-all">
@@ -207,10 +418,84 @@ function NewPostModal({ onClose, onCreated }: { onClose: () => void; onCreated: 
           <textarea
             value={form.body}
             onChange={e => setForm(f => ({ ...f, body: e.target.value }))}
-            rows={5}
+            rows={4}
             placeholder="Share your ideas, project details, or question..."
             className="w-full px-3.5 py-2.5 rounded-xl border border-[#e8e8f0] text-[13.5px] font-[inherit] outline-none focus:border-[#5b4cf5] focus:shadow-[0_0_0_3px_rgba(91,76,245,0.1)] transition-all resize-none bg-[#fafaff]"
           />
+        </div>
+
+        {/* Media section */}
+        <div className="mb-3.5">
+          <label className="block text-[12px] font-semibold text-[#6b6b8a] mb-2 uppercase tracking-wide">
+            Media <span className="text-[#c8c8d8] font-normal normal-case">(image, GIF, or short video)</span>
+          </label>
+
+          {mediaPreview ? (
+            <div className="relative rounded-xl overflow-hidden border border-[#e8e8f0]">
+              {mediaPreview.type === 'video'
+                ? <video src={mediaPreview.url} controls className="w-full max-h-48" />
+                : <img src={mediaPreview.url} alt="Preview" className="w-full max-h-48 object-cover" />}
+              <button onClick={removeMedia}
+                className="absolute top-2 right-2 w-7 h-7 bg-[#0a0a0f]/60 text-white rounded-full border-0 cursor-pointer grid place-items-center hover:bg-[#0a0a0f]/80 transition-all">
+                <i className="fas fa-times text-[11px]" />
+              </button>
+              <div className="absolute bottom-2 left-2 text-[10px] font-bold text-white bg-[#0a0a0f]/50 px-2 py-0.5 rounded-full uppercase">
+                {mediaPreview.type}
+              </div>
+            </div>
+          ) : (
+            <div className="border border-dashed border-[#d0d0e8] rounded-xl p-4 bg-[#fafaff]">
+              {/* Tab switcher */}
+              <div className="flex gap-1 mb-3 bg-[#f0f0f8] rounded-lg p-0.5">
+                {(['url', 'upload'] as const).map(tab => (
+                  <button key={tab} onClick={() => setMediaTab(tab)}
+                    className={`flex-1 py-1.5 rounded-md text-[11.5px] font-semibold border-0 cursor-pointer transition-all ${mediaTab === tab ? 'bg-white text-[#5b4cf5] shadow-sm' : 'bg-transparent text-[#9898b8]'}`}>
+                    {tab === 'url' ? '🔗 URL / GIF link' : '📁 Upload file'}
+                  </button>
+                ))}
+              </div>
+
+              {mediaTab === 'url' ? (
+                <div className="flex gap-2">
+                  <input
+                    value={mediaUrl}
+                    onChange={e => setMediaUrl(e.target.value)}
+                    placeholder="Paste image, GIF, or video URL..."
+                    className="flex-1 px-3 py-2 rounded-lg border border-[#e8e8f0] text-[12.5px] font-[inherit] outline-none focus:border-[#5b4cf5] transition-all bg-white"
+                    onKeyDown={e => e.key === 'Enter' && handleMediaUrl()}
+                  />
+                  <button onClick={handleMediaUrl}
+                    className="px-3 py-2 bg-[#5b4cf5] text-white rounded-lg border-0 cursor-pointer text-[12px] font-semibold hover:bg-[#4a3de0] transition-all">
+                    Add
+                  </button>
+                </div>
+              ) : (
+                <div>
+                  <input ref={fileRef} type="file" accept="image/*,video/mp4,video/webm" onChange={handleFileUpload} className="hidden" id="media-upload" />
+                  <label htmlFor="media-upload"
+                    className="flex flex-col items-center justify-center gap-2 py-5 cursor-pointer rounded-lg border border-[#e8e8f0] bg-white hover:bg-[#f8f8fc] transition-all">
+                    <div className="w-10 h-10 rounded-xl bg-[#f4f2ff] grid place-items-center text-[#5b4cf5] text-lg">
+                      <i className="fas fa-cloud-upload-alt" />
+                    </div>
+                    <div className="text-[12px] text-[#6b6b8a] text-center">
+                      <span className="font-semibold text-[#5b4cf5]">Click to upload</span> or drag & drop<br />
+                      <span className="text-[11px] text-[#c8c8d8]">PNG, JPG, GIF, MP4 · Max 50MB</span>
+                    </div>
+                  </label>
+                </div>
+              )}
+
+              <div className="flex gap-2 mt-2.5 flex-wrap">
+                {['https://media.giphy.com/media/du3J3cXyzhj75IOgvA/giphy.gif', 'https://media.giphy.com/media/a9xhxAxaqOfQs/giphy.gif'].map((gif, i) => (
+                  <button key={i} onClick={() => { setMediaPreview({ url: gif, type: 'gif' }); setForm(f => ({ ...f, imageUrl: gif })); }}
+                    className="w-14 h-10 rounded-lg overflow-hidden border border-[#e8e8f0] cursor-pointer hover:border-[#5b4cf5] transition-all p-0 bg-transparent">
+                    <img src={gif} alt="Quick GIF" className="w-full h-full object-cover" />
+                  </button>
+                ))}
+                <span className="text-[10.5px] text-[#c8c8d8] self-center">Quick GIFs</span>
+              </div>
+            </div>
+          )}
         </div>
 
         <div className="mb-3.5">
@@ -250,14 +535,107 @@ function NewPostModal({ onClose, onCreated }: { onClose: () => void; onCreated: 
   );
 }
 
+/* ── Private Chat Panel ─────────────────────────────────────────────────── */
+const DEMO_CHAT_MESSAGES: Record<string, any[]> = {
+  default: [
+    { id: 'm1', from: 'them', text: "Hey! Saw your post about the job board. The real-time alerts are impressive.", time: new Date(Date.now() - 1000*60*5).toISOString() },
+    { id: 'm2', from: 'me',   text: "Thanks! It took a while to get SSE working right with Next.js App Router but it's solid now.", time: new Date(Date.now() - 1000*60*4).toISOString() },
+    { id: 'm3', from: 'them', text: "Would you be open to doing a pair coding session sometime? I'm building something similar.", time: new Date(Date.now() - 1000*60*3).toISOString() },
+  ],
+};
+
+function ChatPanel({ user, onClose }: { user: any; onClose: () => void }) {
+  const [messages, setMessages] = useState(DEMO_CHAT_MESSAGES.default);
+  const [text, setText] = useState('');
+  const bottomRef = useRef<HTMLDivElement>(null);
+  const [minimized, setMinimized] = useState(false);
+
+  useEffect(() => {
+    bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [messages]);
+
+  function sendMessage() {
+    if (!text.trim()) return;
+    setMessages(prev => [...prev, { id: `m${Date.now()}`, from: 'me', text: text.trim(), time: new Date().toISOString() }]);
+    setText('');
+    // Simulate reply
+    setTimeout(() => {
+      setMessages(prev => [...prev, { id: `m${Date.now()}`, from: 'them', text: "That sounds great! Let me know when you're available.", time: new Date().toISOString() }]);
+    }, 1500);
+  }
+
+  const name = `${user.firstName} ${user.lastName}`;
+
+  return (
+    <div className={`fixed bottom-6 right-6 z-[400] w-[340px] bg-white rounded-2xl shadow-[0_8px_40px_rgba(0,0,0,0.18)] border border-[#e8e8f0] flex flex-col overflow-hidden transition-all ${minimized ? 'h-[56px]' : 'h-[460px]'}`}>
+      {/* Header */}
+      <div className="flex items-center gap-2.5 px-4 py-3 bg-gradient-to-r from-[#5b4cf5] to-[#7c6ff7] flex-shrink-0">
+        <div className="relative">
+          <Avatar user={user} size={8} />
+          <div className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 bg-[#10b981] rounded-full border-2 border-white" />
+        </div>
+        <div className="flex-1 min-w-0">
+          <div className="font-semibold text-white text-[13px] truncate">{name}</div>
+          <div className="text-white/60 text-[10.5px]">Active now</div>
+        </div>
+        <div className="flex items-center gap-1.5">
+          <button onClick={() => setMinimized(v => !v)}
+            className="w-6 h-6 rounded-lg bg-white/20 border-0 cursor-pointer text-white grid place-items-center hover:bg-white/30 transition-all text-[10px]">
+            <i className={`fas fa-${minimized ? 'expand-alt' : 'minus'}`} />
+          </button>
+          <button onClick={onClose}
+            className="w-6 h-6 rounded-lg bg-white/20 border-0 cursor-pointer text-white grid place-items-center hover:bg-white/30 transition-all text-[10px]">
+            <i className="fas fa-times" />
+          </button>
+        </div>
+      </div>
+
+      {!minimized && (
+        <>
+          {/* Messages */}
+          <div className="flex-1 overflow-y-auto p-3.5 space-y-2.5 bg-[#fafaff]">
+            <div className="text-center text-[10.5px] text-[#c8c8d8] mb-2">Today</div>
+            {messages.map(msg => (
+              <div key={msg.id} className={`flex ${msg.from === 'me' ? 'justify-end' : 'justify-start'} gap-2`}>
+                {msg.from === 'them' && <Avatar user={user} size={6} />}
+                <div className={`max-w-[75%] px-3.5 py-2.5 rounded-2xl text-[12.5px] leading-relaxed ${msg.from === 'me' ? 'bg-[#5b4cf5] text-white rounded-br-sm' : 'bg-white text-[#0a0a0f] border border-[#e8e8f0] rounded-bl-sm'}`}>
+                  {msg.text}
+                  <div className={`text-[9.5px] mt-0.5 ${msg.from === 'me' ? 'text-white/60' : 'text-[#c8c8d8]'}`}>
+                    {timeAgo(msg.time)}
+                  </div>
+                </div>
+              </div>
+            ))}
+            <div ref={bottomRef} />
+          </div>
+
+          {/* Input */}
+          <div className="flex items-center gap-2 p-3 border-t border-[#f0f0f8] bg-white flex-shrink-0">
+            <input
+              value={text}
+              onChange={e => setText(e.target.value)}
+              onKeyDown={e => e.key === 'Enter' && sendMessage()}
+              placeholder={`Message ${user.firstName}…`}
+              className="flex-1 px-3.5 py-2.5 rounded-xl bg-[#f5f5fb] border border-transparent text-[12.5px] font-[inherit] outline-none focus:border-[#5b4cf5] focus:bg-white transition-all"
+            />
+            <button onClick={sendMessage} disabled={!text.trim()}
+              className="w-9 h-9 rounded-xl bg-[#5b4cf5] text-white border-0 cursor-pointer grid place-items-center hover:bg-[#4a3de0] disabled:opacity-50 disabled:cursor-not-allowed transition-all flex-shrink-0">
+              <i className="fas fa-paper-plane text-[12px]" />
+            </button>
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+
 /* ── Stats Bar ─────────────────────────────────────────────────────────── */
 function StatsBar({ stats }: { stats: any }) {
-  if (!stats) return null;
   const items = [
-    { icon: 'fa-file-alt',  color: '#5b4cf5', bg: '#f4f2ff', label: 'Posts',   value: stats.totalPosts },
-    { icon: 'fa-comments',  color: '#10b981', bg: '#f0fdf4', label: 'Replies',  value: stats.totalComments },
-    { icon: 'fa-users',     color: '#3b82f6', bg: '#eff6ff', label: 'Members',  value: stats.totalMembers },
-    { icon: 'fa-fire',      color: '#ef4444', bg: '#fef2f2', label: 'Active (7d)', value: stats.recentActive },
+    { icon: 'fa-file-alt',  color: '#5b4cf5', bg: '#f4f2ff', label: 'Posts',      value: stats?.totalPosts    ?? 5 },
+    { icon: 'fa-comments',  color: '#10b981', bg: '#f0fdf4', label: 'Replies',    value: stats?.totalComments ?? 179 },
+    { icon: 'fa-users',     color: '#3b82f6', bg: '#eff6ff', label: 'Members',    value: stats?.totalMembers  ?? 1240 },
+    { icon: 'fa-fire',      color: '#ef4444', bg: '#fef2f2', label: 'Active (7d)',value: stats?.recentActive  ?? 84 },
   ];
   return (
     <div className="grid grid-cols-4 gap-3 mb-6 max-md:grid-cols-2">
@@ -276,6 +654,37 @@ function StatsBar({ stats }: { stats: any }) {
   );
 }
 
+/* ── Online Members Strip ────────────────────────────────────────────────── */
+const ONLINE_MEMBERS = [
+  { firstName: 'Amara',  lastName: 'O', avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=amara&backgroundColor=b6e3f4' },
+  { firstName: 'Kemi',   lastName: 'A', avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=kemi&backgroundColor=ffdfbf' },
+  { firstName: 'Chidi',  lastName: 'N', avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=chidi&backgroundColor=c0aede' },
+  { firstName: 'Tolu',   lastName: 'B', avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=tolu&backgroundColor=d1d4f9' },
+  { firstName: 'Ngozi',  lastName: 'E', avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=ngozi&backgroundColor=ffd5dc' },
+  { firstName: 'Emeka',  lastName: 'O', avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=emeka' },
+];
+
+function OnlineMembersBar({ onMessage }: { onMessage: (user: any) => void }) {
+  return (
+    <div className="bg-white rounded-2xl border border-[#e8e8f0] p-4 mb-5 flex items-center gap-3 overflow-x-auto">
+      <span className="text-[11.5px] font-semibold text-[#9898b8] uppercase tracking-wide flex-shrink-0">Online</span>
+      <div className="flex items-center gap-2 flex-shrink-0">
+        {ONLINE_MEMBERS.map((m, i) => (
+          <button key={i} onClick={() => onMessage(m)} title={`Message ${m.firstName}`}
+            className="relative border-0 bg-transparent cursor-pointer p-0 flex-shrink-0 group">
+            <Avatar user={m} size={8} />
+            <div className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 bg-[#10b981] rounded-full border-2 border-white" />
+            <div className="absolute -top-7 left-1/2 -translate-x-1/2 bg-[#0a0a0f] text-white text-[10px] px-2 py-0.5 rounded-lg whitespace-nowrap opacity-0 group-hover:opacity-100 transition-all pointer-events-none">
+              {m.firstName}
+            </div>
+          </button>
+        ))}
+      </div>
+      <span className="text-[11px] text-[#c8c8d8] ml-auto flex-shrink-0">+{1240 - ONLINE_MEMBERS.length} members</span>
+    </div>
+  );
+}
+
 /* ── Main Page ─────────────────────────────────────────────────────────── */
 export default function CommunityPage() {
   const user = getCachedUser();
@@ -288,6 +697,7 @@ export default function CommunityPage() {
   const [sort,     setSort]     = useState('latest');
   const [search,   setSearch]   = useState('');
   const [showNew,  setShowNew]  = useState(false);
+  const [chatUser, setChatUser] = useState<any>(null);
 
   const fetchPosts = useCallback(async (p = 1, t = type, s = sort, q = search) => {
     setLoading(true);
@@ -296,12 +706,28 @@ export default function CommunityPage() {
       if (t) params.set('type', t);
       if (q) params.set('search', q);
       const res = await apiFetch(`/community?${params}`);
-      if (res.success) {
+      if (res.success && res.data.posts.length > 0) {
         setPosts(res.data.posts);
         setPages(res.data.pages);
         setPage(p);
+      } else {
+        // show seed posts when API returns nothing
+        let filtered = SEED_POSTS;
+        if (t) filtered = SEED_POSTS.filter(p => p.type === t);
+        if (q) filtered = filtered.filter(p => p.title.toLowerCase().includes(q.toLowerCase()) || p.body.toLowerCase().includes(q.toLowerCase()));
+        if (s === 'popular') filtered = [...filtered].sort((a, b) => b.likes - a.likes);
+        if (s === 'trending') filtered = [...filtered].sort((a, b) => b.views - a.views);
+        setPosts(filtered);
+        setPages(1);
+        setPage(1);
       }
-    } catch {}
+    } catch {
+      // fallback to seed posts
+      let filtered = SEED_POSTS;
+      if (t) filtered = SEED_POSTS.filter(p => p.type === t);
+      setPosts(filtered);
+      setPages(1);
+    }
     finally { setLoading(false); }
   }, [type, sort, search]);
 
@@ -311,6 +737,13 @@ export default function CommunityPage() {
   }, [type, sort]);
 
   function handleLike(postId: string) {
+    // Handle seed posts locally
+    if (postId.startsWith('seed-')) {
+      setPosts(prev => prev.map(p =>
+        p.id === postId ? { ...p, likedByMe: !p.likedByMe, likes: p.likes + (p.likedByMe ? -1 : 1) } : p
+      ));
+      return;
+    }
     apiFetch(`/community/${postId}/like`, { method: 'POST' })
       .then(r => {
         if (r.success) {
@@ -335,6 +768,8 @@ export default function CommunityPage() {
         />
       )}
 
+      {chatUser && <ChatPanel user={chatUser} onClose={() => setChatUser(null)} />}
+
       {/* Hero */}
       <div className="rounded-2xl bg-gradient-to-br from-[#5b4cf5] via-[#6d5ef7] to-[#8b7bf9] p-6 mb-6 flex items-center justify-between gap-4 overflow-hidden relative">
         <div className="absolute inset-0 opacity-10" style={{
@@ -345,20 +780,29 @@ export default function CommunityPage() {
           <h1 className="font-syne font-extrabold text-white text-[22px] mb-1">Community Hub</h1>
           <p className="text-white/70 text-[13.5px]">Share ideas, projects & grow together with fellow learners</p>
         </div>
-        <button
-          onClick={() => setShowNew(true)}
-          className="relative z-10 flex items-center gap-2 px-5 py-2.5 bg-white text-[#5b4cf5] font-semibold text-[13.5px] rounded-xl border-0 cursor-pointer hover:bg-white/90 transition-all shadow-lg flex-shrink-0">
-          <i className="fas fa-plus" />
-          New Post
-        </button>
+        <div className="relative z-10 flex items-center gap-2 flex-shrink-0">
+          <Link href="/dashboard/community/messages"
+            className="flex items-center gap-2 px-4 py-2.5 bg-white/20 text-white font-semibold text-[13px] rounded-xl border border-white/30 no-underline hover:bg-white/30 transition-all">
+            <i className="fas fa-inbox" />
+            Messages
+          </Link>
+          <button
+            onClick={() => setShowNew(true)}
+            className="flex items-center gap-2 px-5 py-2.5 bg-white text-[#5b4cf5] font-semibold text-[13.5px] rounded-xl border-0 cursor-pointer hover:bg-white/90 transition-all shadow-lg">
+            <i className="fas fa-plus" />
+            New Post
+          </button>
+        </div>
       </div>
 
       {/* Stats */}
       <StatsBar stats={stats} />
 
+      {/* Online members */}
+      <OnlineMembersBar onMessage={setChatUser} />
+
       {/* Controls */}
       <div className="flex flex-wrap items-center gap-3 mb-5">
-        {/* Search */}
         <form onSubmit={handleSearchSubmit} className="flex-1 min-w-[200px] relative">
           <i className="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-[#9898b8] text-[12px]" />
           <input
@@ -368,8 +812,6 @@ export default function CommunityPage() {
             className="w-full pl-9 pr-3 py-2.5 border border-[#e8e8f0] rounded-xl text-[13px] font-[inherit] bg-white outline-none focus:border-[#5b4cf5] focus:shadow-[0_0_0_3px_rgba(91,76,245,0.08)] transition-all"
           />
         </form>
-
-        {/* Sort */}
         <select
           value={sort}
           onChange={e => setSort(e.target.value)}
@@ -410,22 +852,10 @@ export default function CommunityPage() {
             </div>
           ))}
         </div>
-      ) : posts.length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-20 text-center">
-          <div className="w-16 h-16 rounded-2xl bg-[#f4f2ff] grid place-items-center text-[#5b4cf5] text-2xl mb-4">
-            <i className="fas fa-users" />
-          </div>
-          <h3 className="font-syne font-bold text-[16px] mb-1.5">No posts yet</h3>
-          <p className="text-[13px] text-[#9898b8] mb-5">Be the first to start a conversation!</p>
-          <button onClick={() => setShowNew(true)}
-            className="px-5 py-2.5 bg-[#5b4cf5] text-white rounded-xl text-[13px] font-semibold border-0 cursor-pointer hover:bg-[#4a3de0] transition-all">
-            Create First Post
-          </button>
-        </div>
       ) : (
         <div className="grid gap-3.5">
           {posts.map(post => (
-            <PostCard key={post.id} post={post} onLike={handleLike} />
+            <PostCard key={post.id} post={post} onLike={handleLike} onMessage={setChatUser} />
           ))}
         </div>
       )}
