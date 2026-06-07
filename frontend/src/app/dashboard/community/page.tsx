@@ -235,6 +235,26 @@ function ConversationStrip({ postId, count }: { postId: string; count: number })
 /* ── Post Card ─────────────────────────────────────────────────────────── */
 function PostCard({ post, onLike, onMessage }: { post: any; onLike: (id: string) => void; onMessage: (user: any) => void }) {
   const tc = TYPE_COLORS[post.type] || TYPE_COLORS.discussion;
+  const [shared, setShared] = useState(false);
+  const [showShareMenu, setShowShareMenu] = useState(false);
+
+  function handleShare(platform?: string) {
+    const url  = `${typeof window !== 'undefined' ? window.location.origin : ''}/dashboard/community/post/${post.id}`;
+    const text = encodeURIComponent(post.title);
+    if (platform === 'copy') {
+      navigator.clipboard?.writeText(url).catch(() => {});
+      setShared(true);
+      setTimeout(() => setShared(false), 2000);
+    } else if (platform === 'twitter') {
+      window.open(`https://twitter.com/intent/tweet?text=${text}&url=${encodeURIComponent(url)}`, '_blank');
+    } else if (platform === 'linkedin') {
+      window.open(`https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(url)}`, '_blank');
+    } else if (platform === 'whatsapp') {
+      window.open(`https://wa.me/?text=${text}%20${encodeURIComponent(url)}`, '_blank');
+    }
+    setShowShareMenu(false);
+  }
+
   return (
     <div className="bg-white border border-[#e8e8f0] rounded-2xl p-5 hover:shadow-[0_4px_20px_rgba(0,0,0,0.07)] hover:-translate-y-0.5 transition-all">
       {/* Header */}
@@ -305,20 +325,76 @@ function PostCard({ post, onLike, onMessage }: { post: any; onLike: (id: string)
 
       {/* Footer */}
       <div className="flex items-center justify-between mt-3.5 pt-3.5 border-t border-[#f0f0f8]">
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2">
+          {/* Like button — large & prominent */}
           <button
             onClick={() => onLike(post.id)}
-            className={`flex items-center gap-1.5 text-[12px] font-medium border-0 bg-transparent cursor-pointer transition-all px-0 ${post.likedByMe ? 'text-[#ef4444]' : 'text-[#9898b8] hover:text-[#ef4444]'}`}>
-            <i className={`${post.likedByMe ? 'fas' : 'far'} fa-heart`} />
-            {post.likes}
+            className={`flex items-center gap-2 px-3.5 py-2 rounded-xl font-semibold text-[13px] border-0 cursor-pointer transition-all select-none ${
+              post.likedByMe
+                ? 'bg-[#fef2f2] text-[#ef4444] shadow-[0_0_0_1.5px_#ef4444]'
+                : 'bg-[#f5f5fb] text-[#6b6b8a] hover:bg-[#fef2f2] hover:text-[#ef4444]'
+            }`}
+            title={post.likedByMe ? 'Unlike' : 'Like'}>
+            <i className={`${post.likedByMe ? 'fas' : 'far'} fa-heart text-[14px]`} />
+            <span>{post.likes}</span>
           </button>
+
           <ConversationStrip postId={post.id} count={post._count?.comments ?? 0} />
+
           <span className="flex items-center gap-1.5 text-[12px] text-[#c8c8d8]">
             <i className="far fa-eye" />
             {post.views}
           </span>
         </div>
-        <span className="text-[11px] text-[#c8c8d8]">{timeAgo(post.createdAt)}</span>
+
+        <div className="flex items-center gap-2">
+          <span className="text-[11px] text-[#c8c8d8]">{timeAgo(post.createdAt)}</span>
+
+          {/* Share button with dropdown */}
+          <div className="relative">
+            <button
+              onClick={() => setShowShareMenu(v => !v)}
+              className={`flex items-center gap-1.5 px-3 py-2 rounded-xl font-semibold text-[12.5px] border-0 cursor-pointer transition-all select-none ${
+                shared
+                  ? 'bg-[#f0fdf4] text-[#10b981]'
+                  : 'bg-[#f4f2ff] text-[#5b4cf5] hover:bg-[#5b4cf5] hover:text-white'
+              }`}
+              title="Share this post">
+              <i className={`fas ${shared ? 'fa-check' : 'fa-share-nodes'} text-[13px]`} />
+              <span>{shared ? 'Copied!' : 'Share'}</span>
+            </button>
+
+            {showShareMenu && (
+              <>
+                {/* Backdrop */}
+                <div className="fixed inset-0 z-[100]" onClick={() => setShowShareMenu(false)} />
+                {/* Menu */}
+                <div className="absolute right-0 bottom-full mb-2 z-[101] bg-white rounded-2xl shadow-[0_8px_32px_rgba(0,0,0,0.14)] border border-[#e8e8f0] overflow-hidden w-[180px]">
+                  <div className="px-3.5 py-2.5 border-b border-[#f0f0f8]">
+                    <p className="text-[11px] font-semibold text-[#9898b8] uppercase tracking-wide">Share via</p>
+                  </div>
+                  {[
+                    { icon: 'fa-link',      label: 'Copy link',  action: 'copy',      color: '#5b4cf5', bg: '#f4f2ff' },
+                    { icon: 'fa-brands fa-x-twitter', label: 'X / Twitter', action: 'twitter', color: '#0f1419', bg: '#f7f7f7' },
+                    { icon: 'fa-brands fa-linkedin',  label: 'LinkedIn',    action: 'linkedin', color: '#0a66c2', bg: '#eff6ff' },
+                    { icon: 'fa-brands fa-whatsapp',  label: 'WhatsApp',    action: 'whatsapp', color: '#25d366', bg: '#f0fdf4' },
+                  ].map(item => (
+                    <button
+                      key={item.action}
+                      onClick={() => handleShare(item.action)}
+                      className="w-full flex items-center gap-3 px-3.5 py-2.5 text-[13px] font-medium border-0 bg-transparent cursor-pointer text-left hover:bg-[#fafaff] transition-all"
+                      style={{ color: item.color }}>
+                      <span className="w-7 h-7 rounded-lg grid place-items-center text-[13px] flex-shrink-0" style={{ background: item.bg, color: item.color }}>
+                        <i className={`fas ${item.icon}`} />
+                      </span>
+                      {item.label}
+                    </button>
+                  ))}
+                </div>
+              </>
+            )}
+          </div>
+        </div>
       </div>
     </div>
   );
