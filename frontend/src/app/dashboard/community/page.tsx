@@ -160,6 +160,13 @@ function Avatar({ user, size = 9 }: { user: any; size?: number }) {
 }
 
 /* ── Media Preview ──────────────────────────────────────────────────────── */
+function detectMediaType(url: string): string {
+  if (!url) return 'image';
+  const lower = url.toLowerCase();
+  if (/\.(mp4|webm|mov)/.test(lower)) return 'video';
+  if (lower.includes('.gif') || lower.includes('giphy')) return 'gif';
+  return 'image';
+}
 function MediaPreview({ url, type }: { url: string; type: string }) {
   if (!url) return null;
   if (type === 'gif') {
@@ -301,7 +308,12 @@ function PostCard({ post, onLike, onMessage }: { post: any; onLike: (id: string)
       </Link>
 
       {/* Media */}
-      {post.mediaUrl && <MediaPreview url={post.mediaUrl} type={post.mediaType} />}
+      {(post.mediaUrl || post.imageUrl) && (
+        <MediaPreview
+          url={post.mediaUrl || post.imageUrl}
+          type={post.mediaType || detectMediaType(post.mediaUrl || post.imageUrl)}
+        />
+      )}
 
       {/* Tags */}
       {post.tags?.length > 0 && (
@@ -443,7 +455,16 @@ function NewPostModal({ onClose, onCreated }: { onClose: () => void; onCreated: 
         method: 'POST',
         body: JSON.stringify({ ...form, tags, imageUrl: form.imageUrl || undefined, projectUrl: form.projectUrl || undefined }),
       });
-      if (res.success) { onCreated(res.data); onClose(); }
+      if (res.success) {
+        // Normalise API response: map imageUrl → mediaUrl + mediaType so PostCard renders correctly
+        const post = res.data;
+        if (post.imageUrl && !post.mediaUrl) {
+          post.mediaUrl  = post.imageUrl;
+          post.mediaType = detectMediaType(post.imageUrl);
+        }
+        onCreated(post);
+        onClose();
+      }
       else setErr(res.message || 'Failed to create post');
     } catch (e: any) {
       setErr(e.message || 'Error creating post');
@@ -950,7 +971,12 @@ export default function CommunityPage() {
       if (q) params.set('search', q);
       const res = await apiFetch(`/community?${params}`);
       if (res.success && res.data.posts.length > 0) {
-        setPosts(res.data.posts);
+        const normalised = res.data.posts.map((p: any) => ({
+          ...p,
+          mediaUrl:  p.mediaUrl  || p.imageUrl || null,
+          mediaType: p.mediaType || detectMediaType(p.imageUrl || ''),
+        }));
+        setPosts(normalised);
         setPages(res.data.pages);
         setPage(p);
       } else {

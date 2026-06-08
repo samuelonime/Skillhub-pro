@@ -13,13 +13,14 @@ router.get('/', authenticate, async (req, res) => {
     ]);
     return success(res, {
       user: {
-        id:       req.user.id,
-        name:     `${req.user.firstName} ${req.user.lastName}`,
-        title:    req.user.title,
-        bio:      req.user.bio,
-        location: req.user.location,
-        avatar:   req.user.avatar,
-        skills:   req.user.skills || [],
+        id:              req.user.id,
+        name:            `${req.user.firstName} ${req.user.lastName}`,
+        title:           req.user.title,
+        bio:             req.user.bio,
+        location:        req.user.location,
+        avatar:          req.user.avatar,
+        skills:          req.user.skills || [],
+        portfolioPublic: req.user.portfolioPublic ?? true,
       },
       projects,
       certificates,
@@ -93,6 +94,31 @@ router.delete('/projects/:id', authenticate, async (req, res) => {
     await prisma.project.delete({ where: { id: req.params.id } });
     return success(res, null, 'Project deleted');
   } catch (err) { return error(res, 'Failed to delete project'); }
+});
+
+// PUT /portfolio/visibility  — toggle portfolioPublic on the user
+router.put('/visibility', authenticate, async (req, res) => {
+  const { portfolioPublic } = req.body;
+  if (typeof portfolioPublic !== 'boolean') return badRequest(res, 'portfolioPublic must be a boolean');
+  try {
+    await prisma.user.update({ where: { id: req.user.id }, data: { portfolioPublic } });
+    return success(res, { portfolioPublic }, portfolioPublic ? 'Portfolio is now visible in the community feed' : 'Portfolio hidden from community feed');
+  } catch (err) { return error(res, 'Failed to update visibility'); }
+});
+
+// PUT /portfolio/projects/:id/community  — toggle a project's community visibility
+router.put('/projects/:id/community', authenticate, async (req, res) => {
+  const { showInCommunity } = req.body;
+  if (typeof showInCommunity !== 'boolean') return badRequest(res, 'showInCommunity must be a boolean');
+  try {
+    const project = await prisma.project.findFirst({ where: { id: req.params.id, userId: req.user.id } });
+    if (!project) return notFound(res, 'Project not found');
+    const updated = await prisma.project.update({
+      where: { id: req.params.id },
+      data: { visibility: showInCommunity ? 'community' : 'public' },
+    });
+    return success(res, updated, showInCommunity ? 'Project shared to community feed' : 'Project removed from community feed');
+  } catch (err) { return error(res, 'Failed to update project visibility'); }
 });
 
 // PUT /portfolio/skills

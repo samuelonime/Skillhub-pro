@@ -55,7 +55,7 @@ router.get('/', authenticate, async (req, res) => {
       })).map(l => l.postId)
     );
 
-    const data = posts.map(p => ({ ...p, likedByMe: likedPostIds.has(p.id) }));
+      const data = posts.map(p => ({ ...p, likedByMe: likedPostIds.has(p.id) }));
 
     return success(res, { posts: data, total, page: parseInt(page), pages: Math.ceil(total / PAGE_SIZE) });
   } catch (e) {
