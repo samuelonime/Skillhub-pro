@@ -8,6 +8,10 @@ async function main() {
   console.log('🌱 Seeding database...');
   const hash = (pw) => bcrypt.hashSync(pw, 12);
 
+  // Admin credentials from env (with fallbacks for local dev)
+  const adminEmail    = process.env.ADMIN_EMAIL    || 'admin@skillhub.com';
+  const adminPassword = process.env.ADMIN_PASSWORD || 'Admin123!';
+
   // Users
   const student = await prisma.user.upsert({
     where: { email: 'student@skillhub.com' },
@@ -22,7 +26,6 @@ async function main() {
       bio: 'Passionate developer with 2 years of experience.',
       location: 'Lagos, Nigeria',
       meritCoins: 1250,
-      skills: ['JavaScript', 'React', 'Node.js', 'Python', 'CSS'],
       verified: true,
     },
   });
@@ -45,18 +48,20 @@ async function main() {
   });
 
   await prisma.user.upsert({
-    where: { email: 'admin@skillhub.com' },
+    where: { email: adminEmail },
     update: {},
     create: {
-      email: 'admin@skillhub.com',
-      password: hash('Admin123!'),
+      email:     adminEmail,
+      password:  hash(adminPassword),
       firstName: 'Admin', lastName: 'User',
-      role: 'admin',
-      avatar: 'https://ui-avatars.com/api/?name=Admin+User&background=ef4444&color=fff&bold=true',
-      title: 'Platform Administrator',
-      verified: true,
+      role:      'admin',
+      avatar:    'https://ui-avatars.com/api/?name=Admin+User&background=ef4444&color=fff&bold=true',
+      title:     'Platform Administrator',
+      verified:  true,
     },
   });
+
+  console.log(`✅ Admin seeded → ${adminEmail}`);
 
   // Courses
   const courses = [
@@ -103,13 +108,13 @@ async function main() {
 
   // Certificates
   const certs = [
-    { name: 'React Developer Certification', issuer: 'Meta', issueDate: new Date('2024-03-15'), expiryDate: new Date('2026-03-15'), status: 'verified', credentialId: 'META-REACT-2024-001' },
-    { name: 'JavaScript Algorithms', issuer: 'freeCodeCamp', issueDate: new Date('2024-01-20'), status: 'verified', credentialId: 'FCC-JS-2024-555' },
-    { name: 'AWS Cloud Practitioner', issuer: 'Amazon Web Services', issueDate: new Date('2023-11-10'), expiryDate: new Date('2026-11-10'), status: 'pending', credentialId: 'AWS-CP-2023-789' },
+    { title: 'React Developer Certification', provider: 'Meta', issueDate: new Date('2024-03-15'), expiryDate: new Date('2026-03-15'), status: 'verified', credentialId: 'META-REACT-2024-001' },
+    { title: 'JavaScript Algorithms', provider: 'freeCodeCamp', issueDate: new Date('2024-01-20'), status: 'verified', credentialId: 'FCC-JS-2024-555' },
+    { title: 'AWS Cloud Practitioner', provider: 'Amazon Web Services', issueDate: new Date('2023-11-10'), expiryDate: new Date('2026-11-10'), status: 'pending', credentialId: 'AWS-CP-2023-789' },
   ];
 
   for (const c of certs) {
-    const existing = await prisma.certificate.findFirst({ where: { userId: student.id, name: c.name } });
+    const existing = await prisma.certificate.findFirst({ where: { userId: student.id, title: c.title } });
     if (!existing) await prisma.certificate.create({ data: { ...c, userId: student.id } });
   }
 
