@@ -306,7 +306,7 @@ export default function PortfolioPage() {
   async function handleVisibilityToggle(v: boolean) {
     try {
       const res = await apiFetch('/portfolio/visibility', { method: 'PUT', body: JSON.stringify({ portfolioPublic: v }) });
-      if (res.success) { setPortfolioPublic(v); showToast(res.message, 'info'); }
+      if (res.success) { setPortfolioPublic(v); showToast(res.message ?? 'Visibility updated', 'info'); }
     } catch {}
   }
 
