@@ -323,7 +323,7 @@ export default function PortfolioPage() {
             p.id === projectId ? { ...p, visibility: showInCommunity ? 'community' : 'public' } : p
           ),
         }));
-        showToast(res.message, 'info');
+        showToast(res.message ?? 'Project visibility updated', 'info');
       }
     } catch {}
   }
