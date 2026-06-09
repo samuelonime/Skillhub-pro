@@ -65,6 +65,14 @@ function detectMediaType(url: string): string {
   if (lower.includes('.gif') || lower.includes('giphy')) return 'gif';
   return 'image';
 }
+
+function normalizeExternalLink(url: string) {
+  if (!url) return '';
+  const trimmed = url.trim();
+  if (/^https?:\/\//i.test(trimmed) || trimmed.startsWith('/')) return trimmed;
+  return `https://${trimmed}`;
+}
+
 function MediaPreview({ url, type }: { url: string; type: string }) {
   if (!url) return null;
   if (type === 'gif') {
@@ -949,13 +957,13 @@ function PortfolioSpotlights({ onMessage }: { onMessage: (user: any) => void }) 
                     </div>
                     <div className="flex flex-wrap gap-2 mt-3">
                       {u.projects[0].liveUrl && (
-                        <a href={u.projects[0].liveUrl} target="_blank" rel="noreferrer"
+                        <a href={normalizeExternalLink(u.projects[0].liveUrl)} target="_blank" rel="noreferrer"
                           className="text-[10.5px] font-semibold text-[#2563eb] bg-[#eff6ff] px-2.5 py-1 rounded-full no-underline hover:bg-[#dbeafe] transition-all">
                           Live preview
                         </a>
                       )}
                       {u.projects[0].githubUrl && (
-                        <a href={u.projects[0].githubUrl} target="_blank" rel="noreferrer"
+                        <a href={normalizeExternalLink(u.projects[0].githubUrl)} target="_blank" rel="noreferrer"
                           className="text-[10.5px] font-semibold text-[#111827] bg-[#f3f4f6] px-2.5 py-1 rounded-full no-underline hover:bg-[#e5e7eb] transition-all">
                           Code repo
                         </a>
