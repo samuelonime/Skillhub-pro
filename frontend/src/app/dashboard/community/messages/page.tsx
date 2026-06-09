@@ -17,35 +17,6 @@ const navItems = [
   { href: '/dashboard/settings',     icon: 'fa-gear',         label: 'Settings' },
 ];
 
-const [contacts, setContacts] = useState<any[]>([]);
-const [loadingContacts, setLoadingContacts] = useState(true);
-const [activeContact, setActiveContact] = useState<any | null>(null);
-const [messages, setMessages] = useState<Record<string, any[]>>({});
-const [text, setText] = useState('');
-const [status, setStatus] = useState('');
-const [isSending, setIsSending] = useState(false);
-const [search, setSearch] = useState('');
-
-useEffect(() => {
-  async function loadContacts() {
-    setLoadingContacts(true);
-    try {
-      const res = await apiFetch('/community/contacts');
-      if (res.success && Array.isArray(res.data)) {
-        setContacts(res.data);
-        if (res.data.length > 0) {
-          setActiveContact(res.data[0]);
-        }
-      }
-    } catch (error) {
-      console.error('Failed to load contacts', error);
-    } finally {
-      setLoadingContacts(false);
-    }
-  }
-
-  loadContacts();
-}, []);
 
 function timeAgo(d: string) {
   const s = Math.floor((Date.now() - new Date(d).getTime()) / 1000);
@@ -71,13 +42,36 @@ function Avatar({ user, size = 10 }: { user: any; size?: number }) {
 }
 
 export default function MessagesPage() {
-  const [activeContact, setActiveContact] = useState(CONTACTS[0]);
-  const [messages, setMessages] = useState<Record<string, any[]>>(MESSAGES);
+  const [contacts, setContacts] = useState<any[]>([]);
+  const [loadingContacts, setLoadingContacts] = useState(true);
+  const [activeContact, setActiveContact] = useState<any | null>(null);
+  const [messages, setMessages] = useState<Record<string, any[]>>({});
   const [text, setText] = useState('');
   const [status, setStatus] = useState('');
   const [isSending, setIsSending] = useState(false);
   const [search, setSearch] = useState('');
   const bottomRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    async function loadContacts() {
+      setLoadingContacts(true);
+      try {
+        const res = await apiFetch('/community/contacts');
+        if (res.success && Array.isArray(res.data)) {
+          setContacts(res.data);
+          if (res.data.length > 0) {
+            setActiveContact(res.data[0]);
+          }
+        }
+      } catch (error) {
+        console.error('Failed to load contacts', error);
+      } finally {
+        setLoadingContacts(false);
+      }
+    }
+
+    loadContacts();
+  }, []);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
