@@ -245,12 +245,27 @@ router.patch('/applicants/:applicationId/status', ...guard, async (req, res) => 
   try {
     const app = await prisma.application.findFirst({
       where: { id: req.params.applicationId, job: { employerId: req.user.id } },
+      include: { job: true },
     });
     if (!app) return notFound(res, 'Application not found');
+
     const updated = await prisma.application.update({
       where: { id: req.params.applicationId },
       data: { status },
     });
+
+    if (status === 'hired') {
+      await prisma.communityPost.create({
+        data: {
+          authorId:  app.userId,
+          title:     `Hired as ${app.job.title} at ${app.job.company}`,
+          body:      `I am excited to join ${app.job.company} as a ${app.job.title}!`,
+          type:      'showcase',
+          tags:      ['career', 'hire'],
+        },
+      });
+    }
+
     await prisma.notification.create({
       data: {
         userId:  app.userId,

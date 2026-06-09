@@ -213,10 +213,36 @@ router.put('/projects/:id/community', authenticate, async (req, res) => {
   try {
     const project = await prisma.project.findFirst({ where: { id: req.params.id, userId: req.user.id } });
     if (!project) return notFound(res, 'Project not found');
+
     const updated = await prisma.project.update({
       where: { id: req.params.id },
       data: { visibility: showInCommunity ? 'community' : 'public' },
     });
+
+    if (showInCommunity) {
+      const existingPost = await prisma.communityPost.findFirst({
+        where: {
+          authorId: req.user.id,
+          title:   `Shared project: ${project.title}`,
+          projectUrl: project.liveUrl || project.githubUrl,
+        },
+      });
+
+      if (!existingPost) {
+        await prisma.communityPost.create({
+          data: {
+            authorId:  req.user.id,
+            title:     `Shared project: ${project.title}`,
+            body:      project.description || `Check out my latest community project: ${project.title}`,
+            type:      'project',
+            tags:      ['project', 'community'],
+            imageUrl:  project.thumbnail,
+            projectUrl: project.liveUrl || project.githubUrl || null,
+          },
+        });
+      }
+    }
+
     return success(res, updated, showInCommunity ? 'Project shared to community feed' : 'Project removed from community feed');
   } catch (err) { return error(res, 'Failed to update project visibility'); }
 });

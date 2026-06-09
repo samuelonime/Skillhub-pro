@@ -139,10 +139,19 @@ router.post('/:id/complete-course', authenticate, requireRole('student'), [
 
     // Check already completed
     const alreadyDone = enrollment.completedCourses.some(c => c.courseId === courseId);
+    let createdEvent = false;
+    let eventTitle = '';
+    let eventBody = '';
+    const completedCourse = enrollment.path.courses.find(c => c.id === courseId);
+    const courseLabel = completedCourse?.title || 'course';
+
     if (!alreadyDone) {
       await prisma.skillPathCourseCompletion.create({
         data: { enrollmentId: enrollment.id, courseId },
       });
+      createdEvent = true;
+      eventTitle = `Completed course: ${courseLabel}`;
+      eventBody = `I just completed "${courseLabel}" on SkillHub!`;
     }
 
     // Recalculate progress
@@ -158,6 +167,22 @@ router.post('/:id/complete-course', authenticate, requireRole('student'), [
         completedAt: isComplete ? new Date() : null,
       },
     });
+
+    if (createdEvent) {
+      if (isComplete) {
+        eventTitle = `Finished skill path: ${enrollment.path.title}`;
+        eventBody = `I completed all ${totalCourses} courses in "${enrollment.path.title}"!`;
+      }
+      await prisma.communityPost.create({
+        data: {
+          authorId:  req.user.id,
+          title:     eventTitle,
+          body:      eventBody,
+          type:      'showcase',
+          tags:      ['course', 'achievement'],
+        },
+      });
+    }
 
     // Update overall profile strength
     await prisma.user.update({
