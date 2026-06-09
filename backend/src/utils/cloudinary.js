@@ -69,7 +69,33 @@ async function deleteFile(publicId, type = 'image') {
   }
 }
 
+/**
+ * Upload a community post media file (image, gif, or video) to Cloudinary.
+ * Images/GIFs use resource_type 'image'; videos use 'video'.
+ * No fixed public_id — each upload gets a unique timestamped id.
+ * @param {Buffer} buffer    - File buffer from multer memoryStorage
+ * @param {'image'|'video'} resourceType
+ * @returns {Promise<string>} Secure URL
+ */
+function uploadMedia(buffer, resourceType = 'image') {
+  return new Promise((resolve, reject) => {
+    const stream = cloudinary.uploader.upload_stream(
+      {
+        folder:        'skillhub/community',
+        resource_type: resourceType,
+        quality:       'auto',
+        fetch_format:  'auto',
+      },
+      (err, result) => {
+        if (err || !result) return reject(err || new Error('Cloudinary upload failed'));
+        resolve(result.secure_url);
+      }
+    );
+    stream.end(buffer);
+  });
+}
+
 // Keep backward-compatible alias
 const deleteImage = (publicId) => deleteFile(publicId, 'image');
 
-module.exports = { cloudinary, uploadImage, uploadRaw, deleteFile, deleteImage };
+module.exports = { cloudinary, uploadImage, uploadRaw, uploadMedia, deleteFile, deleteImage };

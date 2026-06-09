@@ -1,14 +1,47 @@
-/**
- * Community Platform Routes
- * POST /api/v1/community
- */
 const express  = require('express');
 const router   = express.Router();
+const multer   = require('multer');
 const prisma   = require('../config/database');
 const { authenticate } = require('../middleware/auth');
+const { uploadMedia } = require('../utils/cloudinary');
 const { success, created, badRequest, notFound, error } = require('../utils/response');
 
 const PAGE_SIZE = 15;
+
+// ── Multer — memory storage, buffer goes straight to Cloudinary ────────────
+const upload = multer({
+  storage: multer.memoryStorage(),
+  limits:  { fileSize: 50 * 1024 * 1024 }, // 50 MB (covers short videos)
+  fileFilter: (_req, file, cb) => {
+    const allowed = ['image/jpeg', 'image/png', 'image/webp', 'image/gif',
+                     'video/mp4', 'video/webm', 'video/quicktime'];
+    if (allowed.includes(file.mimetype)) cb(null, true);
+    else cb(new Error('Only images, GIFs, and short videos are allowed'));
+  },
+});
+
+// ── POST /upload-media — upload image/gif/video, returns Cloudinary URL ───
+router.post('/upload-media', authenticate, upload.single('media'), async (req, res) => {
+  if (!req.file) return badRequest(res, 'No file uploaded');
+  try {
+    const resourceType = req.file.mimetype.startsWith('video') ? 'video' : 'image';
+    const url = await uploadMedia(req.file.buffer, resourceType);
+    return success(res, { url });
+  } catch (e) {
+    console.error('Community media upload error:', e);
+    return error(res, 'Failed to upload media');
+  }
+});
+
+// ── Multer error handler ──────────────────────────────────────────────────
+router.use((err, req, res, next) => {
+  if (err instanceof multer.MulterError) {
+    if (err.code === 'LIMIT_FILE_SIZE') return badRequest(res, 'File too large. Maximum size is 50MB.');
+    return badRequest(res, err.message);
+  }
+  if (err) return badRequest(res, err.message);
+  next();
+});
 
 // ── Helpers ────────────────────────────────────────────────────────────────
 const postSelect = {
@@ -55,7 +88,7 @@ router.get('/', authenticate, async (req, res) => {
       })).map(l => l.postId)
     );
 
-      const data = posts.map(p => ({ ...p, likedByMe: likedPostIds.has(p.id) }));
+    const data = posts.map(p => ({ ...p, likedByMe: likedPostIds.has(p.id) }));
 
     return success(res, { posts: data, total, page: parseInt(page), pages: Math.ceil(total / PAGE_SIZE) });
   } catch (e) {

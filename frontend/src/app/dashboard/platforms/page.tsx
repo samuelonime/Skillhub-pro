@@ -16,14 +16,17 @@ const navItems = [
   { href: '/dashboard/settings', icon: 'fa-gear', label: 'Settings' },
 ];
 
+// Platform brand logos via Clearbit / official CDNs — no emoji
 const ALL_PLATFORMS = [
   {
     key: 'udemy',
     name: 'Udemy',
     tagline: 'World\'s largest online learning marketplace',
-    icon: '🎓',
+    logo: 'https://www.udemy.com/staticx/udemy/images/v7/logo-udemy.svg',
+    logoBg: '#a435f0',
     color: '#a435f0',
-    bg: '#f7f0ff',
+    bg: '#faf5ff',
+    border: '#e9d5ff',
     courses: '213,000+',
     students: '62M+',
     perks: ['Lifetime access', 'Certificate of completion', 'Mobile & TV access'],
@@ -33,9 +36,11 @@ const ALL_PLATFORMS = [
     key: 'coursera',
     name: 'Coursera',
     tagline: 'University-grade courses from top institutions',
-    icon: '🏛️',
+    logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/9/97/Coursera-Logo_600x600.svg/1200px-Coursera-Logo_600x600.svg.png',
+    logoBg: '#0056d2',
     color: '#0056d2',
     bg: '#eff6ff',
+    border: '#bfdbfe',
     courses: '7,000+',
     students: '130M+',
     perks: ['University certificates', 'Degree programs', 'Industry partners'],
@@ -45,9 +50,11 @@ const ALL_PLATFORMS = [
     key: 'edx',
     name: 'edX',
     tagline: 'High-quality courses from MIT, Harvard & more',
-    icon: '📐',
+    logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/8/8f/EdX.svg/1200px-EdX.svg.png',
+    logoBg: '#02262b',
     color: '#02262b',
     bg: '#f0fdf4',
+    border: '#bbf7d0',
     courses: '3,500+',
     students: '45M+',
     perks: ['MicroMasters programs', 'Professional certificates', 'Audit for free'],
@@ -57,9 +64,11 @@ const ALL_PLATFORMS = [
     key: 'linkedin',
     name: 'LinkedIn Learning',
     tagline: 'Professional skills tied to your career profile',
-    icon: '💼',
+    logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/0/01/LinkedIn_Logo.svg/1200px-LinkedIn_Logo.svg.png',
+    logoBg: '#0077b5',
     color: '#0077b5',
     bg: '#eff6ff',
+    border: '#bfdbfe',
     courses: '21,000+',
     students: '27M+',
     perks: ['Profile integration', 'Skill assessments', 'Career insights'],
@@ -69,9 +78,11 @@ const ALL_PLATFORMS = [
     key: 'pluralsight',
     name: 'Pluralsight',
     tagline: 'Tech & creative skills for teams and individuals',
-    icon: '💡',
+    logo: 'https://www.pluralsight.com/content/dam/pluralsight2/general/brand/logo/pluralsight-logo-horizontal-white-rgb.svg',
+    logoBg: '#f15b2a',
     color: '#f15b2a',
     bg: '#fff7f5',
+    border: '#fed7aa',
     courses: '7,000+',
     students: '17M+',
     perks: ['Skill IQ assessments', 'Role-based paths', 'Cloud labs'],
@@ -81,9 +92,11 @@ const ALL_PLATFORMS = [
     key: 'skillshare',
     name: 'Skillshare',
     tagline: 'Creative, business & tech classes for creatives',
-    icon: '🎨',
-    color: '#00e676',
+    logo: 'https://static.skillshare.com/uploads/users/14426990/user-image-original.jpeg',
+    logoBg: '#00e676',
+    color: '#00a854',
     bg: '#f0fdf4',
+    border: '#bbf7d0',
     courses: '40,000+',
     students: '12M+',
     perks: ['Project-based learning', 'Community feedback', 'Offline classes'],
@@ -93,9 +106,11 @@ const ALL_PLATFORMS = [
     key: 'alison',
     name: 'Alison',
     tagline: 'Free online courses with certificates',
-    icon: '🌍',
+    logo: 'https://alison.com/images/alison-logo.png',
+    logoBg: '#7eb63e',
     color: '#7eb63e',
     bg: '#f7fdf0',
+    border: '#d9f99d',
     courses: '5,000+',
     students: '40M+',
     perks: ['Free courses', 'CPD certificates', 'Diploma programs'],
@@ -105,9 +120,11 @@ const ALL_PLATFORMS = [
     key: 'futurelearn',
     name: 'FutureLearn',
     tagline: 'Social learning platform with expert educators',
-    icon: '🚀',
+    logo: 'https://ugc.futurelearn.com/uploads/images/96/0e/logo_960e9c1f-ce1d-4bc3-a23a-ee5a2c5d9e8a.png',
+    logoBg: '#d60303',
     color: '#d60303',
     bg: '#fef2f2',
+    border: '#fecaca',
     courses: '1,000+',
     students: '18M+',
     perks: ['Expert teachers', 'Discussion threads', 'Business courses'],
@@ -115,6 +132,41 @@ const ALL_PLATFORMS = [
   },
 ];
 
+/* ── Logo component — shows logo image with fallback to styled text ──── */
+function PlatformLogo({ platform, size = 'md' }: { platform: typeof ALL_PLATFORMS[0]; size?: 'sm' | 'md' | 'lg' }) {
+  const [imgError, setImgError] = useState(false);
+  const dim = size === 'sm' ? 36 : size === 'lg' ? 64 : 48;
+  const fontSize = size === 'sm' ? 11 : size === 'lg' ? 18 : 14;
+
+  if (imgError) {
+    // Fallback: styled initials block
+    return (
+      <div
+        className="rounded-xl flex items-center justify-center font-black text-white flex-shrink-0"
+        style={{ width: dim, height: dim, background: platform.logoBg, fontSize }}>
+        {platform.name.slice(0, 2).toUpperCase()}
+      </div>
+    );
+  }
+
+  // Most platform logos look best on a white or brand-coloured background
+  const needsDarkBg = ['pluralsight'].includes(platform.key);
+
+  return (
+    <div
+      className="rounded-xl flex items-center justify-center flex-shrink-0 overflow-hidden"
+      style={{ width: dim, height: dim, background: needsDarkBg ? platform.logoBg : '#fff', border: `1.5px solid ${platform.border}` }}>
+      <img
+        src={platform.logo}
+        alt={platform.name}
+        onError={() => setImgError(true)}
+        style={{ width: dim * 0.72, height: dim * 0.72, objectFit: 'contain' }}
+      />
+    </div>
+  );
+}
+
+/* ── Import Cert Modal ────────────────────────────────────────────────── */
 function ImportCertModal({ platformKey, platformName, onClose, onImported }: any) {
   const [form, setForm] = useState({ title: '', completedAt: '', credentialUrl: '', skills: '' });
   const [saving, setSaving] = useState(false);
@@ -137,16 +189,21 @@ function ImportCertModal({ platformKey, platformName, onClose, onImported }: any
     finally { setSaving(false); }
   }
 
+  const plat = ALL_PLATFORMS.find(p => p.key === platformKey);
+
   return (
     <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4" onClick={onClose}>
       <div className="bg-white rounded-2xl p-6 w-full max-w-lg shadow-2xl" onClick={e => e.stopPropagation()}>
         <div className="flex items-center justify-between mb-5">
-          <h3 className="font-syne font-bold text-[17px]">Import Certificate from {platformName}</h3>
+          <div className="flex items-center gap-3">
+            {plat && <PlatformLogo platform={plat} size="sm" />}
+            <h3 className="font-syne font-bold text-[17px]">Import from {platformName}</h3>
+          </div>
           <button onClick={onClose} className="w-8 h-8 rounded-xl bg-[#f5f5fb] border-0 cursor-pointer text-[#6b6b8a] hover:bg-[#f4f2ff] hover:text-[#5b4cf5] transition-all grid place-items-center">
             <i className="fas fa-times" />
           </button>
         </div>
-        <p className="text-sm text-[#6b6b8a] mb-5">Add a completed course from {platformName} to your SkillHub profile. This will be visible to employers and earns you Merit Coins.</p>
+        <p className="text-sm text-[#6b6b8a] mb-5">Add a completed course from {platformName} to your SkillHub profile. Visible to employers and earns Merit Coins.</p>
 
         {error && <div className="mb-4 p-3 bg-[#fef2f2] text-[#ef4444] text-sm rounded-xl">{error}</div>}
 
@@ -175,7 +232,8 @@ function ImportCertModal({ platformKey, platformName, onClose, onImported }: any
             Cancel
           </button>
           <button onClick={submit} disabled={saving}
-            className="flex-1 py-2.5 bg-[#5b4cf5] text-white rounded-xl text-sm font-semibold border-0 cursor-pointer hover:bg-[#7c6ff7] transition-all disabled:opacity-60">
+            className="flex-1 py-2.5 text-white rounded-xl text-sm font-semibold border-0 cursor-pointer transition-all disabled:opacity-60"
+            style={{ background: plat?.color || '#5b4cf5' }}>
             {saving ? 'Importing…' : 'Import Certificate'}
           </button>
         </div>
@@ -184,63 +242,84 @@ function ImportCertModal({ platformKey, platformName, onClose, onImported }: any
   );
 }
 
+/* ── Platform Card — logo-first, clean layout ───────────────────────── */
 function PlatformCard({ platform, connected, onConnect, onImport, connecting }: any) {
   return (
-    <div className="bg-white rounded-2xl border border-[#e8e8f0] overflow-hidden hover:-translate-y-0.5 hover:shadow-[0_8px_24px_rgba(0,0,0,0.08)] transition-all">
-      <div className="h-2" style={{ background: platform.color }} />
-      <div className="p-5">
-        <div className="flex items-start justify-between mb-4">
-          <div className="flex items-center gap-3">
-            <div className="w-12 h-12 rounded-xl text-2xl grid place-items-center flex-shrink-0" style={{ background: platform.bg }}>
-              {platform.icon}
-            </div>
-            <div>
-              <h3 className="font-syne font-bold text-[15px] text-[#0a0a0f]">{platform.name}</h3>
-              <span className="text-[10.5px] font-semibold px-2 py-0.5 rounded-full"
-                style={{ background: platform.color + '15', color: platform.color }}>
-                {platform.category}
-              </span>
-            </div>
-          </div>
-          {connected && (
-            <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-[#22c55e] bg-[#f0fdf4] px-2.5 py-1 rounded-full">
-              <i className="fas fa-check-circle text-[10px]" />Connected
-            </span>
-          )}
+    <div className="bg-white rounded-2xl border border-[#e8e8f0] overflow-hidden hover:-translate-y-1 hover:shadow-[0_12px_32px_rgba(0,0,0,0.1)] transition-all group flex flex-col">
+
+      {/* Hero banner — brand colour strip with logo centred */}
+      <div
+        className="relative flex items-center justify-center overflow-hidden"
+        style={{ height: 88, background: `linear-gradient(135deg, ${platform.logoBg}18 0%, ${platform.logoBg}30 100%)`, borderBottom: `1.5px solid ${platform.border}` }}>
+        {/* Decorative circles */}
+        <div className="absolute -top-6 -right-6 w-24 h-24 rounded-full opacity-20" style={{ background: platform.logoBg }} />
+        <div className="absolute -bottom-4 -left-4 w-16 h-16 rounded-full opacity-10" style={{ background: platform.logoBg }} />
+
+        {/* Logo */}
+        <div className="relative z-10">
+          <PlatformLogo platform={platform} size="lg" />
         </div>
 
-        <p className="text-xs text-[#6b6b8a] mb-4 leading-relaxed">{platform.tagline}</p>
-
-        <div className="flex gap-4 mb-4">
-          <div className="text-center">
-            <div className="font-syne font-bold text-sm" style={{ color: platform.color }}>{platform.courses}</div>
-            <div className="text-[10px] text-[#9898b8]">Courses</div>
+        {/* Connected badge */}
+        {connected && (
+          <div className="absolute top-2.5 right-2.5 flex items-center gap-1 text-[10.5px] font-bold text-[#22c55e] bg-white px-2 py-0.5 rounded-full shadow-sm border border-[#bbf7d0]">
+            <i className="fas fa-check-circle text-[9px]" />Connected
           </div>
-          <div className="text-center">
-            <div className="font-syne font-bold text-sm text-[#0a0a0f]">{platform.students}</div>
-            <div className="text-[10px] text-[#9898b8]">Students</div>
+        )}
+
+        {/* Category pill */}
+        <div
+          className="absolute bottom-2.5 left-2.5 text-[9.5px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wide"
+          style={{ background: platform.logoBg + '22', color: platform.color }}>
+          {platform.category}
+        </div>
+      </div>
+
+      {/* Content */}
+      <div className="p-4 flex flex-col flex-1">
+        {/* Name + tagline */}
+        <h3 className="font-syne font-bold text-[14px] text-[#0a0a0f] mb-0.5">{platform.name}</h3>
+        <p className="text-[11.5px] text-[#9898b8] leading-snug mb-3">{platform.tagline}</p>
+
+        {/* Stats row */}
+        <div className="flex items-center gap-3 mb-3 pb-3 border-b border-[#f4f4f8]">
+          <div className="flex-1 text-center">
+            <div className="font-syne font-extrabold text-[14px]" style={{ color: platform.color }}>{platform.courses}</div>
+            <div className="text-[9.5px] text-[#c8c8d8] font-medium uppercase tracking-wide">Courses</div>
+          </div>
+          <div className="w-px h-6 bg-[#f0f0f8]" />
+          <div className="flex-1 text-center">
+            <div className="font-syne font-extrabold text-[14px] text-[#0a0a0f]">{platform.students}</div>
+            <div className="text-[9.5px] text-[#c8c8d8] font-medium uppercase tracking-wide">Learners</div>
           </div>
         </div>
 
-        <div className="flex flex-col gap-1.5 mb-5">
+        {/* Perks */}
+        <div className="flex flex-col gap-1.5 mb-4 flex-1">
           {platform.perks.map((p: string) => (
-            <div key={p} className="flex items-center gap-2 text-xs text-[#6b6b8a]">
-              <i className="fas fa-check text-[10px]" style={{ color: platform.color }} />
+            <div key={p} className="flex items-center gap-2 text-[11.5px] text-[#4b4b6a]">
+              <div className="w-4 h-4 rounded-full grid place-items-center flex-shrink-0" style={{ background: platform.logoBg + '18' }}>
+                <i className="fas fa-check text-[8px]" style={{ color: platform.color }} />
+              </div>
               {p}
             </div>
           ))}
         </div>
 
-        <div className="flex gap-2">
+        {/* CTA buttons */}
+        <div className="flex gap-2 mt-auto">
           {connected ? (
             <>
-              <button onClick={() => onImport(platform.key, platform.name)}
-                className="flex-1 py-2 text-xs font-semibold text-white rounded-xl border-0 cursor-pointer transition-all hover:-translate-y-px"
+              <button
+                onClick={() => onImport(platform.key, platform.name)}
+                className="flex-1 py-2 text-[12px] font-semibold text-white rounded-xl border-0 cursor-pointer transition-all hover:opacity-90 hover:-translate-y-px flex items-center justify-center gap-1.5"
                 style={{ background: platform.color }}>
-                <i className="fas fa-download mr-1.5" />Import Certificate
+                <i className="fas fa-download" />Import Cert
               </button>
-              <a href="#" onClick={e => { e.preventDefault(); onConnect(platform.key, true); }}
-                className="px-3 py-2 text-xs font-semibold text-[#6b6b8a] bg-[#f5f5fb] rounded-xl no-underline hover:bg-[#e8e8f0] transition-all flex items-center">
+              <a
+                href="#"
+                onClick={e => { e.preventDefault(); onConnect(platform.key, true); }}
+                className="w-9 h-9 grid place-items-center text-[12px] text-[#6b6b8a] bg-[#f5f5fb] rounded-xl no-underline hover:bg-[#e8e8f0] transition-all flex-shrink-0">
                 <i className="fas fa-external-link-alt" />
               </a>
             </>
@@ -248,12 +327,12 @@ function PlatformCard({ platform, connected, onConnect, onImport, connecting }: 
             <button
               disabled={connecting === platform.key}
               onClick={() => onConnect(platform.key)}
-              className="w-full py-2 text-xs font-semibold text-white rounded-xl border-0 cursor-pointer transition-all hover:-translate-y-px disabled:opacity-60 disabled:cursor-not-allowed hover:shadow-md"
+              className="w-full py-2 text-[12px] font-semibold text-white rounded-xl border-0 cursor-pointer transition-all hover:opacity-90 hover:-translate-y-px disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-1.5 hover:shadow-md"
               style={{ background: connecting === platform.key ? '#9898b8' : platform.color }}>
               {connecting === platform.key ? (
-                <span><i className="fas fa-spinner fa-spin mr-1.5" />Connecting…</span>
+                <><i className="fas fa-spinner fa-spin" />Connecting…</>
               ) : (
-                <span><i className="fas fa-plug mr-1.5" />Connect Platform</span>
+                <><i className="fas fa-plug" />Connect</>
               )}
             </button>
           )}
@@ -263,6 +342,7 @@ function PlatformCard({ platform, connected, onConnect, onImport, connecting }: 
   );
 }
 
+/* ── Main Page ───────────────────────────────────────────────────────── */
 export default function PlatformsPage() {
   const [connected, setConnected] = useState<Record<string, any>>({});
   const [certificates, setCertificates] = useState<any[]>([]);
@@ -302,7 +382,6 @@ export default function PlatformsPage() {
       if (res.success) {
         showToast(`Connected to ${ALL_PLATFORMS.find(p => p.key === platformKey)?.name}! Redirecting…`);
         load();
-        // Open affiliate URL in new tab
         if (res.data?.affiliateUrl) {
           setTimeout(() => window.open(res.data.affiliateUrl, '_blank'), 1000);
         }
@@ -319,7 +398,6 @@ export default function PlatformsPage() {
   const filtered = filter === 'All' ? ALL_PLATFORMS : ALL_PLATFORMS.filter(p => p.category === filter);
   const connectedCount = Object.keys(connected).length;
   const certCount = certificates.length;
-  const completedCount = certificates.length; // all imported = completed
 
   if (loading) {
     return (
@@ -350,7 +428,7 @@ export default function PlatformsPage() {
       {/* Header */}
       <div className="mb-6">
         <h1 className="font-syne font-bold text-[21px] tracking-tight mb-1">External Learning Platforms</h1>
-        <p className="text-[13.5px] text-[#6b6b8a]">Connect platforms, study on them, and sync your progress & certificates back to SkillHub.</p>
+        <p className="text-[13.5px] text-[#6b6b8a]">Connect platforms, study on them, then sync certificates back to SkillHub.</p>
       </div>
 
       {/* How it works banner */}
@@ -360,10 +438,10 @@ export default function PlatformsPage() {
           <h2 className="font-syne font-bold text-white text-[16px] mb-3">How it works</h2>
           <div className="grid grid-cols-4 gap-4 max-md:grid-cols-2">
             {[
-              { icon: 'fa-plug', step: '1', text: 'Click Connect on any platform' },
-              { icon: 'fa-external-link-alt', step: '2', text: 'You\'re redirected to their site (via our referral link)' },
-              { icon: 'fa-book-open', step: '3', text: 'Study and complete courses on the platform' },
-              { icon: 'fa-download', step: '4', text: 'Import your certificates back to SkillHub' },
+              { icon: 'fa-plug',             step: '1', text: 'Click Connect on any platform' },
+              { icon: 'fa-external-link-alt', step: '2', text: "You're redirected via our referral link" },
+              { icon: 'fa-book-open',         step: '3', text: 'Study and complete courses' },
+              { icon: 'fa-download',          step: '4', text: 'Import certificates back to SkillHub' },
             ].map(s => (
               <div key={s.step} className="flex items-center gap-3">
                 <div className="w-8 h-8 rounded-xl grid place-items-center text-white font-bold text-xs flex-shrink-0" style={{ background: 'rgba(255,255,255,0.2)' }}>
@@ -377,11 +455,11 @@ export default function PlatformsPage() {
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-3 gap-3.5 mb-6 max-md:grid-cols-3">
+      <div className="grid grid-cols-3 gap-3.5 mb-6">
         {[
-          { icon: 'fa-plug', bg: '#f4f2ff', color: '#5b4cf5', value: connectedCount, label: 'Platforms Connected' },
-          { icon: 'fa-certificate', bg: '#f0fdf4', color: '#22c55e', value: certCount, label: 'Certificates Imported' },
-          { icon: 'fa-check-circle', bg: '#fffbeb', color: '#f59e0b', value: completedCount, label: 'Courses Completed' },
+          { icon: 'fa-plug',         bg: '#f4f2ff', color: '#5b4cf5', value: connectedCount, label: 'Platforms Connected' },
+          { icon: 'fa-certificate',  bg: '#f0fdf4', color: '#22c55e', value: certCount,      label: 'Certificates Imported' },
+          { icon: 'fa-check-circle', bg: '#fffbeb', color: '#f59e0b', value: certCount,      label: 'Courses Completed' },
         ].map(s => (
           <div key={s.label} className="bg-white rounded-2xl p-4 border border-[#e8e8f0] flex items-center gap-3">
             <div className="w-10 h-10 rounded-xl grid place-items-center text-sm flex-shrink-0" style={{ background: s.bg, color: s.color }}>
@@ -431,9 +509,10 @@ export default function PlatformsPage() {
               return (
                 <div key={cert.id} className="rounded-xl p-4 border border-[#e8e8f0] hover:border-[#5b4cf5]/30 transition-all">
                   <div className="flex items-center gap-2.5 mb-3">
-                    <div className="w-8 h-8 rounded-lg text-base grid place-items-center" style={{ background: plat?.bg || '#f5f5fb' }}>
-                      {plat?.icon || '📚'}
-                    </div>
+                    {plat
+                      ? <PlatformLogo platform={plat} size="sm" />
+                      : <div className="w-9 h-9 rounded-lg bg-[#f5f5fb] grid place-items-center text-lg">📚</div>
+                    }
                     <span className="text-xs font-semibold text-[#6b6b8a]">{plat?.name || cert.issuer}</span>
                   </div>
                   <h3 className="font-syne font-bold text-[13px] text-[#0a0a0f] mb-1 leading-tight">{cert.title}</h3>

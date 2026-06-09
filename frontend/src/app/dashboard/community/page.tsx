@@ -416,6 +416,7 @@ function PostCard({ post, onLike, onMessage }: { post: any; onLike: (id: string)
 function NewPostModal({ onClose, onCreated }: { onClose: () => void; onCreated: (post: any) => void }) {
   const [form, setForm]       = useState({ title: '', body: '', type: 'discussion', tags: '', projectUrl: '', imageUrl: '' });
   const [saving, setSaving]   = useState(false);
+  const [uploading, setUploading] = useState(false);
   const [err, setErr]         = useState('');
   const [mediaPreview, setMediaPreview] = useState<{ url: string; type: string } | null>(null);
   const [mediaTab, setMediaTab] = useState<'url' | 'upload'>('url');
@@ -430,13 +431,39 @@ function NewPostModal({ onClose, onCreated }: { onClose: () => void; onCreated: 
     setForm(f => ({ ...f, imageUrl: mediaUrl }));
   }
 
-  function handleFileUpload(e: React.ChangeEvent<HTMLInputElement>) {
+  async function handleFileUpload(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file) return;
-    const url = URL.createObjectURL(file);
+
+    // Show a local preview immediately so the user sees something
+    const localPreviewUrl = URL.createObjectURL(file);
     const type = file.type.startsWith('video') ? 'video' : file.type.includes('gif') ? 'gif' : 'image';
-    setMediaPreview({ url, type });
-    setForm(f => ({ ...f, imageUrl: url }));
+    setMediaPreview({ url: localPreviewUrl, type });
+    setUploading(true);
+
+    try {
+      const fd = new FormData();
+      fd.append('media', file);
+      const res = await fetch('/api/v1/community/upload-media', {
+        method: 'POST',
+        credentials: 'include',
+        body: fd,
+      });
+      const data = await res.json();
+      if (!res.ok || !data.success) throw new Error(data.message || 'Upload failed');
+
+      // Replace the local blob preview with the real Cloudinary URL
+      URL.revokeObjectURL(localPreviewUrl);
+      setMediaPreview({ url: data.data.url, type });
+      setForm(f => ({ ...f, imageUrl: data.data.url }));
+    } catch (err: any) {
+      setMediaPreview(null);
+      URL.revokeObjectURL(localPreviewUrl);
+      if (fileRef.current) fileRef.current.value = '';
+      alert(err.message || 'Media upload failed. Please try again.');
+    } finally {
+      setUploading(false);
+    }
   }
 
   function removeMedia() {
@@ -455,16 +482,7 @@ function NewPostModal({ onClose, onCreated }: { onClose: () => void; onCreated: 
         method: 'POST',
         body: JSON.stringify({ ...form, tags, imageUrl: form.imageUrl || undefined, projectUrl: form.projectUrl || undefined }),
       });
-      if (res.success) {
-        // Normalise API response: map imageUrl → mediaUrl + mediaType so PostCard renders correctly
-        const post = res.data;
-        if (post.imageUrl && !post.mediaUrl) {
-          post.mediaUrl  = post.imageUrl;
-          post.mediaType = detectMediaType(post.imageUrl);
-        }
-        onCreated(post);
-        onClose();
-      }
+      if (res.success) { onCreated(res.data); onClose(); }
       else setErr(res.message || 'Failed to create post');
     } catch (e: any) {
       setErr(e.message || 'Error creating post');
@@ -622,9 +640,9 @@ function NewPostModal({ onClose, onCreated }: { onClose: () => void; onCreated: 
             className="flex-1 py-2.5 rounded-xl border border-[#e8e8f0] text-[13px] font-semibold text-[#6b6b8a] bg-white cursor-pointer hover:bg-[#f5f5fb] transition-all">
             Cancel
           </button>
-          <button onClick={submit} disabled={saving}
+          <button onClick={submit} disabled={saving || uploading}
             className="flex-1 py-2.5 rounded-xl bg-[#5b4cf5] text-white text-[13px] font-semibold border-0 cursor-pointer hover:bg-[#4a3de0] disabled:opacity-60 disabled:cursor-not-allowed transition-all">
-            {saving ? <><i className="fas fa-spinner fa-spin mr-1.5" />Publishing…</> : 'Publish Post'}
+            {uploading ? <><i className="fas fa-spinner fa-spin mr-1.5" />Uploading media…</> : saving ? <><i className="fas fa-spinner fa-spin mr-1.5" />Publishing…</> : 'Publish Post'}
           </button>
         </div>
       </div>
@@ -971,12 +989,7 @@ export default function CommunityPage() {
       if (q) params.set('search', q);
       const res = await apiFetch(`/community?${params}`);
       if (res.success && res.data.posts.length > 0) {
-        const normalised = res.data.posts.map((p: any) => ({
-          ...p,
-          mediaUrl:  p.mediaUrl  || p.imageUrl || null,
-          mediaType: p.mediaType || detectMediaType(p.imageUrl || ''),
-        }));
-        setPosts(normalised);
+        setPosts(res.data.posts);
         setPages(res.data.pages);
         setPage(p);
       } else {
