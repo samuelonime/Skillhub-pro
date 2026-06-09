@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { SidebarLayout } from '@/components/layout/SidebarLayout';
 import { apiFetch } from '@/lib/api';
 
@@ -243,7 +244,7 @@ function ImportCertModal({ platformKey, platformName, onClose, onImported }: any
 }
 
 /* ── Platform Card — logo-first, clean layout ───────────────────────── */
-function PlatformCard({ platform, connected, onConnect, onImport, connecting }: any) {
+function PlatformCard({ platform, connected, onConnect, onImport, onBrowse, connecting }: any) {
   return (
     <div className="bg-white rounded-2xl border border-[#e8e8f0] overflow-hidden hover:-translate-y-1 hover:shadow-[0_12px_32px_rgba(0,0,0,0.1)] transition-all group flex flex-col">
 
@@ -307,6 +308,15 @@ function PlatformCard({ platform, connected, onConnect, onImport, connecting }: 
         </div>
 
         {/* CTA buttons */}
+        <div className="mb-3">
+          <button
+            type="button"
+            onClick={() => onBrowse(platform.key)}
+            className="w-full py-2 text-sm font-semibold rounded-2xl border border-[#e8e8f0] bg-white text-[#5b4cf5] hover:bg-[#f4f6ff] transition-all"
+          >
+            Browse {platform.name} courses
+          </button>
+        </div>
         <div className="flex gap-2 mt-auto">
           {connected ? (
             <>
@@ -344,6 +354,7 @@ function PlatformCard({ platform, connected, onConnect, onImport, connecting }: 
 
 /* ── Main Page ───────────────────────────────────────────────────────── */
 export default function PlatformsPage() {
+  const router = useRouter();
   const [connected, setConnected] = useState<Record<string, any>>({});
   const [certificates, setCertificates] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -493,6 +504,7 @@ export default function PlatformsPage() {
             connecting={connecting}
             onConnect={handleConnect}
             onImport={(key: string, name: string) => setImportModal({ key, name })}
+            onBrowse={(key: string) => router.push(`/dashboard/courses?platform=${key}`)}
           />
         ))}
       </div>

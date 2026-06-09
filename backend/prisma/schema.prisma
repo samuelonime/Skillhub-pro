@@ -25,6 +25,7 @@ model User {
   companyWebsite   String?
   companySize      String?
   industry         String?
+  interestNiche    String?
   phone            String?
   profileStrength  Int      @default(20)
   meritCoins       Int      @default(100)

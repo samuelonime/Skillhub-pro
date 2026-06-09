@@ -102,6 +102,7 @@ export function setCachedUser(user: any) {
     company:         user.company,
     meritCoins:      user.meritCoins,
     profileStrength: user.profileStrength,
+    interestNiche:   user.interestNiche || null,
   };
   localStorage.setItem(USER_KEY, JSON.stringify(safe));
 }

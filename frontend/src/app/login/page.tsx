@@ -41,9 +41,10 @@ function Spinner() {
 }
 
 /* ── Google Button ───────────────────────────────────────────────────────── */
-function GoogleButton({ onAlert, role, label = 'Continue with Google' }: {
+function GoogleButton({ onAlert, role, niche, label = 'Continue with Google' }: {
   onAlert: (msg: string, type?: AlertType) => void;
   role?: Role;
+  niche?: string;
   label?: string;
 }) {
   const router = useRouter();
@@ -60,6 +61,7 @@ function GoogleButton({ onAlert, role, label = 'Continue with Google' }: {
 
   const handleGoogle = useCallback(() => {
     if (!window.google) return onAlert('Google sign-in not ready. Please refresh and try again.');
+    if (role === 'student' && !niche) return onAlert('Please choose a learning niche before signing up with Google.', 'err');
     setGLoading(true);
     onAlert('');
     window.google.accounts.id.initialize({
@@ -68,6 +70,7 @@ function GoogleButton({ onAlert, role, label = 'Continue with Google' }: {
         try {
           const body: Record<string, string> = { credential };
           if (role) body.role = role;
+          if (niche) body.niche = niche;
           const res = await fetch(`${API_BASE}/auth/google`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -121,9 +124,10 @@ function GoogleButton({ onAlert, role, label = 'Continue with Google' }: {
 }
 
 /* ── Apple Button ────────────────────────────────────────────────────────── */
-function AppleButton({ onAlert, role, label = 'Continue with Apple' }: {
+function AppleButton({ onAlert, role, niche, label = 'Continue with Apple' }: {
   onAlert: (msg: string, type?: AlertType) => void;
   role?: Role;
+  niche?: string;
   label?: string;
 }) {
   const router = useRouter();
@@ -139,6 +143,7 @@ function AppleButton({ onAlert, role, label = 'Continue with Apple' }: {
   }, []);
 
   const handleApple = useCallback(async () => {
+    if (role === 'student' && !niche) return onAlert('Please choose a learning niche before signing up with Apple.', 'err');
     onAlert('');
     setLoading(true);
     try {
@@ -154,6 +159,7 @@ function AppleButton({ onAlert, role, label = 'Continue with Apple' }: {
       const appleUser = response.user;
       const body: Record<string, any> = { id_token };
       if (role) body.role = role;
+      if (niche) body.niche = niche;
       if (appleUser) body.user = appleUser;
       const res = await fetch(`${API_BASE}/auth/apple`, {
         method: 'POST',
@@ -292,17 +298,20 @@ function RegisterForm({ onAlert }: { onAlert: (msg: string, type?: AlertType) =>
   const router = useRouter();
   const [role, setRole] = useState<Role>('student');
   const [fields, setFields] = useState({ fn: '', ln: '', email: '', pwd: '', pwdC: '', company: '' });
+  const [niche, setNiche] = useState('');
   const [showPwd, setShowPwd] = useState(false);
   const [loading, setLoading] = useState(false);
   const up = (k: string, v: string) => setFields(f => ({ ...f, [k]: v }));
+  const niches = ['Web Development', 'Data Science', 'UI/UX Design', 'AI & Machine Learning', 'Cybersecurity', 'Cloud Engineering', 'Product Management', 'Digital Marketing'];
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
     if (fields.pwd !== fields.pwdC) return onAlert('Passwords do not match');
     setLoading(true); onAlert('');
     try {
-      const body: any = { firstName: fields.fn, lastName: fields.ln, email: fields.email, password: fields.pwd, role };
+      const body: any = { firstName: fields.fn, lastName: fields.ln, email: fields.email, password: fields.pwd, role, niche };
       if (role === 'employer' && fields.company) body.company = fields.company;
+      if (role === 'student' && !niche) return onAlert('Choose your learning niche to continue');
       const res = await fetch(`${API_BASE}/auth/register`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -376,6 +385,25 @@ function RegisterForm({ onAlert }: { onAlert: (msg: string, type?: AlertType) =>
         <input type="password" value={fields.pwdC} onChange={e => up('pwdC', e.target.value)} placeholder="Re-enter your password" required className={inputCls} />
       </div>
 
+      {role === 'student' && (
+        <div className="mb-5">
+          <label className={labelCls}>Learning Niche</label>
+          <div className="grid grid-cols-2 gap-2">
+            {niches.map(item => (
+              <button
+                type="button"
+                key={item}
+                onClick={() => setNiche(item)}
+                className={`text-left px-3.5 py-3 rounded-2xl border transition-all text-sm ${niche === item ? 'bg-[#5b4cf5] border-[#5b4cf5] text-white' : 'bg-[#0d1117] border-[#30363d] text-[#e6edf3] hover:bg-[#161b22]'}`}
+              >
+                {item}
+              </button>
+            ))}
+          </div>
+          {!niche && <p className="text-[0.8rem] text-[#f87171] mt-2">Select a niche before continuing.</p>}
+        </div>
+      )}
+
       <button
         type="submit"
         disabled={loading}
@@ -388,8 +416,8 @@ function RegisterForm({ onAlert }: { onAlert: (msg: string, type?: AlertType) =>
         <div className="flex-1 h-px bg-[#30363d]" /><span>or continue with</span><div className="flex-1 h-px bg-[#30363d]" />
       </div>
       <div className="flex flex-col gap-3">
-        <GoogleButton onAlert={onAlert} role={role} label="Sign up with Google" />
-        <AppleButton onAlert={onAlert} role={role} label="Sign up with Apple" />
+        <GoogleButton onAlert={onAlert} role={role} niche={role === 'student' ? niche : undefined} label="Sign up with Google" />
+        <AppleButton onAlert={onAlert} role={role} niche={role === 'student' ? niche : undefined} label="Sign up with Apple" />
       </div>
       <p className="text-[0.72rem] text-[#7d8590] text-left leading-relaxed mt-4">
         By creating an account you agree to our{' '}

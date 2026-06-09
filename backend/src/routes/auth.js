@@ -63,7 +63,7 @@ async function issueTokens(res, user) {
 
 /* ── GOOGLE OAUTH ──────────────────────────────────────────────────────────── */
 router.post('/google', async (req, res) => {
-  const { credential, role: requestedRole } = req.body;
+  const { credential, role: requestedRole, niche } = req.body;
   if (!credential) return badRequest(res, 'Google credential required');
 
   try {
@@ -78,19 +78,23 @@ router.post('/google', async (req, res) => {
       }
 
       const role = ['student','employer'].includes(requestedRole) ? requestedRole : 'student';
+      if (role === 'student' && !niche) {
+        return badRequest(res, 'Please choose a learning niche');
+      }
       const trialEndsAt = role === 'employer'
         ? new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
         : null;
       user = await prisma.user.create({
         data: {
           email,
-          password:  await bcrypt.hash(googleId + process.env.JWT_SECRET, 12),
-          firstName: given_name || email.split('@')[0],
-          lastName:  family_name || '',
+          password:     await bcrypt.hash(googleId + process.env.JWT_SECRET, 12),
+          firstName:    given_name || email.split('@')[0],
+          lastName:     family_name || '',
           role,
-          avatar:    picture || `https://ui-avatars.com/api/?name=${given_name}+${family_name}&background=4f46e5&color=fff&bold=true`,
-          title:     role === 'employer' ? 'Employer' : 'Learner',
-          verified:  true,
+          interestNiche: role === 'student' ? niche : null,
+          avatar:       picture || `https://ui-avatars.com/api/?name=${given_name}+${family_name}&background=4f46e5&color=fff&bold=true`,
+          title:        role === 'employer' ? 'Employer' : 'Learner',
+          verified:     true,
           trialEndsAt,
         },
       });
@@ -119,10 +123,11 @@ router.post('/register', [
   const errors = validationResult(req);
   if (!errors.isEmpty()) return badRequest(res, 'Validation failed', errors.array());
 
-  const { email, password, firstName, lastName, role, company } = req.body;
+  const { email, password, firstName, lastName, role, company, niche } = req.body;
   try {
     const existing = await prisma.user.findUnique({ where: { email } });
     if (existing) return badRequest(res, 'Email already registered');
+    if (role === 'student' && !niche) return badRequest(res, 'Please choose a learning niche');
 
     const hashed = await bcrypt.hash(password, 12);
 
@@ -133,10 +138,15 @@ router.post('/register', [
 
     const user   = await prisma.user.create({
       data: {
-        email, password: hashed, firstName, lastName, role,
-        company: company || null,
-        avatar:  `https://ui-avatars.com/api/?name=${firstName}+${lastName}&background=4f46e5&color=fff&bold=true`,
-        title:   role === 'employer' ? 'Employer' : 'student',
+        email,
+        password:     hashed,
+        firstName,
+        lastName,
+        role,
+        interestNiche: role === 'student' ? niche : null,
+        company:      company || null,
+        avatar:       `https://ui-avatars.com/api/?name=${firstName}+${lastName}&background=4f46e5&color=fff&bold=true`,
+        title:        role === 'employer' ? 'Employer' : 'student',
         trialEndsAt,
       },
     });

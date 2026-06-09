@@ -1,8 +1,9 @@
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { SidebarLayout } from '@/components/layout/SidebarLayout';
-import { apiFetch } from '@/lib/api';
+import { apiFetch, getCachedUser } from '@/lib/api';
 
 const navItems = [
   { href: '/dashboard', icon: 'fa-home', label: 'Dashboard' },
@@ -49,6 +50,22 @@ function getPlatformKey(provider: string | undefined) {
   }, null);
 }
 
+const PLATFORM_LABELS: Record<string, string> = {
+  udemy: 'Udemy',
+  coursera: 'Coursera',
+  edx: 'edX',
+  linkedin: 'LinkedIn Learning',
+  skillshare: 'Skillshare',
+  pluralsight: 'Pluralsight',
+  alison: 'Alison',
+  futurelearn: 'FutureLearn',
+};
+
+function matchesPlatform(course: any, platform: string) {
+  const key = course.platformKey || getPlatformKey(course.provider);
+  return String(key || '').toLowerCase() === platform.toLowerCase();
+}
+
 function getCoursePlatformUrl(course: any) {
   if (course.externalUrl) return course.externalUrl;
   const key = course.platformKey || getPlatformKey(course.provider);
@@ -80,11 +97,22 @@ export default function CoursesPage() {
   const [category, setCategory] = useState('All');
   const [categories, setCategories] = useState<string[]>(['All']);
   const [toast, setToast] = useState('');
+  const searchParams = useSearchParams();
   const [search, setSearch] = useState('');
   const [level, setLevel] = useState('All Levels');
   const [sort, setSort] = useState('default');
+  const [platform, setPlatform] = useState('');
   const [platforms, setPlatforms] = useState<any[]>([]);
   const [externalCourses, setExternalCourses] = useState<any[]>([]);
+
+  useEffect(() => {
+    const platformParam = searchParams.get('platform');
+    const categoryParam = searchParams.get('category');
+    const user = getCachedUser();
+    if (platformParam) setPlatform(platformParam);
+    if (categoryParam) setCategory(categoryParam);
+    else if (user?.interestNiche) setCategory(user.interestNiche);
+  }, [searchParams?.toString()]);
 
   async function loadCourses() {
     setLoading(true);
@@ -195,6 +223,7 @@ export default function CoursesPage() {
     let result = merged.filter(c => {
       if (filter === 'enrolled' && !c.enrolled) return false;
       if (filter === 'available' && c.enrolled) return false;
+      if (platform && !matchesPlatform(c, platform)) return false;
       if (category !== 'All' && c.category !== category) return false;
       if (level !== 'All Levels' && c.level !== level) return false;
       if (search.trim()) {
@@ -215,7 +244,9 @@ export default function CoursesPage() {
     else if (sort === 'coins_desc') result = [...result].sort((a, b) => (b.coins ?? 0) - (a.coins ?? 0));
 
     return result;
-  }, [courses, filter, category, level, search, sort]);
+  }, [courses, externalCourses, filter, category, level, search, sort, platform]);
+
+  const platformLabel = platform ? PLATFORM_LABELS[platform] || platform.charAt(0).toUpperCase() + platform.slice(1) : '';
 
   return (
     <SidebarLayout navItems={navItems} pageTitle="Courses">
@@ -231,6 +262,12 @@ export default function CoursesPage() {
           <p className="text-[13.5px] text-[#6b6b8a]">Continue learning and earn Merit Coins for every module completed.</p>
         </div>
       </div>
+
+      {platform && (
+        <div className="rounded-2xl bg-[#f8fbff] border border-[#dbeafe] p-4 mb-4 text-sm text-[#3730a3]">
+          Showing <strong>{platformLabel}</strong> courses{category !== 'All' ? ` for ${category}` : ''}.
+        </div>
+      )}
 
       {/* Search + Sort row */}
       <div className="flex items-center gap-3 mb-4 flex-wrap">
