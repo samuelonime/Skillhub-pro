@@ -659,32 +659,63 @@ function NewPostModal({ onClose, onCreated }: { onClose: () => void; onCreated: 
 }
 
 /* ── Private Chat Panel ─────────────────────────────────────────────────── */
-const DEMO_CHAT_MESSAGES: Record<string, any[]> = {
-  default: [
-    { id: 'm1', from: 'them', text: "Hey! Saw your post about the job board. The real-time alerts are impressive.", time: new Date(Date.now() - 1000*60*5).toISOString() },
-    { id: 'm2', from: 'me',   text: "Thanks! It took a while to get SSE working right with Next.js App Router but it's solid now.", time: new Date(Date.now() - 1000*60*4).toISOString() },
-    { id: 'm3', from: 'them', text: "Would you be open to doing a pair coding session sometime? I'm building something similar.", time: new Date(Date.now() - 1000*60*3).toISOString() },
-  ],
-};
-
 function ChatPanel({ user, onClose }: { user: any; onClose: () => void }) {
-  const [messages, setMessages] = useState(DEMO_CHAT_MESSAGES.default);
+  const [messages, setMessages] = useState<any[]>([]);
   const [text, setText] = useState('');
+  const [status, setStatus] = useState('');
+  const [isSending, setIsSending] = useState(false);
+  const [recipientOnline, setRecipientOnline] = useState(true);
   const bottomRef = useRef<HTMLDivElement>(null);
   const [minimized, setMinimized] = useState(false);
+
+  useEffect(() => {
+    setMessages([]);
+    setStatus('');
+    setRecipientOnline(true);
+  }, [user.id]);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
-  function sendMessage() {
-    if (!text.trim()) return;
-    setMessages(prev => [...prev, { id: `m${Date.now()}`, from: 'me', text: text.trim(), time: new Date().toISOString() }]);
+  async function sendMessage() {
+    const trimmed = text.trim();
+    if (!trimmed) return;
+
+    const outgoing = { id: `me-${Date.now()}`, from: 'me', text: trimmed, time: new Date().toISOString() };
+    setMessages(prev => [...prev, outgoing]);
     setText('');
-    // Simulate reply
-    setTimeout(() => {
-      setMessages(prev => [...prev, { id: `m${Date.now()}`, from: 'them', text: "That sounds great! Let me know when you're available.", time: new Date().toISOString() }]);
-    }, 1500);
+    setIsSending(true);
+    setStatus('Sending message...');
+
+    try {
+      const res = await apiFetch('/community/messages', {
+        method: 'POST',
+        body: JSON.stringify({ recipientId: user.id, message: trimmed }),
+      });
+      if (!res.success) throw new Error(res.message || 'Send failed');
+
+      setRecipientOnline(res.data?.online ?? false);
+      if (!res.data?.online) {
+        setMessages(prev => [
+          ...prev,
+          {
+            id: `sys-${Date.now()}`,
+            from: 'system',
+            text: 'They are currently offline. Your message was delivered as a notification.',
+            time: new Date().toISOString(),
+          },
+        ]);
+        setStatus('Delivered as notification');
+      } else {
+        setStatus('Delivered');
+      }
+    } catch (err: any) {
+      setStatus(err.message || 'Failed to send message');
+    } finally {
+      setIsSending(false);
+      setTimeout(() => setStatus(''), 4000);
+    }
   }
 
   const name = `${user.firstName} ${user.lastName}`;
@@ -699,7 +730,9 @@ function ChatPanel({ user, onClose }: { user: any; onClose: () => void }) {
         </div>
         <div className="flex-1 min-w-0">
           <div className="font-semibold text-white text-[13px] truncate">{name}</div>
-          <div className="text-white/60 text-[10.5px]">Active now</div>
+          <div className="text-white/60 text-[10.5px]">
+            {recipientOnline ? 'Online — live chat available' : 'Offline — message sent as notification'}
+          </div>
         </div>
         <div className="flex items-center gap-1.5">
           <button onClick={() => setMinimized(v => !v)}
@@ -741,11 +774,14 @@ function ChatPanel({ user, onClose }: { user: any; onClose: () => void }) {
               placeholder={`Message ${user.firstName}…`}
               className="flex-1 px-3.5 py-2.5 rounded-xl bg-[#f5f5fb] border border-transparent text-[12.5px] font-[inherit] outline-none focus:border-[#5b4cf5] focus:bg-white transition-all"
             />
-            <button onClick={sendMessage} disabled={!text.trim()}
+            <button onClick={sendMessage} disabled={!text.trim() || isSending}
               className="w-9 h-9 rounded-xl bg-[#5b4cf5] text-white border-0 cursor-pointer grid place-items-center hover:bg-[#4a3de0] disabled:opacity-50 disabled:cursor-not-allowed transition-all flex-shrink-0">
               <i className="fas fa-paper-plane text-[12px]" />
             </button>
           </div>
+          {status && (
+            <div className="px-4 pb-3 text-[12px] text-[#5b4cf5]">{status}</div>
+          )}
         </>
       )}
     </div>
@@ -820,8 +856,8 @@ function PortfolioSpotlights({ onMessage }: { onMessage: (user: any) => void }) 
             <i className="fas fa-layer-group" />
           </div>
           <div>
-            <h3 className="font-syne font-bold text-[14px] text-[#0a0a0f]">Portfolio Spotlights</h3>
-            <p className="text-[11px] text-[#9898b8]">Members sharing their work with the community</p>
+            <h3 className="font-syne font-bold text-[14px] text-[#0a0a0f]">Community Projects</h3>
+            <p className="text-[11px] text-[#9898b8]">Shared community projects with live links, tech tags and featured details</p>
           </div>
         </div>
         <div className="flex items-center gap-2">
@@ -886,6 +922,48 @@ function PortfolioSpotlights({ onMessage }: { onMessage: (user: any) => void }) 
                 </div>
 
                 {/* Projects count + message */}
+                      {u.projects[0] && (
+                  <div className="mb-3 rounded-2xl bg-[#f8f8fc] p-3 border border-[#f0f0f8]">
+                    <div className="flex items-start justify-between gap-3">
+                      <div>
+                        <div className="text-[11px] font-semibold text-[#0a0a0f] mb-1">Featured project</div>
+                        <div className="font-semibold text-[13px] text-[#0a0a0f] truncate">
+                          {u.projects[0].title}
+                        </div>
+                        <p className="text-[11px] text-[#6b6b8a] mt-1 line-clamp-2">
+                          {u.projects[0].description || 'No project description provided yet.'}
+                        </p>
+                      </div>
+                      {u.projects[0].score && (
+                        <div className="text-[11px] font-semibold text-[#5b4cf5] bg-[#eff6ff] px-2 py-1 rounded-full">
+                          ★ {u.projects[0].score}
+                        </div>
+                      )}
+                    </div>
+                    <div className="flex flex-wrap gap-2 mt-3">
+                      {(u.projects[0].technologies || u.projects[0].techStack || []).slice(0, 4).map((skill: string) => (
+                        <span key={skill} className="text-[10px] text-[#5b4cf5] bg-[#eff6ff] px-2 py-1 rounded-full">
+                          {skill}
+                        </span>
+                      ))}
+                    </div>
+                    <div className="flex flex-wrap gap-2 mt-3">
+                      {u.projects[0].liveUrl && (
+                        <a href={u.projects[0].liveUrl} target="_blank" rel="noreferrer"
+                          className="text-[10.5px] font-semibold text-[#2563eb] bg-[#eff6ff] px-2.5 py-1 rounded-full no-underline hover:bg-[#dbeafe] transition-all">
+                          Live preview
+                        </a>
+                      )}
+                      {u.projects[0].githubUrl && (
+                        <a href={u.projects[0].githubUrl} target="_blank" rel="noreferrer"
+                          className="text-[10.5px] font-semibold text-[#111827] bg-[#f3f4f6] px-2.5 py-1 rounded-full no-underline hover:bg-[#e5e7eb] transition-all">
+                          Code repo
+                        </a>
+                      )}
+                    </div>
+                  </div>
+                )}
+
                 <div className="flex items-center justify-between">
                   <span className="text-[10.5px] text-[#9898b8]">
                     <i className="fas fa-layer-group mr-1" />{u.projects.length} project{u.projects.length !== 1 ? 's' : ''}

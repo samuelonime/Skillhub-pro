@@ -124,6 +124,103 @@ router.post('/', authenticate, async (req, res) => {
   }
 });
 
+// ── POST /messages — send a private community message as a notification ───
+router.post('/messages', authenticate, async (req, res) => {
+  try {
+    const { recipientId, message } = req.body;
+    if (!recipientId) return badRequest(res, 'Recipient is required');
+    if (!message?.trim()) return badRequest(res, 'Message is required');
+
+    const recipient = await prisma.user.findUnique({
+      where: { id: recipientId },
+      select: { id: true, firstName: true, lastName: true },
+    });
+    if (!recipient) return notFound(res, 'Recipient not found');
+
+    const senderName = `${req.user.firstName} ${req.user.lastName}`.trim();
+    const notification = await prisma.notification.create({
+      data: {
+        userId: recipient.id,
+        type: 'message',
+        icon: 'comments',
+        title: `${senderName} sent you a message`,
+        message: `${senderName}: ${message.trim().slice(0, 200)}`,
+      },
+    });
+
+    const latestSession = await prisma.userSession.findFirst({
+      where: {
+        userId: recipient.id,
+        isActive: true,
+        expiresAt: { gt: new Date() },
+      },
+      orderBy: { lastSeenAt: 'desc' },
+    });
+    const online = !!latestSession && new Date(latestSession.lastSeenAt).getTime() > Date.now() - 5 * 60 * 1000;
+
+    return success(res, { notificationId: notification.id, online }, online
+      ? 'Message sent and recipient is likely online.'
+      : 'Message sent. Recipient will see it as a notification while offline.');
+  } catch (e) {
+    console.error(e);
+    return error(res, 'Failed to send message');
+  }
+});
+
+// ── GET /contacts — list recent community contacts for messaging ────────────
+router.get('/contacts', authenticate, async (req, res) => {
+  try {
+    const recentAuthors = await prisma.communityPost.findMany({
+      where: { authorId: { not: req.user.id } },
+      distinct: ['authorId'],
+      orderBy: { createdAt: 'desc' },
+      take: 20,
+      select: {
+        author: {
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true,
+            avatar: true,
+            title: true,
+          },
+        },
+      },
+    });
+
+    const authorIds = recentAuthors.map(r => r.author.id);
+    const sessions = await prisma.userSession.findMany({
+      where: {
+        userId: { in: authorIds },
+        isActive: true,
+        expiresAt: { gt: new Date() },
+      },
+      orderBy: { lastSeenAt: 'desc' },
+    });
+
+    const now = Date.now();
+    const onlineMap = new Map();
+    sessions.forEach(session => {
+      if (new Date(session.lastSeenAt).getTime() > now - 5 * 60 * 1000) {
+        onlineMap.set(session.userId, true);
+      }
+    });
+
+    const contacts = recentAuthors.map(({ author }) => ({
+      ...author,
+      online: onlineMap.get(author.id) || false,
+      lastMessage: 'Tap to start a new message',
+      lastTime: new Date().toISOString(),
+      unread: 0,
+    }));
+
+    return success(res, contacts);
+  } catch (e) {
+    console.error(e);
+    return error(res, 'Failed to load contacts');
+  }
+});
+
 // ── GET /:id  — single post with comments ─────────────────────────────────
 router.get('/:id', authenticate, async (req, res) => {
   try {
