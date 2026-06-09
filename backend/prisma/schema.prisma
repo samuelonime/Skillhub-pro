@@ -61,6 +61,7 @@ model User {
   communityPosts       CommunityPost[]        @relation("AuthorPosts")
   communityComments    CommunityComment[]     @relation("AuthorComments")
   communityLikes       CommunityLike[]
+  sessions             UserSession[]
 
   @@map("users")
 }
@@ -610,4 +611,26 @@ model SystemSetting {
   updatedBy String?
 
   @@map("system_settings")
+}
+
+model UserSession {
+  id          String    @id @default(uuid())
+  userId      String
+  ipAddress   String?
+  userAgent   String?
+  device      String?
+  browser     String?
+  os          String?
+  country     String?
+  city        String?
+  lastSeenAt  DateTime  @default(now())
+  createdAt   DateTime  @default(now())
+  expiresAt   DateTime?
+  isActive    Boolean   @default(true)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([lastSeenAt])
+  @@map("user_sessions")
 }

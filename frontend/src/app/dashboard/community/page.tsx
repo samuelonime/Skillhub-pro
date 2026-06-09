@@ -34,108 +34,6 @@ const TYPE_COLORS: Record<string, { bg: string; color: string; icon: string }> =
   showcase:   { bg: '#fef2f2', color: '#ef4444', icon: 'fa-star' },
 };
 
-// ── Rich seed posts with images/GIFs and conversations ──────────────────────
-const SEED_POSTS = [
-  {
-    id: 'seed-1',
-    title: 'Just launched my full-stack job board — built with Next.js 15 + Hono + Prisma 🚀',
-    body: 'Been grinding on this for 3 months. It has real-time job alerts, a resume parser, and company profiles. Would love feedback from fellow devs!',
-    type: 'showcase',
-    tags: ['nextjs', 'prisma', 'typescript', 'fullstack'],
-    likes: 142,
-    views: 2340,
-    isPinned: true,
-    likedByMe: false,
-    createdAt: new Date(Date.now() - 1000 * 60 * 47).toISOString(),
-    mediaUrl: 'https://images.unsplash.com/photo-1555066931-4365d14bab8c?w=800&q=80',
-    mediaType: 'image',
-    projectUrl: 'https://github.com/example/jobboard',
-    author: { firstName: 'Amara', lastName: 'Osei', title: 'Full-Stack Developer', avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=amara&backgroundColor=b6e3f4' },
-    _count: { comments: 18 },
-  },
-  {
-    id: 'seed-2',
-    title: 'Hot take: Tailwind CSS is making junior devs worse at CSS fundamentals 🔥',
-    body: "I've interviewed 30+ junior devs this year and most can't explain the box model or write a CSS grid without Tailwind. Are we trading understanding for speed?",
-    type: 'discussion',
-    tags: ['css', 'tailwind', 'career', 'opinion'],
-    likes: 89,
-    views: 3120,
-    isPinned: false,
-    likedByMe: true,
-    createdAt: new Date(Date.now() - 1000 * 60 * 60 * 3).toISOString(),
-    mediaUrl: 'https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExcDhsZnBuNnNua3N5NXhxZTRuZGthZHZucm01MGd3amY4NzZoNHZmdCZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/du3J3cXyzhj75IOgvA/giphy.gif',
-    mediaType: 'gif',
-    projectUrl: null,
-    author: { firstName: 'Kemi', lastName: 'Adeyemi', title: 'Senior Frontend Engineer', avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=kemi&backgroundColor=ffdfbf' },
-    _count: { comments: 54 },
-  },
-  {
-    id: 'seed-3',
-    title: 'Free resource: I compiled 200+ system design interview questions with answers',
-    body: 'Took 6 months of prep and actual interviews at FAANG companies. Covers distributed systems, databases, caching, load balancing and more. All free, no paywall.',
-    type: 'resource',
-    tags: ['system-design', 'interviews', 'career', 'free'],
-    likes: 317,
-    views: 8900,
-    isPinned: false,
-    likedByMe: false,
-    createdAt: new Date(Date.now() - 1000 * 60 * 60 * 6).toISOString(),
-    mediaUrl: 'https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?w=800&q=80',
-    mediaType: 'image',
-    projectUrl: 'https://github.com/example/system-design-guide',
-    author: { firstName: 'Chidi', lastName: 'Nwosu', title: 'Staff Engineer @ Flutterwave', avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=chidi&backgroundColor=c0aede' },
-    _count: { comments: 41 },
-  },
-  {
-    id: 'seed-4',
-    title: 'How do I stop over-engineering everything? Every side project turns into a microservices nightmare 😅',
-    body: "I started building a simple todo app and somehow ended up with Kafka, Redis, 4 microservices, and a Kubernetes cluster. How do you all resist the urge to add more abstraction?",
-    type: 'question',
-    tags: ['architecture', 'beginners', 'help', 'overengineering'],
-    likes: 203,
-    views: 4500,
-    isPinned: false,
-    likedByMe: false,
-    createdAt: new Date(Date.now() - 1000 * 60 * 60 * 11).toISOString(),
-    mediaUrl: 'https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExbXF3ZThwN2R1NzFlYWYxbmhudnlwbGR4OXllMG83dWk1N2cxaXUwdCZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/a9xhxAxaqOfQs/giphy.gif',
-    mediaType: 'gif',
-    projectUrl: null,
-    author: { firstName: 'Tolu', lastName: 'Bankole', title: 'Backend Developer', avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=tolu&backgroundColor=d1d4f9' },
-    _count: { comments: 37 },
-  },
-  {
-    id: 'seed-5',
-    title: 'My open-source React component library just hit 1,000 GitHub stars ⭐',
-    body: "Started it as a personal utility library 8 months ago, never expected this. The community contributions have been incredible. Here's what the dashboard looks like now:",
-    type: 'project',
-    tags: ['react', 'opensource', 'components', 'milestone'],
-    likes: 256,
-    views: 5600,
-    isPinned: false,
-    likedByMe: false,
-    createdAt: new Date(Date.now() - 1000 * 60 * 60 * 18).toISOString(),
-    mediaUrl: 'https://images.unsplash.com/photo-1618477388954-7852f32655ec?w=800&q=80',
-    mediaType: 'image',
-    projectUrl: 'https://github.com/example/react-lib',
-    author: { firstName: 'Ngozi', lastName: 'Eze', title: 'Open Source Maintainer', avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=ngozi&backgroundColor=ffd5dc' },
-    _count: { comments: 29 },
-  },
-];
-
-const SEED_CONVERSATIONS: Record<string, any[]> = {
-  'seed-1': [
-    { id: 'c1', body: "This is incredible! The resume parser feature alone would save hours. What tech did you use for it?", likes: 24, likedByMe: false, createdAt: new Date(Date.now() - 1000*60*40).toISOString(), author: { firstName: 'Dami', lastName: 'Adebayo', title: 'React Developer', avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=dami' } },
-    { id: 'c2', body: "Used OpenAI function calling + a custom PDF parser I built with pdf-lib. Happy to share the code if interested!", likes: 18, likedByMe: false, createdAt: new Date(Date.now() - 1000*60*35).toISOString(), author: { firstName: 'Amara', lastName: 'Osei', title: 'Full-Stack Developer', avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=amara&backgroundColor=b6e3f4' } },
-    { id: 'c3', body: "The real-time alerts — are you using WebSockets or SSE? I tried SSE with Next.js and had a horrible time with deployment 😅", likes: 12, likedByMe: true, createdAt: new Date(Date.now() - 1000*60*30).toISOString(), author: { firstName: 'Emeka', lastName: 'Obi', title: 'Node.js Dev', avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=emeka' } },
-  ],
-  'seed-2': [
-    { id: 'c4', body: "Hard agree. I teach CSS and the number of students who can't debug layout issues without dev tools suggesting Tailwind classes is alarming.", likes: 45, likedByMe: false, createdAt: new Date(Date.now() - 1000*60*60*2.5).toISOString(), author: { firstName: 'Funmi', lastName: 'Akinola', title: 'CSS Educator', avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=funmi' } },
-    { id: 'c5', body: "Respectfully disagree. Tailwind utility classes ARE CSS. The abstraction is minimal. We don't say \"Bootstrap made devs worse\" in 2015.", likes: 38, likedByMe: false, createdAt: new Date(Date.now() - 1000*60*60*2).toISOString(), author: { firstName: 'Seun', lastName: 'Martins', title: 'Frontend Architect', avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=seun' } },
-    { id: 'c6', body: "The real issue is skipping fundamentals entirely. Tailwind is fine once you understand the cascade, specificity, and layout models.", likes: 62, likedByMe: true, createdAt: new Date(Date.now() - 1000*60*60*1.5).toISOString(), author: { firstName: 'Kemi', lastName: 'Adeyemi', title: 'Senior Frontend Engineer', avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=kemi&backgroundColor=ffdfbf' } },
-  ],
-};
-
 function timeAgo(d: string) {
   const s = Math.floor((Date.now() - new Date(d).getTime()) / 1000);
   if (s < 60)    return 'Just now';
@@ -196,7 +94,8 @@ function MediaPreview({ url, type }: { url: string; type: string }) {
 /* ── Mini conversation strip ─────────────────────────────────────────────── */
 function ConversationStrip({ postId, count }: { postId: string; count: number }) {
   const [open, setOpen] = useState(false);
-  const convos = SEED_CONVERSATIONS[postId] || [];
+  // No seed data — show link to post detail
+  const convos: any[] = [];
   if (convos.length === 0) return (
     <Link href={`/dashboard/community/post/${postId}`}
       className="flex items-center gap-1.5 text-[12px] font-medium text-[#9898b8] hover:text-[#5b4cf5] no-underline transition-all">
@@ -240,10 +139,19 @@ function ConversationStrip({ postId, count }: { postId: string; count: number })
 }
 
 /* ── Post Card ─────────────────────────────────────────────────────────── */
-function PostCard({ post, onLike, onMessage }: { post: any; onLike: (id: string) => void; onMessage: (user: any) => void }) {
+function PostCard({ post, onLike, onMessage, onEdit, onDelete, currentUserId }: {
+  post: any;
+  onLike: (id: string) => void;
+  onMessage: (user: any) => void;
+  onEdit: (post: any) => void;
+  onDelete: (id: string) => void;
+  currentUserId?: string;
+}) {
   const tc = TYPE_COLORS[post.type] || TYPE_COLORS.discussion;
   const [shared, setShared] = useState(false);
   const [showShareMenu, setShowShareMenu] = useState(false);
+  const [showActions, setShowActions] = useState(false);
+  const isOwner = currentUserId && post.author?.id === currentUserId;
 
   function handleShare(platform?: string) {
     const url  = `${typeof window !== 'undefined' ? window.location.origin : ''}/dashboard/community/post/${post.id}`;
@@ -296,6 +204,32 @@ function PostCard({ post, onLike, onMessage }: { post: any; onLike: (id: string)
             title={`Message ${post.author.firstName}`}>
             <i className="fas fa-paper-plane" />
           </button>
+          {isOwner && (
+            <div className="relative">
+              <button
+                onClick={() => setShowActions(v => !v)}
+                className="w-7 h-7 rounded-lg bg-[#f5f5fb] text-[#9898b8] border-0 cursor-pointer hover:bg-[#f0f0f8] transition-all grid place-items-center text-[11px]">
+                <i className="fas fa-ellipsis-v" />
+              </button>
+              {showActions && (
+                <>
+                  <div className="fixed inset-0 z-[100]" onClick={() => setShowActions(false)} />
+                  <div className="absolute right-0 top-full mt-1 z-[101] bg-white rounded-xl shadow-[0_8px_24px_rgba(0,0,0,0.12)] border border-[#e8e8f0] overflow-hidden w-[140px]">
+                    <button
+                      onClick={() => { setShowActions(false); onEdit(post); }}
+                      className="w-full flex items-center gap-2.5 px-3.5 py-2.5 text-[13px] font-medium border-0 bg-transparent cursor-pointer text-left text-[#5b4cf5] hover:bg-[#f4f2ff] transition-all">
+                      <i className="fas fa-pen text-[11px]" /> Edit
+                    </button>
+                    <button
+                      onClick={() => { setShowActions(false); onDelete(post.id); }}
+                      className="w-full flex items-center gap-2.5 px-3.5 py-2.5 text-[13px] font-medium border-0 bg-transparent cursor-pointer text-left text-[#ef4444] hover:bg-[#fef2f2] transition-all">
+                      <i className="fas fa-trash text-[11px]" /> Delete
+                    </button>
+                  </div>
+                </>
+              )}
+            </div>
+          )}
         </div>
       </div>
 
@@ -406,6 +340,80 @@ function PostCard({ post, onLike, onMessage }: { post: any; onLike: (id: string)
               </>
             )}
           </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ── Edit Post Modal ─────────────────────────────────────────────────────── */
+function EditPostModal({ post, onClose, onUpdated }: { post: any; onClose: () => void; onUpdated: (updated: any) => void }) {
+  const [form, setForm] = useState({
+    title: post.title || '',
+    body: post.body || '',
+    tags: (post.tags || []).join(', '),
+    projectUrl: post.projectUrl || '',
+    imageUrl: post.imageUrl || '',
+  });
+  const [saving, setSaving] = useState(false);
+  const [err, setErr] = useState('');
+
+  async function submit() {
+    if (!form.title.trim() || !form.body.trim()) { setErr('Title and body are required.'); return; }
+    setSaving(true); setErr('');
+    try {
+      const tags = form.tags.split(',').map((t: string) => t.trim()).filter(Boolean).slice(0, 5);
+      const res = await apiFetch(`/community/${post.id}`, {
+        method: 'PUT',
+        body: JSON.stringify({ ...form, tags }),
+      });
+      if (res.success) { onUpdated(res.data); onClose(); }
+      else setErr(res.message || 'Failed to update post');
+    } catch (e: any) {
+      setErr(e.message || 'Error updating post');
+    } finally { setSaving(false); }
+  }
+
+  return (
+    <div className="fixed inset-0 bg-[#0a0a0f]/60 backdrop-blur-sm z-[300] flex items-center justify-center p-4" onClick={onClose}>
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto p-6" onClick={e => e.stopPropagation()}>
+        <div className="flex items-center justify-between mb-5">
+          <h2 className="font-syne font-bold text-[17px]">Edit Post</h2>
+          <button onClick={onClose} className="w-8 h-8 rounded-xl bg-[#f5f5fb] border-0 cursor-pointer text-[#6b6b8a] grid place-items-center hover:bg-[#f0f0f8] transition-all">
+            <i className="fas fa-times text-sm" />
+          </button>
+        </div>
+        {err && <div className="bg-[#fef2f2] text-[#ef4444] text-[13px] rounded-xl px-4 py-2.5 mb-4">{err}</div>}
+        <div className="mb-3.5">
+          <label className="block text-[12px] font-semibold text-[#6b6b8a] mb-1.5 uppercase tracking-wide">Title</label>
+          <input value={form.title} onChange={e => setForm(f => ({ ...f, title: e.target.value }))}
+            className="w-full px-3.5 py-2.5 rounded-xl border border-[#e8e8f0] text-[13.5px] font-[inherit] outline-none focus:border-[#5b4cf5] focus:shadow-[0_0_0_3px_rgba(91,76,245,0.1)] transition-all bg-[#fafaff]" />
+        </div>
+        <div className="mb-3.5">
+          <label className="block text-[12px] font-semibold text-[#6b6b8a] mb-1.5 uppercase tracking-wide">Content</label>
+          <textarea value={form.body} onChange={e => setForm(f => ({ ...f, body: e.target.value }))} rows={5}
+            className="w-full px-3.5 py-2.5 rounded-xl border border-[#e8e8f0] text-[13.5px] font-[inherit] outline-none focus:border-[#5b4cf5] focus:shadow-[0_0_0_3px_rgba(91,76,245,0.1)] transition-all resize-none bg-[#fafaff]" />
+        </div>
+        <div className="mb-3.5">
+          <label className="block text-[12px] font-semibold text-[#6b6b8a] mb-1.5 uppercase tracking-wide">Tags <span className="text-[#c8c8d8] font-normal normal-case">(comma-separated)</span></label>
+          <input value={form.tags} onChange={e => setForm(f => ({ ...f, tags: e.target.value }))}
+            placeholder="react, typescript, career"
+            className="w-full px-3.5 py-2.5 rounded-xl border border-[#e8e8f0] text-[13.5px] font-[inherit] outline-none focus:border-[#5b4cf5] focus:shadow-[0_0_0_3px_rgba(91,76,245,0.1)] transition-all bg-[#fafaff]" />
+        </div>
+        <div className="mb-5">
+          <label className="block text-[12px] font-semibold text-[#6b6b8a] mb-1.5 uppercase tracking-wide">Project URL</label>
+          <input value={form.projectUrl} onChange={e => setForm(f => ({ ...f, projectUrl: e.target.value }))}
+            placeholder="https://github.com/..."
+            className="w-full px-3.5 py-2.5 rounded-xl border border-[#e8e8f0] text-[13.5px] font-[inherit] outline-none focus:border-[#5b4cf5] focus:shadow-[0_0_0_3px_rgba(91,76,245,0.1)] transition-all bg-[#fafaff]" />
+        </div>
+        <div className="flex gap-3">
+          <button onClick={onClose} className="flex-1 py-3 rounded-xl border border-[#e8e8f0] text-[13.5px] font-semibold font-[inherit] text-[#6b6b8a] bg-white cursor-pointer hover:bg-[#f5f5fb] transition-all">
+            Cancel
+          </button>
+          <button onClick={submit} disabled={saving}
+            className="flex-1 py-3 bg-[#5b4cf5] text-white rounded-xl text-[13.5px] font-semibold font-[inherit] cursor-pointer hover:bg-[#7c6ff7] disabled:opacity-60 disabled:cursor-not-allowed transition-all">
+            {saving ? 'Saving…' : 'Save changes'}
+          </button>
         </div>
       </div>
     </div>
@@ -770,47 +778,6 @@ function StatsBar({ stats }: { stats: any }) {
 }
 
 /* ── Seed portfolio data shown when API returns nothing ──────────────────── */
-const SEED_PORTFOLIOS = [
-  {
-    id: 'pu1',
-    firstName: 'Amara', lastName: 'Osei',
-    title: 'Full-Stack Developer',
-    avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=amara&backgroundColor=b6e3f4',
-    skills: ['React', 'Node.js', 'TypeScript', 'PostgreSQL'],
-    bio: 'Building products that scale. Open to remote roles.',
-    location: 'Lagos, Nigeria',
-    projects: [
-      { id: 'pp1', title: 'JobBoard Pro', description: 'Full-stack job board with real-time alerts and resume parsing.', technologies: ['Next.js', 'Prisma', 'Redis'], thumbnail: 'https://images.unsplash.com/photo-1555066931-4365d14bab8c?w=400&q=80', liveUrl: '#', score: 9.2, views: 340 },
-      { id: 'pp2', title: 'DevTrack', description: 'Developer task manager with GitHub integration.', technologies: ['React', 'Node.js', 'MongoDB'], thumbnail: 'https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?w=400&q=80', liveUrl: '#', score: 8.7, views: 210 },
-    ],
-  },
-  {
-    id: 'pu2',
-    firstName: 'Chidi', lastName: 'Nwosu',
-    title: 'Staff Engineer @ Flutterwave',
-    avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=chidi&backgroundColor=c0aede',
-    skills: ['System Design', 'Go', 'Kubernetes', 'AWS'],
-    bio: 'Distributed systems, open-source contributor, speaker.',
-    location: 'Abuja, Nigeria',
-    projects: [
-      { id: 'pp3', title: 'MicroFlow', description: 'Event-driven microservices orchestration framework.', technologies: ['Go', 'Kafka', 'Docker'], thumbnail: 'https://images.unsplash.com/photo-1618477388954-7852f32655ec?w=400&q=80', liveUrl: '#', score: 9.5, views: 890 },
-    ],
-  },
-  {
-    id: 'pu3',
-    firstName: 'Ngozi', lastName: 'Eze',
-    title: 'Open Source Maintainer',
-    avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=ngozi&backgroundColor=ffd5dc',
-    skills: ['React', 'Storybook', 'CSS', 'Figma'],
-    bio: 'I build UI systems that teams love. 1k⭐ on GitHub.',
-    location: 'Port Harcourt, Nigeria',
-    projects: [
-      { id: 'pp4', title: 'PetalUI', description: 'Accessible React component library with 50+ components.', technologies: ['React', 'TypeScript', 'Rollup'], thumbnail: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&q=80', liveUrl: '#', score: 9.1, views: 1200 },
-      { id: 'pp5', title: 'ColorSage', description: 'AI-powered color palette generator for designers.', technologies: ['React', 'OpenAI', 'Tailwind'], thumbnail: 'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=400&q=80', liveUrl: '#', score: 8.8, views: 430 },
-    ],
-  },
-];
-
 /* ── Portfolio Spotlights ────────────────────────────────────────────────── */
 function PortfolioSpotlights({ onMessage }: { onMessage: (user: any) => void }) {
   const [portfolios, setPortfolios] = useState<any[]>([]);
@@ -820,10 +787,11 @@ function PortfolioSpotlights({ onMessage }: { onMessage: (user: any) => void }) 
   useEffect(() => {
     apiFetch('/portfolio/community-feed?limit=6')
       .then(r => {
-        if (r.success && r.data.users.length > 0) setPortfolios(r.data.users);
-        else setPortfolios(SEED_PORTFOLIOS);
+        const feed = Array.isArray(r.data) ? r.data : (r.data?.users ?? []);
+        if (r.success && feed.length > 0) setPortfolios(feed);
+        else setPortfolios([]);
       })
-      .catch(() => setPortfolios(SEED_PORTFOLIOS))
+      .catch(() => setPortfolios([]))
       .finally(() => setLoading(false));
   }, []);
 
@@ -936,33 +904,23 @@ function PortfolioSpotlights({ onMessage }: { onMessage: (user: any) => void }) 
   );
 }
 
-/* ── Online Members Strip ────────────────────────────────────────────────── */
-const ONLINE_MEMBERS = [
-  { firstName: 'Amara',  lastName: 'O', avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=amara&backgroundColor=b6e3f4' },
-  { firstName: 'Kemi',   lastName: 'A', avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=kemi&backgroundColor=ffdfbf' },
-  { firstName: 'Chidi',  lastName: 'N', avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=chidi&backgroundColor=c0aede' },
-  { firstName: 'Tolu',   lastName: 'B', avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=tolu&backgroundColor=d1d4f9' },
-  { firstName: 'Ngozi',  lastName: 'E', avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=ngozi&backgroundColor=ffd5dc' },
-  { firstName: 'Emeka',  lastName: 'O', avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=emeka' },
-];
-
-function OnlineMembersBar({ onMessage }: { onMessage: (user: any) => void }) {
+function OnlineMembersBar({ members, total }: { members: any[]; total: number }) {
+  if (members.length === 0) return null;
   return (
     <div className="bg-white rounded-2xl border border-[#e8e8f0] p-4 mb-5 flex items-center gap-3 overflow-x-auto">
-      <span className="text-[11.5px] font-semibold text-[#9898b8] uppercase tracking-wide flex-shrink-0">Online</span>
+      <span className="text-[11.5px] font-semibold text-[#9898b8] uppercase tracking-wide flex-shrink-0">Members</span>
       <div className="flex items-center gap-2 flex-shrink-0">
-        {ONLINE_MEMBERS.map((m, i) => (
-          <button key={i} onClick={() => onMessage(m)} title={`Message ${m.firstName}`}
-            className="relative border-0 bg-transparent cursor-pointer p-0 flex-shrink-0 group">
+        {members.map((m: any, i: number) => (
+          <div key={i} title={`${m.firstName} ${m.lastName}`}
+            className="relative flex-shrink-0">
             <Avatar user={m} size={8} />
             <div className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 bg-[#10b981] rounded-full border-2 border-white" />
-            <div className="absolute -top-7 left-1/2 -translate-x-1/2 bg-[#0a0a0f] text-white text-[10px] px-2 py-0.5 rounded-lg whitespace-nowrap opacity-0 group-hover:opacity-100 transition-all pointer-events-none">
-              {m.firstName}
-            </div>
-          </button>
+          </div>
         ))}
       </div>
-      <span className="text-[11px] text-[#c8c8d8] ml-auto flex-shrink-0">+{1240 - ONLINE_MEMBERS.length} members</span>
+      {total > members.length && (
+        <span className="text-[11px] text-[#c8c8d8] ml-auto flex-shrink-0">+{total - members.length} more</span>
+      )}
     </div>
   );
 }
@@ -970,16 +928,18 @@ function OnlineMembersBar({ onMessage }: { onMessage: (user: any) => void }) {
 /* ── Main Page ─────────────────────────────────────────────────────────── */
 export default function CommunityPage() {
   const user = getCachedUser();
-  const [posts,    setPosts]    = useState<any[]>([]);
-  const [stats,    setStats]    = useState<any>(null);
-  const [loading,  setLoading]  = useState(true);
-  const [page,     setPage]     = useState(1);
-  const [pages,    setPages]    = useState(1);
-  const [type,     setType]     = useState('');
-  const [sort,     setSort]     = useState('latest');
-  const [search,   setSearch]   = useState('');
-  const [showNew,  setShowNew]  = useState(false);
-  const [chatUser, setChatUser] = useState<any>(null);
+  const [posts,      setPosts]      = useState<any[]>([]);
+  const [stats,      setStats]      = useState<any>(null);
+  const [loading,    setLoading]    = useState(true);
+  const [page,       setPage]       = useState(1);
+  const [pages,      setPages]      = useState(1);
+  const [type,       setType]       = useState('');
+  const [sort,       setSort]       = useState('latest');
+  const [search,     setSearch]     = useState('');
+  const [showNew,    setShowNew]    = useState(false);
+  const [chatUser,   setChatUser]   = useState<any>(null);
+  const [editPost,   setEditPost]   = useState<any>(null);
+  const [deleting,   setDeleting]   = useState<string | null>(null);
 
   const fetchPosts = useCallback(async (p = 1, t = type, s = sort, q = search) => {
     setLoading(true);
@@ -988,26 +948,17 @@ export default function CommunityPage() {
       if (t) params.set('type', t);
       if (q) params.set('search', q);
       const res = await apiFetch(`/community?${params}`);
-      if (res.success && res.data.posts.length > 0) {
-        setPosts(res.data.posts);
-        setPages(res.data.pages);
+      if (res.success) {
+        setPosts(res.data.posts || []);
+        setPages(res.data.pages || 1);
         setPage(p);
       } else {
-        // show seed posts when API returns nothing
-        let filtered = SEED_POSTS;
-        if (t) filtered = SEED_POSTS.filter(p => p.type === t);
-        if (q) filtered = filtered.filter(p => p.title.toLowerCase().includes(q.toLowerCase()) || p.body.toLowerCase().includes(q.toLowerCase()));
-        if (s === 'popular') filtered = [...filtered].sort((a, b) => b.likes - a.likes);
-        if (s === 'trending') filtered = [...filtered].sort((a, b) => b.views - a.views);
-        setPosts(filtered);
+        setPosts([]);
         setPages(1);
         setPage(1);
       }
     } catch {
-      // fallback to seed posts
-      let filtered = SEED_POSTS;
-      if (t) filtered = SEED_POSTS.filter(p => p.type === t);
-      setPosts(filtered);
+      setPosts([]);
       setPages(1);
     }
     finally { setLoading(false); }
@@ -1019,13 +970,6 @@ export default function CommunityPage() {
   }, [type, sort]);
 
   function handleLike(postId: string) {
-    // Handle seed posts locally
-    if (postId.startsWith('seed-')) {
-      setPosts(prev => prev.map(p =>
-        p.id === postId ? { ...p, likedByMe: !p.likedByMe, likes: p.likes + (p.likedByMe ? -1 : 1) } : p
-      ));
-      return;
-    }
     apiFetch(`/community/${postId}/like`, { method: 'POST' })
       .then(r => {
         if (r.success) {
@@ -1041,12 +985,38 @@ export default function CommunityPage() {
     fetchPosts(1, type, sort, search);
   }
 
+  async function handleDeletePost(postId: string) {
+    if (!confirm('Delete this post? This cannot be undone.')) return;
+    setDeleting(postId);
+    try {
+      const res = await apiFetch(`/community/${postId}`, { method: 'DELETE' });
+      if (res.success) setPosts(prev => prev.filter(p => p.id !== postId));
+    } catch { /* silent */ }
+    finally { setDeleting(null); }
+  }
+
+  function handleEditPost(post: any) {
+    setEditPost(post);
+  }
+
+  function handlePostUpdated(updated: any) {
+    setPosts(prev => prev.map(p => p.id === updated.id ? { ...p, ...updated } : p));
+  }
+
   return (
     <SidebarLayout navItems={navItems} pageTitle="Community">
       {showNew && (
         <NewPostModal
           onClose={() => setShowNew(false)}
           onCreated={post => { setPosts(prev => [post, ...prev]); }}
+        />
+      )}
+
+      {editPost && (
+        <EditPostModal
+          post={editPost}
+          onClose={() => setEditPost(null)}
+          onUpdated={handlePostUpdated}
         />
       )}
 
@@ -1081,7 +1051,7 @@ export default function CommunityPage() {
       <StatsBar stats={stats} />
 
       {/* Online members */}
-      <OnlineMembersBar onMessage={setChatUser} />
+      <OnlineMembersBar members={[]} total={stats?.totalMembers ?? 0} />
 
       {/* Portfolio Spotlights */}
       <PortfolioSpotlights onMessage={setChatUser} />
@@ -1137,10 +1107,38 @@ export default function CommunityPage() {
             </div>
           ))}
         </div>
+      ) : posts.length === 0 ? (
+        <div className="bg-white rounded-2xl border border-[#e8e8f0] p-12 text-center">
+          <div className="w-16 h-16 bg-[#f4f2ff] rounded-2xl grid place-items-center mx-auto mb-4">
+            <i className="fas fa-comments text-2xl text-[#5b4cf5]" />
+          </div>
+          <h3 className="font-syne font-bold text-[16px] text-[#0a0a0f] mb-2">
+            {type || search ? 'No posts found' : 'Be the first to post!'}
+          </h3>
+          <p className="text-[13px] text-[#9898b8] mb-5">
+            {type || search
+              ? 'Try a different filter or search term.'
+              : 'Share your projects, ask questions, or start a discussion with the community.'}
+          </p>
+          {!type && !search && (
+            <button onClick={() => setShowNew(true)}
+              className="px-5 py-2.5 bg-[#5b4cf5] text-white rounded-xl text-[13.5px] font-semibold border-0 cursor-pointer hover:bg-[#7c6ff7] transition-all">
+              <i className="fas fa-plus mr-2" />Create first post
+            </button>
+          )}
+        </div>
       ) : (
         <div className="grid gap-3.5">
           {posts.map(post => (
-            <PostCard key={post.id} post={post} onLike={handleLike} onMessage={setChatUser} />
+            <PostCard
+              key={post.id}
+              post={post}
+              onLike={handleLike}
+              onMessage={setChatUser}
+              onEdit={handleEditPost}
+              onDelete={handleDeletePost}
+              currentUserId={user?.id}
+            />
           ))}
         </div>
       )}

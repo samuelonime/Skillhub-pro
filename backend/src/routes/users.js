@@ -5,7 +5,7 @@ const { body, validationResult } = require('express-validator');
 const prisma  = require('../config/database');
 const { authenticate } = require('../middleware/auth');
 const { uploadImage, deleteImage } = require('../utils/cloudinary');
-const { success, badRequest, error } = require('../utils/response');
+const { success, badRequest, error, notFound } = require('../utils/response');
 
 // ── Avatar upload — memory storage (buffer goes straight to Cloudinary) ────────
 const avatarUpload = multer({
@@ -91,6 +91,36 @@ router.put('/password', authenticate, [
     await prisma.refreshToken.deleteMany({ where: { userId: req.user.id } });
     return success(res, null, 'Password updated. Please log in again.');
   } catch (err) { return error(res, 'Failed to update password'); }
+});
+
+// ── GET /users/sessions — list active sessions for current user ───────────────
+router.get('/sessions', authenticate, async (req, res) => {
+  try {
+    const sessions = await prisma.userSession.findMany({
+      where: { userId: req.user.id, isActive: true },
+      orderBy: { lastSeenAt: 'desc' },
+      select: { id: true, ipAddress: true, browser: true, os: true, device: true, lastSeenAt: true, createdAt: true },
+    });
+    return success(res, sessions);
+  } catch (err) { return error(res, 'Failed to fetch sessions'); }
+});
+
+// ── DELETE /users/sessions/:id — revoke a session ────────────────────────────
+router.delete('/sessions/:id', authenticate, async (req, res) => {
+  try {
+    const session = await prisma.userSession.findFirst({ where: { id: req.params.id, userId: req.user.id } });
+    if (!session) return notFound(res, 'Session not found');
+    await prisma.userSession.update({ where: { id: req.params.id }, data: { isActive: false } });
+    return success(res, null, 'Session revoked');
+  } catch (err) { return error(res, 'Failed to revoke session'); }
+});
+
+// ── DELETE /users/sessions — revoke all other sessions ───────────────────────
+router.delete('/sessions', authenticate, async (req, res) => {
+  try {
+    await prisma.userSession.updateMany({ where: { userId: req.user.id }, data: { isActive: false } });
+    return success(res, null, 'All sessions revoked');
+  } catch (err) { return error(res, 'Failed to revoke sessions'); }
 });
 
 // ── Multer error handler ──────────────────────────────────────────────────────

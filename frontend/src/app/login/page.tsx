@@ -215,7 +215,7 @@ function AppleButton({ onAlert, role, label = 'Continue with Apple' }: {
   );
 }
 
-function LoginForm({ onAlert }: { onAlert: (msg: string, type?: AlertType) => void }) {
+function LoginForm({ onAlert, redirectTo }: { onAlert: (msg: string, type?: AlertType) => void; redirectTo?: string }) {
   const router = useRouter();
   const [email, setEmail] = useState('');
   const [pwd, setPwd] = useState('');
@@ -239,7 +239,8 @@ function LoginForm({ onAlert }: { onAlert: (msg: string, type?: AlertType) => vo
       setCachedUser(d.data.user);
       onAlert('Login successful! Redirecting…', 'ok');
       const role = d.data.user.role;
-      setTimeout(() => router.push(role === 'employer' ? '/employer' : role === 'admin' ? '/admin' : '/dashboard'), 800);
+      const destination = redirectTo || (role === 'employer' ? '/employer' : role === 'admin' ? '/admin' : '/dashboard');
+      setTimeout(() => router.push(destination), 800);
     } catch { onAlert('Cannot reach server. Please check your connection.'); }
     finally { setLoading(false); }
   }
@@ -371,6 +372,7 @@ function RegisterForm({ onAlert }: { onAlert: (msg: string, type?: AlertType) =>
 function LoginPageInner() {
   const searchParams = useSearchParams();
   const initTab: Tab = (searchParams.get('tab') as Tab) === 'register' ? 'register' : 'login';
+  const redirectTo = searchParams.get('redirect') || undefined;
   const [tab, setTab] = useState<Tab>(initTab);
   const [alert, setAlert] = useState<{ msg: string; type: AlertType }>({ msg: '', type: 'err' });
 
@@ -443,7 +445,7 @@ function LoginPageInner() {
 
         <Alert msg={alert.msg} type={alert.type} />
 
-        {tab === 'login' && <LoginForm onAlert={onAlert} />}
+        {tab === 'login' && <LoginForm onAlert={onAlert} redirectTo={redirectTo} />}
         {tab === 'register' && <RegisterForm onAlert={onAlert} />}
       </div>
     </div>

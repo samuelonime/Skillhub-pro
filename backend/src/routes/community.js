@@ -273,6 +273,31 @@ router.delete('/:id/comments/:cid', authenticate, async (req, res) => {
   }
 });
 
+// ── PUT /:id/comments/:cid  — update comment ────────────────────────────
+router.put('/:id/comments/:cid', authenticate, async (req, res) => {
+  try {
+    const comment = await prisma.communityComment.findUnique({ where: { id: req.params.cid } });
+    if (!comment) return notFound(res, 'Comment not found');
+    if (comment.authorId !== req.user.id && req.user.role !== 'admin')
+      return res.status(403).json({ success: false, message: 'Not authorized' });
+
+    const { body } = req.body;
+    if (!body?.trim()) return badRequest(res, 'Comment body is required');
+
+    const updated = await prisma.communityComment.update({
+      where: { id: req.params.cid },
+      data: { body: body.trim() },
+      select: {
+        id: true, body: true, likes: true, createdAt: true, updatedAt: true,
+        author: { select: { id: true, firstName: true, lastName: true, avatar: true, title: true } },
+      },
+    });
+    return success(res, updated, 'Comment updated');
+  } catch (e) {
+    return error(res, 'Failed to update comment');
+  }
+});
+
 // ── POST /:id/comments/:cid/like  — toggle comment like ──────────────────
 router.post('/:id/comments/:cid/like', authenticate, async (req, res) => {
   try {

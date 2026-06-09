@@ -9,6 +9,7 @@ const cookieParser = require('cookie-parser');
 const crypto      = require('crypto');
 const path        = require('path');
 const prisma      = require('./config/database');
+const { trackSession } = require('./middleware/sessionTracker');
 
 // ENV validation
 const REQUIRED_ENV = ['JWT_SECRET', 'JWT_REFRESH_SECRET', 'DATABASE_URL'];
@@ -85,6 +86,9 @@ app.use('/uploads/resumes', require('./middleware/auth').authenticate, async (re
 app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
 
 // ── Routes ─────────────────────────────────────────────────────────────────
+// Session tracker fires on every authenticated API request (throttled to 1 write/5min per user)
+app.use('/api/v1', require('./middleware/auth').optionalAuthenticate, trackSession);
+
 app.use('/api/v1/auth',         require('./routes/auth'));
 app.use('/api/v1/dashboard',    require('./routes/dashboard'));
 app.use('/api/v1/courses',      require('./routes/courses'));

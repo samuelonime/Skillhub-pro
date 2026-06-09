@@ -23,13 +23,18 @@ export function middleware(request: NextRequest) {
 
   if (isProtected && !isAuthenticated) {
     const loginUrl = new URL('/login', request.url);
-    loginUrl.searchParams.set('redirect', pathname);
+    // Preserve the full path+query so the user lands back here after login
+    const fullPath = pathname + (request.nextUrl.search || '');
+    loginUrl.searchParams.set('redirect', fullPath);
     return NextResponse.redirect(loginUrl);
   }
 
   // Redirect already-authenticated users away from login
+  // BUT if they arrived via a shared link redirect param, honour it
   if (pathname === '/login' && isAuthenticated) {
-    return NextResponse.redirect(new URL('/dashboard', request.url));
+    const redirect = request.nextUrl.searchParams.get('redirect');
+    const safeDest = redirect && redirect.startsWith('/') ? redirect : '/dashboard';
+    return NextResponse.redirect(new URL(safeDest, request.url));
   }
 
   return NextResponse.next();

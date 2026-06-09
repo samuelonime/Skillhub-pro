@@ -119,4 +119,21 @@ const requireEmployerAccess = async (req, res, next) => {
   }
 };
 
-module.exports = { authenticate, requireRole, requireEmployerAccess };
+module.exports = { authenticate, requireRole, requireEmployerAccess, optionalAuthenticate };
+
+// optionalAuthenticate — sets req.user if a valid token is present, but never blocks the request
+async function optionalAuthenticate(req, _res, next) {
+  try {
+    let token = req.cookies?.sh_access;
+    if (!token) {
+      const header = req.headers.authorization;
+      if (header?.startsWith('Bearer ')) token = header.split(' ')[1];
+    }
+    if (!token) return next();
+    const { verifyAccessToken } = require('../utils/jwt');
+    const decoded = verifyAccessToken(token);
+    const user = await prisma.user.findUnique({ where: { id: decoded.id }, select: { id: true, role: true, isActive: true } });
+    if (user?.isActive) req.user = user;
+  } catch { /* ignore */ }
+  next();
+}

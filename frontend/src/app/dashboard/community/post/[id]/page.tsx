@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
 import { SidebarLayout } from '@/components/layout/SidebarLayout';
-import { apiFetch } from '@/lib/api';
+import { apiFetch, getCachedUser } from '@/lib/api';
 
 const navItems = [
   { href: '/dashboard',              icon: 'fa-home',         label: 'Dashboard' },
@@ -52,6 +52,10 @@ export default function CommunityPostPage() {
   const [error, setError] = useState('');
   const [commentBody, setCommentBody] = useState('');
   const [savingComment, setSavingComment] = useState(false);
+  const [editCommentId, setEditCommentId] = useState<string | null>(null);
+  const [editCommentBody, setEditCommentBody] = useState('');
+  const [deletingCommentId, setDeletingCommentId] = useState<string | null>(null);
+  const currentUser = getCachedUser();
 
   useEffect(() => {
     if (!postId) return;
@@ -128,6 +132,42 @@ export default function CommunityPostPage() {
       setSavingComment(false);
     }
   }
+
+  async function deleteComment(commentId: string) {
+    if (!confirm('Delete this comment?')) return;
+    setDeletingCommentId(commentId);
+    try {
+      const res = await apiFetch(`/community/${postId}/comments/${commentId}`, { method: 'DELETE' });
+      if (res.success) {
+        setPost((current: any) => current ? {
+          ...current,
+          comments: current.comments.filter((c: any) => c.id !== commentId),
+        } : current);
+      }
+    } catch { /* ignore */ }
+    finally { setDeletingCommentId(null); }
+  }
+
+  async function saveEditComment(commentId: string) {
+    if (!editCommentBody.trim()) return;
+    try {
+      const res = await apiFetch(`/community/${postId}/comments/${commentId}`, {
+        method: 'PUT',
+        body: JSON.stringify({ body: editCommentBody.trim() }),
+      });
+      if (res.success) {
+        setPost((current: any) => current ? {
+          ...current,
+          comments: current.comments.map((c: any) =>
+            c.id === commentId ? { ...c, body: res.data.body } : c
+          ),
+        } : current);
+        setEditCommentId(null);
+        setEditCommentBody('');
+      }
+    } catch { /* ignore */ }
+  }
+
 
   return (
     <SidebarLayout navItems={navItems} pageTitle="Community">
@@ -228,8 +268,46 @@ export default function CommunityPostPage() {
                         </div>
                         <div className="text-[12px] text-[#6b7280]">{timeAgo(comment.createdAt)}</div>
                       </div>
+                      {currentUser?.id === comment.author?.id && (
+                        <div className="flex items-center gap-1 flex-shrink-0">
+                          <button
+                            onClick={() => { setEditCommentId(comment.id); setEditCommentBody(comment.body); }}
+                            className="w-7 h-7 rounded-lg bg-[#f4f2ff] text-[#5b4cf5] border-0 cursor-pointer grid place-items-center text-[11px] hover:bg-[#5b4cf5] hover:text-white transition-all"
+                            title="Edit comment">
+                            <i className="fas fa-pen" />
+                          </button>
+                          <button
+                            onClick={() => deleteComment(comment.id)}
+                            disabled={deletingCommentId === comment.id}
+                            className="w-7 h-7 rounded-lg bg-[#fef2f2] text-[#ef4444] border-0 cursor-pointer grid place-items-center text-[11px] hover:bg-[#ef4444] hover:text-white transition-all disabled:opacity-40"
+                            title="Delete comment">
+                            <i className="fas fa-trash" />
+                          </button>
+                        </div>
+                      )}
                     </div>
-                    <p className="text-[14px] text-[#334155] leading-relaxed">{comment.body}</p>
+                    {editCommentId === comment.id ? (
+                      <div className="mt-1">
+                        <textarea
+                          value={editCommentBody}
+                          onChange={e => setEditCommentBody(e.target.value)}
+                          rows={3}
+                          className="w-full rounded-xl border border-[#d1d5db] bg-white px-3 py-2.5 text-[13px] outline-none focus:border-[#5b4cf5] focus:shadow-[0_0_0_3px_rgba(91,76,245,0.1)] transition-all resize-none"
+                        />
+                        <div className="flex gap-2 mt-2">
+                          <button onClick={() => saveEditComment(comment.id)}
+                            className="px-4 py-1.5 bg-[#5b4cf5] text-white rounded-lg text-[12px] font-semibold border-0 cursor-pointer hover:bg-[#4a3de0] transition-all">
+                            Save
+                          </button>
+                          <button onClick={() => { setEditCommentId(null); setEditCommentBody(''); }}
+                            className="px-4 py-1.5 bg-white text-[#6b7280] rounded-lg text-[12px] font-semibold border border-[#e5e7eb] cursor-pointer hover:bg-[#f8fafc] transition-all">
+                            Cancel
+                          </button>
+                        </div>
+                      </div>
+                    ) : (
+                      <p className="text-[14px] text-[#334155] leading-relaxed">{comment.body}</p>
+                    )}
                     <div className="mt-4 flex items-center gap-3 text-[12px] text-[#6b7280]">
                       <button onClick={() => toggleCommentLike(comment.id)} className={`inline-flex items-center gap-2 border border-transparent rounded-full px-3 py-1.5 transition-all ${comment.likedByMe ? 'bg-[#fee2e2] text-[#b91c1c]' : 'bg-white hover:bg-[#f8fafc]'}`}>
                         <i className={`${comment.likedByMe ? 'fas' : 'far'} fa-heart`} />
