@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { SidebarLayout } from '@/components/layout/SidebarLayout';
 import { apiFetch } from '@/lib/api';
 
@@ -151,22 +151,63 @@ function ProjectCard({ project, onEdit, onDelete, onToggleCommunity }: any) {
 /* ── Project Modal ──────────────────────────────────────────────────────── */
 function ProjectModal({ project, onClose, onSaved }: any) {
   const [form, setForm] = useState({
-    title: project?.title || '',
-    description: project?.description || '',
+    title:        project?.title || '',
+    description:  project?.description || '',
     technologies: (project?.technologies || []).join(', '),
-    liveUrl: project?.liveUrl || '',
-    githubUrl: project?.githubUrl || '',
+    liveUrl:      project?.liveUrl || '',
+    githubUrl:    project?.githubUrl || '',
+    thumbnail:    project?.thumbnail || '',
   });
-  const [saving, setSaving] = useState(false);
-  const [error, setError] = useState('');
+  const [saving, setSaving]         = useState(false);
+  const [uploading, setUploading]   = useState(false);
+  const [dragOver, setDragOver]     = useState(false);
+  const [error, setError]           = useState('');
+  const imgRef = useRef<HTMLInputElement>(null);
+
+  async function uploadImage(file: File) {
+    if (!file.type.startsWith('image/')) { setError('Only image files are allowed'); return; }
+    setUploading(true);
+    setError('');
+    // Show local preview immediately
+    const localUrl = URL.createObjectURL(file);
+    setForm(p => ({ ...p, thumbnail: localUrl }));
+    try {
+      const fd = new FormData();
+      fd.append('image', file);
+      const res = await fetch('/api/v1/portfolio/projects/upload-image', {
+        method: 'POST', credentials: 'include', body: fd,
+      });
+      const data = await res.json();
+      if (!res.ok || !data.success) throw new Error(data.message || 'Upload failed');
+      URL.revokeObjectURL(localUrl);
+      setForm(p => ({ ...p, thumbnail: data.data.url }));
+    } catch (e: any) {
+      URL.revokeObjectURL(localUrl);
+      setForm(p => ({ ...p, thumbnail: project?.thumbnail || '' }));
+      setError(e.message || 'Image upload failed');
+    } finally { setUploading(false); }
+  }
+
+  function handleFile(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (file) uploadImage(file);
+  }
+
+  function handleDrop(e: React.DragEvent) {
+    e.preventDefault(); setDragOver(false);
+    const file = e.dataTransfer.files?.[0];
+    if (file) uploadImage(file);
+  }
 
   async function submit() {
     if (!form.title || !form.description) { setError('Title and description are required'); return; }
+    if (uploading) { setError('Please wait for the image to finish uploading'); return; }
     setSaving(true);
     try {
       const payload = {
         ...form,
         technologies: form.technologies.split(',').map((t: string) => t.trim()).filter(Boolean),
+        thumbnail: form.thumbnail || undefined,
       };
       const res = project?.id
         ? await apiFetch(`/portfolio/projects/${project.id}`, { method: 'PUT', body: JSON.stringify(payload) })
@@ -179,42 +220,93 @@ function ProjectModal({ project, onClose, onSaved }: any) {
 
   return (
     <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4" onClick={onClose}>
-      <div className="bg-white rounded-2xl p-6 w-full max-w-lg shadow-2xl" onClick={e => e.stopPropagation()}>
-        <div className="flex items-center justify-between mb-5">
-          <h3 className="font-syne font-bold text-[17px]">{project?.id ? 'Edit Project' : 'Add Project'}</h3>
-          <button onClick={onClose} className="w-8 h-8 rounded-xl bg-[#f5f5fb] border-0 cursor-pointer text-[#6b6b8a] hover:bg-[#f4f2ff] hover:text-[#5b4cf5] transition-all grid place-items-center">
-            <i className="fas fa-times" />
-          </button>
-        </div>
-        {error && <div className="mb-4 p-3 bg-[#fef2f2] text-[#ef4444] text-sm rounded-xl">{error}</div>}
-        <div className="flex flex-col gap-3">
-          {[
-            { label: 'Project Title *', key: 'title', placeholder: 'e.g. E-commerce Dashboard' },
-            { label: 'Live URL', key: 'liveUrl', placeholder: 'https://yourproject.com' },
-            { label: 'GitHub URL', key: 'githubUrl', placeholder: 'https://github.com/you/project' },
-            { label: 'Technologies (comma-separated)', key: 'technologies', placeholder: 'React, TypeScript, Node.js' },
-          ].map(f => (
-            <div key={f.key}>
-              <label className="block text-xs font-semibold text-[#6b6b8a] mb-1">{f.label}</label>
-              <input value={(form as any)[f.key]} onChange={e => setForm(p => ({ ...p, [f.key]: e.target.value }))}
-                placeholder={f.placeholder}
-                className="w-full px-3.5 py-2.5 border border-[#e8e8f0] rounded-xl text-sm font-[inherit] outline-none focus:border-[#5b4cf5] focus:shadow-[0_0_0_3px_rgba(91,76,245,0.12)] transition-all" />
+      <div className="bg-white rounded-2xl w-full max-w-lg shadow-2xl max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
+
+        {/* Image / banner area — shows at the top of the modal */}
+        <div
+          className={`relative h-44 rounded-t-2xl overflow-hidden cursor-pointer transition-all ${dragOver ? 'ring-2 ring-[#5b4cf5] ring-inset' : ''}`}
+          onDragOver={e => { e.preventDefault(); setDragOver(true); }}
+          onDragLeave={() => setDragOver(false)}
+          onDrop={handleDrop}
+          onClick={() => imgRef.current?.click()}
+        >
+          {form.thumbnail ? (
+            <>
+              <img src={form.thumbnail} alt="Project thumbnail" className="w-full h-full object-cover" />
+              {/* Overlay on hover */}
+              <div className="absolute inset-0 bg-black/0 hover:bg-black/40 transition-all flex items-center justify-center group">
+                <div className="opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center gap-1 text-white">
+                  {uploading
+                    ? <><div className="w-6 h-6 border-2 border-white/40 border-t-white rounded-full animate-spin mb-1" /><span className="text-xs font-semibold">Uploading…</span></>
+                    : <><i className="fas fa-camera text-2xl" /><span className="text-xs font-semibold mt-1">Change image</span></>
+                  }
+                </div>
+              </div>
+              {/* Remove button */}
+              <button
+                onClick={e => { e.stopPropagation(); setForm(p => ({ ...p, thumbnail: '' })); }}
+                className="absolute top-3 right-3 w-7 h-7 bg-black/50 hover:bg-black/70 text-white rounded-full border-0 cursor-pointer grid place-items-center text-xs transition-all">
+                <i className="fas fa-times" />
+              </button>
+            </>
+          ) : (
+            <div className={`w-full h-full bg-gradient-to-br from-[#f4f2ff] to-[#e8e8f0] flex flex-col items-center justify-center gap-2 border-2 border-dashed ${dragOver ? 'border-[#5b4cf5] bg-[#f4f2ff]' : 'border-[#d8d8ec]'} rounded-t-2xl transition-all`}>
+              {uploading ? (
+                <><div className="w-8 h-8 border-2 border-[#5b4cf5]/30 border-t-[#5b4cf5] rounded-full animate-spin" /><p className="text-xs text-[#6b6b8a] font-medium">Uploading…</p></>
+              ) : (
+                <>
+                  <div className="w-12 h-12 rounded-xl bg-white/80 grid place-items-center shadow-sm">
+                    <i className="fas fa-image text-xl text-[#5b4cf5]" />
+                  </div>
+                  <div className="text-center">
+                    <p className="text-sm font-semibold text-[#0a0a0f]"><span className="text-[#5b4cf5]">Click to upload</span> or drag & drop</p>
+                    <p className="text-[11px] text-[#9898b8] mt-0.5">Project cover image or logo • JPEG, PNG, WebP • max 8MB</p>
+                  </div>
+                </>
+              )}
             </div>
-          ))}
-          <div>
-            <label className="block text-xs font-semibold text-[#6b6b8a] mb-1">Description *</label>
-            <textarea value={form.description} onChange={e => setForm(p => ({ ...p, description: e.target.value }))}
-              placeholder="Describe what this project does, your role, and the impact…"
-              rows={4}
-              className="w-full px-3.5 py-2.5 border border-[#e8e8f0] rounded-xl text-sm font-[inherit] outline-none focus:border-[#5b4cf5] focus:shadow-[0_0_0_3px_rgba(91,76,245,0.12)] transition-all resize-none" />
-          </div>
+          )}
+          <input ref={imgRef} type="file" accept="image/*" onChange={handleFile} className="hidden" />
         </div>
-        <div className="flex gap-2.5 mt-5">
-          <button onClick={onClose} className="flex-1 py-2.5 border border-[#e8e8f0] rounded-xl text-sm font-semibold text-[#6b6b8a] bg-white cursor-pointer hover:bg-[#f5f5fb] transition-all">Cancel</button>
-          <button onClick={submit} disabled={saving}
-            className="flex-1 py-2.5 bg-[#5b4cf5] text-white rounded-xl text-sm font-semibold border-0 cursor-pointer hover:bg-[#7c6ff7] transition-all disabled:opacity-60">
-            {saving ? 'Saving…' : project?.id ? 'Update Project' : 'Add Project (+25 coins)'}
-          </button>
+
+        {/* Form body */}
+        <div className="p-6">
+          <div className="flex items-center justify-between mb-5">
+            <h3 className="font-syne font-bold text-[17px]">{project?.id ? 'Edit Project' : 'Add Project'}</h3>
+            <button onClick={onClose} className="w-8 h-8 rounded-xl bg-[#f5f5fb] border-0 cursor-pointer text-[#6b6b8a] hover:bg-[#f4f2ff] hover:text-[#5b4cf5] transition-all grid place-items-center">
+              <i className="fas fa-times" />
+            </button>
+          </div>
+          {error && <div className="mb-4 p-3 bg-[#fef2f2] text-[#ef4444] text-sm rounded-xl">{error}</div>}
+          <div className="flex flex-col gap-3">
+            {[
+              { label: 'Project Title *', key: 'title',        placeholder: 'e.g. E-commerce Dashboard' },
+              { label: 'Live URL',        key: 'liveUrl',      placeholder: 'https://yourproject.com' },
+              { label: 'GitHub URL',      key: 'githubUrl',    placeholder: 'https://github.com/you/project' },
+              { label: 'Technologies (comma-separated)', key: 'technologies', placeholder: 'React, TypeScript, Node.js' },
+            ].map(f => (
+              <div key={f.key}>
+                <label className="block text-xs font-semibold text-[#6b6b8a] mb-1">{f.label}</label>
+                <input value={(form as any)[f.key]} onChange={e => setForm(p => ({ ...p, [f.key]: e.target.value }))}
+                  placeholder={f.placeholder}
+                  className="w-full px-3.5 py-2.5 border border-[#e8e8f0] rounded-xl text-sm font-[inherit] outline-none focus:border-[#5b4cf5] focus:shadow-[0_0_0_3px_rgba(91,76,245,0.12)] transition-all" />
+              </div>
+            ))}
+            <div>
+              <label className="block text-xs font-semibold text-[#6b6b8a] mb-1">Description *</label>
+              <textarea value={form.description} onChange={e => setForm(p => ({ ...p, description: e.target.value }))}
+                placeholder="Describe what this project does, your role, and the impact…"
+                rows={4}
+                className="w-full px-3.5 py-2.5 border border-[#e8e8f0] rounded-xl text-sm font-[inherit] outline-none focus:border-[#5b4cf5] focus:shadow-[0_0_0_3px_rgba(91,76,245,0.12)] transition-all resize-none" />
+            </div>
+          </div>
+          <div className="flex gap-2.5 mt-5">
+            <button onClick={onClose} className="flex-1 py-2.5 border border-[#e8e8f0] rounded-xl text-sm font-semibold text-[#6b6b8a] bg-white cursor-pointer hover:bg-[#f5f5fb] transition-all">Cancel</button>
+            <button onClick={submit} disabled={saving || uploading}
+              className="flex-1 py-2.5 bg-[#5b4cf5] text-white rounded-xl text-sm font-semibold border-0 cursor-pointer hover:bg-[#7c6ff7] transition-all disabled:opacity-60">
+              {uploading ? 'Uploading image…' : saving ? 'Saving…' : project?.id ? 'Update Project' : 'Add Project (+25 coins)'}
+            </button>
+          </div>
         </div>
       </div>
     </div>
