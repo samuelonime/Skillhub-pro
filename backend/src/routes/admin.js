@@ -32,7 +32,10 @@ router.get('/stats', async (req, res) => {
       certificates: { total: totalCerts, verified: verifiedCerts, pending: pendingCerts },
       revenue: { totalPayments, totalRevenue: revenue / 100, currency: 'NGN' },
     });
-  } catch (err) { console.error(err); return error(res, 'Failed to fetch stats'); }
+  } catch (err) { 
+    console.error(err); 
+    return error(res, 'Failed to fetch stats'); 
+  }
 });
 
 router.get('/users', async (req, res) => {
@@ -54,35 +57,54 @@ router.get('/users', async (req, res) => {
       prisma.user.count({ where }),
     ]);
     return success(res, { users, pagination: { page: parseInt(page), limit: parseInt(limit), total, pages: Math.ceil(total / parseInt(limit)) } });
-  } catch (err) { return error(res, 'Failed to fetch users'); }
+  } catch (err) { 
+    console.error(err);
+    return error(res, 'Failed to fetch users'); 
+  }
 });
 
 router.get('/users/:id', async (req, res) => {
   try {
-    const user = await prisma.user.findUnique({ where: { id: req.params.id }, select: { id: true, email: true, firstName: true, lastName: true, role: true, verified: true, meritCoins: true, createdAt: true, title: true, bio: true, skills: { select: { id: true, name: true, level: true, verified: true } } } });
+    const user = await prisma.user.findUnique({ 
+      where: { id: req.params.id }, 
+      select: { id: true, email: true, firstName: true, lastName: true, role: true, verified: true, meritCoins: true, createdAt: true, title: true, bio: true, skills: { select: { id: true, name: true, level: true, verified: true } } } 
+    });
     if (!user) return notFound(res, 'User not found');
     return success(res, user);
-  } catch (err) { return error(res, 'Failed to fetch user'); }
+  } catch (err) { 
+    console.error(err);
+    return error(res, 'Failed to fetch user'); 
+  }
 });
 
 router.put('/users/:id', async (req, res) => {
   const ALLOWED = ['role', 'verified', 'meritCoins', 'title'];
   const data = {};
   ALLOWED.forEach(k => { if (req.body[k] !== undefined) data[k] = req.body[k]; });
-  if (!Object.keys(data).length) return notFound(res, 'No updatable fields provided');
+  if (!Object.keys(data).length) return badRequest(res, 'No updatable fields provided');
   try {
-    const user = await prisma.user.update({ where: { id: req.params.id }, data, select: { id: true, email: true, firstName: true, lastName: true, role: true, verified: true, meritCoins: true } });
+    const user = await prisma.user.update({ 
+      where: { id: req.params.id }, 
+      data, 
+      select: { id: true, email: true, firstName: true, lastName: true, role: true, verified: true, meritCoins: true } 
+    });
     return success(res, user, 'User updated');
-  } catch (err) { return notFound(res, 'User not found'); }
+  } catch (err) { 
+    console.error(err);
+    return notFound(res, 'User not found'); 
+  }
 });
 
 router.delete('/users/:id', async (req, res) => {
   if (req.params.id === req.user.id)
-   return badRequest(res, 'You cannot delete your own admin account');
+    return badRequest(res, 'You cannot delete your own admin account');
   try {
     await prisma.user.delete({ where: { id: req.params.id } });
     return success(res, null, 'User deleted');
-  } catch (err) { return notFound(res, 'User not found'); }
+  } catch (err) { 
+    console.error(err);
+    return notFound(res, 'User not found'); 
+  }
 });
 
 router.get('/certificates', async (req, res) => {
@@ -99,7 +121,10 @@ router.get('/certificates', async (req, res) => {
       prisma.certificate.count(),
     ]);
     return success(res, { certs, pagination: { page: parseInt(page), limit: parseInt(limit), total, pages: Math.ceil(total / parseInt(limit)) } });
-  } catch (err) { return error(res, 'Failed to fetch certificates'); }
+  } catch (err) { 
+    console.error(err);
+    return error(res, 'Failed to fetch certificates'); 
+  }
 });
 
 router.put('/certificates/:id/verify', async (req, res) => {
@@ -108,10 +133,24 @@ router.put('/certificates/:id/verify', async (req, res) => {
       where: { id: req.params.id },
       data: { status: 'verified', verifiedAt: new Date(), verifiedBy: req.user.id },
     });
-    await prisma.user.update({ where: { id: cert.userId }, data: { meritCoins: { increment: 50 } } });
-    await prisma.notification.create({ data: { userId: cert.userId, type: 'success', icon: 'certificate', title: 'Certificate Verified!', message: `${cert.title} has been verified. +50 Merit Coins!`
+    await prisma.user.update({ 
+      where: { id: cert.userId }, 
+      data: { meritCoins: { increment: 50 } } 
+    });
+    await prisma.notification.create({ 
+      data: { 
+        userId: cert.userId, 
+        type: 'success', 
+        icon: 'certificate', 
+        title: 'Certificate Verified!', 
+        message: `${cert.title} has been verified. +50 Merit Coins!` 
+      } 
+    });
     return success(res, cert, 'Certificate verified');
-  } catch (err) { return notFound(res, 'Certificate not found'); }
+  } catch (err) { 
+    console.error(err);
+    return notFound(res, 'Certificate not found'); 
+  }
 });
 
 router.get('/jobs', async (req, res) => {
@@ -121,14 +160,17 @@ router.get('/jobs', async (req, res) => {
     const [jobs, total] = await Promise.all([
       prisma.job.findMany({
         include:  { _count: { select: { applications: true } } },
-        orderBy:  { createdAt: 'desc' },   // was postedAt — field does not exist in schema
+        orderBy:  { createdAt: 'desc' },
         skip,
         take: parseInt(limit),
       }),
       prisma.job.count(),
     ]);
     return success(res, { jobs, pagination: { page: parseInt(page), limit: parseInt(limit), total, pages: Math.ceil(total / parseInt(limit)) } });
-  } catch (err) { return error(res, 'Failed to fetch jobs'); }
+  } catch (err) { 
+    console.error(err);
+    return error(res, 'Failed to fetch jobs'); 
+  }
 });
 
 router.put('/jobs/:id', async (req, res) => {
@@ -139,7 +181,10 @@ router.put('/jobs/:id', async (req, res) => {
   try {
     const job = await prisma.job.update({ where: { id: req.params.id }, data });
     return success(res, job, 'Job updated');
-  } catch (err) { return notFound(res, 'Job not found'); }
+  } catch (err) { 
+    console.error(err);
+    return notFound(res, 'Job not found'); 
+  }
 });
 
 router.get('/payments', async (req, res) => {
@@ -150,7 +195,10 @@ router.get('/payments', async (req, res) => {
       take: 100,
     });
     return success(res, payments);
-  } catch (err) { return error(res, 'Failed to fetch payments'); }
+  } catch (err) { 
+    console.error(err);
+    return error(res, 'Failed to fetch payments'); 
+  }
 });
 
 // ── GET /admin/settings/billing ───────────────────────────────────────────────
