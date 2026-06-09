@@ -18,6 +18,44 @@ const navItems = [
 
 const COLORS = ['#5b4cf5', '#10b981', '#f59e0b', '#3b82f6', '#ef4444', '#8b5cf6', '#ec4899', '#14b8a6'];
 
+const PROVIDER_PLATFORM_MAP: Record<string, string> = {
+  udemy: 'udemy',
+  coursera: 'coursera',
+  'coursera.org': 'coursera',
+  'edx': 'edx',
+  'linkedin learning': 'linkedin',
+  skillshare: 'skillshare',
+  pluralsight: 'pluralsight',
+  alison: 'alison',
+  futurelearn: 'futurelearn',
+};
+
+const PLATFORM_SEARCH_URL: Record<string, (title: string) => string> = {
+  udemy: title => `https://www.udemy.com/courses/search/?q=${encodeURIComponent(title)}`,
+  coursera: title => `https://www.coursera.org/search?query=${encodeURIComponent(title)}`,
+  edx: title => `https://www.edx.org/search?q=${encodeURIComponent(title)}`,
+  linkedin: title => `https://www.linkedin.com/learning/search?keywords=${encodeURIComponent(title)}`,
+  skillshare: title => `https://www.skillshare.com/search?query=${encodeURIComponent(title)}`,
+  pluralsight: title => `https://www.pluralsight.com/search?q=${encodeURIComponent(title)}`,
+  alison: title => `https://alison.com/search?query=${encodeURIComponent(title)}`,
+  futurelearn: title => `https://www.futurelearn.com/search?q=${encodeURIComponent(title)}`,
+};
+
+function getPlatformKey(provider: string | undefined) {
+  if (!provider) return null;
+  const lower = provider.toLowerCase();
+  return Object.entries(PROVIDER_PLATFORM_MAP).reduce<string | null>((match, [name, key]) => {
+    return match || (lower.includes(name) ? key : null);
+  }, null);
+}
+
+function getCoursePlatformUrl(course: any) {
+  if (course.externalUrl) return course.externalUrl;
+  const key = course.platformKey || getPlatformKey(course.provider);
+  if (!key) return null;
+  return PLATFORM_SEARCH_URL[key]?.(course.title || course.provider || '') || null;
+}
+
 function colorFor(id: string) {
   let h = 0;
   for (let i = 0; i < id.length; i++) h = id.charCodeAt(i) + ((h << 5) - h);
@@ -45,18 +83,59 @@ export default function CoursesPage() {
   const [search, setSearch] = useState('');
   const [level, setLevel] = useState('All Levels');
   const [sort, setSort] = useState('default');
+  const [platforms, setPlatforms] = useState<any[]>([]);
+  const [externalCourses, setExternalCourses] = useState<any[]>([]);
 
   async function loadCourses() {
     setLoading(true);
     try {
-      const res = await apiFetch('/courses');
-      if (res.success) {
-        setCourses(res.data);
-        const cats = ['All', ...Array.from(new Set<string>(res.data.map((c: any) => c.category).filter(Boolean)))];
+      const [coursesRes, platformsRes, certsRes] = await Promise.all([
+        apiFetch('/courses'),
+        apiFetch('/platforms'),
+        apiFetch('/platforms/certificates'),
+      ]);
+
+      if (coursesRes.success) {
+        setCourses(coursesRes.data);
+        const cats = ['All', ...Array.from(new Set<string>(coursesRes.data.map((c: any) => c.category).filter(Boolean)))];
         setCategories(cats);
       }
-    } catch {}
-    finally { setLoading(false); }
+
+      if (platformsRes.success) {
+        setPlatforms(platformsRes.data || []);
+      }
+
+      if (certsRes.success) {
+        const imported = (certsRes.data || []).map((cert: any) => {
+          const provider = cert.platform || cert.issuer || 'External Platform';
+          const platformKey = getPlatformKey(provider);
+          const connected = platformsRes.success && (platformsRes.data || []).some((p: any) => p.platform?.toLowerCase() === platformKey);
+          return {
+            id: cert.id,
+            title: cert.title,
+            provider,
+            category: cert.skills?.[0] || 'Platform course',
+            level: 'External',
+            enrolled: true,
+            progress: 100,
+            external: true,
+            externalUrl: cert.credentialUrl || getCoursePlatformUrl({ provider, title: cert.title, platformKey }),
+            platform: provider,
+            platformKey,
+            platformLabel: cert.platform || provider,
+            connected: connected || false,
+            badge: 'Imported',
+            completedAt: cert.completedAt,
+          };
+        });
+
+        setExternalCourses(imported);
+        setCategories(prev => {
+          const importedCats = imported.map((course: any) => course.category).filter(Boolean);
+          return ['All', ...Array.from(new Set([...prev, ...importedCats]))];
+        });
+      }
+    } catch {} finally { setLoading(false); }
   }
 
   useEffect(() => { loadCourses(); }, []);
@@ -73,8 +152,32 @@ export default function CoursesPage() {
         setToast(res.message || 'Enrollment failed');
         setTimeout(() => setToast(''), 3000);
       }
-    } catch { setToast('Enrollment failed'); setTimeout(() => setToast(''), 3000); }
-    finally { setEnrolling(null); }
+    } catch {
+      setToast('Enrollment failed');
+      setTimeout(() => setToast(''), 3000);
+    } finally { setEnrolling(null); }
+  }
+
+  function openExternalCourse(course: any) {
+    const url = getCoursePlatformUrl(course);
+    if (!url) {
+      setToast('No external course link available');
+      setTimeout(() => setToast(''), 3000);
+      return;
+    }
+    window.open(url, '_blank', 'noopener,noreferrer');
+  }
+
+  function handleCourseAction(course: any) {
+    if (course.enrolled || course.external || course.connected) {
+      openExternalCourse(course);
+      return;
+    }
+    if (course.platformKey) {
+      openExternalCourse(course);
+      return;
+    }
+    enroll(course.id, course.title);
   }
 
   function clearFilters() {
@@ -88,7 +191,8 @@ export default function CoursesPage() {
   const hasActiveFilters = search || filter !== 'all' || category !== 'All' || level !== 'All Levels' || sort !== 'default';
 
   const visible = useMemo(() => {
-    let result = courses.filter(c => {
+    const merged = [...courses, ...externalCourses];
+    let result = merged.filter(c => {
       if (filter === 'enrolled' && !c.enrolled) return false;
       if (filter === 'available' && c.enrolled) return false;
       if (category !== 'All' && c.category !== category) return false;
@@ -98,7 +202,8 @@ export default function CoursesPage() {
         if (
           !c.title?.toLowerCase().includes(q) &&
           !c.category?.toLowerCase().includes(q) &&
-          !c.level?.toLowerCase().includes(q)
+          !c.level?.toLowerCase().includes(q) &&
+          !c.provider?.toLowerCase().includes(q)
         ) return false;
       }
       return true;
@@ -242,6 +347,7 @@ export default function CoursesPage() {
                   </div>
                   <h3 className="font-syne font-bold text-[15px] tracking-tight mb-1 leading-tight">{course.title}</h3>
                   <div className="flex items-center gap-3 text-xs text-[#6b6b8a] mb-3">
+                    {course.provider && <span><i className="fas fa-building mr-1" />{course.provider}</span>}
                     {course.modules && <span><i className="fas fa-layer-group mr-1" />{course.modules} modules</span>}
                     {course.duration && <span><i className="fas fa-clock mr-1" />{course.duration}</span>}
                   </div>
@@ -255,13 +361,23 @@ export default function CoursesPage() {
                       <div className="h-1.5 bg-[#e8e8f0] rounded-full overflow-hidden mb-3">
                         <div className="h-full rounded-full" style={{ width: `${course.progress}%`, background: color }} />
                       </div>
-                      <button className="w-full py-2.5 rounded-xl text-sm font-semibold border-0 cursor-pointer text-white transition-all hover:-translate-y-px" style={{ background: color }}>
-                        Continue Learning
+                      <button
+                        onClick={() => handleCourseAction(course)}
+                        className="w-full py-2.5 rounded-xl text-sm font-semibold border-0 cursor-pointer text-white transition-all hover:-translate-y-px"
+                        style={{ background: color }}>
+                        {course.external || course.connected || course.platformKey
+                          ? `Open on ${course.platformLabel || course.provider}`
+                          : 'Continue Learning'}
                       </button>
                     </>
                   ) : course.enrolled ? (
-                    <button className="w-full py-2.5 rounded-xl text-sm font-semibold border-0 cursor-pointer text-white transition-all" style={{ background: color }}>
-                      Start Learning
+                    <button
+                      onClick={() => handleCourseAction(course)}
+                      className="w-full py-2.5 rounded-xl text-sm font-semibold border-0 cursor-pointer text-white transition-all"
+                      style={{ background: color }}>
+                      {course.external || course.connected || course.platformKey
+                        ? `Open on ${course.platformLabel || course.provider}`
+                        : 'Start Learning'}
                     </button>
                   ) : (
                     <>
@@ -273,13 +389,15 @@ export default function CoursesPage() {
                       )}
                       <button
                         disabled={enrolling === course.id}
-                        onClick={() => enroll(course.id, course.title)}
+                        onClick={() => handleCourseAction(course)}
                         className="w-full py-2.5 rounded-xl text-sm font-semibold border cursor-pointer transition-all hover:text-white disabled:opacity-60"
                         style={{ borderColor: color, color, background: 'transparent' }}
                         onMouseEnter={e => { if (enrolling !== course.id) { (e.target as HTMLButtonElement).style.background = color; (e.target as HTMLButtonElement).style.color = 'white'; } }}
                         onMouseLeave={e => { (e.target as HTMLButtonElement).style.background = 'transparent'; (e.target as HTMLButtonElement).style.color = color; }}
                       >
-                        {enrolling === course.id ? 'Enrolling…' : 'Enroll Now'}
+                        {course.external || course.connected || course.platformKey
+                          ? `Open on ${course.platformLabel || course.provider}`
+                          : enrolling === course.id ? 'Enrolling…' : 'Enroll Now'}
                       </button>
                     </>
                   )}
