@@ -143,6 +143,45 @@ router.get('/', authenticate, requireRole('employer', 'admin'), async (req, res)
   }
 });
 
+// ── GET /api/v1/talent/my/shortlisted — employer's shortlisted candidates ────
+// IMPORTANT: This MUST be placed BEFORE the /:id route to avoid conflict
+router.get('/my/shortlisted', authenticate, requireRole('employer', 'admin'), async (req, res) => {
+  try {
+    const list = await prisma.shortlistedCandidate.findMany({
+      where: { employerId: req.user.id },
+      include: {
+        candidate: {
+          select: {
+            id: true, firstName: true, lastName: true, avatar: true,
+            bio: true, location: true, profileStrength: true,
+            skills: {
+              select:  { name: true, level: true, verified: true },
+              orderBy: { verified: 'desc' },
+              take: 5,
+            },
+            certificates: { where: { status: 'verified' }, select: { title: true }, take: 3 },
+            resume: { select: { fileUrl: true } },
+          },
+        },
+        job: { select: { id: true, title: true } },
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+
+    return success(res, list.map(s => ({
+      shortlistId:  s.id,
+      note:         s.note,
+      shortlistedAt: s.createdAt,
+      job:          s.job,
+      ...s.candidate,
+      fullName: `${s.candidate.firstName} ${s.candidate.lastName}`,
+    })));
+  } catch (err) {
+    console.error(err);
+    return error(res, 'Failed to load shortlist');
+  }
+});
+
 // ── GET /api/v1/talent/:id — full candidate profile ───────────────────────────
 router.get('/:id', authenticate, requireRole('employer', 'admin'), async (req, res) => {
   try {
@@ -201,12 +240,14 @@ router.post('/:id/shortlist', authenticate, requireRole('employer', 'admin'), as
   try {
     const { jobId, note } = req.body;
 
+    const resolvedJobId = jobId || null;
+
     const existing = await prisma.shortlistedCandidate.findUnique({
       where: {
         employerId_candidateId_jobId: {
           employerId:  req.user.id,
           candidateId: req.params.id,
-          jobId:       jobId || '',
+          jobId:       resolvedJobId,
         },
       },
     });
@@ -221,8 +262,8 @@ router.post('/:id/shortlist', authenticate, requireRole('employer', 'admin'), as
       data: {
         employerId:  req.user.id,
         candidateId: req.params.id,
-        jobId:       jobId || null,
-        note:        note  || null,
+        jobId:       resolvedJobId,  
+        note:        note || null,
       },
     });
 
@@ -230,43 +271,6 @@ router.post('/:id/shortlist', authenticate, requireRole('employer', 'admin'), as
   } catch (err) {
     console.error(err);
     return error(res, 'Failed to update shortlist');
-  }
-});
-
-// ── GET /api/v1/talent/shortlisted — employer's shortlisted candidates ────────
-router.get('/my/shortlisted', authenticate, requireRole('employer', 'admin'), async (req, res) => {
-  try {
-    const list = await prisma.shortlistedCandidate.findMany({
-      where: { employerId: req.user.id },
-      include: {
-        candidate: {
-          select: {
-            id: true, firstName: true, lastName: true, avatar: true,
-            bio: true, location: true, profileStrength: true,
-            skills: {
-              select:  { name: true, level: true, verified: true },
-              orderBy: { verified: 'desc' },
-              take: 5,
-            },
-            certificates: { where: { status: 'verified' }, select: { title: true }, take: 3 },
-            resume: { select: { fileUrl: true } },
-          },
-        },
-        job: { select: { id: true, title: true } },
-      },
-      orderBy: { createdAt: 'desc' },
-    });
-
-    return success(res, list.map(s => ({
-      shortlistId:  s.id,
-      note:         s.note,
-      shortlistedAt:s.createdAt,
-      job:          s.job,
-      ...s.candidate,
-      fullName: `${s.candidate.firstName} ${s.candidate.lastName}`,
-    })));
-  } catch (err) {
-    return error(res, 'Failed to load shortlist');
   }
 });
 

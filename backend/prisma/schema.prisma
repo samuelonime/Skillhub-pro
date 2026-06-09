@@ -37,6 +37,10 @@ model User {
   trialEndsAt      DateTime?
   createdAt        DateTime @default(now())
   updatedAt        DateTime @updatedAt
+  
+
+  googleId         String?
+  appleId          String?
 
   refreshTokens        RefreshToken[]
   enrollments          Enrollment[]

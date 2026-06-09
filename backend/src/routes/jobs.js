@@ -1,7 +1,7 @@
 const router  = require('express').Router();
 const { body, validationResult } = require('express-validator');
 const prisma  = require('../config/database');
-const { authenticate, requireRole } = require('../middleware/auth');
+const { authenticate, requireRole, requireEmployerAccess } = require('../middleware/auth');
 const { success, created, notFound, badRequest, error } = require('../utils/response');
 
 // userSkills is now UserSkill[] from the relation — extract names for comparison
@@ -219,7 +219,7 @@ router.post('/:id/save', authenticate, async (req, res) => {
 });
 
 // ── POST /jobs — employer post ───────────────────────────────────────────────
-router.post('/', authenticate, requireRole('employer', 'admin'), [
+router.post('/', authenticate, requireRole('employer', 'admin'), requireEmployerAccess,[
   body('title').trim().isLength({ min: 3, max: 100 }),
   body('description').isLength({ min: 20 }),
   body('type').isIn(['Full-time', 'Part-time', 'Contract', 'Remote', 'Internship']),

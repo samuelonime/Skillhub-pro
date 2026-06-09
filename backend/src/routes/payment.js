@@ -257,8 +257,7 @@ router.post('/verify/:reference', authenticate, async (req, res) => {
     if (payment.purpose === 'subscription') {
       const meta    = payment.metadata;
       const plan    = PLANS[meta.plan];
-      const endDate = new Date();
-      endDate.setDate(endDate.getDate() + plan.period);
+      const endDate = new Date(Date.now() + plan.period * 24 * 60 * 60 * 1000);
       const exists = await prisma.subscription.findUnique({ where: { paymentId: updatedPayment.id } });
       if (!exists) {
         await prisma.subscription.create({
@@ -326,8 +325,7 @@ router.post('/webhook', async (req, res) => {
         const meta  = payment.metadata;
         const plan  = PLANS[meta?.plan];
         if (plan) {
-          const endDate = new Date();
-          endDate.setDate(endDate.getDate() + plan.period);
+          const endDate = new Date(Date.now() + plan.period * 24 * 60 * 60 * 1000);
           const exists = await prisma.subscription.findUnique({ where: { paymentId: payment.id } });
           if (!exists) {
             await prisma.subscription.create({ data: { userId: payment.userId, paymentId: payment.id, plan: meta.plan, status: 'active', endDate } });

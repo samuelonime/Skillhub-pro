@@ -42,6 +42,39 @@ router.get('/', authenticate, async (req, res) => {
   } catch (err) { console.error(err); return error(res, 'Failed to fetch skill paths'); }
 });
 
+// ── GET my enrolled paths ─────────────────────────────────────────────────────
+// IMPORTANT: This MUST be placed BEFORE the /:id route to avoid conflict
+router.get('/my/enrolled', authenticate, async (req, res) => {
+  try {
+    const enrollments = await prisma.skillPathEnrollment.findMany({
+      where: { userId: req.user.id },
+      include: {
+        path: {
+          include: {
+            courses: { orderBy: { order: 'asc' } },
+            _count:  { select: { enrollments: true } },
+          },
+        },
+        completedCourses: { select: { courseId: true } },
+      },
+      orderBy: { enrolledAt: 'desc' },
+    });
+
+    const result = enrollments.map(e => ({
+      enrollmentId:     e.id,
+      progress:         e.progress,
+      enrolledAt:       e.enrolledAt,
+      completedAt:      e.completedAt,
+      completedCourses: e.completedCourses.map(c => c.courseId),
+      ...e.path,
+      enrollCount:      e.path._count.enrollments,
+      _count:           undefined,
+    }));
+
+    return success(res, result);
+  } catch (err) { console.error(err); return error(res, 'Failed to fetch enrolled paths'); }
+});
+
 // ── GET single skill path ─────────────────────────────────────────────────────
 router.get('/:id', authenticate, async (req, res) => {
   try {
@@ -185,10 +218,11 @@ router.post('/:id/complete-course', authenticate, requireRole('student'), [
     }
 
     // Update overall profile strength
-    await prisma.user.update({
-      where: { id: req.user.id },
-      data:  { profileStrength: { increment: isComplete ? 5 : 1 } },
-    });
+    await prisma.$executeRaw`
+      UPDATE users
+      SET    "profileStrength" = LEAST("profileStrength" + ${isComplete ? 5 : 1}, 100)
+      WHERE  id = ${req.user.id}
+    `;
 
     if (isComplete) {
       await prisma.user.update({
@@ -208,38 +242,6 @@ router.post('/:id/complete-course', authenticate, requireRole('student'), [
 
     return success(res, { progress, completed: isComplete }, isComplete ? 'Skill path completed!' : 'Course marked complete');
   } catch (err) { console.error(err); return error(res, 'Failed to update progress'); }
-});
-
-// ── GET my enrolled paths ─────────────────────────────────────────────────────
-router.get('/my/enrolled', authenticate, async (req, res) => {
-  try {
-    const enrollments = await prisma.skillPathEnrollment.findMany({
-      where: { userId: req.user.id },
-      include: {
-        path: {
-          include: {
-            courses: { orderBy: { order: 'asc' } },
-            _count:  { select: { enrollments: true } },
-          },
-        },
-        completedCourses: { select: { courseId: true } },
-      },
-      orderBy: { enrolledAt: 'desc' },
-    });
-
-    const result = enrollments.map(e => ({
-      enrollmentId:     e.id,
-      progress:         e.progress,
-      enrolledAt:       e.enrolledAt,
-      completedAt:      e.completedAt,
-      completedCourses: e.completedCourses.map(c => c.courseId),
-      ...e.path,
-      enrollCount:      e.path._count.enrollments,
-      _count:           undefined,
-    }));
-
-    return success(res, result);
-  } catch (err) { console.error(err); return error(res, 'Failed to fetch enrolled paths'); }
 });
 
 // ── CREATE skill path (instructor / admin only) ───────────────────────────────

@@ -15,9 +15,15 @@ router.get('/', authenticate, async (req, res) => {
   try { return success(res, await getOrCreate(req.user.id)); } catch (err) { return error(res, 'Failed to fetch settings'); }
 });
 router.put('/', authenticate, async (req, res) => {
+  const ALLOWED = ['emailNotifs','pushNotifs','jobAlerts','courseUpdates',
+                   'weeklyDigest','profileVisible','showEmail','showLocation',
+                   'theme','language','timezone'];
+  const data = {};
+  ALLOWED.forEach(k => { if (req.body[k] !== undefined) data[k] = req.body[k]; });
+  if (!Object.keys(data).length) return success(res, null, 'Nothing to update');
   try {
     await getOrCreate(req.user.id);
-    const s = await prisma.userSettings.update({ where: { userId: req.user.id }, data: req.body });
+    const s = await prisma.userSettings.update({ where: { userId: req.user.id }, data });
     return success(res, s, 'Settings saved');
   } catch (err) { return error(res, 'Failed to save settings'); }
 });

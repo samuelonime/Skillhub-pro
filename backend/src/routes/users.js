@@ -57,22 +57,47 @@ router.get('/profile', authenticate, async (req, res) => {
                 meritCoins: true, profileStrength: true, verified: true, createdAt: true },
     });
     return success(res, user);
-  } catch (err) { return error(res, 'Failed to fetch profile'); }
+  } catch (err) { 
+    console.error(err);
+    return error(res, 'Failed to fetch profile'); 
+  }
 });
 
 // ── PUT /users/profile ────────────────────────────────────────────────────────
 router.put('/profile', authenticate, [
   body('firstName').optional().trim().isLength({ min: 2, max: 50 }),
   body('lastName').optional().trim().isLength({ min: 2, max: 50 }),
+  body('title').optional().trim().isLength({ max: 100 }),
+  body('bio').optional().trim().isLength({ max: 500 }),
+  body('location').optional().trim().isLength({ max: 100 }),
+  body('company').optional().trim().isLength({ max: 100 }),
+  body('companyWebsite').optional().trim().isURL(),
+  body('companySize').optional().isIn(['1-10', '11-50', '51-200', '201-500', '500+']),
+  body('industry').optional().trim().isLength({ max: 50 }),
+  body('phone').optional().trim().matches(/^[+]?[\d\s-]{8,20}$/),
 ], async (req, res) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) return badRequest(res, 'Validation failed', errors.array());
-  const { password, email, role, ...safe } = req.body;
+
+  // Explicitly define which fields can be updated (prevents mass assignment attacks)
+  const ALLOWED = ['firstName', 'lastName', 'title', 'bio', 'location',
+                   'company', 'companyWebsite', 'companySize', 'industry', 'phone'];
+  const data = {};
+  ALLOWED.forEach(k => { 
+    if (req.body[k] !== undefined) data[k] = req.body[k]; 
+  });
+
   try {
-    const user = await prisma.user.update({ where: { id: req.user.id }, data: safe });
+    const user = await prisma.user.update({ 
+      where: { id: req.user.id }, 
+      data 
+    });
     const { password: _, ...safeUser } = user;
     return success(res, safeUser, 'Profile updated');
-  } catch (err) { return error(res, 'Failed to update profile'); }
+  } catch (err) { 
+    console.error(err);
+    return error(res, 'Failed to update profile'); 
+  }
 });
 
 // ── PUT /users/password ───────────────────────────────────────────────────────
@@ -90,7 +115,10 @@ router.put('/password', authenticate, [
     await prisma.user.update({ where: { id: req.user.id }, data: { password: hashed } });
     await prisma.refreshToken.deleteMany({ where: { userId: req.user.id } });
     return success(res, null, 'Password updated. Please log in again.');
-  } catch (err) { return error(res, 'Failed to update password'); }
+  } catch (err) { 
+    console.error(err);
+    return error(res, 'Failed to update password'); 
+  }
 });
 
 // ── GET /users/sessions — list active sessions for current user ───────────────
@@ -102,25 +130,42 @@ router.get('/sessions', authenticate, async (req, res) => {
       select: { id: true, ipAddress: true, browser: true, os: true, device: true, lastSeenAt: true, createdAt: true },
     });
     return success(res, sessions);
-  } catch (err) { return error(res, 'Failed to fetch sessions'); }
+  } catch (err) { 
+    console.error(err);
+    return error(res, 'Failed to fetch sessions'); 
+  }
 });
 
 // ── DELETE /users/sessions/:id — revoke a session ────────────────────────────
 router.delete('/sessions/:id', authenticate, async (req, res) => {
   try {
-    const session = await prisma.userSession.findFirst({ where: { id: req.params.id, userId: req.user.id } });
+    const session = await prisma.userSession.findFirst({ 
+      where: { id: req.params.id, userId: req.user.id } 
+    });
     if (!session) return notFound(res, 'Session not found');
-    await prisma.userSession.update({ where: { id: req.params.id }, data: { isActive: false } });
+    await prisma.userSession.update({ 
+      where: { id: req.params.id }, 
+      data: { isActive: false } 
+    });
     return success(res, null, 'Session revoked');
-  } catch (err) { return error(res, 'Failed to revoke session'); }
+  } catch (err) { 
+    console.error(err);
+    return error(res, 'Failed to revoke session'); 
+  }
 });
 
 // ── DELETE /users/sessions — revoke all other sessions ───────────────────────
 router.delete('/sessions', authenticate, async (req, res) => {
   try {
-    await prisma.userSession.updateMany({ where: { userId: req.user.id }, data: { isActive: false } });
+    await prisma.userSession.updateMany({ 
+      where: { userId: req.user.id }, 
+      data: { isActive: false } 
+    });
     return success(res, null, 'All sessions revoked');
-  } catch (err) { return error(res, 'Failed to revoke sessions'); }
+  } catch (err) { 
+    console.error(err);
+    return error(res, 'Failed to revoke sessions'); 
+  }
 });
 
 // ── Multer error handler ──────────────────────────────────────────────────────

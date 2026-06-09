@@ -77,7 +77,8 @@ router.put('/users/:id', async (req, res) => {
 });
 
 router.delete('/users/:id', async (req, res) => {
-  if (req.params.id === req.user.id) return success(res, null, 'Cannot delete your own account');
+  if (req.params.id === req.user.id)
+   return badRequest(res, 'You cannot delete your own admin account');
   try {
     await prisma.user.delete({ where: { id: req.params.id } });
     return success(res, null, 'User deleted');
@@ -108,7 +109,7 @@ router.put('/certificates/:id/verify', async (req, res) => {
       data: { status: 'verified', verifiedAt: new Date(), verifiedBy: req.user.id },
     });
     await prisma.user.update({ where: { id: cert.userId }, data: { meritCoins: { increment: 50 } } });
-    await prisma.notification.create({ data: { userId: cert.userId, type: 'success', icon: 'certificate', title: 'Certificate Verified!', message: `${cert.name} has been verified. +50 Merit Coins!` } });
+    await prisma.notification.create({ data: { userId: cert.userId, type: 'success', icon: 'certificate', title: 'Certificate Verified!', message: `${cert.title} has been verified. +50 Merit Coins!`
     return success(res, cert, 'Certificate verified');
   } catch (err) { return notFound(res, 'Certificate not found'); }
 });

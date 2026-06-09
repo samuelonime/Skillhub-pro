@@ -78,6 +78,7 @@ router.get('/', authenticate, async (req, res) => {
     }));
     return success(res, result);
   } catch (err) {
+    console.error(err);
     return error(res, 'Failed to fetch platforms');
   }
 });
@@ -89,6 +90,11 @@ router.post('/:platform/connect', authenticate, async (req, res) => {
   if (!config) return badRequest(res, 'Unsupported platform');
 
   try {
+    // Check if the connection already exists BEFORE upsert
+    const existingBefore = await prisma.connectedPlatform.findUnique({
+      where: { userId_platform: { userId: req.user.id, platform } },
+    });
+
     // Upsert the connection
     const conn = await prisma.connectedPlatform.upsert({
       where: { userId_platform: { userId: req.user.id, platform } },
@@ -107,15 +113,61 @@ router.post('/:platform/connect', authenticate, async (req, res) => {
     });
 
     // Award merit coins for connecting a new platform (first time only)
-    const existingConns = await prisma.connectedPlatform.count({ where: { userId: req.user.id } });
-    if (existingConns <= 1) {
-      // First platform connection bonus
-      await prisma.user.update({ where: { id: req.user.id }, data: { meritCoins: { increment: 50 } } });
+    // Using existingBefore check to detect truly first-time connection vs re-connection
+    if (!existingBefore) {
+      // Truly first time connecting this platform
+      const totalConns = await prisma.connectedPlatform.count({ 
+        where: { userId: req.user.id } 
+      });
+      
+      // Bonus for first ever platform connection
+      if (totalConns === 1) {
+        await prisma.user.update({ 
+          where: { id: req.user.id }, 
+          data: { meritCoins: { increment: 50 } } 
+        });
+        
+        await prisma.notification.create({
+          data: {
+            userId: req.user.id,
+            type: 'success',
+            icon: 'link',
+            title: 'First Platform Connected! 🎉',
+            message: `You connected your first learning platform (${config.label}). +50 Merit Coins earned!`,
+          },
+        });
+      } else {
+        // Optional: smaller bonus for connecting additional platforms
+        await prisma.user.update({ 
+          where: { id: req.user.id }, 
+          data: { meritCoins: { increment: 10 } } 
+        });
+        
+        await prisma.notification.create({
+          data: {
+            userId: req.user.id,
+            type: 'info',
+            icon: 'link',
+            title: 'Platform Connected',
+            message: `You connected ${config.label}. +10 Merit Coins earned!`,
+          },
+        });
+      }
     }
 
     const affiliateUrl = config.affiliateUrl(config.affiliateTag);
 
-    return success(res, { connection: conn, affiliateUrl }, `Connected to ${config.label}`);
+    return success(
+      res, 
+      { 
+        connection: conn, 
+        affiliateUrl, 
+        isNewConnection: !existingBefore 
+      }, 
+      existingBefore 
+        ? `Reconnected to ${config.label}` 
+        : `Connected to ${config.label}`
+    );
   } catch (err) {
     console.error(err);
     return error(res, 'Failed to connect platform');
@@ -131,6 +183,7 @@ router.delete('/:platform/disconnect', authenticate, async (req, res) => {
     });
     return success(res, null, 'Platform disconnected');
   } catch (err) {
+    console.error(err);
     return error(res, 'Failed to disconnect platform');
   }
 });
@@ -161,7 +214,20 @@ router.post('/:platform/certificates', authenticate, async (req, res) => {
     });
 
     // Award merit coins for completing an external course
-    await prisma.user.update({ where: { id: req.user.id }, data: { meritCoins: { increment: 75 } } });
+    await prisma.user.update({ 
+      where: { id: req.user.id }, 
+      data: { meritCoins: { increment: 75 } } 
+    });
+    
+    await prisma.notification.create({
+      data: {
+        userId: req.user.id,
+        type: 'success',
+        icon: 'certificate',
+        title: 'Course Certificate Imported!',
+        message: `"${title}" imported from ${platform}. +75 Merit Coins earned!`,
+      },
+    });
 
     return created(res, { ...cert, coinsEarned: 75 }, 'Certificate imported! +75 Merit Coins earned');
   } catch (err) {
@@ -179,6 +245,7 @@ router.get('/certificates', authenticate, async (req, res) => {
     });
     return success(res, certs);
   } catch (err) {
+    console.error(err);
     return error(res, 'Failed to fetch certificates');
   }
 });
@@ -187,8 +254,13 @@ router.get('/certificates', authenticate, async (req, res) => {
 router.get('/summary', authenticate, async (req, res) => {
   try {
     const [platforms, certs] = await Promise.all([
-      prisma.connectedPlatform.findMany({ where: { userId: req.user.id }, include: { certificates: true } }),
-      prisma.externalCertificate.findMany({ where: { userId: req.user.id } }),
+      prisma.connectedPlatform.findMany({ 
+        where: { userId: req.user.id }, 
+        include: { certificates: true } 
+      }),
+      prisma.externalCertificate.findMany({ 
+        where: { userId: req.user.id } 
+      }),
     ]);
     const summary = {
       totalPlatforms: platforms.length,
@@ -204,6 +276,7 @@ router.get('/summary', authenticate, async (req, res) => {
     };
     return success(res, summary);
   } catch (err) {
+    console.error(err);
     return error(res, 'Failed to fetch platform summary');
   }
 });
@@ -218,6 +291,7 @@ router.delete('/certificates/:id', authenticate, async (req, res) => {
     await prisma.externalCertificate.delete({ where: { id: req.params.id } });
     return success(res, null, 'Certificate removed');
   } catch (err) {
+    console.error(err);
     return error(res, 'Failed to remove certificate');
   }
 });
@@ -232,6 +306,7 @@ router.get('/referrals', authenticate, async (req, res) => {
     const totalCommission = referrals.reduce((sum, r) => sum + (r.commission || 0), 0);
     return success(res, { referrals, totalCommission });
   } catch (err) {
+    console.error(err);
     return error(res, 'Failed to fetch referrals');
   }
 });

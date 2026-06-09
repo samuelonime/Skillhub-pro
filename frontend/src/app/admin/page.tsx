@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { apiFetch } from '@/lib/api';
+import { getCachedUser } from '@/lib/auth'; // Make sure this import path is correct
 
 /* ─── Types ─────────────────────────────────────────────────────────────── */
 interface Stats {
@@ -118,6 +119,7 @@ const NAV = [
 
 /* ─── Main Admin Page ───────────────────────────────────────────────────── */
 export default function AdminPage() {
+  const [authorized, setAuthorized] = useState<boolean | null>(null);
   const [tab, setTab]         = useState('overview');
   const [stats, setStats]     = useState<Stats | null>(null);
   const [users, setUsers]     = useState<User[]>([]);
@@ -132,6 +134,17 @@ export default function AdminPage() {
   const [billingLoading, setBillingLoading] = useState(false);
   const [deleteModal, setDeleteModal] = useState<{ id: string; name: string } | null>(null);
   const [verifyingCert, setVerifyingCert] = useState<string | null>(null);
+
+  useEffect(() => {
+    const user = getCachedUser();
+    if (!user || user.role !== 'admin') {
+      window.location.href = '/dashboard';
+      return;
+    }
+    setAuthorized(true);
+  }, []);
+
+  if (!authorized) return null;
 
   function setLoad(key: string, v: boolean) {
     setLoading(prev => ({ ...prev, [key]: v }));

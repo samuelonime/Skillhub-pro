@@ -143,8 +143,10 @@ router.put('/profile', ...guard, async (req, res) => {
 router.put('/account/password', ...guard, async (req, res) => {
   const bcrypt = require('bcryptjs');
   const { currentPassword, newPassword } = req.body;
-  if (!currentPassword || !newPassword || newPassword.length < 8)
-    return badRequest(res, 'Valid current and new password (8+ chars) required');
+  if (!currentPassword || !newPassword || newPassword.length < 8 ||
+      !/[A-Z]/.test(newPassword) || !/[0-9]/.test(newPassword)) {
+    return badRequest(res, 'New password must be 8+ chars with at least 1 uppercase and 1 number');
+  }
   try {
     const user = await prisma.user.findUnique({ where: { id: req.user.id } });
     const valid = await bcrypt.compare(currentPassword, user.password);

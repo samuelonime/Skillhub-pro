@@ -221,6 +221,26 @@ router.get('/contacts', authenticate, async (req, res) => {
   }
 });
 
+// ── GET /stats/overview  — community stats ────────────────────────────────
+// IMPORTANT: This MUST be placed BEFORE the /:id route to avoid conflict
+router.get('/stats/overview', authenticate, async (req, res) => {
+  try {
+    const [totalPosts, totalComments, totalMembers, recentActive] = await prisma.$transaction([
+      prisma.communityPost.count(),
+      prisma.communityComment.count(),
+      prisma.user.count({ where: { role: 'student' } }),
+      prisma.communityPost.count({
+        where: { createdAt: { gte: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000) } },
+      }),
+    ]);
+
+    return success(res, { totalPosts, totalComments, totalMembers, recentActive });
+  } catch (e) {
+    console.error(e);
+    return error(res, 'Failed to fetch stats');
+  }
+});
+
 // ── GET /:id  — single post with comments ─────────────────────────────────
 router.get('/:id', authenticate, async (req, res) => {
   try {
@@ -288,6 +308,7 @@ router.put('/:id', authenticate, async (req, res) => {
 
     return success(res, updated, 'Post updated');
   } catch (e) {
+    console.error(e);
     return error(res, 'Failed to update post');
   }
 });
@@ -303,6 +324,7 @@ router.delete('/:id', authenticate, async (req, res) => {
     await prisma.communityPost.delete({ where: { id: req.params.id } });
     return success(res, null, 'Post deleted');
   } catch (e) {
+    console.error(e);
     return error(res, 'Failed to delete post');
   }
 });
@@ -328,6 +350,7 @@ router.post('/:id/like', authenticate, async (req, res) => {
       return success(res, { liked: true });
     }
   } catch (e) {
+    console.error(e);
     return error(res, 'Failed to toggle like');
   }
 });
@@ -351,6 +374,7 @@ router.post('/:id/comments', authenticate, async (req, res) => {
 
     return created(res, { ...comment, likedByMe: false }, 'Comment added');
   } catch (e) {
+    console.error(e);
     return error(res, 'Failed to add comment');
   }
 });
@@ -366,6 +390,7 @@ router.delete('/:id/comments/:cid', authenticate, async (req, res) => {
     await prisma.communityComment.delete({ where: { id: req.params.cid } });
     return success(res, null, 'Comment deleted');
   } catch (e) {
+    console.error(e);
     return error(res, 'Failed to delete comment');
   }
 });
@@ -391,6 +416,7 @@ router.put('/:id/comments/:cid', authenticate, async (req, res) => {
     });
     return success(res, updated, 'Comment updated');
   } catch (e) {
+    console.error(e);
     return error(res, 'Failed to update comment');
   }
 });
@@ -416,25 +442,8 @@ router.post('/:id/comments/:cid/like', authenticate, async (req, res) => {
       return success(res, { liked: true });
     }
   } catch (e) {
+    console.error(e);
     return error(res, 'Failed to toggle comment like');
-  }
-});
-
-// ── GET /stats/overview  — community stats ────────────────────────────────
-router.get('/stats/overview', authenticate, async (req, res) => {
-  try {
-    const [totalPosts, totalComments, totalMembers, recentActive] = await prisma.$transaction([
-      prisma.communityPost.count(),
-      prisma.communityComment.count(),
-      prisma.user.count({ where: { role: 'student' } }),
-      prisma.communityPost.count({
-        where: { createdAt: { gte: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000) } },
-      }),
-    ]);
-
-    return success(res, { totalPosts, totalComments, totalMembers, recentActive });
-  } catch (e) {
-    return error(res, 'Failed to fetch stats');
   }
 });
 

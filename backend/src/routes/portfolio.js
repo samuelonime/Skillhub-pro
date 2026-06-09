@@ -174,7 +174,7 @@ router.put('/projects/:id', authenticate, async (req, res) => {
       ? (Array.isArray(technologies) ? technologies : technologies.split(',').map((t) => t.trim()).filter(Boolean))
       : project.technologies;
     const updated = await prisma.project.update({
-      where: { id: req.params.id },
+      where: { id: req.params.id, userId: req.user.id }, 
       data: {
         title, description,
         technologies: techs, techStack: techs,
@@ -215,7 +215,7 @@ router.put('/projects/:id/community', authenticate, async (req, res) => {
     if (!project) return notFound(res, 'Project not found');
 
     const updated = await prisma.project.update({
-      where: { id: req.params.id },
+      where: { id: req.params.id, userId: req.user.id }, 
       data: { visibility: showInCommunity ? 'community' : 'public' },
     });
 
