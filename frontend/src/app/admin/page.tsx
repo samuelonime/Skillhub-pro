@@ -1,8 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { apiFetch } from '@/lib/api';
-import { getCachedUser } from '@/lib/auth'; // Make sure this import path is correct
+import { apiFetch, getCachedUser } from '@/lib/api';
 
 /* ─── Types ─────────────────────────────────────────────────────────────── */
 interface Stats {
