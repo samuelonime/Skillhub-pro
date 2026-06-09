@@ -373,6 +373,7 @@ export default function PortfolioPage() {
   const [editingSkills, setEditingSkills] = useState(false);
   const [skillInput, setSkillInput]   = useState('');
   const [skills, setSkills]           = useState<string[]>([]);
+  const savedSkillsRef                = useRef<string[]>([]);
   const [portfolioPublic, setPortfolioPublic] = useState(false);
 
   async function load() {
@@ -382,6 +383,7 @@ export default function PortfolioPage() {
       if (res.success) {
         setData(res.data);
         setSkills(res.data.user?.skills || []);
+        savedSkillsRef.current = res.data.user?.skills || [];
         setPortfolioPublic(res.data.user?.portfolioPublic ?? false);
       }
     } catch {}
@@ -431,7 +433,14 @@ export default function PortfolioPage() {
   async function saveSkills() {
     try {
       const res = await apiFetch('/portfolio/skills', { method: 'PUT', body: JSON.stringify({ skills }) });
-      if (res.success) { showToast('Skills updated!'); setEditingSkills(false); load(); }
+      if (res.success) {
+        // Use names returned by the API — don't call load() which would re-map UserSkill objects
+        const saved = res.data?.skills || skills;
+        setSkills(saved);
+        savedSkillsRef.current = saved;
+        showToast('Skills updated!');
+        setEditingSkills(false);
+      }
     } catch {}
   }
 
@@ -574,7 +583,7 @@ export default function PortfolioPage() {
               </button>
             ) : (
               <div className="flex gap-2">
-                <button onClick={() => { setEditingSkills(false); setSkills(user?.skills || []); }}
+                <button onClick={() => { setEditingSkills(false); setSkills(savedSkillsRef.current); }}
                   className="px-3.5 py-2 text-sm font-semibold text-[#6b6b8a] bg-[#f5f5fb] rounded-xl border-0 cursor-pointer hover:bg-[#e8e8f0] transition-all">Cancel</button>
                 <button onClick={saveSkills}
                   className="px-3.5 py-2 text-sm font-semibold text-white bg-[#5b4cf5] rounded-xl border-0 cursor-pointer hover:bg-[#7c6ff7] transition-all">Save</button>

@@ -113,6 +113,26 @@ export default function ApplicantsPage() {
             </div>
             {selected.skills?.length>0&&<div className="mb-3"><div className="text-[11px] font-semibold text-[#6b6b8a] uppercase tracking-wide mb-2">Skills</div><div className="flex flex-wrap gap-1.5">{selected.skills.map((s:any)=><span key={s.name} className="text-xs font-semibold px-2.5 py-1 rounded-lg bg-[#f4f2ff] text-[#5b4cf5]">{s.name}</span>)}</div></div>}
             {selected.platforms?.length>0&&<div className="mb-3"><div className="text-[11px] font-semibold text-[#6b6b8a] uppercase tracking-wide mb-2">Platforms</div><div className="flex flex-wrap gap-1.5">{selected.platforms.map((p:string)=><span key={p} className="text-[11px] font-semibold px-2.5 py-1 rounded-full bg-[#f0fdf4] text-[#22c55e]"><i className="fas fa-check-circle mr-1"/>{p}</span>)}</div></div>}
+            {selected.projects?.length>0&&(
+              <div className="mb-3">
+                <div className="text-[11px] font-semibold text-[#6b6b8a] uppercase tracking-wide mb-2">Projects ({selected.projects.length})</div>
+                <div className="flex flex-col gap-2">
+                  {selected.projects.map((p:any)=>(
+                    <div key={p.id} className="rounded-xl overflow-hidden border border-[#e8e8f0]">
+                      {p.thumbnail&&<img src={p.thumbnail} alt={p.title} className="w-full h-20 object-cover"/>}
+                      <div className="p-2.5">
+                        <div className="font-semibold text-[12px] text-[#0a0a0f] mb-1">{p.title}</div>
+                        {(p.techStack||[]).length>0&&<div className="flex flex-wrap gap-1 mb-1.5">{(p.techStack||[]).slice(0,4).map((t:string)=><span key={t} className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-[#f4f2ff] text-[#5b4cf5]">{t}</span>)}</div>}
+                        <div className="flex gap-2">
+                          {p.liveUrl&&<a href={p.liveUrl} target="_blank" rel="noreferrer" className="text-[10px] font-semibold text-[#5b4cf5] no-underline hover:underline"><i className="fas fa-external-link-alt mr-1"/>Live</a>}
+                          {p.githubUrl&&<a href={p.githubUrl} target="_blank" rel="noreferrer" className="text-[10px] font-semibold text-[#6b6b8a] no-underline hover:underline"><i className="fab fa-github mr-1"/>Code</a>}
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
             <div className="flex flex-col gap-2 mt-4">
               <button className="w-full py-2.5 bg-[#5b4cf5] text-white rounded-xl text-sm font-semibold border-0 cursor-pointer hover:bg-[#7c6ff7] transition-all">Send Message</button>
               <button onClick={()=>{ onStatusChange(selected.applicationId,'shortlisted'); setSelected((p:any)=>({...p,status:'shortlisted'})); }} className="w-full py-2.5 bg-[#f0fdf4] text-[#15803d] rounded-xl text-sm font-semibold border border-[#bbf7d0] cursor-pointer hover:bg-[#22c55e] hover:text-white transition-all">Shortlist</button>
