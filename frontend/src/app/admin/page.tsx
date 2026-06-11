@@ -27,6 +27,27 @@ interface Payment {
   id: string; amount: number; currency: string; status: string; purpose: string;
   createdAt: string; user: { firstName: string; lastName: string; email: string };
 }
+interface AffiliateEarning {
+  id: string; platform: string; network: string; orderId: string | null;
+  orderAmount: number; commissionAmount: number; currency: string;
+  status: 'pending' | 'confirmed' | 'locked' | 'paid' | 'reversed';
+  convertedAt: string; paidAt: string | null;
+}
+interface AffiliateSummary {
+  platform: string; label: string; totalOrders: number;
+  totalOrderAmount: number; totalCommission: number;
+  confirmedCommission: number; lockedCommission: number;
+  paidCommission: number; reversals: number;
+}
+interface AffiliateData {
+  earnings: AffiliateEarning[];
+  platformSummary: AffiliateSummary[];
+  overview: {
+    totalClicks: number; totalConverted: number; conversionRate: string;
+    totalCommission: number; paidCommission: number; pendingCommission: number;
+  };
+  pagination: { total: number; pages: number };
+}
 
 /* ─── Helpers ───────────────────────────────────────────────────────────── */
 function fmt(n: number) { return n?.toLocaleString() ?? '0'; }
@@ -113,6 +134,7 @@ const NAV = [
   { id: 'jobs',          icon: 'fa-briefcase',       label: 'Jobs' },
   { id: 'certificates',  icon: 'fa-certificate',     label: 'Certificates' },
   { id: 'payments',      icon: 'fa-credit-card',     label: 'Payments' },
+  { id: 'affiliate',    icon: 'fa-handshake',    label: 'Affiliate Earnings' },
   { id: 'settings',      icon: 'fa-sliders',         label: 'Settings' },
 ];
 
@@ -133,6 +155,8 @@ export default function AdminPage() {
   const [billingLoading, setBillingLoading] = useState(false);
   const [deleteModal, setDeleteModal] = useState<{ id: string; name: string } | null>(null);
   const [verifyingCert, setVerifyingCert] = useState<string | null>(null);
+  const [affiliate, setAffiliate] = useState<AffiliateData | null>(null);
+  const [affiliateLoading, setAffiliateLoading] = useState(false);
 
   useEffect(() => {
     const user = getCachedUser();
@@ -218,11 +242,21 @@ export default function AdminPage() {
     if (tab === 'jobs') loadJobs();
     if (tab === 'payments') loadPayments();
     if (tab === 'settings') loadBilling();
+    if (tab === 'affiliate') loadAffiliate();
   }, [tab, loadUsers, loadCerts, loadJobs, loadPayments, loadBilling]);
 
   useEffect(() => {
     if (tab === 'users') loadUsers();
   }, [userRole, userSearch]);
+
+  const loadAffiliate = useCallback(async () => {
+    setAffiliateLoading(true);
+    try {
+      const r = await apiFetch('/platforms/earnings/admin');
+      if (r.success) setAffiliate(r.data);
+    } catch { showToast('Failed to load affiliate data', 'error'); }
+    finally { setAffiliateLoading(false); }
+  }, []);
 
   /* ── Actions ── */
   async function toggleBilling(v: boolean) {
@@ -709,6 +743,166 @@ export default function AdminPage() {
                   </tbody>
                 </table>
               </div>
+            </div>
+          )}
+
+          {/* ══════════════ AFFILIATE ══════════════ */}
+          {tab === 'affiliate' && (
+            <div>
+              <div className="mb-4 text-[12px] text-[#3a3a55]">
+                Commission SkillHub earns when users register and pay on external platforms via affiliate links.
+              </div>
+
+              {affiliateLoading ? (
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+                  {[...Array(4)].map((_, i) => (
+                    <div key={i} className="h-24 rounded-2xl bg-[#0d0d18] border border-[#1e1e2e] animate-pulse" />
+                  ))}
+                </div>
+              ) : affiliate ? (
+                <>
+                  {/* Overview cards */}
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+                    {[
+                      { label: 'Total Clicks',   value: affiliate.overview.totalClicks.toLocaleString(),            sub: 'referral link clicks',   icon: 'fa-mouse-pointer', accent: '#5b4cf5' },
+                      { label: 'Conversions',    value: affiliate.overview.totalConverted.toLocaleString(),          sub: `${affiliate.overview.conversionRate}% rate`, icon: 'fa-check-circle', accent: '#10b981' },
+                      { label: 'Total Earned',   value: `$${affiliate.overview.totalCommission.toFixed(2)}`,         sub: 'all time',               icon: 'fa-coins',         accent: '#f59e0b' },
+                      { label: 'Pending Payout', value: `$${affiliate.overview.pendingCommission.toFixed(2)}`,       sub: 'confirmed + locked',     icon: 'fa-clock',         accent: '#3b82f6' },
+                    ].map(card => (
+                      <div key={card.label} className="bg-[#0d0d18] border border-[#1e1e2e] rounded-2xl p-5">
+                        <div className="flex items-center justify-between mb-3">
+                          <div className="text-[11px] text-[#4a4a65] font-medium uppercase tracking-wide">{card.label}</div>
+                          <div className="w-7 h-7 rounded-lg grid place-items-center" style={{ background: card.accent + '18' }}>
+                            <i className={`fas ${card.icon} text-[11px]`} style={{ color: card.accent }} />
+                          </div>
+                        </div>
+                        <div className="font-syne font-bold text-xl text-white">{card.value}</div>
+                        <div className="text-[11px] text-[#3a3a55] mt-0.5">{card.sub}</div>
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Per-platform breakdown */}
+                  <div className="bg-[#0d0d18] border border-[#1e1e2e] rounded-2xl overflow-hidden mb-6">
+                    <div className="px-6 py-4 border-b border-[#1e1e2e]">
+                      <div className="text-[14px] font-semibold text-white">Earnings by Platform</div>
+                    </div>
+                    <div className="divide-y divide-[#1e1e2e]">
+                      {affiliate.platformSummary.length === 0 ? (
+                        <div className="px-6 py-8 text-center text-[13px] text-[#3a3a55]">
+                          No earnings yet — configure webhook URLs in each affiliate network dashboard.
+                        </div>
+                      ) : affiliate.platformSummary.map(p => (
+                        <div key={p.platform} className="px-6 py-4 flex items-center gap-4">
+                          <div className="w-9 h-9 rounded-xl flex items-center justify-center text-white text-[11px] font-black flex-shrink-0 bg-[#5b4cf5]">
+                            {p.label.slice(0, 2).toUpperCase()}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <div className="text-[13px] font-semibold text-white">{p.label}</div>
+                            <div className="text-[11px] text-[#4a4a65]">{p.totalOrders} orders · ${p.totalOrderAmount.toFixed(2)} GMV</div>
+                          </div>
+                          <div className="text-right">
+                            <div className="font-syne font-bold text-[15px] text-white">${p.totalCommission.toFixed(2)}</div>
+                            <div className="text-[10px] text-[#4a4a65]">
+                              ${p.paidCommission.toFixed(2)} paid · ${(p.confirmedCommission + p.lockedCommission).toFixed(2)} pending
+                            </div>
+                          </div>
+                          {p.reversals > 0 && (
+                            <div className="text-[10px] text-red-400 font-medium">{p.reversals} reversed</div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Transaction log */}
+                  <div className="bg-[#0d0d18] border border-[#1e1e2e] rounded-2xl overflow-hidden mb-6">
+                    <div className="px-6 py-4 border-b border-[#1e1e2e] flex items-center justify-between">
+                      <div className="text-[14px] font-semibold text-white">Transaction Log</div>
+                      <div className="text-[11px] text-[#3a3a55]">{affiliate.pagination.total} total</div>
+                    </div>
+                    {affiliate.earnings.length === 0 ? (
+                      <div className="px-6 py-10 text-center">
+                        <div className="w-12 h-12 rounded-2xl bg-[#5b4cf5]/10 grid place-items-center mx-auto mb-3">
+                          <i className="fas fa-handshake text-[#5b4cf5] text-lg" />
+                        </div>
+                        <div className="text-[13px] text-white font-semibold mb-1">No conversions yet</div>
+                        <div className="text-[11px] text-[#3a3a55]">
+                          Once users click affiliate links and purchase, conversions appear here.
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="overflow-x-auto">
+                        <table className="w-full">
+                          <thead>
+                            <tr className="border-b border-[#1e1e2e]">
+                              {['Platform', 'Network', 'Order ID', 'Sale', 'Commission', 'Status', 'Date'].map(h => (
+                                <th key={h} className="px-4 py-3 text-left text-[11px] text-[#3a3a55] font-medium uppercase tracking-wide">{h}</th>
+                              ))}
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {affiliate.earnings.map(e => (
+                              <tr key={e.id} className="border-b border-[#1e1e2e] hover:bg-[#0a0a14] transition-colors">
+                                <td className="px-4 py-3 text-[12px] text-white capitalize">{e.platform}</td>
+                                <td className="px-4 py-3 text-[12px] text-[#4a4a65] capitalize">{e.network}</td>
+                                <td className="px-4 py-3 text-[11px] text-[#4a4a65] font-mono">{e.orderId || '—'}</td>
+                                <td className="px-4 py-3 text-[13px] text-white">${e.orderAmount.toFixed(2)}</td>
+                                <td className="px-4 py-3 font-syne font-bold text-[13px] text-[#10b981]">+${e.commissionAmount.toFixed(2)}</td>
+                                <td className="px-4 py-3">
+                                  <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[10px] font-semibold capitalize ${
+                                    e.status === 'paid'      ? 'bg-green-500/15 text-green-400' :
+                                    e.status === 'locked'    ? 'bg-purple-500/15 text-purple-400' :
+                                    e.status === 'confirmed' ? 'bg-blue-500/15 text-blue-400' :
+                                    e.status === 'reversed'  ? 'bg-red-500/15 text-red-400' :
+                                                              'bg-yellow-500/15 text-yellow-400'
+                                  }`}>
+                                    <div className="w-1 h-1 rounded-full bg-current" />
+                                    {e.status}
+                                  </span>
+                                </td>
+                                <td className="px-4 py-3 text-[11px] text-[#4a4a65]">
+                                  {new Date(e.convertedAt).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Webhook setup guide */}
+                  <div className="bg-[#0d0d18] border border-[#1e1e2e] rounded-2xl p-6">
+                    <div className="flex items-center gap-3 mb-4">
+                      <div className="w-8 h-8 rounded-xl bg-[#5b4cf5]/10 grid place-items-center">
+                        <i className="fas fa-plug text-[#5b4cf5] text-sm" />
+                      </div>
+                      <div>
+                        <div className="text-[14px] font-semibold text-white">Webhook URLs</div>
+                        <div className="text-[11px] text-[#3a3a55]">Register these in each affiliate network dashboard</div>
+                      </div>
+                    </div>
+                    <div className="space-y-2">
+                      {[
+                        { label: 'Impact — Coursera, edX, LinkedIn, Pluralsight, Skillshare', path: '/api/v1/platforms/webhook/impact/{platform}', color: '#3b82f6' },
+                        { label: 'Rakuten — Udemy, FutureLearn',                              path: '/api/v1/platforms/webhook/rakuten/{platform}', color: '#f59e0b' },
+                        { label: 'ShareASale — Alison',                                       path: '/api/v1/platforms/webhook/shareasale/alison',  color: '#10b981' },
+                      ].map(w => (
+                        <div key={w.label} className="flex items-start gap-3 p-3 bg-[#0a0a14] rounded-xl border border-[#1e1e2e]">
+                          <div className="w-2 h-2 rounded-full flex-shrink-0 mt-1.5" style={{ background: w.color }} />
+                          <div>
+                            <div className="text-[11px] text-white font-medium mb-0.5">{w.label}</div>
+                            <div className="text-[10px] text-[#3a3a55] font-mono">https://api.skillhub.meritlives.com{w.path}</div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </>
+              ) : (
+                <div className="text-center py-12 text-[#4a4a65]">Failed to load affiliate data.</div>
+              )}
             </div>
           )}
 

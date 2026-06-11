@@ -531,6 +531,41 @@ model AffiliateReferral {
   @@map("affiliate_referrals")
 }
 
+model AffiliateEarning {
+  id               String                 @id @default(uuid())
+  platform         String                 // "udemy" | "coursera" | "edx" etc.
+  network          String                 // "impact" | "rakuten" | "shareasale" | "manual"
+  referralTag      String                 // affiliate tag / sub-id used
+  orderId          String?                // order / transaction ID from the network
+  orderAmount      Float                  // full purchase amount the user paid
+  commissionAmount Float                  // what SkillHub earns from this sale
+  currency         String                 @default("USD")
+  status           AffiliateEarningStatus @default(pending)
+  convertedAt      DateTime               @default(now())
+  lockedAt         DateTime?              // commission confirmed (past return window)
+  paidAt           DateTime?              // money transferred to SkillHub bank
+  rawPayload       Json?                  // full webhook body for audit
+  createdAt        DateTime               @default(now())
+  updatedAt        DateTime               @updatedAt
+
+  referralId String?
+  referral   AffiliateReferral? @relation(fields: [referralId], references: [id], onDelete: SetNull)
+
+  @@index([platform])
+  @@index([status])
+  @@index([convertedAt])
+  @@map("affiliate_earnings")
+}
+
+enum AffiliateEarningStatus {
+  pending    // sale event received, awaiting confirmation
+  confirmed  // network confirmed (still in return window)
+  locked     // return window passed — commission guaranteed
+  paid       // transferred to SkillHub bank account
+  reversed   // refund / chargeback — commission cancelled
+}
+
+
 model PasswordResetToken {
   id        String    @id @default(uuid())
   userId    String

@@ -55,6 +55,7 @@ app.use(cookieParser(process.env.COOKIE_SECRET || process.env.JWT_SECRET));
 
 // Webhook MUST receive raw body for signature verification
 app.use('/api/v1/payment/webhook', express.raw({ type: 'application/json' }));
+app.use('/api/v1/platforms/webhook', express.raw({ type: 'application/json' }));
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
