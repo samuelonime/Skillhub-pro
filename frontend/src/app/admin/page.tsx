@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { apiFetch, getCachedUser } from '@/lib/api';
+import React from 'react';
 
 /* ─── Types ─────────────────────────────────────────────────────────────── */
 interface Stats {
