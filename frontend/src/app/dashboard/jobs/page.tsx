@@ -60,7 +60,7 @@ function Sk({ h='h-4', w='w-full', r='rounded' }: any) {
 function OpportunityAd({ job, userTier, onApply, onSave, applying, saving }: any) {
   const jobTier = (job.minTier || 'bronze') as TierKey;
   const t = TIERS[jobTier] || TIERS.bronze;
-  const lc = logoColor(job.companyName || job.company || '');
+  const lc = logoColor(job.company || '');
   const isPremium = job.isPremium;
   const [mbg, mc] = matchColor(job.match || 60);
 
@@ -77,11 +77,11 @@ function OpportunityAd({ job, userTier, onApply, onSave, applying, saving }: any
         <div className="flex items-start justify-between gap-3 mb-3">
           <div className="flex items-center gap-3 flex-1 min-w-0">
             <div className="w-11 h-11 rounded-xl grid place-items-center font-syne font-bold text-base text-white flex-shrink-0" style={{ background: lc }}>
-              {(job.companyName || job.company || '?')[0].toUpperCase()}
+              {(job.company || '?')[0].toUpperCase()}
             </div>
             <div className="min-w-0">
               <h3 className="font-syne font-bold text-[14.5px] tracking-tight text-[#0a0a0f] truncate">{job.title}</h3>
-              <p className="text-xs text-[#6b6b8a] truncate">{job.companyName || job.company} · {job.location}</p>
+              <p className="text-xs text-[#6b6b8a] truncate">{job.company ? `${job.company} · ${job.location}` : job.location}</p>
             </div>
           </div>
           <div className="flex flex-col items-end gap-1.5 flex-shrink-0">
@@ -429,7 +429,7 @@ export default function JobsPage() {
                           <div className="flex items-start justify-between gap-2">
                             <div className="min-w-0">
                               <h3 className="font-syne font-bold text-[14px] tracking-tight truncate">{job.title}</h3>
-                              <p className="text-xs text-[#6b6b8a]">{job.company} · {job.location}</p>
+                              <p className="text-xs text-[#6b6b8a]">{job.company ? `${job.company} · ${job.location}` : job.location}</p>
                             </div>
                             {job.match != null && (
                               <span className="text-[11px] font-bold px-2 py-0.5 rounded-full flex-shrink-0" style={{ background:mbg, color:mc }}>{job.match}%</span>

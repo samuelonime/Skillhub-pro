@@ -50,7 +50,7 @@ router.get('/featured', authenticate, async (req, res) => {
         id:          j.id,
         title:       j.title,
         company:     j.company,
-        companyName: j.company || (j.employer ? `${j.employer.firstName}'s Company` : 'Company'),
+        companyName: j.company,
         location:    j.location,
         type:        j.type,
         salary:      j.salary,
@@ -240,7 +240,7 @@ router.post('/', authenticate, requireRole('employer', 'admin'), requireEmployer
         minTier:  minTier  || null,
         isPremium: isPremium || false,
         employerId: req.user.id,
-        company:    req.user.company || `${req.user.firstName}'s Company`,
+        company:    req.user.company || null,
         status:     'active',
       },
     });
