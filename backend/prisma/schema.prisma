@@ -528,6 +528,8 @@ model AffiliateReferral {
   user         User              @relation(fields: [userId], references: [id], onDelete: Cascade)
   platformConn ConnectedPlatform @relation(fields: [platformId], references: [id], onDelete: Cascade)
 
+  earnings AffiliateEarning[]  
+
   @@map("affiliate_referrals")
 }
 
