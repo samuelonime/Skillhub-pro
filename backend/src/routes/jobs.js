@@ -35,7 +35,7 @@ router.get('/featured', authenticate, async (req, res) => {
 
   try {
     const jobs = await prisma.job.findMany({
-      where: { status: 'active' },
+      where: { status: 'active', employerId: { not: null } },
       include: {
         applications: { where: { userId: req.user.id }, select: { id: true } },
         savedBy:      { where: { userId: req.user.id }, select: { id: true } },
@@ -85,7 +85,7 @@ router.get('/matches', authenticate, async (req, res) => {
 
   try {
     const jobs = await prisma.job.findMany({
-      where: { status: 'active' },
+      where: { status: 'active', employerId: { not: null } },
       include: {
         applications: { where: { userId: req.user.id }, select: { id: true } },
         savedBy:      { where: { userId: req.user.id }, select: { id: true } },
@@ -113,7 +113,9 @@ router.get('/matches', authenticate, async (req, res) => {
 router.get('/saved', authenticate, async (req, res) => {
   try {
     const saved = await prisma.savedJob.findMany({ where: { userId: req.user.id }, include: { job: true } });
-    return success(res, saved.map(s => ({ ...s.job, saved: true, applied: false })));
+    return success(res, saved
+      .filter(s => s.job?.employerId !== null)
+      .map(s => ({ ...s.job, saved: true, applied: false })));
   } catch (err) { return error(res, 'Failed to fetch saved jobs'); }
 });
 
@@ -140,6 +142,7 @@ router.get('/', authenticate, async (req, res) => {
     const jobs = await prisma.job.findMany({
       where: {
         status: 'active',
+        employerId: { not: null },
         ...(type     ? { type: { equals: type, mode: 'insensitive' } } : {}),
         ...(location ? { location: { contains: location, mode: 'insensitive' } } : {}),
         ...(search   ? { OR: [{ title: { contains: search, mode: 'insensitive' } }, { company: { contains: search, mode: 'insensitive' } }] } : {}),
@@ -170,8 +173,8 @@ router.get('/', authenticate, async (req, res) => {
 // ── GET /jobs/:id ────────────────────────────────────────────────────────────
 router.get('/:id', authenticate, async (req, res) => {
   try {
-    const job = await prisma.job.findUnique({
-      where: { id: req.params.id },
+    const job = await prisma.job.findFirst({
+      where: { id: req.params.id, employerId: { not: null } },
       include: {
         applications: { where: { userId: req.user.id } },
         savedBy:      { where: { userId: req.user.id } },
