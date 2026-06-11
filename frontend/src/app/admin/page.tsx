@@ -2,7 +2,6 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { apiFetch, getCachedUser } from '@/lib/api';
-import React from 'react';
 
 /* ─── Types ─────────────────────────────────────────────────────────────── */
 interface Stats {
@@ -135,41 +134,31 @@ const NAV = [
   { id: 'jobs',          icon: 'fa-briefcase',       label: 'Jobs' },
   { id: 'certificates',  icon: 'fa-certificate',     label: 'Certificates' },
   { id: 'payments',      icon: 'fa-credit-card',     label: 'Payments' },
-  { id: 'affiliate',    icon: 'fa-handshake',    label: 'Affiliate Earnings' },
+  { id: 'affiliate',     icon: 'fa-handshake',       label: 'Affiliate Earnings' },
   { id: 'settings',      icon: 'fa-sliders',         label: 'Settings' },
 ];
 
 /* ─── Main Admin Page ───────────────────────────────────────────────────── */
 export default function AdminPage() {
   const [authorized, setAuthorized] = useState<boolean | null>(null);
-  const [tab, setTab]         = useState('overview');
-  const [stats, setStats]     = useState<Stats | null>(null);
-  const [users, setUsers]     = useState<User[]>([]);
-  const [certs, setCerts]     = useState<Certificate[]>([]);
-  const [jobs, setJobs]       = useState<Job[]>([]);
-  const [payments, setPayments] = useState<Payment[]>([]);
-  const [loading, setLoading] = useState<Record<string, boolean>>({});
-  const [toast, setToast]     = useState<{ msg: string; type: 'success' | 'error' | 'info' } | null>(null);
+  const [tab, setTab]               = useState('overview');
+  const [stats, setStats]           = useState<Stats | null>(null);
+  const [users, setUsers]           = useState<User[]>([]);
+  const [certs, setCerts]           = useState<Certificate[]>([]);
+  const [jobs, setJobs]             = useState<Job[]>([]);
+  const [payments, setPayments]     = useState<Payment[]>([]);
+  const [loading, setLoading]       = useState<Record<string, boolean>>({});
+  const [toast, setToast]           = useState<{ msg: string; type: 'success' | 'error' | 'info' } | null>(null);
   const [userSearch, setUserSearch] = useState('');
   const [userRole, setUserRole]     = useState('');
   const [billingEnabled, setBillingEnabled] = useState<boolean | null>(null);
   const [billingLoading, setBillingLoading] = useState(false);
-  const [deleteModal, setDeleteModal] = useState<{ id: string; name: string } | null>(null);
-  const [verifyingCert, setVerifyingCert] = useState<string | null>(null);
-  const [affiliate, setAffiliate] = useState<AffiliateData | null>(null);
+  const [deleteModal, setDeleteModal]       = useState<{ id: string; name: string } | null>(null);
+  const [verifyingCert, setVerifyingCert]   = useState<string | null>(null);
+  const [affiliate, setAffiliate]           = useState<AffiliateData | null>(null);
   const [affiliateLoading, setAffiliateLoading] = useState(false);
 
-  useEffect(() => {
-    const user = getCachedUser();
-    if (!user || user.role !== 'admin') {
-      window.location.href = '/dashboard';
-      return;
-    }
-    setAuthorized(true);
-  }, []);
-
-  if (!authorized) return null;
-
+  /* ── Helpers ── */
   function setLoad(key: string, v: boolean) {
     setLoading(prev => ({ ...prev, [key]: v }));
   }
@@ -179,7 +168,7 @@ export default function AdminPage() {
     setTimeout(() => setToast(null), 4000);
   }
 
-  /* ── Loaders ── */
+  /* ── Loaders (all useCallback BEFORE any early return) ── */
   const loadStats = useCallback(async () => {
     setLoad('stats', true);
     try {
@@ -235,21 +224,6 @@ export default function AdminPage() {
     } catch {}
   }, []);
 
-  useEffect(() => { loadStats(); loadBilling(); }, [loadStats, loadBilling]);
-
-  useEffect(() => {
-    if (tab === 'users') loadUsers();
-    if (tab === 'certificates') loadCerts();
-    if (tab === 'jobs') loadJobs();
-    if (tab === 'payments') loadPayments();
-    if (tab === 'settings') loadBilling();
-    if (tab === 'affiliate') loadAffiliate();
-  }, [tab, loadUsers, loadCerts, loadJobs, loadPayments, loadBilling]);
-
-  useEffect(() => {
-    if (tab === 'users') loadUsers();
-  }, [userRole, userSearch]);
-
   const loadAffiliate = useCallback(async () => {
     setAffiliateLoading(true);
     try {
@@ -258,6 +232,31 @@ export default function AdminPage() {
     } catch { showToast('Failed to load affiliate data', 'error'); }
     finally { setAffiliateLoading(false); }
   }, []);
+
+  /* ── Effects (all BEFORE early return) ── */
+  useEffect(() => {
+    const user = getCachedUser();
+    if (!user || user.role !== 'admin') {
+      window.location.href = '/dashboard';
+      return;
+    }
+    setAuthorized(true);
+  }, []);
+
+  useEffect(() => { loadStats(); loadBilling(); }, [loadStats, loadBilling]);
+
+  useEffect(() => {
+    if (tab === 'users')         loadUsers();
+    if (tab === 'certificates')  loadCerts();
+    if (tab === 'jobs')          loadJobs();
+    if (tab === 'payments')      loadPayments();
+    if (tab === 'settings')      loadBilling();
+    if (tab === 'affiliate')     loadAffiliate();
+  }, [tab, loadUsers, loadCerts, loadJobs, loadPayments, loadBilling, loadAffiliate]);
+
+  useEffect(() => {
+    if (tab === 'users') loadUsers();
+  }, [userRole, userSearch]);
 
   /* ── Actions ── */
   async function toggleBilling(v: boolean) {
@@ -309,6 +308,9 @@ export default function AdminPage() {
       else showToast(r.message ?? 'Failed', 'error');
     } catch (e: any) { showToast(e.message || 'Failed', 'error'); }
   }
+
+  /* ── Early return AFTER all hooks ── */
+  if (!authorized) return null;
 
   /* ─── UI ─────────────────────────────────────────────────────────────── */
   return (
@@ -418,14 +420,14 @@ export default function AdminPage() {
               ) : stats && (
                 <>
                   <div className="grid grid-cols-4 gap-4 mb-8">
-                    <StatCard icon="fa-users" label="Total Users" value={fmt(stats.users.total)} sub={`${fmt(stats.users.students)} students`} accent="#5b4cf5" />
-                    <StatCard icon="fa-user-tie" label="Employers" value={fmt(stats.users.employers)} sub="registered" accent="#f59e0b" />
-                    <StatCard icon="fa-briefcase" label="Active Jobs" value={fmt(stats.jobs.active)} sub={`${fmt(stats.jobs.total)} total`} accent="#10b981" />
-                    <StatCard icon="fa-paper-plane" label="Applications" value={fmt(stats.jobs.totalApplications)} sub="all time" accent="#3b82f6" />
-                    <StatCard icon="fa-book-open" label="Courses" value={fmt(stats.courses.total)} sub="available" accent="#ec4899" />
-                    <StatCard icon="fa-certificate" label="Certificates" value={fmt(stats.certificates.total)} sub={`${fmt(stats.certificates.pending)} pending`} accent="#f59e0b" />
-                    <StatCard icon="fa-coins" label="Revenue" value={`₦${fmt(stats.revenue.totalRevenue)}`} sub={`${fmt(stats.revenue.totalPayments)} payments`} accent="#10b981" />
-                    <StatCard icon="fa-chalkboard-user" label="Instructors" value={fmt(stats.users.instructors)} sub="registered" accent="#a78bfa" />
+                    <StatCard icon="fa-users"            label="Total Users"   value={fmt(stats.users.total)}              sub={`${fmt(stats.users.students)} students`} accent="#5b4cf5" />
+                    <StatCard icon="fa-user-tie"         label="Employers"     value={fmt(stats.users.employers)}          sub="registered"                              accent="#f59e0b" />
+                    <StatCard icon="fa-briefcase"        label="Active Jobs"   value={fmt(stats.jobs.active)}              sub={`${fmt(stats.jobs.total)} total`}         accent="#10b981" />
+                    <StatCard icon="fa-paper-plane"      label="Applications"  value={fmt(stats.jobs.totalApplications)}   sub="all time"                                accent="#3b82f6" />
+                    <StatCard icon="fa-book-open"        label="Courses"       value={fmt(stats.courses.total)}            sub="available"                               accent="#ec4899" />
+                    <StatCard icon="fa-certificate"      label="Certificates"  value={fmt(stats.certificates.total)}       sub={`${fmt(stats.certificates.pending)} pending`} accent="#f59e0b" />
+                    <StatCard icon="fa-coins"            label="Revenue"       value={`₦${fmt(stats.revenue.totalRevenue)}`} sub={`${fmt(stats.revenue.totalPayments)} payments`} accent="#10b981" />
+                    <StatCard icon="fa-chalkboard-user"  label="Instructors"   value={fmt(stats.users.instructors)}        sub="registered"                              accent="#a78bfa" />
                   </div>
 
                   {/* User breakdown bar */}
@@ -433,8 +435,8 @@ export default function AdminPage() {
                     <div className="text-[13px] font-semibold text-white mb-4">User Breakdown</div>
                     <div className="flex gap-3 mb-4">
                       {[
-                        { label: 'Students', count: stats.users.students, color: '#5b4cf5' },
-                        { label: 'Employers', count: stats.users.employers, color: '#f59e0b' },
+                        { label: 'Students',    count: stats.users.students,    color: '#5b4cf5' },
+                        { label: 'Employers',   count: stats.users.employers,   color: '#f59e0b' },
                         { label: 'Instructors', count: stats.users.instructors, color: '#10b981' },
                       ].map(s => (
                         <div key={s.label} className="flex-1 rounded-xl p-4" style={{ background: s.color + '0f', border: `1px solid ${s.color}25` }}>
@@ -445,8 +447,8 @@ export default function AdminPage() {
                     </div>
                     <div className="flex rounded-full overflow-hidden h-2.5 gap-0.5">
                       {stats.users.total > 0 && [
-                        { c: stats.users.students, color: '#5b4cf5' },
-                        { c: stats.users.employers, color: '#f59e0b' },
+                        { c: stats.users.students,    color: '#5b4cf5' },
+                        { c: stats.users.employers,   color: '#f59e0b' },
                         { c: stats.users.instructors, color: '#10b981' },
                       ].map((s, i) => (
                         <div key={i} className="transition-all duration-700 rounded-full"
@@ -462,8 +464,8 @@ export default function AdminPage() {
                       <div className="space-y-3">
                         {[
                           { label: 'Verified', value: stats.certificates.verified, color: '#10b981' },
-                          { label: 'Pending', value: stats.certificates.pending, color: '#f59e0b' },
-                          { label: 'Total', value: stats.certificates.total, color: '#5b4cf5' },
+                          { label: 'Pending',  value: stats.certificates.pending,  color: '#f59e0b' },
+                          { label: 'Total',    value: stats.certificates.total,    color: '#5b4cf5' },
                         ].map(s => (
                           <div key={s.label} className="flex items-center justify-between">
                             <div className="flex items-center gap-2.5">
@@ -479,8 +481,8 @@ export default function AdminPage() {
                       <div className="text-[13px] font-semibold text-white mb-4">Jobs Overview</div>
                       <div className="space-y-3">
                         {[
-                          { label: 'Active', value: stats.jobs.active, color: '#10b981' },
-                          { label: 'Total Posted', value: stats.jobs.total, color: '#5b4cf5' },
+                          { label: 'Active',       value: stats.jobs.active,            color: '#10b981' },
+                          { label: 'Total Posted', value: stats.jobs.total,             color: '#5b4cf5' },
                           { label: 'Applications', value: stats.jobs.totalApplications, color: '#f59e0b' },
                         ].map(s => (
                           <div key={s.label} className="flex items-center justify-between">
@@ -765,10 +767,10 @@ export default function AdminPage() {
                   {/* Overview cards */}
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
                     {[
-                      { label: 'Total Clicks',   value: affiliate.overview.totalClicks.toLocaleString(),            sub: 'referral link clicks',   icon: 'fa-mouse-pointer', accent: '#5b4cf5' },
-                      { label: 'Conversions',    value: affiliate.overview.totalConverted.toLocaleString(),          sub: `${affiliate.overview.conversionRate}% rate`, icon: 'fa-check-circle', accent: '#10b981' },
-                      { label: 'Total Earned',   value: `$${affiliate.overview.totalCommission.toFixed(2)}`,         sub: 'all time',               icon: 'fa-coins',         accent: '#f59e0b' },
-                      { label: 'Pending Payout', value: `$${affiliate.overview.pendingCommission.toFixed(2)}`,       sub: 'confirmed + locked',     icon: 'fa-clock',         accent: '#3b82f6' },
+                      { label: 'Total Clicks',   value: affiliate.overview.totalClicks.toLocaleString(),       sub: 'referral link clicks',   icon: 'fa-mouse-pointer', accent: '#5b4cf5' },
+                      { label: 'Conversions',    value: affiliate.overview.totalConverted.toLocaleString(),     sub: `${affiliate.overview.conversionRate}% rate`, icon: 'fa-check-circle', accent: '#10b981' },
+                      { label: 'Total Earned',   value: `$${affiliate.overview.totalCommission.toFixed(2)}`,    sub: 'all time',               icon: 'fa-coins',         accent: '#f59e0b' },
+                      { label: 'Pending Payout', value: `$${affiliate.overview.pendingCommission.toFixed(2)}`,  sub: 'confirmed + locked',     icon: 'fa-clock',         accent: '#3b82f6' },
                     ].map(card => (
                       <div key={card.label} className="bg-[#0d0d18] border border-[#1e1e2e] rounded-2xl p-5">
                         <div className="flex items-center justify-between mb-3">
@@ -856,7 +858,7 @@ export default function AdminPage() {
                                     e.status === 'locked'    ? 'bg-purple-500/15 text-purple-400' :
                                     e.status === 'confirmed' ? 'bg-blue-500/15 text-blue-400' :
                                     e.status === 'reversed'  ? 'bg-red-500/15 text-red-400' :
-                                                              'bg-yellow-500/15 text-yellow-400'
+                                                               'bg-yellow-500/15 text-yellow-400'
                                   }`}>
                                     <div className="w-1 h-1 rounded-full bg-current" />
                                     {e.status}
@@ -959,8 +961,8 @@ export default function AdminPage() {
                     <div className="text-[12px] font-semibold text-[#3a3a55] uppercase tracking-widest mb-3">Configured Plans</div>
                     <div className="grid grid-cols-2 gap-3">
                       {[
-                        { key: 'employer_monthly', label: 'Monthly Plan', icon: 'fa-calendar', note: 'Billed monthly' },
-                        { key: 'employer_annual', label: 'Annual Plan', icon: 'fa-calendar-days', note: 'Billed yearly · best value' },
+                        { key: 'employer_monthly', label: 'Monthly Plan', icon: 'fa-calendar',      note: 'Billed monthly' },
+                        { key: 'employer_annual',  label: 'Annual Plan',  icon: 'fa-calendar-days', note: 'Billed yearly · best value' },
                       ].map(plan => (
                         <div key={plan.key} className="bg-[#0a0a14] border border-[#1e1e2e] rounded-xl p-4">
                           <div className="flex items-center gap-2.5 mb-2">
