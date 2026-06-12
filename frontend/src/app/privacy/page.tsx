@@ -6,7 +6,7 @@ import Link from 'next/link';
 const LAST_UPDATED = 'June 12, 2026';
 const EFFECTIVE_DATE = 'June 12, 2026';
 const CONTACT_EMAIL = 'privacy@skillhub.io';
-const CONTACT_PHONE = '+1 (230) 905-5000';
+const CONTACT_PHONE = 'support@skillhub.ng';
 const COMPANY_NAME = 'SkillHub (a Meritlives LLC product)';
 
 const sections = [
@@ -684,7 +684,7 @@ export default function PrivacyPolicyPage() {
               {[
                 { icon: 'fa-building',    label: 'Data Controller',    value: COMPANY_NAME,    accent: '#4F8EF7' },
                 { icon: 'fa-envelope',    label: 'Privacy Email',      value: CONTACT_EMAIL,   accent: '#00E5A0' },
-                { icon: 'fa-phone',       label: 'Phone',              value: CONTACT_PHONE,   accent: '#F59E0B' },
+                { icon: 'fa-envelope',    label: 'Support Email',       value: CONTACT_PHONE,   accent: '#F59E0B' },
               ].map(c => (
                 <div key={c.label} className="rounded-2xl p-5 text-center"
                   style={{ background: '#0C1220', border: `1px solid ${c.accent}25` }}>
@@ -716,9 +716,9 @@ export default function PrivacyPolicyPage() {
               A Meritlives LLC product · Privacy Policy · Effective {EFFECTIVE_DATE}
             </p>
             <div className="flex items-center justify-center gap-4 mt-3">
-              <Link href="/terms" className="text-[11px] no-underline hover:opacity-80" style={{ color: 'rgba(79,142,247,0.7)' }}>Terms of Service</Link>
+              <Link href="/about" className="text-[11px] no-underline hover:opacity-80" style={{ color: 'rgba(79,142,247,0.7)' }}>About SkillHub</Link>
               <span style={{ color: 'rgba(255,255,255,0.1)' }}>·</span>
-              <Link href="/cookies" className="text-[11px] no-underline hover:opacity-80" style={{ color: 'rgba(79,142,247,0.7)' }}>Cookie Policy</Link>
+              <Link href="/contact" className="text-[11px] no-underline hover:opacity-80" style={{ color: 'rgba(79,142,247,0.7)' }}>Contact Support</Link>
               <span style={{ color: 'rgba(255,255,255,0.1)' }}>·</span>
               <Link href="/dashboard" className="text-[11px] no-underline hover:opacity-80" style={{ color: 'rgba(79,142,247,0.7)' }}>Dashboard</Link>
             </div>

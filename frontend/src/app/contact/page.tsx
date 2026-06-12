@@ -13,7 +13,7 @@ const navItems = [
   { href: '/dashboard/jobs',         icon: 'fa-briefcase',        label: 'Jobs' },
   { href: '/dashboard/certificates', icon: 'fa-certificate',      label: 'Certificates' },
   { href: '/dashboard/rewards',      icon: 'fa-coins',            label: 'Rewards' },
-  { href: '/dashboard/faq',          icon: 'fa-circle-question',  label: 'FAQ' },
+  { href: '/dashboard/community',          icon: 'fa-users',  label: 'Community' },
   { href: '/dashboard/contact',      icon: 'fa-envelope',         label: 'Contact Us' },
   { href: '/dashboard/settings',     icon: 'fa-gear',             label: 'Settings' },
 ];
@@ -51,13 +51,13 @@ const CHANNELS = [
     href:  '/dashboard/community',
   },
   {
-    icon:  'fa-circle-question',
+    icon:  'fa-users',
     color: '#f59e0b',
     bg:    '#fffbeb',
-    label: 'FAQ',
+    label: 'Community',
     value: 'Browse 33 answers',
     sub:   'Find answers without waiting',
-    href:  '/dashboard/faq',
+    href:  '/dashboard/community',
   },
 ];
 
@@ -431,7 +431,7 @@ export default function ContactPage() {
             </p>
             <div className="space-y-2">
               {[
-                { href: '/dashboard/faq',       icon: 'fa-circle-question', color: '#f59e0b', bg: '#fffbeb', label: 'Browse the FAQ' },
+                { href: '/dashboard/community',       icon: 'fa-users', color: '#f59e0b', bg: '#fffbeb', label: 'Browse the Community' },
                 { href: '/dashboard/community', icon: 'fa-users',            color: '#10b981', bg: '#f0fdf4', label: 'Ask the community' },
                 { href: '/dashboard/settings',  icon: 'fa-gear',             color: '#5b4cf5', bg: '#f4f2ff', label: 'Account settings' },
               ].map(link => (

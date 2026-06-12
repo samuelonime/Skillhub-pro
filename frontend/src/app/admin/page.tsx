@@ -986,7 +986,7 @@ export default function AdminPage() {
                 </div>
               </div>
 
-              {/* Placeholder cards for future settings */}
+              {/* Certificate reward card */}
               <div className="bg-[#0d0d18] border border-[#1e1e2e] rounded-2xl overflow-hidden mt-4">
                 <div className="px-6 py-4 border-b border-[#1e1e2e] flex items-center gap-3">
                   <div className="w-8 h-8 rounded-xl bg-[#5b4cf5]/10 grid place-items-center">
@@ -1000,9 +1000,9 @@ export default function AdminPage() {
                 <div className="px-6 py-5 flex items-center justify-between">
                   <div>
                     <div className="text-[13px] text-white font-semibold">Reward per Verification</div>
-                    <div className="text-[11px] text-[#3a3a55] mt-0.5">Each verified certificate awards 50 Merit Coins</div>
+                    <div className="text-[11px] text-[#3a3a55] mt-0.5">Merit Coins awarded when admin verifies a certificate</div>
                   </div>
-                  <div className="font-syne font-bold text-xl text-[#f59e0b]">50 <span className="text-[12px] font-normal text-[#3a3a55]">coins</span></div>
+                  <div className="font-syne font-bold text-xl text-[#f59e0b]">+50 <span className="text-[12px] font-normal text-[#3a3a55]">coins</span></div>
                 </div>
               </div>
             </div>

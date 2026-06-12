@@ -1,4 +1,6 @@
 
+'use client';
+
 import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 
@@ -677,7 +679,7 @@ export default function AboutPage() {
             <div className="flex items-center gap-4 flex-wrap">
               {[
                 { label: 'Privacy Policy', href: '/privacy' },
-                { label: 'Terms of Service', href: '/terms' },
+                { label: 'About', href: '/about' },
                 { label: 'Contact', href: 'https://service.meritlives.com/contact/' },
                 { label: 'Dashboard', href: '/dashboard' },
               ].map(link => (

@@ -234,7 +234,7 @@ export default function EmployerDashboardPage() {
           { icon:'fa-chart-bar',    label:'Analytics',       bg:'#eff6ff', color:'#3b82f6', href:'/employer/analytics' },
         ].map(a=>(
           a.action
-            ? <button key={a.label} onClick={a.action} className="flex flex-col items-center gap-2 py-4 rounded-2xl border border-[#e8e8f0] bg-white cursor-pointer hover:scale-105 transition-all border-0">
+            ? <button key={a.label} onClick={a.action} className="flex flex-col items-center gap-2 py-4 rounded-2xl border border-[#e8e8f0] bg-white cursor-pointer hover:scale-105 transition-all">
                 <i className={`fas ${a.icon} text-xl`} style={{color:a.color}}/>
                 <span className="text-xs font-semibold" style={{color:a.color}}>{a.label}</span>
               </button>

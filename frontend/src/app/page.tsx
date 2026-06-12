@@ -197,11 +197,14 @@ const CSS = `
     opacity: 0; animation: fadeUp .7s ease .5s forwards;
   }
   .avatar-stack { display: flex; }
-  .avatar-stack img {
+  .avatar-stack .av {
     width: 28px; height: 28px; border-radius: 50%;
     border: 2px solid var(--bg); margin-left: -7px;
+    display: grid; place-items: center;
+    font-family: 'DM Mono', monospace; font-size: 9px; font-weight: 700; color: #fff;
+    flex-shrink: 0;
   }
-  .avatar-stack img:first-child { margin-left: 0; }
+  .avatar-stack .av:first-child { margin-left: 0; }
   .proof-text { font-size: 13px; color: var(--sub); }
   .proof-text strong { color: var(--text); }
   .proof-divider { width: 1px; height: 18px; background: var(--border); }
@@ -398,54 +401,6 @@ const CSS = `
   .step-h { font-size: 15px; font-weight: 600; color: var(--white); margin-bottom: 8px; }
   .step-p { font-size: 13px; line-height: 1.7; color: var(--sub); }
 
-  /* ── Pricing ── */
-  .pricing-grid {
-    display: grid; grid-template-columns: repeat(3,1fr);
-    gap: 1px; margin-top: 52px;
-    border: 1px solid var(--border); border-radius: 12px; overflow: hidden;
-  }
-  @media (max-width: 900px) {
-    .pricing-grid { grid-template-columns: 1fr; max-width: 420px; margin-left: auto; margin-right: auto; }
-    .pricing-card.featured { border-left: none; border-right: none; order: -1; }
-    .pricing-card:last-child { border-left: none; border-top: 1px solid var(--border); }
-  }
-  .pricing-card { background: var(--surface); padding: 24px 20px; position: relative; }
-  @media (min-width: 480px) { .pricing-card { padding: 36px 32px; } }
-  .pricing-card.featured { background: #141d2e; border-left: 1px solid var(--border); border-right: 1px solid var(--border); }
-  @media (max-width: 900px) {
-    .pricing-card + .pricing-card { border-top: 1px solid var(--border); }
-  }
-  .pricing-plan {
-    font-family: 'DM Mono', monospace; font-size: 11px; font-weight: 500;
-    letter-spacing: 1px; text-transform: uppercase; color: var(--muted); margin-bottom: 14px;
-  }
-  .pricing-amount {
-    font-family: 'DM Mono', monospace; font-size: 28px; font-weight: 500;
-    color: var(--white); letter-spacing: -1px; margin-bottom: 4px;
-  }
-  @media (min-width: 480px) { .pricing-amount { font-size: 36px; letter-spacing: -2px; } }
-  .pricing-amount sub { font-size: 14px; color: var(--muted); vertical-align: baseline; }
-  .pricing-period { font-size: 12px; color: var(--muted); margin-bottom: 24px; line-height: 1.6; }
-  .pricing-divider { height: 1px; background: var(--border); margin-bottom: 20px; }
-  .pricing-feature { display: flex; align-items: center; gap: 9px; font-size: 13px; color: var(--sub); margin-bottom: 10px; }
-  .pricing-feature.off { opacity: 0.3; }
-  .pricing-cta {
-    display: block; width: 100%; padding: 12px; text-align: center;
-    border-radius: var(--r); font-size: 14px; font-weight: 600;
-    margin-top: 24px; cursor: pointer; transition: all .2s; font-family: inherit;
-  }
-  .pricing-cta.solid { background: var(--accent); color: var(--white); border: 1px solid var(--accent); }
-  .pricing-cta.solid:hover { background: var(--accent2); box-shadow: 0 8px 20px rgba(37,99,235,0.25); }
-  .pricing-cta.outline { background: transparent; color: var(--sub); border: 1px solid var(--border); }
-  .pricing-cta.outline:hover { color: var(--white); border-color: var(--mid); }
-  .featured-badge {
-    position: absolute; top: 16px; right: 16px;
-    font-family: 'DM Mono', monospace; font-size: 10px; font-weight: 500;
-    letter-spacing: .5px; text-transform: uppercase;
-    color: var(--accent); background: rgba(37,99,235,0.1);
-    border: 1px solid rgba(37,99,235,0.25); padding: 3px 9px; border-radius: 5px;
-  }
-
   /* ── Testimonials ── */
   .testi-grid {
     display: grid; grid-template-columns: repeat(3,1fr);
@@ -515,12 +470,16 @@ function Navbar() {
   return (
     <nav className={`nav${scrolled ? ' scrolled' : ''}`}>
       <Link href="/" className="nav-logo">
-        <img src="/meritlives.svg" alt="MeritLives" style={{width:28,height:28}} />
+        <img src="/meritlives.svg" alt="SkillHub" style={{width:28,height:28}} />
         SkillHub
       </Link>
       <div className="nav-links">
-        {[['Features','#features'],['How it works','#how'],['Pricing','#pricing']].map(([l,h]) => (
-          <a key={l} href={h}>{l}</a>
+        {[['Features','#features'],['How it works','#how'],['About','/about'],['Privacy','/privacy']].map(([l,h]) => (
+          h.startsWith('/') ? (
+            <Link key={l} href={h}>{l}</Link>
+          ) : (
+            <a key={l} href={h}>{l}</a>
+          )
         ))}
       </div>
       <div className="nav-actions">
@@ -532,8 +491,13 @@ function Navbar() {
 }
 
 function Hero() {
-  const avatars = ['AJ','SW','KO','TB','FA'];
-  const colors  = ['2563eb','059669','d97706','dc2626','7c3aed'];
+  const avatars = [
+    { init: 'TO', color: '2563eb' },
+    { init: 'AN', color: '059669' },
+    { init: 'FK', color: 'd97706' },
+    { init: 'CB', color: 'dc2626' },
+    { init: 'OA', color: '7c3aed' },
+  ];
   return (
     <section className="hero">
       <div className="hero-eyebrow">Now live across Africa</div>
@@ -551,8 +515,8 @@ function Hero() {
       </div>
       <div className="hero-proof">
         <div className="avatar-stack">
-          {avatars.map((a,i) => (
-            <img key={a} src={`https://ui-avatars.com/api/?name=${a}&background=${colors[i]}&color=fff&bold=true&size=60`} alt={a} />
+          {avatars.map((a) => (
+            <div key={a.init} className="av" style={{background:`#${a.color}`}}>{a.init}</div>
           ))}
         </div>
         <div className="proof-divider" />
@@ -568,7 +532,7 @@ function Hero() {
           <div className="dash-layout">
             <div className="dash-sidebar">
               <div className="dash-logo">
-                <img src="/meritlives.svg" alt="MeritLives" style={{width:28,height:28}} />
+                <img src="/meritlives.svg" alt="SkillHub" style={{width:20,height:20}} />
                 <span>SkillHub</span>
               </div>
               {[['Dashboard',true],['Courses',false],['Portfolio',false],['Jobs',false],['Rewards',false]].map(([l,a]) => (
@@ -620,7 +584,7 @@ function Hero() {
 }
 
 function StatsBand() {
-  const stats = [['12K+','Active learners'],['95%','Job placement'],['500+','Hiring partners'],['50+','Courses'],['$0','To get started']];
+  const stats = [['12K+','Active learners'],['95%','Job placement'],['500+','Hiring partners'],['50+','Courses'],['₦0','To get started']];
   return (
     <div className="stats-band">
       {stats.map(([n,l]) => (
@@ -658,7 +622,7 @@ function Features() {
             <div className="match-row">
               <div className="match-title">Frontend Developer — Paystack</div>
               <div className="match-meta">
-                Remote · $2,500–$4,000/mo
+                Remote · ₦400,000–₦650,000/mo
                 <span className="match-badge">92% match</span>
               </div>
             </div>
@@ -705,58 +669,6 @@ function HowItWorks() {
   );
 }
 
-function Pricing() {
-  return (
-    <section id="pricing" className="section" style={{borderTop:'1px solid var(--border)'}}>
-      <div className="section-tag">Pricing</div>
-      <h2 className="section-title">Start free.<br /><em>Upgrade when ready.</em></h2>
-      <p className="section-sub">No credit card required to get started.</p>
-
-      <div className="pricing-grid">
-        <div className="pricing-card">
-          <div className="pricing-plan">Free</div>
-          <div className="pricing-amount">₦0 <span style={{fontSize:'16px',fontWeight:500,color:'#9898b8'}}>/ Free</span></div>
-          <div className="pricing-period">Forever free</div>
-          <div className="pricing-divider"/>
-          {[[true,'Access 30+ free courses'],[true,'Basic job matching'],[true,'Portfolio builder'],[true,'Merit Coins rewards'],[false,'Premium courses'],[false,'Priority job matching']].map(([y,t]) => (
-            <div key={String(t)} className={`pricing-feature${y?'':' off'}`}>
-              <i className={`fas ${y?'fa-check':'fa-times'}`} style={{fontSize:11,color:y?'var(--accent)':'var(--muted)',flexShrink:0}}/>{t}
-            </div>
-          ))}
-          <Link href="/login?tab=register" className="pricing-cta outline">Get started free</Link>
-        </div>
-
-        <div className="pricing-card featured">
-          <span className="featured-badge">Most popular</span>
-          <div className="pricing-plan">Pro</div>
-          <div className="pricing-amount">₦5,000<sub>/mo</sub></div>
-          <div className="pricing-period" style={{color:'#9898b8',fontSize:'13px',marginTop:'2px'}}>~$3.13/mo · or ₦45,000/year — save 25%</div>
-          <div className="pricing-divider"/>
-          {['Everything in Free','All premium courses','Priority job matching','Featured profile badge','Resume review','Mock interviews','2× Merit Coin earn rate'].map(t => (
-            <div key={t} className="pricing-feature">
-              <i className="fas fa-check" style={{fontSize:11,color:'var(--accent)',flexShrink:0}}/>{t}
-            </div>
-          ))}
-          <Link href="/login?tab=register" className="pricing-cta solid">Start free trial</Link>
-        </div>
-
-        <div className="pricing-card">
-          <div className="pricing-plan">Employer</div>
-          <div className="pricing-amount">₦15,000<sub>/mo</sub></div>
-          <div className="pricing-period" style={{color:'#9898b8',fontSize:'13px',marginTop:'2px'}}>~$9.38/mo · or ₦135,000/year</div>
-          <div className="pricing-divider"/>
-          {[[true,'Post unlimited jobs'],[true,'Search verified candidates'],[true,'Employer dashboard'],[true,'Application tracking'],[true,'Skill-matched shortlists'],[true,'Priority support'],[false,'Course hosting']].map(([y,t]) => (
-            <div key={String(t)} className={`pricing-feature${y?'':' off'}`}>
-              <i className={`fas ${y?'fa-check':'fa-times'}`} style={{fontSize:11,color:y?'var(--accent)':'var(--muted)',flexShrink:0}}/>{t}
-            </div>
-          ))}
-          <Link href="/login?tab=register" className="pricing-cta outline">Start hiring</Link>
-        </div>
-      </div>
-    </section>
-  );
-}
-
 function Testimonials() {
   return (
     <section className="section" style={{borderTop:'1px solid var(--border)'}}>
@@ -765,9 +677,9 @@ function Testimonials() {
       <div style={{height:40}}/>
       <div className="testi-grid">
         {[
-          { init:'AJ', bg:'2563eb', q:'I went from zero to landing a React developer role at a Lagos startup in 4 months. The skill matching is scary accurate — 92% on my first application.', name:'Alex Johnson', role:'Frontend Developer, Lagos' },
-          { init:'SW', bg:'059669', q:'As an employer, finding verified talent used to take weeks. With SkillHub I posted a job and had 3 shortlisted candidates in 48 hours.', name:'Sarah Williams', role:'HR Manager, TechVision Africa' },
-          { init:'KO', bg:'d97706', q:'The Merit Coins system kept me going. I redeemed coins for a mock interview, nailed my Andela application. Worth every minute.', name:'Kofi Osei', role:'Data Analyst, Andela' },
+          { init:'TO', bg:'2563eb', q:'I went from bootcamp grad to landing a React developer role at a Lagos fintech in 4 months. The skill matching is scary accurate — 92% on my first application.', name:'Tobi Okonkwo', role:'Frontend Developer, Lagos' },
+          { init:'AN', bg:'059669', q:'As an employer, finding verified talent used to take weeks. With SkillHub I posted a role and had three shortlisted candidates within 48 hours.', name:'Amaka Nwosu', role:'Head of People, TechVision Africa' },
+          { init:'FK', bg:'d97706', q:'The Merit Coins system kept me motivated. I redeemed coins for a mock interview session, nailed my Andela application, and never looked back.', name:'Femi Kassim', role:'Data Analyst, Andela' },
         ].map(t => (
           <div key={t.name} className="testi-card">
             <div className="testi-stars">★★★★★</div>
@@ -803,12 +715,14 @@ function Footer() {
   return (
     <footer className="footer">
       <div className="footer-logo">
-        <img src="/meritlives.svg" alt="MeritLives" style={{width:28,height:28}} />
+        <img src="/meritlives.svg" alt="SkillHub" style={{width:28,height:28}} />
         SkillHub Pro
       </div>
-      <span style={{fontSize:12,color:'var(--muted)'}}>© 2025 SkillHub Pro · Built for Africa's tech talent</span>
+      <span style={{fontSize:12,color:'var(--muted)'}}>© {new Date().getFullYear()} SkillHub Pro · Built for Africa's tech talent</span>
       <div className="footer-links">
-        {['Privacy','Terms','Support'].map(l => <a key={l} href="#">{l}</a>)}
+        <Link href="/privacy">Privacy</Link>
+        <Link href="/about">About</Link>
+        <Link href="/contact">Support</Link>
         <Link href="/login">Sign in</Link>
       </div>
     </footer>
@@ -825,7 +739,6 @@ export default function LandingPage() {
         <StatsBand/>
         <Features/>
         <HowItWorks/>
-        <Pricing/>
         <Testimonials/>
         <CTA/>
         <Footer/>
