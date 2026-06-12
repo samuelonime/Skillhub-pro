@@ -16,14 +16,14 @@ const CRITICAL_THRESHOLD = 20; // below 20% → critical
 // ── Freshness model ───────────────────────────────────────────────────────────
 // Exponential decay: freshness = 100 * (0.5 ^ (daysSinceUse / HALF_LIFE_DAYS))
 // Boosted by: market demand (high demand = slower perceived decay)
-function computeFreshness(daysSinceUse: number, demandScore: number): number {
+function computeFreshness(daysSinceUse, demandScore) {
   // demand score 0–1 slows decay by up to 30%
   const effectiveHalfLife = HALF_LIFE_DAYS * (1 + demandScore * 0.3);
   const freshness = 100 * Math.pow(0.5, daysSinceUse / effectiveHalfLife);
   return Math.round(Math.max(0, Math.min(100, freshness)));
 }
 
-function freshnessLabel(score: number): 'fresh' | 'good' | 'fading' | 'at-risk' | 'cold' {
+function freshnessLabel(score) {
   if (score >= 80) return 'fresh';
   if (score >= 60) return 'good';
   if (score >= 40) return 'fading';
@@ -61,7 +61,7 @@ router.get('/', authenticate, async (req, res) => {
       select: { skills: true, id: true },
     });
 
-    const skillDemand: Record<string, number> = {};
+    const skillDemand = {};
     activeJobs.forEach(j => {
       j.skills.forEach(s => {
         const k = s.toLowerCase();
@@ -79,7 +79,7 @@ router.get('/', authenticate, async (req, res) => {
 
       // Last active: skill updatedAt OR most recent cert referencing this skill
       const certWithSkill = user.certificates.find(c =>
-        c.skills.map((s: string) => s.toLowerCase()).includes(skillKey)
+        c.skills.map(s => s.toLowerCase()).includes(skillKey)
       );
       const lastActive = new Date(Math.max(
         skill.updatedAt.getTime(),

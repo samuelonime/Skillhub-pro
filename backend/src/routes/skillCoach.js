@@ -13,31 +13,28 @@ const { success, error } = require('../utils/response');
 //   Transaction records                   → engagement events
 //   CoachSession (new, added below)       → coach intervention log
 
-type EmotionState = 'confident' | 'engaged' | 'struggling' | 'frustrated' | 'disengaged';
+// Option 3: Using object constant instead of TypeScript type
+const EmotionState = {
+  CONFIDENT: 'confident',
+  ENGAGED: 'engaged',
+  STRUGGLING: 'struggling',
+  FRUSTRATED: 'frustrated',
+  DISENGAGED: 'disengaged'
+};
 
-interface DaySignal {
-  date:     string;
-  emotion:  EmotionState;
-  signals:  string[];
-}
-
-function inferEmotion(sessionMinutes: number, retriesThisDay: number, abandonedEarly: boolean): EmotionState {
-  if (abandonedEarly && retriesThisDay === 0) return 'disengaged';
-  if (retriesThisDay >= 3)                    return 'frustrated';
-  if (retriesThisDay >= 1 && abandonedEarly)  return 'struggling';
-  if (sessionMinutes >= 30)                   return 'confident';
-  return 'engaged';
+function inferEmotion(sessionMinutes, retriesThisDay, abandonedEarly) {
+  if (abandonedEarly && retriesThisDay === 0) return EmotionState.DISENGAGED;
+  if (retriesThisDay >= 3)                    return EmotionState.FRUSTRATED;
+  if (retriesThisDay >= 1 && abandonedEarly)  return EmotionState.STRUGGLING;
+  if (sessionMinutes >= 30)                   return EmotionState.CONFIDENT;
+  return EmotionState.ENGAGED;
 }
 
 // Adaptive recommendation based on emotional trajectory
-function buildIntervention(recentEmotions: EmotionState[]): {
-  message:          string;
-  actions:          string[];
-  sessionMinutes:   number;
-} {
+function buildIntervention(recentEmotions) {
   const last3 = recentEmotions.slice(-3);
-  const frustCount = last3.filter(e => e === 'frustrated').length;
-  const disengCount = last3.filter(e => e === 'disengaged').length;
+  const frustCount = last3.filter(e => e === EmotionState.FRUSTRATED).length;
+  const disengCount = last3.filter(e => e === EmotionState.DISENGAGED).length;
 
   if (frustCount >= 2) {
     return {
@@ -53,7 +50,7 @@ function buildIntervention(recentEmotions: EmotionState[]): {
       sessionMinutes: 20,
     };
   }
-  if (last3.includes('struggling')) {
+  if (last3.includes(EmotionState.STRUGGLING)) {
     return {
       message:        "You're making progress but one area is slowing you down. Let's isolate it.",
       actions:        ['Replay the specific section that caused retries', 'Find an alternative resource', 'Ask in the community'],
@@ -86,7 +83,7 @@ router.get('/state', authenticate, async (req, res) => {
     });
 
     // Group by calendar day and estimate emotion
-    const dayMap: Record<string, { events: number; completions: number; stalls: number }> = {};
+    const dayMap = {};
 
     for (let d = 0; d < 7; d++) {
       const day = new Date(Date.now() - d * 24 * 60 * 60 * 1000);
@@ -106,7 +103,7 @@ router.get('/state', authenticate, async (req, res) => {
       if (e.progress > 0 && e.progress < 30 && !e.completedAt) dayMap[key].stalls++;
     });
 
-    const days: DaySignal[] = Object.entries(dayMap)
+    const days = Object.entries(dayMap)
       .sort(([a], [b]) => a.localeCompare(b))
       .map(([date, d]) => {
         const emotion = inferEmotion(
@@ -114,7 +111,7 @@ router.get('/state', authenticate, async (req, res) => {
           d.stalls,
           d.events === 0
         );
-        const signals: string[] = [];
+        const signals = [];
         if (d.completions > 0) signals.push(`${d.completions} module(s) completed`);
         if (d.stalls > 0)      signals.push(`${d.stalls} stalled progress`);
         if (d.events === 0)    signals.push('No activity recorded');

@@ -9,7 +9,7 @@ const { success, error } = require('../utils/response');
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
-function salaryBand(coins: number): string {
+function salaryBand(coins) {
   if (coins >= 5000) return 'platinum';
   if (coins >= 2000) return 'gold';
   if (coins >= 500)  return 'silver';
@@ -17,7 +17,7 @@ function salaryBand(coins: number): string {
 }
 
 // Anonymise a user record — never expose id, email, name
-function anonymise(user: any, index: number) {
+function anonymise(user, index) {
   const letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
   return {
     alias:    `Peer ${letters[index % 26]}`,
@@ -29,7 +29,7 @@ function anonymise(user: any, index: number) {
 }
 
 // Compute a simple similarity score between requester and a candidate
-function similarity(requester: any, candidate: any): number {
+function similarity(requester, candidate) {
   let score = 0;
   // Same country/city
   if (requester.location && candidate.location &&
@@ -39,7 +39,7 @@ function similarity(requester: any, candidate: any): number {
   // Similar role type (keyword overlap in title)
   const reqWords = (requester.title || '').toLowerCase().split(/\s+/);
   const candWords = (candidate.title || '').toLowerCase().split(/\s+/);
-  const overlap   = reqWords.filter((w: string) => candWords.includes(w)).length;
+  const overlap   = reqWords.filter((w) => candWords.includes(w)).length;
   score += overlap * 15;
   // Similar starting coin tier
   if (salaryBand(requester.meritCoins) === salaryBand(candidate.pastCoins || 0)) score += 25;
@@ -106,9 +106,9 @@ router.get('/', authenticate, async (req, res) => {
       const profile = anonymise(c, i);
 
       // Determine what they did
-      const verifiedSkillsAdded = c.skills.filter((s: any) => s.verified).map((s: any) => s.name);
-      const certsEarned         = c.certificates.map((cert: any) => cert.title).slice(0, 3);
-      const pathsCompleted      = c.enrolledPaths.map((e: any) => e.path.title).slice(0, 2);
+      const verifiedSkillsAdded = c.skills.filter((s) => s.verified).map((s) => s.name);
+      const certsEarned         = c.certificates.map((cert) => cert.title).slice(0, 3);
+      const pathsCompleted      = c.enrolledPaths.map((e) => e.path.title).slice(0, 2);
 
       // Outcome assessment
       const progressed = c.meritCoins >= 500;
@@ -118,7 +118,7 @@ router.get('/', authenticate, async (req, res) => {
           } months`
         : 'Still at starting level after 12+ months';
 
-      const keyMoves: string[] = [];
+      const keyMoves = [];
       if (verifiedSkillsAdded.length) keyMoves.push(`Verified skills: ${verifiedSkillsAdded.slice(0, 3).join(', ')}`);
       if (certsEarned.length)         keyMoves.push(`Earned cert: ${certsEarned[0]}`);
       if (pathsCompleted.length)      keyMoves.push(`Completed path: ${pathsCompleted[0]}`);
