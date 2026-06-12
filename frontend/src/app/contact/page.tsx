@@ -70,7 +70,7 @@ const RESPONSE_TIME: Record<string, string> = {
   jobs:        'Job and application queries are answered within 24 hours.',
   ai_features: 'AI feature feedback is reviewed by our product team within 48 hours.',
   partnership: 'Partnership enquiries are reviewed within 3 business days.',
-  other:       'We'll get back to you within 24 hours.',
+  other:       'We\'ll get back to you within 24 hours.',
 };
 
 interface FormState {
