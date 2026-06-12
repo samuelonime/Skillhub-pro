@@ -119,7 +119,7 @@ router.get('/', authenticate, async (req, res) => {
           select: { skills: true },
           take:   50,
         }).then(jobs => {
-          const freq: Record<string, number> = {};
+          const freq= {};
           jobs.forEach(j => j.skills.forEach(s => { freq[s] = (freq[s] || 0) + 1; }));
           return Object.entries(freq)
             .sort((a, b) => b[1] - a[1])
@@ -159,9 +159,9 @@ router.get('/', authenticate, async (req, res) => {
 // Recalculates trajectory after hypothetically adding skills
 router.get('/what-if', authenticate, async (req, res) => {
   try {
-    const hypotheticalSkills = ((req.query.skills as string) || '')
+    const hypotheticalSkills = ((req.query.skills) || '')
       .split(',')
-      .map((s: string) => s.trim().toLowerCase())
+      .map((s) => s.trim().toLowerCase())
       .filter(Boolean);
 
     if (!hypotheticalSkills.length) {

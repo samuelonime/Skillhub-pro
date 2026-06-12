@@ -12,7 +12,7 @@ const { success, error, notFound } = require('../utils/response');
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
 // Score a skill against a job's required skills and description
-function skillRelevanceScore(skillName: string, jobSkills: string[], jobDescription: string): number {
+function skillRelevanceScore(skillName, jobSkills, jobDescription) {
   const name = skillName.toLowerCase();
   const desc = (jobDescription || '').toLowerCase();
   const required = jobSkills.map(s => s.toLowerCase());
@@ -28,7 +28,7 @@ function skillRelevanceScore(skillName: string, jobSkills: string[], jobDescript
 }
 
 // Score a portfolio project against a job
-function projectRelevanceScore(project: any, jobSkills: string[], jobDescription: string): number {
+function projectRelevanceScore(project, jobSkills, jobDescription) {
   let score = 0;
   const desc = (jobDescription || '').toLowerCase();
   const required = jobSkills.map(s => s.toLowerCase());
@@ -37,22 +37,14 @@ function projectRelevanceScore(project: any, jobSkills: string[], jobDescription
   required.forEach(skill => {
     if (projectText.includes(skill)) score += 20;
   });
-  if (desc && projectText.split(' ').some((w: string) => desc.includes(w) && w.length > 5)) {
+  if (desc && projectText.split(' ').some((w) => desc.includes(w) && w.length > 5)) {
     score += 10;
   }
   return score;
 }
 
 // Generate cover letter paragraphs from structured data
-function generateCoverLetter(params: {
-  userName:         string;
-  userTitle:        string;
-  jobTitle:         string;
-  company:          string;
-  topSkills:        string[];
-  topProject:       any | null;
-  matchPercentage:  number;
-}): string {
+function generateCoverLetter(params) {
   const { userName, userTitle, jobTitle, company, topSkills, topProject, matchPercentage } = params;
   const firstName = userName.split(' ')[0];
 
