@@ -76,7 +76,7 @@ router.post('/', optionalAuth, async (req, res) => {
     return created(res, {
       id:        contact.id,
       reference: contact.id.slice(0, 8).toUpperCase(),
-    }, 'Message received. We'll be in touch within 24 hours.');
+    }, 'Message received. We\'ll be in touch within 24 hours.');
   } catch (err) {
     console.error('[contact/submit]', err);
     return error(res, 'Failed to send message. Please try again.');
