@@ -1,10 +1,7 @@
 // routes/contact.js — Contact Us
-// Accepts messages from authenticated users (and a public endpoint for
-// unauthenticated visitors). Messages are persisted to the ContactMessage
-// table and a Notification is sent to every admin account.
 const router  = require('express').Router();
 const prisma  = require('../config/database');
-const { authenticate, optionalAuth } = require('../middleware/auth');
+const { authenticate, optionalAuthenticate } = require('../middleware/auth');
 const { success, created, badRequest, error } = require('../utils/response');
 
 // ── Validation helpers ────────────────────────────────────────────────────────
@@ -32,15 +29,13 @@ function validateBody(body) {
 }
 
 // ── POST /api/v1/contact — submit a contact message ──────────────────────────
-// optionalAuth: authenticated users get their userId stored; guests proceed without
-router.post('/', optionalAuth, async (req, res) => {
+router.post('/', optionalAuthenticate, async (req, res) => {
   try {
     const { name, email, topic, subject, message, priority } = req.body;
 
     const errs = validateBody(req.body);
     if (errs.length) return badRequest(res, errs[0], errs);
 
-    // Store in DB
     const contact = await prisma.contactMessage.create({
       data: {
         name:     name.trim(),
@@ -54,7 +49,6 @@ router.post('/', optionalAuth, async (req, res) => {
       },
     });
 
-    // Notify all admins so they see it in their dashboard
     const admins = await prisma.user.findMany({
       where:  { role: 'admin' },
       select: { id: true },
