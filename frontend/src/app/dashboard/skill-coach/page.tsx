@@ -43,30 +43,96 @@ function Card({ children, className = '' }: { children: React.ReactNode; classNa
 }
 
 export default function SkillCoachPage() {
-  const [data, setData]             = useState<any>(null);
-  const [loading, setLoading]       = useState(true);
+  const [data, setData] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null); // ADDED: error state
   const [signalSent, setSignalSent] = useState(false);
 
   useEffect(() => {
-    apiFetch('/skill-coach/state')
-      .then(r => { if (r.success) setData(r.data); })
-      .catch(() => {})
-      .finally(() => setLoading(false));
+    let mounted = true;
+    
+    const fetchData = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        
+        const response = await apiFetch('/skill-coach/state');
+        
+        if (mounted) {
+          if (response && response.success) {
+            setData(response.data);
+          } else {
+            // Handle API error gracefully
+            console.error('API returned error:', response);
+            setError(response?.message || 'Failed to load coach data');
+            // Set empty data structure to prevent rendering errors
+            setData({ days: [], intervention: null });
+          }
+        }
+      } catch (err) {
+        if (mounted) {
+          console.error('Skill coach fetch error:', err);
+          setError('Unable to connect to the learning coach. Please check your connection.');
+          setData({ days: [], intervention: null });
+        }
+      } finally {
+        if (mounted) {
+          setLoading(false);
+        }
+      }
+    };
+    
+    fetchData();
+    
+    return () => {
+      mounted = false;
+    };
   }, []);
 
   async function sendSignal(signalType: string) {
-    await apiFetch('/skill-coach/signal', {
-      method: 'POST',
-      body: JSON.stringify({ signalType, metadata: { source: 'manual_test' } }),
-    }).catch(() => {});
-    setSignalSent(true);
-    setTimeout(() => setSignalSent(false), 2000);
+    try {
+      await apiFetch('/skill-coach/signal', {
+        method: 'POST',
+        body: JSON.stringify({ signalType, metadata: { source: 'manual_test' } }),
+      });
+      setSignalSent(true);
+      setTimeout(() => setSignalSent(false), 2000);
+    } catch (err) {
+      console.error('Failed to send signal:', err);
+    }
   }
 
-  const days: any[]        = data?.days ?? [];
-  const intervention: any  = data?.intervention ?? null;
-  const todayEmotion       = days[days.length - 1]?.emotion as EmotionState;
-  const todayCfg           = todayEmotion ? EMOTION[todayEmotion] : EMOTION.engaged;
+  // SAFE DATA ACCESS with fallbacks
+  const days: any[] = data?.days ?? [];
+  const intervention: any = data?.intervention ?? null;
+  
+  // Safe access to today's emotion with fallback
+  const todayEmotion = (days.length > 0 ? days[days.length - 1]?.emotion : null) as EmotionState | null;
+  const todayCfg = todayEmotion && EMOTION[todayEmotion] ? EMOTION[todayEmotion] : EMOTION.engaged;
+
+  // Generate consistent day labels for heatmap (always 7 items)
+  const heatmapDays = days.length === 7 ? days : [];
+  
+  // Show error state if needed
+  if (error && !loading) {
+    return (
+      <SidebarLayout navItems={navItems} pageTitle="Skill Coach">
+        <div className="text-center py-12">
+          <div className="mb-4">
+            <i className="fas fa-exclamation-triangle text-4xl mb-3" style={{ color: '#F87171' }} />
+            <p style={{ color: 'rgba(255,255,255,0.7)' }}>{error}</p>
+          </div>
+          <button 
+            onClick={() => window.location.reload()}
+            className="px-4 py-2 rounded-lg transition-all"
+            style={{ background: 'rgba(79,142,247,0.2)', color: '#4F8EF7', border: '1px solid rgba(79,142,247,0.3)' }}
+          >
+            Try Again
+          </button>
+        </div>
+      </SidebarLayout>
+    );
+  }
 
   return (
     <SidebarLayout navItems={navItems} pageTitle="Skill Coach">
@@ -104,14 +170,25 @@ export default function SkillCoachPage() {
             <span className="font-jakarta font-semibold text-[14px] text-white/90">7-Day Emotional Heatmap</span>
           </div>
           {loading ? (
-            <div className="grid grid-cols-7 gap-2">{[0,1,2,3,4,5,6].map(i => <Sk key={i} h="h-20" />)}</div>
+            <div className="grid grid-cols-7 gap-2">
+              {[0,1,2,3,4,5,6].map(i => <Sk key={i} h="h-20" />)}
+            </div>
+          ) : heatmapDays.length === 0 ? (
+            <div className="text-center py-8">
+              <p className="text-[13px]" style={{ color: 'rgba(255,255,255,0.3)' }}>
+                Not enough learning data yet. Complete some courses to see your emotional heatmap.
+              </p>
+            </div>
           ) : (
             <>
               <div className="grid grid-cols-7 gap-2 mb-4">
-                {days.map((day: any, i: number) => {
-                  const cfg = EMOTION[day.emotion as EmotionState] ?? EMOTION.engaged;
+                {heatmapDays.map((day: any, i: number) => {
+                  const emotion = day.emotion as EmotionState;
+                  const cfg = EMOTION[emotion] ?? EMOTION.engaged;
+                  const signals = day.signals ?? [];
                   return (
-                    <div key={day.date} title={day.signals.join(' · ')}
+                    <div key={day.date || i} 
+                      title={signals.length > 0 ? signals.join(' · ') : 'No activity recorded'}
                       className="rounded-xl flex flex-col items-center justify-center py-4 cursor-help transition-all hover:-translate-y-0.5"
                       style={{ background: `${cfg.accent}14`, border: `1px solid ${cfg.accent}30` }}>
                       <span className="text-[22px]">{cfg.emoji}</span>
@@ -133,8 +210,8 @@ export default function SkillCoachPage() {
           )}
         </Card>
 
-        {/* Coach intervention */}
-        {intervention && (
+        {/* Coach intervention - only show if intervention exists and not loading */}
+        {!loading && intervention && intervention.message && (
           <Card className="mb-4">
             <div className="flex items-center gap-2 mb-4">
               <div className="w-8 h-8 rounded-xl grid place-items-center" style={{ background: 'rgba(245,158,11,0.15)' }}>
@@ -145,21 +222,25 @@ export default function SkillCoachPage() {
             <div className="p-4 rounded-xl mb-4" style={{ background: 'rgba(245,158,11,0.08)', border: '1px solid rgba(245,158,11,0.2)' }}>
               <p className="text-[13px] leading-relaxed" style={{ color: 'rgba(255,255,255,0.75)' }}>{intervention.message}</p>
             </div>
-            <div className="space-y-2 mb-4">
-              {intervention.actions.map((action: string, i: number) => (
-                <div key={i} className="flex items-start gap-3 p-3 rounded-xl" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)' }}>
-                  <i className="fas fa-circle-check mt-0.5 text-[11px]" style={{ color: '#00E5A0' }} />
-                  <span className="text-[13px]" style={{ color: 'rgba(255,255,255,0.7)' }}>{action}</span>
-                </div>
-              ))}
-            </div>
-            <div className="flex items-center gap-2 pt-3" style={{ borderTop: '1px solid rgba(255,255,255,0.06)' }}>
-              <i className="fas fa-clock text-[12px]" style={{ color: 'rgba(255,255,255,0.3)' }} />
-              <span className="text-[12px]" style={{ color: 'rgba(255,255,255,0.4)' }}>
-                Recommended today:{' '}
-                <strong className="text-white/70">{intervention.sessionMinutes} minutes</strong>
-              </span>
-            </div>
+            {intervention.actions && intervention.actions.length > 0 && (
+              <div className="space-y-2 mb-4">
+                {intervention.actions.map((action: string, i: number) => (
+                  <div key={i} className="flex items-start gap-3 p-3 rounded-xl" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)' }}>
+                    <i className="fas fa-circle-check mt-0.5 text-[11px]" style={{ color: '#00E5A0' }} />
+                    <span className="text-[13px]" style={{ color: 'rgba(255,255,255,0.7)' }}>{action}</span>
+                  </div>
+                ))}
+              </div>
+            )}
+            {intervention.sessionMinutes && (
+              <div className="flex items-center gap-2 pt-3" style={{ borderTop: '1px solid rgba(255,255,255,0.06)' }}>
+                <i className="fas fa-clock text-[12px]" style={{ color: 'rgba(255,255,255,0.3)' }} />
+                <span className="text-[12px]" style={{ color: 'rgba(255,255,255,0.4)' }}>
+                  Recommended today:{' '}
+                  <strong className="text-white/70">{intervention.sessionMinutes} minutes</strong>
+                </span>
+              </div>
+            )}
           </Card>
         )}
 
