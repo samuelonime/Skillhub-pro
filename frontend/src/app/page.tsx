@@ -583,22 +583,7 @@ function Hero() {
   );
 }
 
-function StatsBand() {
-  const stats = [['12K+','Active learners'],['95%','Job placement'],['500+','Hiring partners'],['50+','Courses'],['₦0','To get started']];
-  return (
-    <div className="stats-band">
-      {stats.map(([n,l]) => (
-        <div key={l} className="stat-item">
-          <div className="stat-num">
-            {n.endsWith('+') ? <>{n.slice(0,-1)}<span>+</span></> :
-             n.endsWith('%') ? <>{n.slice(0,-1)}<span>%</span></> : n}
-          </div>
-          <div className="stat-label">{l}</div>
-        </div>
-      ))}
-    </div>
-  );
-}
+
 
 function Features() {
   return (
