@@ -19,13 +19,37 @@ interface SidebarLayoutProps {
 }
 
 /* ── helpers ────────────────────────────────────────────────────────────── */
-function timeAgo(d: string) {
-  const s = Math.floor((Date.now() - new Date(d).getTime()) / 1000);
-  if (s < 60)    return 'Just now';
-  if (s < 3600)  return `${Math.floor(s / 60)}m ago`;
-  if (s < 86400) return `${Math.floor(s / 3600)}h ago`;
-  return `${Math.floor(s / 86400)}d ago`;
+// FIXED: timeAgo that won't cause hydration mismatch
+function timeAgo(dateString: string) {
+  // Use a fixed reference time for initial render
+  // This will be updated on client after hydration
+  const [isClient, setIsClient] = useState(false);
+  const [timeAgoText, setTimeAgoText] = useState('');
+  
+  useEffect(() => {
+    setIsClient(true);
+    const updateTimeAgo = () => {
+      const now = Date.now();
+      const s = Math.floor((now - new Date(dateString).getTime()) / 1000);
+      let text;
+      if (s < 60) text = 'Just now';
+      else if (s < 3600) text = `${Math.floor(s / 60)}m ago`;
+      else if (s < 86400) text = `${Math.floor(s / 3600)}h ago`;
+      else text = `${Math.floor(s / 86400)}d ago`;
+      setTimeAgoText(text);
+    };
+    updateTimeAgo();
+    const interval = setInterval(updateTimeAgo, 60000);
+    return () => clearInterval(interval);
+  }, [dateString]);
+  
+  // Return a consistent placeholder during SSR
+  if (!isClient) return '...';
+  return timeAgoText;
 }
+
+// But timeAgo is used inside NotificationPanel which is problematic
+// Better to move the logic inside NotificationPanel itself
 
 const NOTIF_ICON: Record<string, { icon: string; color: string }> = {
   success:            { icon: 'fa-check-circle',  color: '#00E5A0' },
@@ -38,14 +62,21 @@ const NOTIF_ICON: Record<string, { icon: string; color: string }> = {
   application_update: { icon: 'fa-briefcase',     color: '#A78BFA' },
   info:               { icon: 'fa-info-circle',   color: '#4F8EF7' },
 };
+
 function iconFor(n: any) {
   return NOTIF_ICON[n.icon] || NOTIF_ICON[n.type] || { icon: 'fa-bell', color: '#6B7280' };
 }
 
-/* ── Notification panel ──────────────────────────────────────────────────── */
+/* ── Notification panel (FIXED for hydration) ──────────────────────────────────── */
 function NotificationPanel({ onClose }: { onClose: () => void }) {
   const [notifs, setNotifs]   = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [mounted, setMounted] = useState(false);
+
+  // Mark as mounted after hydration
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   useEffect(() => {
     apiFetch('/dashboard/notifications')
@@ -65,6 +96,26 @@ function NotificationPanel({ onClose }: { onClose: () => void }) {
   }
 
   const unread = notifs.filter(n => !n.read).length;
+
+  // FIXED: timeAgo component that won't cause hydration mismatch
+  const TimeAgo = ({ date }: { date: string }) => {
+    const [text, setText] = useState('Just now');
+    
+    useEffect(() => {
+      const update = () => {
+        const s = Math.floor((Date.now() - new Date(date).getTime()) / 1000);
+        if (s < 60) setText('Just now');
+        else if (s < 3600) setText(`${Math.floor(s / 60)}m ago`);
+        else if (s < 86400) setText(`${Math.floor(s / 3600)}h ago`);
+        else setText(`${Math.floor(s / 86400)}d ago`);
+      };
+      update();
+      const interval = setInterval(update, 60000);
+      return () => clearInterval(interval);
+    }, [date]);
+    
+    return <>{text}</>;
+  };
 
   return (
     <div
@@ -94,7 +145,7 @@ function NotificationPanel({ onClose }: { onClose: () => void }) {
       </div>
 
       <div className="overflow-y-auto max-h-[420px]">
-        {loading ? (
+        {!mounted || loading ? (
           <div className="flex flex-col gap-0">
             {[1,2,3,4].map(i => (
               <div key={i} className="flex items-start gap-3 px-4 py-3.5" style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
@@ -111,36 +162,48 @@ function NotificationPanel({ onClose }: { onClose: () => void }) {
             <i className="fas fa-bell text-3xl mb-3 block" style={{ color: 'rgba(255,255,255,0.1)' }} />
             <p className="text-sm" style={{ color: 'rgba(255,255,255,0.3)' }}>No notifications yet</p>
           </div>
-        ) : notifs.map(n => {
-          const { icon, color } = iconFor(n);
-          return (
-            <div key={n.id} onClick={() => !n.read && markOne(n.id)}
-              className="flex items-start gap-3 px-4 py-3.5 transition-colors cursor-pointer"
-              style={{
-                borderBottom: '1px solid rgba(255,255,255,0.05)',
-                background: !n.read ? 'rgba(79,142,247,0.05)' : 'transparent',
-              }}
-            >
-              <div className="w-8 h-8 rounded-full grid place-items-center text-[11px] flex-shrink-0"
-                style={{ background: color + '18', color, border: `1px solid ${color}30` }}>
-                <i className={`fas ${icon}`} />
+        ) : (
+          notifs.map(n => {
+            const { icon, color } = iconFor(n);
+            return (
+              <div key={n.id} onClick={() => !n.read && markOne(n.id)}
+                className="flex items-start gap-3 px-4 py-3.5 transition-colors cursor-pointer"
+                style={{
+                  borderBottom: '1px solid rgba(255,255,255,0.05)',
+                  background: !n.read ? 'rgba(79,142,247,0.05)' : 'transparent',
+                }}
+              >
+                <div className="w-8 h-8 rounded-full grid place-items-center text-[11px] flex-shrink-0"
+                  style={{ background: color + '18', color, border: `1px solid ${color}30` }}>
+                  <i className={`fas ${icon}`} />
+                </div>
+                <div className="flex-1 min-w-0">
+                  {n.title && <p className="text-[12.5px] font-semibold mb-0.5 leading-snug" style={{ color: 'rgba(255,255,255,0.85)' }}>{n.title}</p>}
+                  <p className="text-[12px] leading-snug" style={{ color: 'rgba(255,255,255,0.45)' }}>{n.message}</p>
+                  <p className="text-[10.5px] mt-1 font-medium" style={{ color: 'rgba(255,255,255,0.25)' }}>
+                    {n.createdAt ? <TimeAgo date={n.createdAt} /> : ''}
+                  </p>
+                </div>
+                {!n.read && <div className="w-1.5 h-1.5 rounded-full flex-shrink-0 mt-2" style={{ background: '#4F8EF7' }} />}
               </div>
-              <div className="flex-1 min-w-0">
-                {n.title && <p className="text-[12.5px] font-semibold mb-0.5 leading-snug" style={{ color: 'rgba(255,255,255,0.85)' }}>{n.title}</p>}
-                <p className="text-[12px] leading-snug" style={{ color: 'rgba(255,255,255,0.45)' }}>{n.message}</p>
-                <p className="text-[10.5px] mt-1 font-medium" style={{ color: 'rgba(255,255,255,0.25)' }}>{n.createdAt ? timeAgo(n.createdAt) : ''}</p>
-              </div>
-              {!n.read && <div className="w-1.5 h-1.5 rounded-full flex-shrink-0 mt-2" style={{ background: '#4F8EF7' }} />}
-            </div>
-          );
-        })}
+            );
+          })
+        )}
       </div>
     </div>
   );
 }
 
-/* ── Profile dropdown ────────────────────────────────────────────────────── */
+/* ── Profile dropdown (FIXED) ────────────────────────────────────────────────────── */
 function ProfileDropdown({ user, isEmployer, onClose }: { user: any; isEmployer: boolean; onClose: () => void }) {
+  const [mounted, setMounted] = useState(false);
+  
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+  
+  if (!mounted) return null; // Don't render until after hydration
+  
   return (
     <div
       className="absolute top-12 right-0 w-[220px] rounded-2xl z-[200] overflow-hidden"
@@ -184,17 +247,33 @@ function ProfileDropdown({ user, isEmployer, onClose }: { user: any; isEmployer:
   );
 }
 
-/* ── User Avatar ─────────────────────────────────────────────────────────── */
+/* ── User Avatar (FIXED - no hydration issues) ─────────────────────────────────────────── */
 function UserAvatar({ user, size = 8 }: { user: any; size?: number }) {
-  const name     = user ? `${user.firstName || ''} ${user.lastName || ''}`.trim() : '';
+  const [mounted, setMounted] = useState(false);
+  
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+  
+  const name = user ? `${user.firstName || ''} ${user.lastName || ''}`.trim() : '';
   const initials = name.split(' ').filter(Boolean).map((n: string) => n[0]).join('').slice(0, 2).toUpperCase() || '?';
-  const colors   = ['#4F8EF7', '#00E5A0', '#F59E0B', '#A78BFA', '#F472B6', '#38BDF8'];
-  const color    = colors[(initials.charCodeAt(0) || 0) % colors.length];
-  const dim      = `${size * 4}px`;
+  const colors = ['#4F8EF7', '#00E5A0', '#F59E0B', '#A78BFA', '#F472B6', '#38BDF8'];
+  const color = colors[(initials.charCodeAt(0) || 0) % colors.length];
+  const dim = `${size * 4}px`;
 
-  if (user?.avatar) {
+  // During SSR and initial hydration, show a consistent placeholder
+  if (!mounted || !user) {
+    return (
+      <div style={{ width: dim, height: dim, background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.2)' }}
+        className="rounded-full flex-shrink-0 grid place-items-center animate-pulse">
+      </div>
+    );
+  }
+
+  if (user.avatar) {
     return <img src={user.avatar} alt={name} style={{ width: dim, height: dim }} className="rounded-full object-cover flex-shrink-0 cursor-pointer ring-1 ring-white/10 hover:ring-2 hover:ring-[#4F8EF7] transition-all" />;
   }
+  
   return (
     <div style={{ width: dim, height: dim, background: color + '28', border: `1px solid ${color}50`, color }}
       className="rounded-full flex-shrink-0 grid place-items-center font-jakarta font-bold text-xs cursor-pointer hover:ring-2 hover:ring-[#4F8EF7] transition-all">
@@ -203,21 +282,37 @@ function UserAvatar({ user, size = 8 }: { user: any; size?: number }) {
   );
 }
 
-/* ── Sidebar ─────────────────────────────────────────────────────────────── */
+/* ── Sidebar (MAIN FIXED COMPONENT) ─────────────────────────────────────────────── */
 export function SidebarLayout({ children, navItems, pageTitle }: SidebarLayoutProps) {
   const pathname    = usePathname();
-  const [mobileOpen, setMobileOpen]   = useState(false);
-  const [showNotifs, setShowNotifs]   = useState(false);
+  const [mounted, setMounted] = useState(false);
+  const [mobileOpen, setMobileOpen] = useState(false);
+  const [showNotifs, setShowNotifs] = useState(false);
   const [showProfile, setShowProfile] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
-  const [user, setUser]               = useState<any>(getCachedUser());
+  const [user, setUser] = useState<any>(null); // Start with null, not from cache
   const notifRef   = useRef<HTMLDivElement>(null);
   const profileRef = useRef<HTMLDivElement>(null);
 
-  const isEmployer = navItems.some(n => n.href.startsWith('/employer'));
+  // FIXED: Determine isEmployer based on pathname, not navItems
+  const isEmployer = pathname?.startsWith('/employer') || false;
 
+  // Mark component as mounted after hydration
   useEffect(() => {
-    apiFetch('/auth/me').then(r => { if (r.success && r.data) setUser(r.data); }).catch(() => {});
+    setMounted(true);
+  }, []);
+
+  // Fetch user data only on client
+  useEffect(() => {
+    // First try cache, but don't render differently
+    const cached = getCachedUser();
+    if (cached) {
+      setUser(cached);
+    }
+    
+    apiFetch('/auth/me').then(r => { 
+      if (r.success && r.data) setUser(r.data); 
+    }).catch(() => {});
   }, []);
 
   const fetchUnread = useCallback(() => {
@@ -227,23 +322,26 @@ export function SidebarLayout({ children, navItems, pageTitle }: SidebarLayoutPr
   }, []);
 
   useEffect(() => {
-    fetchUnread();
-    const interval = setInterval(fetchUnread, 60_000);
-    return () => clearInterval(interval);
-  }, [fetchUnread]);
+    if (mounted) {
+      fetchUnread();
+      const interval = setInterval(fetchUnread, 60_000);
+      return () => clearInterval(interval);
+    }
+  }, [mounted, fetchUnread]);
 
   useEffect(() => {
     function handler(e: MouseEvent) {
-      if (notifRef.current   && !notifRef.current.contains(e.target as Node))   setShowNotifs(false);
+      if (notifRef.current && !notifRef.current.contains(e.target as Node)) setShowNotifs(false);
       if (profileRef.current && !profileRef.current.contains(e.target as Node)) setShowProfile(false);
     }
     document.addEventListener('mousedown', handler);
     return () => document.removeEventListener('mousedown', handler);
   }, []);
 
+  // Ensure consistent render between server and client
   return (
     <div className="flex min-h-screen" style={{ background: '#080C14' }}>
-      {mobileOpen && (
+      {mobileOpen && mounted && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[99] md:hidden" onClick={() => setMobileOpen(false)} />
       )}
 
@@ -252,13 +350,13 @@ export function SidebarLayout({ children, navItems, pageTitle }: SidebarLayoutPr
         className={`w-[240px] min-h-screen flex flex-col fixed top-0 left-0 z-[100] transition-transform duration-[0.25s] max-md:-translate-x-full ${mobileOpen ? 'translate-x-0' : ''}`}
         style={{ background: '#080C14', borderRight: '1px solid rgba(255,255,255,0.06)' }}
       >
-        {/* Logo */}
+        {/* Logo - always same */}
         <div className="flex items-center gap-2.5 px-5 py-5" style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
           <img src="/meritlives.svg" alt="SkillHub" style={{ width: 26, height: 26 }} />
           <span className="font-jakarta font-extrabold text-[18px] text-white tracking-tight">SkillHub</span>
         </div>
 
-        {/* Nav */}
+        {/* Nav - always same structure */}
         <nav className="flex-1 p-3 overflow-y-auto mt-1">
           <div className="text-[9px] font-bold uppercase tracking-[0.15em] px-3 mb-2" style={{ color: 'rgba(255,255,255,0.2)' }}>
             Navigation
@@ -266,7 +364,7 @@ export function SidebarLayout({ children, navItems, pageTitle }: SidebarLayoutPr
           {navItems.map(item => {
             const active = item.href === '/dashboard' || item.href === '/employer'
               ? pathname === item.href
-              : pathname === item.href || pathname.startsWith(item.href + '/');
+              : pathname === item.href || pathname?.startsWith(item.href + '/');
             return (
               <Link key={item.href} href={item.href}
                 className="flex items-center gap-2.5 px-3 py-2.5 rounded-[10px] text-[13px] font-medium mb-0.5 no-underline transition-all relative"
@@ -291,13 +389,17 @@ export function SidebarLayout({ children, navItems, pageTitle }: SidebarLayoutPr
           })}
         </nav>
 
-        {/* User card at bottom */}
+        {/* User card at bottom - always rendered but content may update after hydration */}
         <div className="p-3" style={{ borderTop: '1px solid rgba(255,255,255,0.05)' }}>
           <div className="flex items-center gap-2.5 px-2 py-2 rounded-xl mb-2">
             <UserAvatar user={user} size={8} />
             <div className="flex-1 min-w-0">
-              <div className="text-[12px] font-semibold text-white/80 truncate">{user ? `${user.firstName} ${user.lastName}` : '…'}</div>
-              <div className="text-[10px] truncate" style={{ color: 'rgba(255,255,255,0.3)' }}>{user?.email || ''}</div>
+              <div className="text-[12px] font-semibold text-white/80 truncate">
+                {user ? `${user.firstName} ${user.lastName}` : 'Loading...'}
+              </div>
+              <div className="text-[10px] truncate" style={{ color: 'rgba(255,255,255,0.3)' }}>
+                {user?.email || ''}
+              </div>
             </div>
           </div>
           <button onClick={logout}
@@ -314,7 +416,7 @@ export function SidebarLayout({ children, navItems, pageTitle }: SidebarLayoutPr
       {/* ── Main area ────────────────────────────────────────────────── */}
       <div className="ml-[240px] flex-1 flex flex-col min-h-screen max-md:ml-0">
 
-        {/* Topbar */}
+        {/* Topbar - always same structure */}
         <header className="h-14 flex items-center justify-between px-6 sticky top-0 z-50 gap-4"
           style={{ background: 'rgba(8,12,20,0.85)', borderBottom: '1px solid rgba(255,255,255,0.06)', backdropFilter: 'blur(16px)', WebkitBackdropFilter: 'blur(16px)' }}>
           
@@ -326,7 +428,7 @@ export function SidebarLayout({ children, navItems, pageTitle }: SidebarLayoutPr
 
           <span className="font-jakarta font-semibold text-[15px] text-white/85 tracking-tight">{pageTitle}</span>
 
-          {/* Search */}
+          {/* Search - always same */}
           <div className="relative flex-1 max-w-[320px] max-md:hidden">
             <i className="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-[12px]" style={{ color: 'rgba(255,255,255,0.2)' }} />
             <input type="text" placeholder="Search courses, jobs, skills…"
@@ -338,7 +440,7 @@ export function SidebarLayout({ children, navItems, pageTitle }: SidebarLayoutPr
           </div>
 
           <div className="flex items-center gap-2">
-            {/* Bell */}
+            {/* Bell - always rendered with consistent structure */}
             <div ref={notifRef} className="relative">
               <button
                 onClick={() => { setShowNotifs(v => !v); setShowProfile(false); }}
@@ -348,13 +450,13 @@ export function SidebarLayout({ children, navItems, pageTitle }: SidebarLayoutPr
                 onMouseLeave={e => { (e.currentTarget as HTMLElement).style.color = 'rgba(255,255,255,0.4)'; }}
               >
                 <i className="fas fa-bell" />
-                {unreadCount > 0 && (
+                {unreadCount > 0 && mounted && (
                   <span className="absolute -top-0.5 -right-0.5 w-3.5 h-3.5 rounded-full text-white text-[8px] font-bold grid place-items-center" style={{ background: '#EF4444', border: '2px solid #080C14' }}>
                     {unreadCount > 9 ? '9+' : unreadCount}
                   </span>
                 )}
               </button>
-              {showNotifs && <NotificationPanel onClose={() => setShowNotifs(false)} />}
+              {showNotifs && mounted && <NotificationPanel onClose={() => setShowNotifs(false)} />}
             </div>
 
             {/* Avatar */}
@@ -362,7 +464,7 @@ export function SidebarLayout({ children, navItems, pageTitle }: SidebarLayoutPr
               <div onClick={() => { setShowProfile(v => !v); setShowNotifs(false); }}>
                 <UserAvatar user={user} size={8} />
               </div>
-              {showProfile && <ProfileDropdown user={user} isEmployer={isEmployer} onClose={() => setShowProfile(false)} />}
+              {showProfile && mounted && <ProfileDropdown user={user} isEmployer={isEmployer} onClose={() => setShowProfile(false)} />}
             </div>
           </div>
         </header>
