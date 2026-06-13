@@ -174,8 +174,8 @@ router.get('/what-if', authenticate, async (req, res) => {
     });
     if (!user) return error(res, 'User not found', 404);
 
-    // Each hypothetical skill adds ~150 coins (one medium course)
-    const bonusCoins   = hypotheticalSkills.length * 150;
+    // Each hypothetical skill adds ~1 coin (one activity)
+    const bonusCoins   = hypotheticalSkills.length * 1;
     const projectedCoins = user.meritCoins + bonusCoins;
     const ladder       = ROLE_LADDERS[getCurrentLadder(user.title)];
     const currentRole  = getLevelInLadder(ladder, user.meritCoins);

@@ -125,16 +125,16 @@ router.post('/:id/enroll', authenticate, requireRole('student'), async (req, res
     // Award merit coins for enrolling
     await prisma.user.update({
       where: { id: req.user.id },
-      data:  { meritCoins: { increment: 10 } },
+      data:  { meritCoins: { increment: 1 } },
     });
 
     await prisma.transaction.create({
       data: {
         userId:      req.user.id,
         type:        'earned',
-        amount:      10,
+        amount:      1,
         description: `Enrolled in skill path: ${path.title}`,
-        balanceAfter: req.user.meritCoins + 10,
+        balanceAfter: req.user.meritCoins + 1,
       },
     });
 
@@ -144,7 +144,7 @@ router.post('/:id/enroll', authenticate, requireRole('student'), async (req, res
         type:    'success',
         icon:    'road',
         title:   'Skill Path Started!',
-        message: `You enrolled in "${path.title}". +10 MeritCoins earned!`,
+        message: `You enrolled in "${path.title}". +1 MeritCoin earned!`,
       },
     });
 
@@ -227,7 +227,7 @@ router.post('/:id/complete-course', authenticate, requireRole('student'), [
     if (isComplete) {
       await prisma.user.update({
         where: { id: req.user.id },
-        data:  { meritCoins: { increment: 100 } },
+        data:  { meritCoins: { increment: 1 } },
       });
       await prisma.notification.create({
         data: {
@@ -235,7 +235,7 @@ router.post('/:id/complete-course', authenticate, requireRole('student'), [
           type:    'success',
           icon:    'trophy',
           title:   '🏆 Skill Path Complete!',
-          message: `You completed "${enrollment.path.title}"! +100 MeritCoins earned.`,
+          message: `You completed "${enrollment.path.title}"! +1 MeritCoin earned.`,
         },
       });
     }

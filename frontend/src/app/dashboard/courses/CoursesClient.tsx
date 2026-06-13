@@ -8,11 +8,6 @@ import { apiFetch, getCachedUser } from '@/lib/api';
 const navItems = [
   { href: '/dashboard', icon: 'fa-home', label: 'Dashboard' },
   { href: '/dashboard/courses', icon: 'fa-book-open', label: 'Courses' },
-  { href: '/dashboard/career-oracle',   icon: 'fa-brain',                label: 'Career Oracle' },
-  { href: '/dashboard/skill-coach',     icon: 'fa-heart-pulse',          label: 'Skill Coach' },
-  { href: '/dashboard/peer-genome',     icon: 'fa-users',                label: 'Peer Genome' },
-  { href: '/dashboard/skill-decay',     icon: 'fa-chart-line',           label: 'Skill Decay' },
-  { href: '/dashboard/ghost-recruiter', icon: 'fa-wand-magic-sparkles',  label: 'Ghost Recruiter' },
   { href: '/dashboard/community', icon: 'fa-users', label: 'Community' },
   { href: '/dashboard/portfolio', icon: 'fa-layer-group', label: 'Portfolio' },
   { href: '/dashboard/platforms', icon: 'fa-graduation-cap', label: 'Learning Platforms' },
@@ -178,7 +173,7 @@ export default function CoursesClient() {
     try {
       const res = await apiFetch(`/courses/${courseId}/enroll`, { method: 'POST' });
       if (res.success) {
-        setToast(`Enrolled in ${title}! +10 Merit Coins`);
+        setToast(`Enrolled in ${title}! +1 Merit Coin`);
         setTimeout(() => setToast(''), 3000);
         loadCourses();
       } else {

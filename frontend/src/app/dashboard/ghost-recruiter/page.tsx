@@ -243,7 +243,7 @@ export default function GhostRecruiterPage() {
             {applied ? (
               <div className="flex items-center gap-2 text-[#10b981] font-semibold text-[14px]">
                 <i className="fas fa-circle-check text-[20px]" />
-                Application submitted! You earned 10 Merit Coins.
+                Application submitted! You earned 1 Merit Coin.
               </div>
             ) : (
               <button

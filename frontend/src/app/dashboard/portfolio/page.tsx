@@ -7,11 +7,6 @@ import { apiFetch } from '@/lib/api';
 const navItems = [
   { href: '/dashboard', icon: 'fa-home', label: 'Dashboard' },
   { href: '/dashboard/courses', icon: 'fa-book-open', label: 'Courses' },
-  { href: '/dashboard/career-oracle',   icon: 'fa-brain',                label: 'Career Oracle' },
-  { href: '/dashboard/skill-coach',     icon: 'fa-heart-pulse',          label: 'Skill Coach' },
-  { href: '/dashboard/peer-genome',     icon: 'fa-users',                label: 'Peer Genome' },
-  { href: '/dashboard/skill-decay',     icon: 'fa-chart-line',           label: 'Skill Decay' },
-  { href: '/dashboard/ghost-recruiter', icon: 'fa-wand-magic-sparkles',  label: 'Ghost Recruiter' },
   { href: '/dashboard/community', icon: 'fa-users', label: 'Community' },
   { href: '/dashboard/portfolio', icon: 'fa-layer-group', label: 'Portfolio' },
   { href: '/dashboard/platforms', icon: 'fa-graduation-cap', label: 'Learning Platforms' },
@@ -309,7 +304,7 @@ function ProjectModal({ project, onClose, onSaved }: any) {
             <button onClick={onClose} className="flex-1 py-2.5 border border-[#e8e8f0] rounded-xl text-sm font-semibold text-[#6b6b8a] bg-white cursor-pointer hover:bg-[#f5f5fb] transition-all">Cancel</button>
             <button onClick={submit} disabled={saving || uploading}
               className="flex-1 py-2.5 bg-[#5b4cf5] text-white rounded-xl text-sm font-semibold border-0 cursor-pointer hover:bg-[#7c6ff7] transition-all disabled:opacity-60">
-              {uploading ? 'Uploading image…' : saving ? 'Saving…' : project?.id ? 'Update Project' : 'Add Project (+25 coins)'}
+              {uploading ? 'Uploading image…' : saving ? 'Saving…' : project?.id ? 'Update Project' : 'Add Project (+1 coin)'}
             </button>
           </div>
         </div>
@@ -554,7 +549,7 @@ export default function PortfolioPage() {
                 <i className="fas fa-layer-group" />
               </div>
               <h3 className="font-syne font-bold text-[15px] mb-2">No projects yet</h3>
-              <p className="text-sm text-[#6b6b8a] mb-5">Showcase your work and earn 25 Merit Coins per project!</p>
+              <p className="text-sm text-[#6b6b8a] mb-5">Showcase your work and earn 1 Merit Coin per project!</p>
               <button onClick={() => setModal({})}
                 className="inline-flex items-center gap-2 px-5 py-2.5 bg-[#5b4cf5] text-white rounded-xl text-sm font-semibold border-0 cursor-pointer hover:bg-[#7c6ff7] transition-all">
                 <i className="fas fa-plus" />Add Your First Project

@@ -187,7 +187,7 @@ router.post('/:jobId/apply', authenticate, async (req, res) => {
     // Award merit coins for applying
     await prisma.user.update({
       where: { id: req.user.id },
-      data:  { meritCoins: { increment: 10 } },
+      data:  { meritCoins: { increment: 1 } },
     });
 
     await prisma.notification.create({
@@ -196,7 +196,7 @@ router.post('/:jobId/apply', authenticate, async (req, res) => {
         type:    'success',
         icon:    'paper-plane',
         title:   'Application submitted',
-        message: 'Your AI-optimised application was submitted. You earned 10 Merit Coins.',
+        message: 'Your AI-optimised application was submitted. You earned 1 Merit Coin.',
         read:    false,
       },
     }).catch(() => {});

@@ -477,16 +477,13 @@ router.post('/:platform/connect', authenticate, async (req, res) => {
 
     // Merit coins for new connection
     if (!existingBefore) {
-      const totalConns = await prisma.connectedPlatform.count({ where: { userId: req.user.id } });
-      const coins = totalConns === 1 ? 50 : 10;
-      const title = totalConns === 1 ? 'First Platform Connected! 🎉' : 'Platform Connected';
-      const message = totalConns === 1
-        ? `You connected your first learning platform (${config.label}). +${coins} Merit Coins earned!`
-        : `You connected ${config.label}. +${coins} Merit Coins earned!`;
+      const coins = 1;
+      const title = 'Platform Connected';
+      const message = `You connected ${config.label}. +${coins} Merit Coin earned!`;
 
       await prisma.user.update({ where: { id: req.user.id }, data: { meritCoins: { increment: coins } } });
       await prisma.notification.create({
-        data: { userId: req.user.id, type: totalConns === 1 ? 'success' : 'info', icon: 'link', title, message },
+        data: { userId: req.user.id, type: 'info', icon: 'link', title, message },
       });
     }
 
@@ -536,18 +533,18 @@ router.post('/:platform/certificates', authenticate, async (req, res) => {
       },
     });
 
-    await prisma.user.update({ where: { id: req.user.id }, data: { meritCoins: { increment: 75 } } });
+    await prisma.user.update({ where: { id: req.user.id }, data: { meritCoins: { increment: 1 } } });
     await prisma.notification.create({
       data: {
         userId: req.user.id,
         type: 'success',
         icon: 'certificate',
         title: 'Course Certificate Imported!',
-        message: `"${title}" imported from ${platform}. +75 Merit Coins earned!`,
+        message: `"${title}" imported from ${platform}. +1 Merit Coin earned!`,
       },
     });
 
-    return created(res, { ...cert, coinsEarned: 75 }, 'Certificate imported! +75 Merit Coins earned');
+    return created(res, { ...cert, coinsEarned: 1 }, 'Certificate imported! +1 Merit Coin earned');
   } catch (err) {
     console.error(err);
     return error(res, 'Failed to import certificate');
@@ -579,7 +576,7 @@ router.get('/summary', authenticate, async (req, res) => {
       totalPlatforms: platforms.length,
       totalExternalCerts: certs.length,
       totalExternalCoursesCompleted: certs.length,
-      coinsEarnedFromPlatforms: certs.length * 75,
+      coinsEarnedFromPlatforms: certs.length * 1,
       platformBreakdown: platforms.map(p => ({
         platform: p.platform,
         label: PLATFORM_CONFIG[p.platform]?.label || p.platform,

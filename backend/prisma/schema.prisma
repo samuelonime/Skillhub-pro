@@ -28,7 +28,7 @@ model User {
   interestNiche    String?
   phone            String?
   profileStrength  Int      @default(20)
-  meritCoins       Int      @default(100)
+  meritCoins       Int      @default(5)
   skills           UserSkill[]
   portfolioPublic  Boolean  @default(true)
   isActive         Boolean  @default(true)

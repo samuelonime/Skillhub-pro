@@ -44,7 +44,7 @@ router.post('/', authenticate, upload.single('resume'), async (req, res) => {
     if (!existing) {
       await prisma.user.update({
         where: { id: req.user.id },
-        data:  { meritCoins: { increment: 20 } },
+        data:  { meritCoins: { increment: 1 } },
       });
       await prisma.notification.create({
         data: {
@@ -52,7 +52,7 @@ router.post('/', authenticate, upload.single('resume'), async (req, res) => {
           type:    'success',
           icon:    'file-pdf',
           title:   'Resume Uploaded!',
-          message: 'Your resume is now visible to employers. +20 MeritCoins earned!',
+          message: 'Your resume is now visible to employers. +1 MeritCoin earned!',
         },
       });
     }

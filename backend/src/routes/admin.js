@@ -135,7 +135,7 @@ router.put('/certificates/:id/verify', async (req, res) => {
     });
     await prisma.user.update({ 
       where: { id: cert.userId }, 
-      data: { meritCoins: { increment: 50 } } 
+      data: { meritCoins: { increment: 1 } } 
     });
     await prisma.notification.create({ 
       data: { 
@@ -143,7 +143,7 @@ router.put('/certificates/:id/verify', async (req, res) => {
         type: 'success', 
         icon: 'certificate', 
         title: 'Certificate Verified!', 
-        message: `${cert.title} has been verified. +50 Merit Coins!` 
+        message: `${cert.title} has been verified. +1 Merit Coin!` 
       } 
     });
     return success(res, cert, 'Certificate verified');

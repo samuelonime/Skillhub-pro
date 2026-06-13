@@ -112,7 +112,7 @@ router.post('/:id/enroll', authenticate, async (req, res) => {
     });
     await prisma.user.update({ 
       where: { id: req.user.id }, 
-      data: { meritCoins: { increment: 10 } } 
+      data: { meritCoins: { increment: 1 } } 
     });
     await prisma.notification.create({ 
       data: { 
@@ -164,7 +164,7 @@ router.put('/:id/progress', authenticate, async (req, res) => {
       const course = await prisma.course.findUnique({ where: { id: req.params.id } });
       await prisma.user.update({ 
         where: { id: req.user.id }, 
-        data: { meritCoins: { increment: 100 } } 
+        data: { meritCoins: { increment: 1 } } 
       });
       await prisma.notification.create({ 
         data: { 
@@ -172,7 +172,7 @@ router.put('/:id/progress', authenticate, async (req, res) => {
           type: 'success', 
           icon: 'certificate', 
           title: 'Course Completed!', 
-          message: `You completed ${course.title}. +100 Merit Coins!` 
+          message: `You completed ${course.title}. +1 Merit Coin!` 
         } 
       });
     }

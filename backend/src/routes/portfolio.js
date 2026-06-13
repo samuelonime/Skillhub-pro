@@ -159,8 +159,8 @@ router.post('/projects', authenticate, [
         thumbnail:    thumbnail || `https://placehold.co/400x250/4f46e5/white?text=${encodeURIComponent(title.substring(0, 15))}`,
       },
     });
-    await prisma.user.update({ where: { id: req.user.id }, data: { meritCoins: { increment: 25 } } });
-    return created(res, project, 'Project added! +25 Merit Coins');
+    await prisma.user.update({ where: { id: req.user.id }, data: { meritCoins: { increment: 1 } } });
+    return created(res, project, 'Project added! +1 Merit Coin');
   } catch (err) { console.error(err); return error(res, 'Failed to add project'); }
 });
 
