@@ -5,36 +5,46 @@ import { SidebarLayout } from '@/components/layout/SidebarLayout';
 import { apiFetch } from '@/lib/api';
 
 const navItems = [
-  { href: '/dashboard',                 icon: 'fa-home',                 label: 'Dashboard' },
-  { href: '/dashboard/courses',         icon: 'fa-book-open',            label: 'Courses' },
-  { href: '/dashboard/career-oracle',   icon: 'fa-brain',                label: 'Career Oracle' },
-  { href: '/dashboard/skill-coach',     icon: 'fa-heart-pulse',          label: 'Skill Coach' },
-  { href: '/dashboard/peer-genome',     icon: 'fa-users',                label: 'Peer Genome' },
-  { href: '/dashboard/skill-decay',     icon: 'fa-chart-line',           label: 'Skill Decay' },
-  { href: '/dashboard/ghost-recruiter', icon: 'fa-wand-magic-sparkles',  label: 'Ghost Recruiter' },
-  { href: '/dashboard/jobs',            icon: 'fa-briefcase',            label: 'Jobs' },
-  { href: '/dashboard/certificates',    icon: 'fa-certificate',          label: 'Certificates' },
-  { href: '/dashboard/rewards',         icon: 'fa-coins',                label: 'Rewards' },
-  { href: '/dashboard/settings',        icon: 'fa-gear',                 label: 'Settings' },
+  { href: '/dashboard',                 icon: 'fa-home',                label: 'Dashboard' },
+  { href: '/dashboard/courses',         icon: 'fa-book-open',           label: 'Courses' },
+  { href: '/dashboard/career-oracle',   icon: 'fa-brain',               label: 'Career Oracle' },
+  { href: '/dashboard/skill-coach',     icon: 'fa-heart-pulse',         label: 'Skill Coach' },
+  { href: '/dashboard/peer-genome',     icon: 'fa-users',               label: 'Peer Genome' },
+  { href: '/dashboard/skill-decay',     icon: 'fa-chart-line',          label: 'Skill Decay' },
+  { href: '/dashboard/ghost-recruiter', icon: 'fa-wand-magic-sparkles', label: 'Ghost Recruiter' },
+  { href: '/dashboard/jobs',            icon: 'fa-briefcase',           label: 'Jobs' },
+  { href: '/dashboard/certificates',    icon: 'fa-certificate',         label: 'Certificates' },
+  { href: '/dashboard/rewards',         icon: 'fa-coins',               label: 'Rewards' },
+  { href: '/dashboard/settings',        icon: 'fa-gear',                label: 'Settings' },
 ];
 
 type EmotionState = 'confident' | 'engaged' | 'struggling' | 'frustrated' | 'disengaged';
 
-const EMOTION_CONFIG: Record<EmotionState, { emoji: string; label: string; bg: string; textColor: string }> = {
-  confident:  { emoji: '😄', label: 'Confident',  bg: '#f0fdf4', textColor: '#15803d' },
-  engaged:    { emoji: '🙂', label: 'Engaged',    bg: '#eff6ff', textColor: '#1d4ed8' },
-  struggling: { emoji: '😐', label: 'Struggling', bg: '#fffbeb', textColor: '#92400e' },
-  frustrated: { emoji: '😤', label: 'Frustrated', bg: '#fef2f2', textColor: '#b91c1c' },
-  disengaged: { emoji: '😶', label: 'Disengaged', bg: '#f5f5fb', textColor: '#6b6b8a' },
+const EMOTION: Record<EmotionState, { emoji: string; label: string; accent: string }> = {
+  confident:  { emoji: '😄', label: 'Confident',  accent: '#00E5A0' },
+  engaged:    { emoji: '🙂', label: 'Engaged',    accent: '#4F8EF7' },
+  struggling: { emoji: '😐', label: 'Struggling', accent: '#F59E0B' },
+  frustrated: { emoji: '😤', label: 'Frustrated', accent: '#F87171' },
+  disengaged: { emoji: '😶', label: 'Disengaged', accent: '#6B7280' },
 };
 
-function Skeleton({ h = 'h-4', w = 'w-full' }: { h?: string; w?: string }) {
-  return <div className={`${h} ${w} rounded bg-[#f0f0f8] animate-pulse`} />;
+const DAY_LABELS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+
+function Sk({ h = 'h-4', w = 'w-full' }: { h?: string; w?: string }) {
+  return <div className={`${h} ${w} rounded-lg animate-pulse`} style={{ background: 'rgba(255,255,255,0.06)' }} />;
+}
+
+function Card({ children, className = '' }: { children: React.ReactNode; className?: string }) {
+  return (
+    <div className={`rounded-2xl p-5 ${className}`} style={{ background: '#0F1521', border: '1px solid rgba(255,255,255,0.07)' }}>
+      {children}
+    </div>
+  );
 }
 
 export default function SkillCoachPage() {
-  const [data, setData]       = useState<any>(null);
-  const [loading, setLoading] = useState(true);
+  const [data, setData]             = useState<any>(null);
+  const [loading, setLoading]       = useState(true);
   const [signalSent, setSignalSent] = useState(false);
 
   useEffect(() => {
@@ -44,7 +54,6 @@ export default function SkillCoachPage() {
       .finally(() => setLoading(false));
   }, []);
 
-  // Demo: manually record a behavioural signal
   async function sendSignal(signalType: string) {
     await apiFetch('/skill-coach/signal', {
       method: 'POST',
@@ -54,132 +63,134 @@ export default function SkillCoachPage() {
     setTimeout(() => setSignalSent(false), 2000);
   }
 
-  const days: any[] = data?.days ?? [];
-  const intervention: any = data?.intervention ?? null;
-
-  const dayLabels = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+  const days: any[]        = data?.days ?? [];
+  const intervention: any  = data?.intervention ?? null;
+  const todayEmotion       = days[days.length - 1]?.emotion as EmotionState;
+  const todayCfg           = todayEmotion ? EMOTION[todayEmotion] : EMOTION.engaged;
 
   return (
     <SidebarLayout navItems={navItems} pageTitle="Skill Coach">
+      <div style={{ color: '#E2E8F0' }}>
 
-      {/* Header */}
-      <div className="rounded-2xl p-6 mb-5 flex items-center justify-between gap-4 flex-wrap relative overflow-hidden"
-        style={{ background: 'linear-gradient(135deg,#f59e0b,#d97706)' }}>
-        <div className="absolute rounded-full pointer-events-none"
-          style={{ top: -60, right: -60, width: 200, height: 200, background: 'rgba(255,255,255,0.08)' }} />
-        <div className="relative z-[1]">
-          <h2 className="font-syne font-bold text-[20px] text-white mb-1">
-            <i className="fas fa-heart-pulse mr-2" /> Emotion-Aware Coach
-          </h2>
-          <p className="text-white/80 text-sm">
-            Detects frustration, boredom, and confidence from your learning patterns — and adapts your plan in real time.
-          </p>
+        {/* Hero */}
+        <div className="relative rounded-2xl p-7 mb-5 overflow-hidden"
+          style={{ background: 'linear-gradient(135deg,#0A1628 0%,#0D1F3C 50%,#0A1628 100%)', border: '1px solid rgba(245,158,11,0.2)' }}>
+          <div className="absolute pointer-events-none" style={{ top: -80, left: -60, width: 320, height: 320, background: 'radial-gradient(circle,rgba(245,158,11,0.15) 0%,transparent 65%)', borderRadius: '50%' }} />
+          <div className="relative z-10 flex items-end justify-between gap-6 flex-wrap">
+            <div>
+              <div className="text-[12px] font-semibold uppercase tracking-[0.12em] mb-2" style={{ color: 'rgba(245,158,11,0.8)' }}>
+                Emotion-Aware Learning
+              </div>
+              <h1 className="font-jakarta font-bold text-[1.8rem] text-white leading-tight mb-2">Skill Coach</h1>
+              <p className="text-[13px]" style={{ color: 'rgba(255,255,255,0.45)' }}>
+                Detects frustration, boredom, and confidence from your learning patterns — and adapts your plan in real time.
+              </p>
+            </div>
+            <div className="flex flex-col items-end gap-1">
+              {loading ? <Sk h="h-8" w="w-28" /> : (
+                <>
+                  <div className="font-jakarta font-bold text-[2rem] leading-none">{todayCfg.emoji}</div>
+                  <div className="font-semibold text-[14px]" style={{ color: todayCfg.accent }}>{todayCfg.label}</div>
+                  <div className="text-[11px]" style={{ color: 'rgba(255,255,255,0.3)' }}>Today's state</div>
+                </>
+              )}
+            </div>
+          </div>
         </div>
-        <div className="relative z-[1] px-4 py-3 rounded-xl" style={{ background: 'rgba(255,255,255,0.18)' }}>
-          <div className="text-[11px] text-white/70 mb-0.5">Today's state</div>
+
+        {/* 7-day heatmap */}
+        <Card className="mb-4">
+          <div className="flex items-center justify-between mb-5">
+            <span className="font-jakarta font-semibold text-[14px] text-white/90">7-Day Emotional Heatmap</span>
+          </div>
           {loading ? (
-            <Skeleton h="h-6" w="w-20" />
+            <div className="grid grid-cols-7 gap-2">{[0,1,2,3,4,5,6].map(i => <Sk key={i} h="h-20" />)}</div>
           ) : (
-            <div className="font-syne font-extrabold text-white text-[18px]">
-              {days.length ? EMOTION_CONFIG[days[days.length - 1]?.emotion as EmotionState]?.emoji ?? '🙂' : '🙂'}{' '}
-              {days.length ? EMOTION_CONFIG[days[days.length - 1]?.emotion as EmotionState]?.label ?? 'Engaged' : 'Engaged'}
+            <>
+              <div className="grid grid-cols-7 gap-2 mb-4">
+                {days.map((day: any, i: number) => {
+                  const cfg = EMOTION[day.emotion as EmotionState] ?? EMOTION.engaged;
+                  return (
+                    <div key={day.date} title={day.signals.join(' · ')}
+                      className="rounded-xl flex flex-col items-center justify-center py-4 cursor-help transition-all hover:-translate-y-0.5"
+                      style={{ background: `${cfg.accent}14`, border: `1px solid ${cfg.accent}30` }}>
+                      <span className="text-[22px]">{cfg.emoji}</span>
+                      <span className="text-[10px] font-semibold mt-1.5" style={{ color: cfg.accent }}>{DAY_LABELS[i % 7]}</span>
+                    </div>
+                  );
+                })}
+              </div>
+              {/* Legend */}
+              <div className="flex flex-wrap gap-2" style={{ borderTop: '1px solid rgba(255,255,255,0.06)', paddingTop: '12px' }}>
+                {Object.entries(EMOTION).map(([key, cfg]) => (
+                  <span key={key} className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-medium"
+                    style={{ background: `${cfg.accent}14`, color: cfg.accent, border: `1px solid ${cfg.accent}25` }}>
+                    {cfg.emoji} {cfg.label}
+                  </span>
+                ))}
+              </div>
+            </>
+          )}
+        </Card>
+
+        {/* Coach intervention */}
+        {intervention && (
+          <Card className="mb-4">
+            <div className="flex items-center gap-2 mb-4">
+              <div className="w-8 h-8 rounded-xl grid place-items-center" style={{ background: 'rgba(245,158,11,0.15)' }}>
+                <i className="fas fa-comment-dots" style={{ color: '#F59E0B' }} />
+              </div>
+              <span className="font-jakarta font-semibold text-[14px] text-white/90">Coach Recommendation</span>
+            </div>
+            <div className="p-4 rounded-xl mb-4" style={{ background: 'rgba(245,158,11,0.08)', border: '1px solid rgba(245,158,11,0.2)' }}>
+              <p className="text-[13px] leading-relaxed" style={{ color: 'rgba(255,255,255,0.75)' }}>{intervention.message}</p>
+            </div>
+            <div className="space-y-2 mb-4">
+              {intervention.actions.map((action: string, i: number) => (
+                <div key={i} className="flex items-start gap-3 p-3 rounded-xl" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)' }}>
+                  <i className="fas fa-circle-check mt-0.5 text-[11px]" style={{ color: '#00E5A0' }} />
+                  <span className="text-[13px]" style={{ color: 'rgba(255,255,255,0.7)' }}>{action}</span>
+                </div>
+              ))}
+            </div>
+            <div className="flex items-center gap-2 pt-3" style={{ borderTop: '1px solid rgba(255,255,255,0.06)' }}>
+              <i className="fas fa-clock text-[12px]" style={{ color: 'rgba(255,255,255,0.3)' }} />
+              <span className="text-[12px]" style={{ color: 'rgba(255,255,255,0.4)' }}>
+                Recommended today:{' '}
+                <strong className="text-white/70">{intervention.sessionMinutes} minutes</strong>
+              </span>
+            </div>
+          </Card>
+        )}
+
+        {/* Signal recorder */}
+        <Card>
+          <div className="flex items-center gap-2 mb-1">
+            <div className="w-8 h-8 rounded-xl grid place-items-center" style={{ background: 'rgba(79,142,247,0.15)' }}>
+              <i className="fas fa-signal" style={{ color: '#4F8EF7' }} />
+            </div>
+            <span className="font-jakarta font-semibold text-[14px] text-white/90">Record a Learning Signal</span>
+          </div>
+          <p className="text-[12px] mb-4" style={{ color: 'rgba(255,255,255,0.35)' }}>
+            Normally sent automatically by the player and quiz engine. Use this panel for testing.
+          </p>
+          <div className="flex flex-wrap gap-2">
+            {['replay', 'abandon', 'quiz_retry', 'session_start', 'session_end'].map(sig => (
+              <button key={sig} onClick={() => sendSignal(sig)}
+                className="px-3 py-1.5 rounded-lg text-[12px] font-semibold transition-all hover:opacity-80"
+                style={{ background: 'rgba(79,142,247,0.1)', color: '#4F8EF7', border: '1px solid rgba(79,142,247,0.2)' }}>
+                {sig.replace('_', ' ')}
+              </button>
+            ))}
+          </div>
+          {signalSent && (
+            <div className="mt-3 flex items-center gap-2 text-[12px]" style={{ color: '#00E5A0' }}>
+              <i className="fas fa-check-circle" /> Signal recorded.
             </div>
           )}
-        </div>
+        </Card>
+
       </div>
-
-      {/* 7-day heatmap */}
-      <div className="bg-white rounded-2xl border border-[#e8e8f0] p-5 mb-5">
-        <h3 className="font-syne font-bold text-[15px] mb-4">7-day emotional heatmap</h3>
-        {loading ? (
-          <div className="flex gap-3">
-            {[0,1,2,3,4,5,6].map(i => <Skeleton key={i} h="h-16" w="w-full" />)}
-          </div>
-        ) : (
-          <>
-            <div className="grid grid-cols-7 gap-2 mb-2">
-              {days.map((day: any, i: number) => {
-                const cfg = EMOTION_CONFIG[day.emotion as EmotionState];
-                return (
-                  <div key={day.date} title={day.signals.join(' · ')}
-                    className="rounded-xl flex flex-col items-center justify-center py-3 cursor-help"
-                    style={{ background: cfg?.bg ?? '#f5f5fb' }}>
-                    <span className="text-[22px]">{cfg?.emoji ?? '🙂'}</span>
-                    <span className="text-[10px] mt-1" style={{ color: cfg?.textColor ?? '#6b6b8a' }}>
-                      {dayLabels[i % 7]}
-                    </span>
-                  </div>
-                );
-              })}
-            </div>
-            {/* Legend */}
-            <div className="flex flex-wrap gap-2 mt-3">
-              {Object.entries(EMOTION_CONFIG).map(([key, cfg]) => (
-                <span key={key} className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px]"
-                  style={{ background: cfg.bg, color: cfg.textColor }}>
-                  {cfg.emoji} {cfg.label}
-                </span>
-              ))}
-            </div>
-          </>
-        )}
-      </div>
-
-      {/* Coach intervention */}
-      {intervention && (
-        <div className="bg-white rounded-2xl border border-[#e8e8f0] p-5 mb-5">
-          <h3 className="font-syne font-bold text-[15px] mb-1">
-            <i className="fas fa-comment-dots text-[#f59e0b] mr-2" />
-            Coach recommendation
-          </h3>
-          <div className="mt-3 p-4 rounded-xl bg-[#fffbeb] border border-[#fde68a]">
-            <p className="text-[13px] text-[#92400e] leading-relaxed">{intervention.message}</p>
-          </div>
-          <div className="mt-3">
-            <div className="text-[12px] text-[#6b7280] mb-2">Suggested actions</div>
-            <ul className="space-y-1.5">
-              {intervention.actions.map((action: string, i: number) => (
-                <li key={i} className="flex items-start gap-2 text-[13px] text-[#374151]">
-                  <i className="fas fa-circle-check text-[#10b981] mt-0.5 text-[11px]" />
-                  {action}
-                </li>
-              ))}
-            </ul>
-          </div>
-          <div className="mt-3 flex items-center gap-2">
-            <i className="fas fa-clock text-[#6b7280] text-[12px]" />
-            <span className="text-[12px] text-[#6b7280]">
-              Recommended session length today:{' '}
-              <strong className="text-[#374151]">{intervention.sessionMinutes} minutes</strong>
-            </span>
-          </div>
-        </div>
-      )}
-
-      {/* Signal recorder (dev/demo tool) */}
-      <div className="bg-white rounded-2xl border border-[#e8e8f0] p-5">
-        <h3 className="font-syne font-bold text-[15px] mb-1">
-          <i className="fas fa-signal text-[#5b4cf5] mr-2" />
-          Record a learning signal
-        </h3>
-        <p className="text-[12px] text-[#6b7280] mb-4">
-          These are normally sent automatically by the player/quiz. Use this panel for testing.
-        </p>
-        <div className="flex flex-wrap gap-2">
-          {['replay', 'abandon', 'quiz_retry', 'session_start', 'session_end'].map(sig => (
-            <button key={sig} onClick={() => sendSignal(sig)}
-              className="px-3 py-1.5 rounded-lg text-[12px] font-semibold border border-[#e8e8f0] bg-[#f5f5fb] text-[#5b4cf5] hover:bg-[#5b4cf5] hover:text-white transition-all">
-              {sig.replace('_', ' ')}
-            </button>
-          ))}
-        </div>
-        {signalSent && (
-          <div className="mt-3 text-[12px] text-[#10b981]">
-            <i className="fas fa-check-circle mr-1" /> Signal recorded successfully.
-          </div>
-        )}
-      </div>
-
     </SidebarLayout>
   );
 }
