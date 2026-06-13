@@ -284,31 +284,6 @@ const CSS = `
     background: rgba(37,99,235,0.12); color: var(--accent); flex-shrink: 0;
   }
 
-  /* ── Stats band ── */
-  .stats-band {
-    border-top: 1px solid var(--border); border-bottom: 1px solid var(--border);
-    display: flex; justify-content: center; flex-wrap: wrap;
-  }
-  .stat-item {
-    padding: 28px 32px; text-align: center;
-    border-right: 1px solid var(--border);
-    flex: 1; min-width: 120px;
-  }
-  .stat-item:last-child { border-right: none; }
-  @media (max-width: 640px) {
-    .stat-item { padding: 20px 16px; min-width: 50%; }
-    .stat-item:nth-child(even) { border-right: none; }
-    .stat-item:nth-child(3) { border-top: 1px solid var(--border); }
-    .stat-item:nth-child(4) { border-top: 1px solid var(--border); }
-    .stat-item:nth-child(5) { border-top: 1px solid var(--border); min-width: 100%; border-right: none; }
-  }
-  .stat-num {
-    font-family: 'DM Mono', monospace; font-size: clamp(24px,4vw,34px); font-weight: 500;
-    color: var(--white); letter-spacing: -1px; margin-bottom: 4px;
-  }
-  .stat-num span { color: var(--accent); }
-  .stat-label { font-size: 11px; color: var(--muted); }
-
   /* ── Sections ── */
   .section { max-width: 1160px; margin: 0 auto; padding: 80px var(--px); }
   @media (max-width: 768px) { .section { padding: 60px var(--px); } }
@@ -583,8 +558,6 @@ function Hero() {
   );
 }
 
-
-
 function Features() {
   return (
     <section id="features" className="section">
@@ -721,7 +694,6 @@ export default function LandingPage() {
       <div style={{background:'var(--bg)',color:'var(--text)',minHeight:'100vh',overflowX:'hidden'}}>
         <Navbar/>
         <Hero/>
-        <StatsBand/>
         <Features/>
         <HowItWorks/>
         <Testimonials/>
