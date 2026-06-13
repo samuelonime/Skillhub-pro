@@ -270,11 +270,16 @@ function PostCard({ post, onLike, onMessage, onEdit, onDelete, currentUserId }: 
 
       {/* Project URL */}
       {post.projectUrl && (
-        <a href={post.projectUrl} target="_blank" rel="noreferrer"
-          className="inline-flex items-center gap-1.5 mt-2.5 text-[12px] text-[#3b82f6] hover:text-[#2563eb] font-medium no-underline">
-          <i className="fas fa-external-link-alt text-[10px]" />
-          {post.projectUrl.replace(/^https?:\/\//, '').slice(0, 40)}
-        </a>
+        (() => {
+          const normalizedUrl = normalizeExternalLink(post.projectUrl);
+          return (
+            <a href={normalizedUrl} target="_blank" rel="noopener noreferrer"
+              className="inline-flex items-center gap-1.5 mt-2.5 text-[12px] text-[#3b82f6] hover:text-[#2563eb] font-medium no-underline">
+              <i className="fas fa-external-link-alt text-[10px]" />
+              {normalizedUrl.replace(/^https?:\/\//, '').replace(/^\/\//, '').slice(0, 40)}
+            </a>
+          );
+        })()
       )}
 
       {/* Footer */}
