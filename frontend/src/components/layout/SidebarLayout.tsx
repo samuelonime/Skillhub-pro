@@ -18,39 +18,6 @@ interface SidebarLayoutProps {
   pageTitle: string;
 }
 
-/* ── helpers ────────────────────────────────────────────────────────────── */
-// FIXED: timeAgo that won't cause hydration mismatch
-function timeAgo(dateString: string) {
-  // Use a fixed reference time for initial render
-  // This will be updated on client after hydration
-  const [isClient, setIsClient] = useState(false);
-  const [timeAgoText, setTimeAgoText] = useState('');
-  
-  useEffect(() => {
-    setIsClient(true);
-    const updateTimeAgo = () => {
-      const now = Date.now();
-      const s = Math.floor((now - new Date(dateString).getTime()) / 1000);
-      let text;
-      if (s < 60) text = 'Just now';
-      else if (s < 3600) text = `${Math.floor(s / 60)}m ago`;
-      else if (s < 86400) text = `${Math.floor(s / 3600)}h ago`;
-      else text = `${Math.floor(s / 86400)}d ago`;
-      setTimeAgoText(text);
-    };
-    updateTimeAgo();
-    const interval = setInterval(updateTimeAgo, 60000);
-    return () => clearInterval(interval);
-  }, [dateString]);
-  
-  // Return a consistent placeholder during SSR
-  if (!isClient) return '...';
-  return timeAgoText;
-}
-
-// But timeAgo is used inside NotificationPanel which is problematic
-// Better to move the logic inside NotificationPanel itself
-
 const NOTIF_ICON: Record<string, { icon: string; color: string }> = {
   success:            { icon: 'fa-check-circle',  color: '#00E5A0' },
   book:               { icon: 'fa-book-open',     color: '#4F8EF7' },
@@ -67,16 +34,30 @@ function iconFor(n: any) {
   return NOTIF_ICON[n.icon] || NOTIF_ICON[n.type] || { icon: 'fa-bell', color: '#6B7280' };
 }
 
-/* ── Notification panel (FIXED for hydration) ──────────────────────────────────── */
-function NotificationPanel({ onClose }: { onClose: () => void }) {
-  const [notifs, setNotifs]   = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [mounted, setMounted] = useState(false);
-
-  // Mark as mounted after hydration
+// TimeAgo component - handles relative times without hydration mismatch
+function TimeAgo({ date }: { date: string }) {
+  const [text, setText] = useState('');
+  
   useEffect(() => {
-    setMounted(true);
-  }, []);
+    const update = () => {
+      const s = Math.floor((Date.now() - new Date(date).getTime()) / 1000);
+      if (s < 60) setText('Just now');
+      else if (s < 3600) setText(`${Math.floor(s / 60)}m ago`);
+      else if (s < 86400) setText(`${Math.floor(s / 3600)}h ago`);
+      else setText(`${Math.floor(s / 86400)}d ago`);
+    };
+    update();
+    const interval = setInterval(update, 60000);
+    return () => clearInterval(interval);
+  }, [date]);
+  
+  return <>{text || '...'}</>;
+}
+
+/* ── Notification panel ──────────────────────────────────────────────────── */
+function NotificationPanel({ onClose }: { onClose: () => void }) {
+  const [notifs, setNotifs] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     apiFetch('/dashboard/notifications')
@@ -96,26 +77,6 @@ function NotificationPanel({ onClose }: { onClose: () => void }) {
   }
 
   const unread = notifs.filter(n => !n.read).length;
-
-  // FIXED: timeAgo component that won't cause hydration mismatch
-  const TimeAgo = ({ date }: { date: string }) => {
-    const [text, setText] = useState('Just now');
-    
-    useEffect(() => {
-      const update = () => {
-        const s = Math.floor((Date.now() - new Date(date).getTime()) / 1000);
-        if (s < 60) setText('Just now');
-        else if (s < 3600) setText(`${Math.floor(s / 60)}m ago`);
-        else if (s < 86400) setText(`${Math.floor(s / 3600)}h ago`);
-        else setText(`${Math.floor(s / 86400)}d ago`);
-      };
-      update();
-      const interval = setInterval(update, 60000);
-      return () => clearInterval(interval);
-    }, [date]);
-    
-    return <>{text}</>;
-  };
 
   return (
     <div
@@ -145,7 +106,7 @@ function NotificationPanel({ onClose }: { onClose: () => void }) {
       </div>
 
       <div className="overflow-y-auto max-h-[420px]">
-        {!mounted || loading ? (
+        {loading ? (
           <div className="flex flex-col gap-0">
             {[1,2,3,4].map(i => (
               <div key={i} className="flex items-start gap-3 px-4 py-3.5" style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
@@ -194,16 +155,8 @@ function NotificationPanel({ onClose }: { onClose: () => void }) {
   );
 }
 
-/* ── Profile dropdown (FIXED) ────────────────────────────────────────────────────── */
+/* ── Profile dropdown ────────────────────────────────────────────────────── */
 function ProfileDropdown({ user, isEmployer, onClose }: { user: any; isEmployer: boolean; onClose: () => void }) {
-  const [mounted, setMounted] = useState(false);
-  
-  useEffect(() => {
-    setMounted(true);
-  }, []);
-  
-  if (!mounted) return null; // Don't render until after hydration
-  
   return (
     <div
       className="absolute top-12 right-0 w-[220px] rounded-2xl z-[200] overflow-hidden"
@@ -247,22 +200,16 @@ function ProfileDropdown({ user, isEmployer, onClose }: { user: any; isEmployer:
   );
 }
 
-/* ── User Avatar (FIXED - no hydration issues) ─────────────────────────────────────────── */
+/* ── User Avatar ─────────────────────────────────────────────────────────── */
 function UserAvatar({ user, size = 8 }: { user: any; size?: number }) {
-  const [mounted, setMounted] = useState(false);
-  
-  useEffect(() => {
-    setMounted(true);
-  }, []);
-  
   const name = user ? `${user.firstName || ''} ${user.lastName || ''}`.trim() : '';
   const initials = name.split(' ').filter(Boolean).map((n: string) => n[0]).join('').slice(0, 2).toUpperCase() || '?';
   const colors = ['#4F8EF7', '#00E5A0', '#F59E0B', '#A78BFA', '#F472B6', '#38BDF8'];
   const color = colors[(initials.charCodeAt(0) || 0) % colors.length];
   const dim = `${size * 4}px`;
 
-  // During SSR and initial hydration, show a consistent placeholder
-  if (!mounted || !user) {
+  if (!user) {
+    // Show a skeleton avatar during loading
     return (
       <div style={{ width: dim, height: dim, background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.2)' }}
         className="rounded-full flex-shrink-0 grid place-items-center animate-pulse">
@@ -282,33 +229,35 @@ function UserAvatar({ user, size = 8 }: { user: any; size?: number }) {
   );
 }
 
-/* ── Sidebar (MAIN FIXED COMPONENT) ─────────────────────────────────────────────── */
+/* ── Sidebar (FIXED with working mobile menu) ─────────────────────────────────────────────── */
 export function SidebarLayout({ children, navItems, pageTitle }: SidebarLayoutProps) {
-  const pathname    = usePathname();
-  const [mounted, setMounted] = useState(false);
+  const pathname = usePathname();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [showNotifs, setShowNotifs] = useState(false);
   const [showProfile, setShowProfile] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
-  const [user, setUser] = useState<any>(null); // Start with null, not from cache
-  const notifRef   = useRef<HTMLDivElement>(null);
+  const [user, setUser] = useState<any>(null);
+  const notifRef = useRef<HTMLDivElement>(null);
   const profileRef = useRef<HTMLDivElement>(null);
 
-  // FIXED: Determine isEmployer based on pathname, not navItems
+  // Determine if employer route
   const isEmployer = pathname?.startsWith('/employer') || false;
 
-  // Mark component as mounted after hydration
+  // Close mobile menu when window resizes to desktop
   useEffect(() => {
-    setMounted(true);
-  }, []);
+    const handleResize = () => {
+      if (window.innerWidth >= 768 && mobileOpen) {
+        setMobileOpen(false);
+      }
+    };
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, [mobileOpen]);
 
-  // Fetch user data only on client
+  // Fetch user data
   useEffect(() => {
-    // First try cache, but don't render differently
     const cached = getCachedUser();
-    if (cached) {
-      setUser(cached);
-    }
+    if (cached) setUser(cached);
     
     apiFetch('/auth/me').then(r => { 
       if (r.success && r.data) setUser(r.data); 
@@ -322,12 +271,10 @@ export function SidebarLayout({ children, navItems, pageTitle }: SidebarLayoutPr
   }, []);
 
   useEffect(() => {
-    if (mounted) {
-      fetchUnread();
-      const interval = setInterval(fetchUnread, 60_000);
-      return () => clearInterval(interval);
-    }
-  }, [mounted, fetchUnread]);
+    fetchUnread();
+    const interval = setInterval(fetchUnread, 60000);
+    return () => clearInterval(interval);
+  }, [fetchUnread]);
 
   useEffect(() => {
     function handler(e: MouseEvent) {
@@ -338,26 +285,57 @@ export function SidebarLayout({ children, navItems, pageTitle }: SidebarLayoutPr
     return () => document.removeEventListener('mousedown', handler);
   }, []);
 
-  // Ensure consistent render between server and client
+  // Prevent body scroll when mobile menu is open
+  useEffect(() => {
+    if (mobileOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, [mobileOpen]);
+
   return (
     <div className="flex min-h-screen" style={{ background: '#080C14' }}>
-      {mobileOpen && mounted && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[99] md:hidden" onClick={() => setMobileOpen(false)} />
+      {/* Backdrop overlay - only visible on mobile when menu is open */}
+      {mobileOpen && (
+        <div 
+          className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[99] md:hidden transition-opacity duration-300"
+          onClick={() => setMobileOpen(false)}
+        />
       )}
 
       {/* ── Sidebar ──────────────────────────────────────────────────── */}
       <aside
-        className={`w-[240px] min-h-screen flex flex-col fixed top-0 left-0 z-[100] transition-transform duration-[0.25s] max-md:-translate-x-full ${mobileOpen ? 'translate-x-0' : ''}`}
+        className={`
+          fixed top-0 left-0 z-[100]
+          w-[280px] h-full
+          transition-transform duration-300 ease-in-out
+          md:translate-x-0 md:relative
+          ${mobileOpen ? 'translate-x-0' : '-translate-x-full'}
+        `}
         style={{ background: '#080C14', borderRight: '1px solid rgba(255,255,255,0.06)' }}
       >
-        {/* Logo - always same */}
-        <div className="flex items-center gap-2.5 px-5 py-5" style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
-          <img src="/meritlives.svg" alt="SkillHub" style={{ width: 26, height: 26 }} />
-          <span className="font-jakarta font-extrabold text-[18px] text-white tracking-tight">SkillHub</span>
+        {/* Logo */}
+        <div className="flex items-center justify-between px-5 py-5" style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+          <div className="flex items-center gap-2.5">
+            <img src="/meritlives.svg" alt="SkillHub" style={{ width: 26, height: 26 }} />
+            <span className="font-jakarta font-extrabold text-[18px] text-white tracking-tight">SkillHub</span>
+          </div>
+          {/* Close button for mobile */}
+          <button
+            onClick={() => setMobileOpen(false)}
+            className="md:hidden w-8 h-8 rounded-lg grid place-items-center"
+            style={{ background: 'rgba(255,255,255,0.06)', color: 'rgba(255,255,255,0.6)' }}
+          >
+            <i className="fas fa-times text-sm" />
+          </button>
         </div>
 
-        {/* Nav - always same structure */}
-        <nav className="flex-1 p-3 overflow-y-auto mt-1">
+        {/* Navigation */}
+        <nav className="flex-1 p-3 overflow-y-auto mt-1 h-[calc(100%-140px)]">
           <div className="text-[9px] font-bold uppercase tracking-[0.15em] px-3 mb-2" style={{ color: 'rgba(255,255,255,0.2)' }}>
             Navigation
           </div>
@@ -366,7 +344,10 @@ export function SidebarLayout({ children, navItems, pageTitle }: SidebarLayoutPr
               ? pathname === item.href
               : pathname === item.href || pathname?.startsWith(item.href + '/');
             return (
-              <Link key={item.href} href={item.href}
+              <Link 
+                key={item.href} 
+                href={item.href}
+                onClick={() => setMobileOpen(false)} // Close mobile menu on navigation
                 className="flex items-center gap-2.5 px-3 py-2.5 rounded-[10px] text-[13px] font-medium mb-0.5 no-underline transition-all relative"
                 style={{
                   background: active ? 'rgba(79,142,247,0.12)' : 'transparent',
@@ -378,9 +359,9 @@ export function SidebarLayout({ children, navItems, pageTitle }: SidebarLayoutPr
                   <div className="absolute left-0 top-1/2 -translate-y-1/2 w-0.5 h-4 rounded-full" style={{ background: '#4F8EF7' }} />
                 )}
                 <i className={`fas ${item.icon} w-4 text-center text-[12px]`} />
-                {item.label}
+                <span className="flex-1 text-left">{item.label}</span>
                 {item.badge ? (
-                  <span className="ml-auto text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full min-w-[20px] text-center" style={{ background: '#EF4444' }}>
+                  <span className="text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full min-w-[20px] text-center" style={{ background: '#EF4444' }}>
                     {item.badge}
                   </span>
                 ) : null}
@@ -389,8 +370,8 @@ export function SidebarLayout({ children, navItems, pageTitle }: SidebarLayoutPr
           })}
         </nav>
 
-        {/* User card at bottom - always rendered but content may update after hydration */}
-        <div className="p-3" style={{ borderTop: '1px solid rgba(255,255,255,0.05)' }}>
+        {/* User card at bottom */}
+        <div className="p-3 absolute bottom-0 left-0 right-0" style={{ borderTop: '1px solid rgba(255,255,255,0.05)', background: '#080C14' }}>
           <div className="flex items-center gap-2.5 px-2 py-2 rounded-xl mb-2">
             <UserAvatar user={user} size={8} />
             <div className="flex-1 min-w-0">
@@ -414,22 +395,26 @@ export function SidebarLayout({ children, navItems, pageTitle }: SidebarLayoutPr
       </aside>
 
       {/* ── Main area ────────────────────────────────────────────────── */}
-      <div className="ml-[240px] flex-1 flex flex-col min-h-screen max-md:ml-0">
-
-        {/* Topbar - always same structure */}
-        <header className="h-14 flex items-center justify-between px-6 sticky top-0 z-50 gap-4"
-          style={{ background: 'rgba(8,12,20,0.85)', borderBottom: '1px solid rgba(255,255,255,0.06)', backdropFilter: 'blur(16px)', WebkitBackdropFilter: 'blur(16px)' }}>
+      <div className="flex-1 flex flex-col min-h-screen w-full overflow-x-hidden">
+        {/* Topbar */}
+        <header className="h-14 flex items-center justify-between px-4 md:px-6 sticky top-0 z-50 gap-4"
+          style={{ background: 'rgba(8,12,20,0.95)', borderBottom: '1px solid rgba(255,255,255,0.06)', backdropFilter: 'blur(16px)' }}>
           
-          <button onClick={() => setMobileOpen(v => !v)}
-            className="md:hidden w-8 h-8 rounded-lg grid place-items-center cursor-pointer border-0 transition-all"
-            style={{ background: 'rgba(255,255,255,0.06)', color: 'rgba(255,255,255,0.6)' }}>
+          {/* Mobile menu button */}
+          <button 
+            onClick={() => setMobileOpen(true)}
+            className="md:hidden w-8 h-8 rounded-lg grid place-items-center cursor-pointer border-0 transition-all flex-shrink-0"
+            style={{ background: 'rgba(255,255,255,0.06)', color: 'rgba(255,255,255,0.6)' }}
+          >
             <i className="fas fa-bars text-[13px]" />
           </button>
 
-          <span className="font-jakarta font-semibold text-[15px] text-white/85 tracking-tight">{pageTitle}</span>
+          <span className="font-jakarta font-semibold text-[15px] text-white/85 tracking-tight truncate flex-1 md:flex-none">
+            {pageTitle}
+          </span>
 
-          {/* Search - always same */}
-          <div className="relative flex-1 max-w-[320px] max-md:hidden">
+          {/* Search - hidden on mobile */}
+          <div className="relative flex-1 max-w-[320px] hidden md:block">
             <i className="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-[12px]" style={{ color: 'rgba(255,255,255,0.2)' }} />
             <input type="text" placeholder="Search courses, jobs, skills…"
               className="w-full pl-8 pr-3 py-2 rounded-xl text-[13px] font-[inherit] outline-none transition-all"
@@ -439,24 +424,22 @@ export function SidebarLayout({ children, navItems, pageTitle }: SidebarLayoutPr
             />
           </div>
 
-          <div className="flex items-center gap-2">
-            {/* Bell - always rendered with consistent structure */}
+          <div className="flex items-center gap-2 flex-shrink-0">
+            {/* Bell */}
             <div ref={notifRef} className="relative">
               <button
                 onClick={() => { setShowNotifs(v => !v); setShowProfile(false); }}
                 className="w-8 h-8 border-0 rounded-lg grid place-items-center cursor-pointer text-[14px] transition-all relative"
                 style={{ background: 'rgba(255,255,255,0.05)', color: 'rgba(255,255,255,0.4)' }}
-                onMouseEnter={e => { (e.currentTarget as HTMLElement).style.color = 'rgba(255,255,255,0.8)'; }}
-                onMouseLeave={e => { (e.currentTarget as HTMLElement).style.color = 'rgba(255,255,255,0.4)'; }}
               >
                 <i className="fas fa-bell" />
-                {unreadCount > 0 && mounted && (
+                {unreadCount > 0 && (
                   <span className="absolute -top-0.5 -right-0.5 w-3.5 h-3.5 rounded-full text-white text-[8px] font-bold grid place-items-center" style={{ background: '#EF4444', border: '2px solid #080C14' }}>
                     {unreadCount > 9 ? '9+' : unreadCount}
                   </span>
                 )}
               </button>
-              {showNotifs && mounted && <NotificationPanel onClose={() => setShowNotifs(false)} />}
+              {showNotifs && <NotificationPanel onClose={() => setShowNotifs(false)} />}
             </div>
 
             {/* Avatar */}
@@ -464,13 +447,13 @@ export function SidebarLayout({ children, navItems, pageTitle }: SidebarLayoutPr
               <div onClick={() => { setShowProfile(v => !v); setShowNotifs(false); }}>
                 <UserAvatar user={user} size={8} />
               </div>
-              {showProfile && mounted && <ProfileDropdown user={user} isEmployer={isEmployer} onClose={() => setShowProfile(false)} />}
+              {showProfile && <ProfileDropdown user={user} isEmployer={isEmployer} onClose={() => setShowProfile(false)} />}
             </div>
           </div>
         </header>
 
         {/* Content */}
-        <main className="p-6 flex-1 max-md:p-4" style={{ color: '#E2E8F0' }}>
+        <main className="p-4 md:p-6 flex-1" style={{ color: '#E2E8F0' }}>
           {children}
         </main>
       </div>
