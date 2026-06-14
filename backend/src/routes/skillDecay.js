@@ -47,10 +47,8 @@ router.get('/', authenticate, async (req, res) => {
           orderBy: { completedAt: 'desc' },
           take:   50,
         },
-        certificates: {
-          select: { skills: true, updatedAt: true },
-          orderBy: { updatedAt: 'desc' },
-        },
+        // Note: Certificate model has no 'skills' field — we derive skill activity
+        // from skill.updatedAt and enrollment completions only
       },
     });
     if (!user) return error(res, 'User not found', 404);
@@ -77,14 +75,8 @@ router.get('/', authenticate, async (req, res) => {
       const demandCount   = skillDemand[skillKey] || 0;
       const demandScore   = demandCount / maxDemand; // 0–1
 
-      // Last active: skill updatedAt OR most recent cert referencing this skill
-      const certWithSkill = user.certificates.find(c =>
-        c.skills.map(s => s.toLowerCase()).includes(skillKey)
-      );
-      const lastActive = new Date(Math.max(
-        skill.updatedAt.getTime(),
-        certWithSkill ? certWithSkill.updatedAt.getTime() : 0
-      ));
+      // Last active: use skill updatedAt (certificates have no skills[] field in schema)
+      const lastActive = new Date(skill.updatedAt.getTime());
       const daysSinceUse = Math.floor((now - lastActive.getTime()) / (24 * 60 * 60 * 1000));
 
       const freshness    = computeFreshness(daysSinceUse, demandScore);
