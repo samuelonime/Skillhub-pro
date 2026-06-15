@@ -229,7 +229,7 @@ function UserAvatar({ user, size = 8 }: { user: any; size?: number }) {
   );
 }
 
-/* ── Sidebar (FIXED with working mobile menu) ─────────────────────────────────────────────── */
+/* ── Sidebar (FIXED with working mobile menu AND SCROLLBAR) ─────────────────────────────────────────────── */
 export function SidebarLayout({ children, navItems, pageTitle }: SidebarLayoutProps) {
   const pathname = usePathname();
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -307,7 +307,7 @@ export function SidebarLayout({ children, navItems, pageTitle }: SidebarLayoutPr
         />
       )}
 
-      {/* ── Sidebar ──────────────────────────────────────────────────── */}
+      {/* ── Sidebar with scrollable navigation ──────────────────────────────────────────────────── */}
       <aside
         className={`
           fixed top-0 left-0 z-[100]
@@ -316,10 +316,15 @@ export function SidebarLayout({ children, navItems, pageTitle }: SidebarLayoutPr
           md:translate-x-0 md:relative
           ${mobileOpen ? 'translate-x-0' : '-translate-x-full'}
         `}
-        style={{ background: '#080C14', borderRight: '1px solid rgba(255,255,255,0.06)' }}
+        style={{ 
+          background: '#080C14', 
+          borderRight: '1px solid rgba(255,255,255,0.06)',
+          display: 'flex',
+          flexDirection: 'column'
+        }}
       >
-        {/* Logo */}
-        <div className="flex items-center justify-between px-5 py-5" style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+        {/* Logo - fixed at top */}
+        <div className="flex items-center justify-between px-5 py-5 flex-shrink-0" style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
           <div className="flex items-center gap-2.5">
             <img src="/meritlives.svg" alt="SkillHub" style={{ width: 26, height: 26 }} />
             <span className="font-jakarta font-extrabold text-[18px] text-white tracking-tight">SkillHub</span>
@@ -334,44 +339,52 @@ export function SidebarLayout({ children, navItems, pageTitle }: SidebarLayoutPr
           </button>
         </div>
 
-        {/* Navigation */}
-        <nav className="flex-1 p-3 overflow-y-auto mt-1 h-[calc(100%-140px)]">
-          <div className="text-[9px] font-bold uppercase tracking-[0.15em] px-3 mb-2" style={{ color: 'rgba(255,255,255,0.2)' }}>
-            Navigation
-          </div>
-          {navItems.map(item => {
-            const active = item.href === '/dashboard' || item.href === '/employer'
-              ? pathname === item.href
-              : pathname === item.href || pathname?.startsWith(item.href + '/');
-            return (
-              <Link 
-                key={item.href} 
-                href={item.href}
-                onClick={() => setMobileOpen(false)} // Close mobile menu on navigation
-                className="flex items-center gap-2.5 px-3 py-2.5 rounded-[10px] text-[13px] font-medium mb-0.5 no-underline transition-all relative"
-                style={{
-                  background: active ? 'rgba(79,142,247,0.12)' : 'transparent',
-                  color: active ? '#4F8EF7' : 'rgba(255,255,255,0.4)',
-                  border: active ? '1px solid rgba(79,142,247,0.2)' : '1px solid transparent',
-                }}
-              >
-                {active && (
-                  <div className="absolute left-0 top-1/2 -translate-y-1/2 w-0.5 h-4 rounded-full" style={{ background: '#4F8EF7' }} />
-                )}
-                <i className={`fas ${item.icon} w-4 text-center text-[12px]`} />
-                <span className="flex-1 text-left">{item.label}</span>
-                {item.badge ? (
-                  <span className="text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full min-w-[20px] text-center" style={{ background: '#EF4444' }}>
-                    {item.badge}
-                  </span>
-                ) : null}
-              </Link>
-            );
-          })}
-        </nav>
+        {/* Scrollable Navigation Area */}
+        <div 
+          className="flex-1 overflow-y-auto"
+          style={{
+            scrollbarWidth: 'thin',
+            scrollbarColor: 'rgba(255,255,255,0.2) rgba(255,255,255,0.05)'
+          }}
+        >
+          <nav className="p-3">
+            <div className="text-[9px] font-bold uppercase tracking-[0.15em] px-3 mb-2" style={{ color: 'rgba(255,255,255,0.2)' }}>
+              Navigation
+            </div>
+            {navItems.map(item => {
+              const active = item.href === '/dashboard' || item.href === '/employer'
+                ? pathname === item.href
+                : pathname === item.href || pathname?.startsWith(item.href + '/');
+              return (
+                <Link 
+                  key={item.href} 
+                  href={item.href}
+                  onClick={() => setMobileOpen(false)} // Close mobile menu on navigation
+                  className="flex items-center gap-2.5 px-3 py-2.5 rounded-[10px] text-[13px] font-medium mb-0.5 no-underline transition-all relative"
+                  style={{
+                    background: active ? 'rgba(79,142,247,0.12)' : 'transparent',
+                    color: active ? '#4F8EF7' : 'rgba(255,255,255,0.4)',
+                    border: active ? '1px solid rgba(79,142,247,0.2)' : '1px solid transparent',
+                  }}
+                >
+                  {active && (
+                    <div className="absolute left-0 top-1/2 -translate-y-1/2 w-0.5 h-4 rounded-full" style={{ background: '#4F8EF7' }} />
+                  )}
+                  <i className={`fas ${item.icon} w-4 text-center text-[12px]`} />
+                  <span className="flex-1 text-left">{item.label}</span>
+                  {item.badge ? (
+                    <span className="text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full min-w-[20px] text-center" style={{ background: '#EF4444' }}>
+                      {item.badge}
+                    </span>
+                  ) : null}
+                </Link>
+              );
+            })}
+          </nav>
+        </div>
 
-        {/* User card at bottom */}
-        <div className="p-3 absolute bottom-0 left-0 right-0" style={{ borderTop: '1px solid rgba(255,255,255,0.05)', background: '#080C14' }}>
+        {/* User card at bottom - fixed */}
+        <div className="p-3 flex-shrink-0" style={{ borderTop: '1px solid rgba(255,255,255,0.05)', background: '#080C14' }}>
           <div className="flex items-center gap-2.5 px-2 py-2 rounded-xl mb-2">
             <UserAvatar user={user} size={8} />
             <div className="flex-1 min-w-0">
