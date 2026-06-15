@@ -9,21 +9,20 @@ const { success, created, badRequest, unauthorized, error } = require('../utils/
 const { authenticate } = require('../middleware/auth');
 
 const IS_PROD      = process.env.NODE_ENV === 'production';
-const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
 /* ── Cookie helpers ────────────────────────────────────────────────────────── */
 const ACCESS_COOKIE_OPTS = {
   httpOnly:  true,
-  secure:    IS_PROD,           // HTTPS only in prod
+  secure:    IS_PROD,
   sameSite:  IS_PROD ? 'strict' : 'lax',
-  maxAge:    15 * 60 * 1000,   // 15 minutes
+  maxAge:    15 * 60 * 1000,
   path:      '/',
 };
 const REFRESH_COOKIE_OPTS = {
   httpOnly:  true,
   secure:    IS_PROD,
   sameSite:  IS_PROD ? 'strict' : 'lax',
-  maxAge:    30 * 24 * 60 * 60 * 1000, // 30 days
+  maxAge:    30 * 24 * 60 * 60 * 1000,
   path:      '/',
 };
 
@@ -63,11 +62,22 @@ async function issueTokens(res, user) {
 
 /* ── GOOGLE OAUTH ──────────────────────────────────────────────────────────── */
 router.post('/google', async (req, res) => {
-  const { credential, role: requestedRole, niche } = req.body;
-  if (!credential) return badRequest(res, 'Google credential required');
+  const { code, role: requestedRole, niche } = req.body;
+  if (!code) return badRequest(res, 'Google authorization code required');
 
   try {
-    const ticket  = await googleClient.verifyIdToken({ idToken: credential, audience: process.env.GOOGLE_CLIENT_ID });
+    // Exchange authorization code for tokens (popup flow uses 'postmessage' as redirect URI)
+    const oAuth2Client = new OAuth2Client(
+      process.env.GOOGLE_CLIENT_ID,
+      process.env.GOOGLE_CLIENT_SECRET,
+      'postmessage',
+    );
+
+    const { tokens } = await oAuth2Client.getToken(code);
+    const ticket = await oAuth2Client.verifyIdToken({
+      idToken:  tokens.id_token,
+      audience: process.env.GOOGLE_CLIENT_ID,
+    });
     const payload = ticket.getPayload();
     const { email, given_name, family_name, picture, sub: googleId } = payload;
 
@@ -77,7 +87,7 @@ router.post('/google', async (req, res) => {
         return unauthorized(res, 'Google account not registered');
       }
 
-      const role = ['student','employer'].includes(requestedRole) ? requestedRole : 'student';
+      const role = ['student', 'employer'].includes(requestedRole) ? requestedRole : 'student';
       if (role === 'student' && !niche) {
         return badRequest(res, 'Please choose a learning niche');
       }
@@ -87,14 +97,14 @@ router.post('/google', async (req, res) => {
       user = await prisma.user.create({
         data: {
           email,
-          password:     await bcrypt.hash(googleId + process.env.JWT_SECRET, 12),
-          firstName:    given_name || email.split('@')[0],
-          lastName:     family_name || '',
+          password:      await bcrypt.hash(googleId + process.env.JWT_SECRET, 12),
+          firstName:     given_name || email.split('@')[0],
+          lastName:      family_name || '',
           role,
           interestNiche: role === 'student' ? niche : null,
-          avatar:       picture || `https://ui-avatars.com/api/?name=${given_name}+${family_name}&background=4f46e5&color=fff&bold=true`,
-          title:        role === 'employer' ? 'Employer' : 'Learner',
-          verified:     true,
+          avatar:        picture || `https://ui-avatars.com/api/?name=${given_name}+${family_name}&background=4f46e5&color=fff&bold=true`,
+          title:         role === 'employer' ? 'Employer' : 'Learner',
+          verified:      true,
           trialEndsAt,
         },
       });
@@ -108,7 +118,7 @@ router.post('/google', async (req, res) => {
     return success(res, { user: sanitizeUser(user) }, 'Google sign-in successful');
   } catch (err) {
     console.error('Google auth error:', err.message);
-    return unauthorized(res, 'Invalid Google credential');
+    return unauthorized(res, 'Google sign-in failed');
   }
 });
 
@@ -131,22 +141,21 @@ router.post('/register', [
 
     const hashed = await bcrypt.hash(password, 12);
 
-    // Employers get a 7-day free trial starting from account creation.
     const trialEndsAt = role === 'employer'
       ? new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
       : null;
 
-    const user   = await prisma.user.create({
+    const user = await prisma.user.create({
       data: {
         email,
-        password:     hashed,
+        password:      hashed,
         firstName,
         lastName,
         role,
         interestNiche: role === 'student' ? niche : null,
-        company:      company || null,
-        avatar:       `https://ui-avatars.com/api/?name=${firstName}+${lastName}&background=4f46e5&color=fff&bold=true`,
-        title:        role === 'employer' ? 'Employer' : 'student',
+        company:       company || null,
+        avatar:        `https://ui-avatars.com/api/?name=${firstName}+${lastName}&background=4f46e5&color=fff&bold=true`,
+        title:         role === 'employer' ? 'Employer' : 'student',
         trialEndsAt,
       },
     });
@@ -189,7 +198,6 @@ router.post('/login', [
 
 /* ── REFRESH TOKEN ─────────────────────────────────────────────────────────── */
 router.post('/refresh', async (req, res) => {
-  // Read from cookie first, fall back to body (for backward compat)
   const token = req.cookies?.sh_refresh || req.body?.refreshToken;
   if (!token) return unauthorized(res, 'Refresh token required');
 
@@ -308,40 +316,34 @@ router.post('/apple', async (req, res) => {
     const appleKeysRes = await fetch('https://appleid.apple.com/auth/keys');
     const { keys } = await appleKeysRes.json();
 
-    // Decode header to find which key to use
     const [headerB64] = id_token.split('.');
     const header = JSON.parse(Buffer.from(headerB64, 'base64').toString('utf8'));
     const appleKey = keys.find((k) => k.kid === header.kid);
     if (!appleKey) return unauthorized(res, 'Apple public key not found');
 
-    // Build PEM from JWK components (RSA)
     const { createPublicKey, verify: cryptoVerify } = require('crypto');
     const jwkToPem = (jwk) => {
-      // Use Node's built-in JWK import (Node ≥ 15)
       const keyObj = createPublicKey({ key: jwk, format: 'jwk' });
       return keyObj.export({ type: 'spki', format: 'pem' });
     };
     const pem = jwkToPem(appleKey);
 
-    // Manually verify the JWT (avoid heavy deps)
     const [h, p, sig] = id_token.split('.');
     const data = `${h}.${p}`;
     const signature = Buffer.from(sig, 'base64url');
     const isValid = cryptoVerify('sha256', Buffer.from(data), { key: pem, padding: crypto.constants?.RSA_PKCS1_PADDING ?? 1 }, signature);
     if (!isValid) return unauthorized(res, 'Invalid Apple token signature');
 
-    // Decode payload
     const payload = JSON.parse(Buffer.from(p, 'base64').toString('utf8'));
 
-    // Validate claims
     if (payload.iss !== 'https://appleid.apple.com') return unauthorized(res, 'Invalid Apple token issuer');
     if (payload.exp < Math.floor(Date.now() / 1000))  return unauthorized(res, 'Apple token expired');
-    const appleId = payload.sub; // stable unique ID
+    const appleId = payload.sub;
     const email   = payload.email || `${appleId}@privaterelay.appleid.com`;
 
     /* ── 2. Upsert user ── */
     let user = await prisma.user.findFirst({
-      where: { OR: [{ email }, { googleId: appleId }] },   // reuse googleId col to store appleId
+      where: { OR: [{ email }, { googleId: appleId }] },
     });
 
     if (!user) {
@@ -359,10 +361,10 @@ router.post('/apple', async (req, res) => {
           firstName,
           lastName,
           role,
-          googleId:  appleId,   // store Apple's `sub` here
+          googleId:  appleId,
           avatar:    `https://ui-avatars.com/api/?name=${encodeURIComponent(firstName + ' ' + lastName)}&background=000000&color=fff&bold=true`,
           title:     role === 'employer' ? 'Employer' : 'Learner',
-          verified:  true,      // Apple verifies email itself
+          verified:  true,
           trialEndsAt,
         },
       });

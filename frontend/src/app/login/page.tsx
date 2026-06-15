@@ -16,6 +16,14 @@ declare global {
           initialize: (config: object) => void;
           prompt: () => void;
         };
+        oauth2: {
+          initCodeClient: (config: {
+            client_id: string;
+            scope: string;
+            ux_mode: 'popup' | 'redirect';
+            callback: (response: { code: string; error?: string }) => void;
+          }) => { requestCode: () => void };
+        };
       };
     };
     AppleID?: {
@@ -64,11 +72,21 @@ function GoogleButton({ onAlert, role, niche, label = 'Continue with Google' }: 
     if (role === 'student' && !niche) return onAlert('Please choose a learning niche before signing up with Google.', 'err');
     setGLoading(true);
     onAlert('');
-    window.google.accounts.id.initialize({
+
+    const client = window.google.accounts.oauth2.initCodeClient({
       client_id: process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID!,
-      callback: async ({ credential }: { credential: string }) => {
+      scope: 'openid email profile',
+      ux_mode: 'popup',
+      callback: async (response: { code: string; error?: string }) => {
+        if (response.error) {
+          if (response.error !== 'access_denied' && response.error !== 'popup_closed_by_user') {
+            onAlert('Google sign-in cancelled or failed.');
+          }
+          setGLoading(false);
+          return;
+        }
         try {
-          const body: Record<string, string> = { credential };
+          const body: Record<string, string> = { code: response.code };
           if (role) body.role = role;
           if (niche) body.niche = niche;
           const res = await fetch(`${API_BASE}/auth/google`, {
@@ -98,8 +116,9 @@ function GoogleButton({ onAlert, role, niche, label = 'Continue with Google' }: 
         }
       },
     });
-    window.google.accounts.id.prompt();
-  }, [role, onAlert, router]);
+
+    client.requestCode();
+  }, [role, niche, onAlert, router]);
 
   return (
     <button
