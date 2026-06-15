@@ -118,6 +118,8 @@ export default function JobsPage(){
 
   useEffect(()=>{load();},[load]);
 
+  const headers = ['Job Title','Type','Location','Min. Tier','Applicants','Featured','Status','Posted'];
+
   return (
     <EmployerAccessGuard>
     <SidebarLayout navItems={employerNavItems} pageTitle="Job Management">
@@ -157,34 +159,40 @@ export default function JobsPage(){
         ):(
           <div className="overflow-x-auto">
             <table className="w-full text-sm border-collapse">
-              <thead><tr>{['Job Title','Type','Location','Min. Tier','Applicants','Featured','Status','Posted'].map(h=>(
-                <th key={h} className="py-2.5 px-4 text-left text-[11px] font-semibold uppercase tracking-wide whitespace-nowrap" style={{color:'rgba(255,255,255,0.45)', borderBottom:'1px solid rgba(255,255,255,0.06)'}}>{h}</th>
-              ))}</thead>
-              <tbody>{jobs.map((job:any)=>{
-                const [sbg,sc]=STATUS_STYLE[job.status]||['rgba(255,255,255,0.06)','rgba(255,255,255,0.45)'];
-                const tier=job.minTier?TIERS[job.minTier]:null;
-                return (
-                  <tr key={job.id} className="transition-colors" style={{borderBottom:'1px solid rgba(255,255,255,0.05)'}}>
-                    <td className="py-3.5 px-4">
-                      <div className="font-semibold text-[13px]" style={{color:'rgba(255,255,255,0.85)'}}>{job.title}</div>
-                      {job.salary&&<div className="text-[11px]" style={{color:'rgba(255,255,255,0.45)'}}>{job.salary}</div>}
-                    </td>
-                    <td className="py-3.5 px-4 text-[12px]" style={{color:'rgba(255,255,255,0.45)'}}>{job.type} </td>
-                    <td className="py-3.5 px-4 text-[12px]" style={{color:'rgba(255,255,255,0.45)'}}>{job.location} </td>
-                    <td className="py-3.5 px-4">
-                      {tier?<span className="inline-flex items-center gap-0.5 text-[10px] font-bold px-1.5 py-0.5 rounded-full" style={{background:tier.bg,color:tier.color, border:`1px solid ${tier.color}20`}}>{tier.icon} {tier.label}+</span>:<span className="text-[11px]" style={{color:'rgba(255,255,255,0.35)'}}>Any</span>}
-                    </td>
-                    <td className="py-3.5 px-4 font-semibold text-[13px]" style={{color:'#4F8EF7'}}>{job.applicantCount??0}</td>
-                    <td className="py-3.5 px-4">
-                      {job.isPremium?<span className="text-[10px] font-bold text-white px-2 py-0.5 rounded-full" style={{background:'#4F8EF7'}}>⭐ Featured</span>:<span className="text-[11px]" style={{color:'rgba(255,255,255,0.35)'}}>—</span>}
-                    </td>
-                    <td className="py-3.5 px-4">
-                      <span className="text-[11px] font-semibold px-2.5 py-0.5 rounded-full capitalize" style={{background:sbg,color:sc}}>{job.status}</span>
-                    </td>
-                    <td className="py-3.5 px-4 text-[11px]" style={{color:'rgba(255,255,255,0.35)'}}>{job.createdAt?new Date(job.createdAt).toLocaleDateString():'—'}</td>
-                  </tr>
-                );
-              })}</tbody>
+              <thead>
+                <tr>
+                  {headers.map(h=>(
+                    <th key={h} className="py-2.5 px-4 text-left text-[11px] font-semibold uppercase tracking-wide whitespace-nowrap" style={{color:'rgba(255,255,255,0.45)', borderBottom:'1px solid rgba(255,255,255,0.06)'}}>{h}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {jobs.map((job:any)=>{
+                  const [sbg,sc]=STATUS_STYLE[job.status]||['rgba(255,255,255,0.06)','rgba(255,255,255,0.45)'];
+                  const tier=job.minTier?TIERS[job.minTier]:null;
+                  return (
+                    <tr key={job.id} className="transition-colors" style={{borderBottom:'1px solid rgba(255,255,255,0.05)'}}>
+                      <td className="py-3.5 px-4">
+                        <div className="font-semibold text-[13px]" style={{color:'rgba(255,255,255,0.85)'}}>{job.title}</div>
+                        {job.salary&&<div className="text-[11px]" style={{color:'rgba(255,255,255,0.45)'}}>{job.salary}</div>}
+                      </td>
+                      <td className="py-3.5 px-4 text-[12px]" style={{color:'rgba(255,255,255,0.45)'}}>{job.type} </td>
+                      <td className="py-3.5 px-4 text-[12px]" style={{color:'rgba(255,255,255,0.45)'}}>{job.location} </td>
+                      <td className="py-3.5 px-4">
+                        {tier?<span className="inline-flex items-center gap-0.5 text-[10px] font-bold px-1.5 py-0.5 rounded-full" style={{background:tier.bg,color:tier.color, border:`1px solid ${tier.color}20`}}>{tier.icon} {tier.label}+</span>:<span className="text-[11px]" style={{color:'rgba(255,255,255,0.35)'}}>Any</span>}
+                      </td>
+                      <td className="py-3.5 px-4 font-semibold text-[13px]" style={{color:'#4F8EF7'}}>{job.applicantCount??0}</td>
+                      <td className="py-3.5 px-4">
+                        {job.isPremium?<span className="text-[10px] font-bold text-white px-2 py-0.5 rounded-full" style={{background:'#4F8EF7'}}>⭐ Featured</span>:<span className="text-[11px]" style={{color:'rgba(255,255,255,0.35)'}}>—</span>}
+                      </td>
+                      <td className="py-3.5 px-4">
+                        <span className="text-[11px] font-semibold px-2.5 py-0.5 rounded-full capitalize" style={{background:sbg,color:sc}}>{job.status}</span>
+                      </td>
+                      <td className="py-3.5 px-4 text-[11px]" style={{color:'rgba(255,255,255,0.35)'}}>{job.createdAt?new Date(job.createdAt).toLocaleDateString():'—'} </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
             </table>
           </div>
         )}
