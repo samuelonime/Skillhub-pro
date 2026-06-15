@@ -5,7 +5,7 @@ import { apiFetch } from '@/lib/api';
 import { employerNavItems } from '@/lib/employerNav';
 import { EmployerAccessGuard } from '@/app/employer/EmployerAccessGuard';
 
-function Sk({h='h-4',w='w-full',r='rounded'}:any){return <div className={`${h} ${w} ${r} bg-[#f0f0f8] animate-pulse`}/>;}
+function Sk({h='h-4',w='w-full',r='rounded'}:any){return <div className={`${h} ${w} ${r} animate-pulse`} style={{background:'rgba(255,255,255,0.06)'}}/>;}
 
 export default function CompanyPage(){
   const [profile,setProfile]=useState<any>(null);
@@ -45,45 +45,53 @@ export default function CompanyPage(){
   return (
     <EmployerAccessGuard>
     <SidebarLayout navItems={employerNavItems} pageTitle="Company Profile">
-      {toast&&<div className="fixed top-5 right-5 z-50 bg-[#0a0a0f] text-white text-sm font-semibold px-5 py-3 rounded-xl shadow-xl flex items-center gap-2"><i className="fas fa-check-circle text-[#22c55e]"/>{toast}</div>}
+      {toast&&<div className="fixed top-5 right-5 z-50 text-white text-sm font-semibold px-5 py-3 rounded-xl shadow-xl flex items-center gap-2" style={{background:'#0F1521', border:'1px solid rgba(79,142,247,0.3)'}}><i className="fas fa-check-circle" style={{color:'#00E5A0'}}/>{toast}</div>}
 
       <div className="flex items-center justify-between mb-5">
-        <div><h1 className="font-syne font-bold text-[21px] tracking-tight">Company Profile</h1><p className="text-[13px] text-[#6b6b8a]">This information is shown to students viewing your job posts.</p></div>
-        {!editing&&<button onClick={()=>setEditing(true)} className="inline-flex items-center gap-2 px-4 py-2.5 bg-[#5b4cf5] text-white rounded-xl text-sm font-semibold border-0 cursor-pointer hover:bg-[#7c6ff7] transition-all"><i className="fas fa-pen"/>Edit Profile</button>}
+        <div><h1 className="font-jakarta font-bold text-[21px] tracking-tight" style={{color:'#FFFFFF'}}>Company Profile</h1><p className="text-[13px]" style={{color:'rgba(255,255,255,0.45)'}}>This information is shown to students viewing your job posts.</p></div>
+        {!editing&&<button onClick={()=>setEditing(true)} className="inline-flex items-center gap-2 px-4 py-2.5 text-white rounded-xl text-sm font-semibold border-0 cursor-pointer transition-all" style={{background:'#4F8EF7'}} onMouseEnter={e=>{(e.currentTarget as HTMLElement).style.background='#6BA0FF'}} onMouseLeave={e=>{(e.currentTarget as HTMLElement).style.background='#4F8EF7'}}><i className="fas fa-pen"/>Edit Profile</button>}
       </div>
 
       <div className="grid grid-cols-[1fr_320px] gap-4 max-[1100px]:grid-cols-1">
-        <div className="bg-white rounded-2xl p-6 border border-[#e8e8f0]">
+        <div className="rounded-2xl p-6" style={{background:'#0F1521', border:'1px solid rgba(255,255,255,0.07)'}}>
           {!profile?<div className="flex flex-col gap-4">{[1,2,3,4,5].map(i=><Sk key={i} h="h-12" r="rounded-xl"/>)}</div>:(
             editing?(
               <div className="flex flex-col gap-4">
                 {fields.map(f=>(
                   <div key={f.key}>
-                    <label className="block text-xs font-semibold text-[#6b6b8a] mb-1.5">{f.label}</label>
+                    <label className="block text-xs font-semibold mb-1.5" style={{color:'rgba(255,255,255,0.45)'}}>{f.label}</label>
                     <input value={form?.[f.key]||''} onChange={e=>set(f.key,e.target.value)} placeholder={f.ph}
-                      className="w-full px-3.5 py-3 border border-[#e8e8f0] rounded-xl text-sm font-[inherit] outline-none focus:border-[#5b4cf5] focus:shadow-[0_0_0_3px_rgba(91,76,245,0.1)] transition-all"/>
+                      className="w-full px-3.5 py-3 rounded-xl text-sm font-[inherit] outline-none transition-all"
+                      style={{background:'rgba(255,255,255,0.05)', border:'1px solid rgba(255,255,255,0.08)', color:'rgba(255,255,255,0.85)'}}
+                      onFocus={e => { e.target.style.border = '1px solid rgba(79,142,247,0.4)'; e.target.style.background = 'rgba(79,142,247,0.06)'; }}
+                      onBlur={e => { e.target.style.border = '1px solid rgba(255,255,255,0.08)'; e.target.style.background = 'rgba(255,255,255,0.05)'; }}
+                    />
                   </div>
                 ))}
                 <div>
-                  <label className="block text-xs font-semibold text-[#6b6b8a] mb-1.5">Company Description</label>
+                  <label className="block text-xs font-semibold mb-1.5" style={{color:'rgba(255,255,255,0.45)'}}>Company Description</label>
                   <textarea value={form?.bio||''} onChange={e=>set('bio',e.target.value)} rows={4} placeholder="Tell candidates about your company, culture and mission…"
-                    className="w-full px-3.5 py-3 border border-[#e8e8f0] rounded-xl text-sm font-[inherit] outline-none focus:border-[#5b4cf5] focus:shadow-[0_0_0_3px_rgba(91,76,245,0.1)] transition-all resize-none"/>
+                    className="w-full px-3.5 py-3 rounded-xl text-sm font-[inherit] outline-none transition-all resize-none"
+                    style={{background:'rgba(255,255,255,0.05)', border:'1px solid rgba(255,255,255,0.08)', color:'rgba(255,255,255,0.85)'}}
+                    onFocus={e => { e.target.style.border = '1px solid rgba(79,142,247,0.4)'; e.target.style.background = 'rgba(79,142,247,0.06)'; }}
+                    onBlur={e => { e.target.style.border = '1px solid rgba(255,255,255,0.08)'; e.target.style.background = 'rgba(255,255,255,0.05)'; }}
+                  />
                 </div>
                 <div className="flex gap-2.5 mt-2">
-                  <button onClick={()=>{setEditing(false);setForm(profile);}} className="flex-1 py-3 border border-[#e8e8f0] rounded-xl text-sm font-semibold text-[#6b6b8a] bg-white cursor-pointer hover:bg-[#f5f5fb] transition-all">Cancel</button>
-                  <button onClick={save} disabled={saving} className="flex-1 py-3 bg-[#5b4cf5] text-white rounded-xl text-sm font-semibold border-0 cursor-pointer hover:bg-[#7c6ff7] transition-all disabled:opacity-60">{saving?'Saving…':'Save Changes'}</button>
+                  <button onClick={()=>{setEditing(false);setForm(profile);}} className="flex-1 py-3 rounded-xl text-sm font-semibold border cursor-pointer transition-all" style={{background:'transparent', color:'rgba(255,255,255,0.6)', borderColor:'rgba(255,255,255,0.08)'}}>Cancel</button>
+                  <button onClick={save} disabled={saving} className="flex-1 py-3 text-white rounded-xl text-sm font-semibold border-0 cursor-pointer transition-all disabled:opacity-60" style={{background:'#4F8EF7'}} onMouseEnter={e=>{(e.currentTarget as HTMLElement).style.background='#6BA0FF'}} onMouseLeave={e=>{(e.currentTarget as HTMLElement).style.background='#4F8EF7'}}>{saving?'Saving…':'Save Changes'}</button>
                 </div>
               </div>
             ):(
               <div>
-                <div className="flex items-center gap-4 mb-6 p-4 bg-[#f5f5fb] rounded-2xl">
-                  <div className="w-16 h-16 rounded-2xl bg-[#5b4cf5] grid place-items-center font-syne font-bold text-2xl text-white flex-shrink-0">
+                <div className="flex items-center gap-4 mb-6 p-4 rounded-2xl" style={{background:'rgba(255,255,255,0.04)', border:'1px solid rgba(255,255,255,0.06)'}}>
+                  <div className="w-16 h-16 rounded-2xl flex items-center justify-center font-jakarta font-bold text-2xl text-white flex-shrink-0" style={{background:'linear-gradient(135deg, #4F8EF7 0%, #A78BFA 100%)'}}>
                     {(profile.company||profile.firstName||'C')[0].toUpperCase()}
                   </div>
                   <div>
-                    <h2 className="font-syne font-bold text-[18px]">{profile.company||'Your Company'}</h2>
-                    <p className="text-sm text-[#6b6b8a]">{profile.industry||'Industry not set'}</p>
-                    {profile.companyWebsite&&<a href={profile.companyWebsite} target="_blank" rel="noreferrer" className="text-xs text-[#5b4cf5] font-semibold no-underline hover:underline">{profile.companyWebsite} ↗</a>}
+                    <h2 className="font-jakarta font-bold text-[18px]" style={{color:'rgba(255,255,255,0.85)'}}>{profile.company||'Your Company'}</h2>
+                    <p className="text-sm" style={{color:'rgba(255,255,255,0.45)'}}>{profile.industry||'Industry not set'}</p>
+                    {profile.companyWebsite&&<a href={profile.companyWebsite} target="_blank" rel="noreferrer" className="text-xs font-semibold no-underline hover:underline" style={{color:'#4F8EF7'}}>{profile.companyWebsite} ↗</a>}
                   </div>
                 </div>
                 <div className="grid grid-cols-2 gap-4 mb-5">
@@ -93,21 +101,21 @@ export default function CompanyPage(){
                     {label:'Industry',     value:profile.industry,     icon:'fa-industry'},
                     {label:'Website',      value:profile.companyWebsite,icon:'fa-globe'},
                   ].map(f=>(
-                    <div key={f.label} className="flex items-start gap-2.5 p-3 bg-[#f5f5fb] rounded-xl">
-                      <i className={`fas ${f.icon} text-[#5b4cf5] text-sm mt-0.5 flex-shrink-0`}/>
-                      <div><div className="text-[10px] text-[#9898b8] uppercase tracking-wide font-semibold">{f.label}</div><div className="text-[13px] font-semibold text-[#0a0a0f] mt-0.5">{f.value||<span className="text-[#9898b8] font-normal">Not set</span>}</div></div>
+                    <div key={f.label} className="flex items-start gap-2.5 p-3 rounded-xl" style={{background:'rgba(255,255,255,0.04)', border:'1px solid rgba(255,255,255,0.06)'}}>
+                      <i className={`fas ${f.icon} text-sm mt-0.5 flex-shrink-0`} style={{color:'#4F8EF7'}}/>
+                      <div><div className="text-[10px] uppercase tracking-wide font-semibold" style={{color:'rgba(255,255,255,0.45)'}}>{f.label}</div><div className="text-[13px] font-semibold mt-0.5" style={{color:'rgba(255,255,255,0.85)'}}>{f.value||<span style={{color:'rgba(255,255,255,0.35)'}}>Not set</span>}</div></div>
                     </div>
                   ))}
                 </div>
-                {profile.bio&&<div><div className="text-[11px] font-semibold text-[#6b6b8a] uppercase tracking-wide mb-2">About</div><p className="text-[13.5px] text-[#2d2d42] leading-relaxed">{profile.bio}</p></div>}
+                {profile.bio&&<div><div className="text-[11px] font-semibold uppercase tracking-wide mb-2" style={{color:'rgba(255,255,255,0.45)'}}>About</div><p className="text-[13.5px] leading-relaxed" style={{color:'rgba(255,255,255,0.7)'}}>{profile.bio}</p></div>}
               </div>
             )
           )}
         </div>
 
         {/* Contact info */}
-        <div className="bg-white rounded-2xl p-5 border border-[#e8e8f0] h-fit">
-          <span className="font-syne font-bold text-[15px] block mb-4">Contact Information</span>
+        <div className="rounded-2xl p-5 h-fit" style={{background:'#0F1521', border:'1px solid rgba(255,255,255,0.07)'}}>
+          <span className="font-jakarta font-bold text-[15px] block mb-4" style={{color:'rgba(255,255,255,0.85)'}}>Contact Information</span>
           {!profile?<div className="flex flex-col gap-3">{[1,2,3].map(i=><Sk key={i} h="h-12" r="rounded-xl"/>)}</div>:(
             <div className="flex flex-col gap-3">
               {[
@@ -115,12 +123,12 @@ export default function CompanyPage(){
                 {icon:'fa-envelope',  label:'Email', value:profile.email},
                 {icon:'fa-phone',     label:'Phone', value:profile.phone},
               ].map(f=>(
-                <div key={f.label} className="flex items-center gap-3 p-3 bg-[#f5f5fb] rounded-xl">
-                  <div className="w-8 h-8 rounded-lg bg-[#f4f2ff] grid place-items-center flex-shrink-0"><i className={`fas ${f.icon} text-[#5b4cf5] text-xs`}/></div>
-                  <div><div className="text-[10px] text-[#9898b8] font-semibold">{f.label}</div><div className="text-[13px] font-semibold">{f.value||<span className="text-[#9898b8] font-normal">Not set</span>}</div></div>
+                <div key={f.label} className="flex items-center gap-3 p-3 rounded-xl" style={{background:'rgba(255,255,255,0.04)', border:'1px solid rgba(255,255,255,0.06)'}}>
+                  <div className="w-8 h-8 rounded-lg grid place-items-center flex-shrink-0" style={{background:'rgba(79,142,247,0.12)'}}><i className={`fas ${f.icon} text-xs`} style={{color:'#4F8EF7'}}/></div>
+                  <div><div className="text-[10px] font-semibold" style={{color:'rgba(255,255,255,0.45)'}}>{f.label}</div><div className="text-[13px] font-semibold" style={{color:'rgba(255,255,255,0.85)'}}>{f.value||<span style={{color:'rgba(255,255,255,0.35)'}}>Not set</span>}</div></div>
                 </div>
               ))}
-              <p className="text-[11px] text-[#9898b8] mt-1">To update contact details, go to <a href="/employer/settings" className="text-[#5b4cf5] font-semibold no-underline hover:underline">Settings</a>.</p>
+              <p className="text-[11px] mt-1" style={{color:'rgba(255,255,255,0.35)'}}>To update contact details, go to <a href="/employer/settings" className="font-semibold no-underline hover:underline" style={{color:'#4F8EF7'}}>Settings</a>.</p>
             </div>
           )}
         </div>

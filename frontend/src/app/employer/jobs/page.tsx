@@ -5,17 +5,19 @@ import { apiFetch } from '@/lib/api';
 import { employerNavItems } from '@/lib/employerNav';
 import { EmployerAccessGuard } from '@/app/employer/EmployerAccessGuard';
 
-function Sk({h='h-4',w='w-full',r='rounded'}:any){return <div className={`${h} ${w} ${r} bg-[#f0f0f8] animate-pulse`}/>;}
+function Sk({h='h-4',w='w-full',r='rounded'}:any){return <div className={`${h} ${w} ${r} animate-pulse`} style={{background:'rgba(255,255,255,0.06)'}}/>;}
 
 const STATUS_STYLE:Record<string,[string,string]>={
-  active:['#f0fdf4','#15803d'],closed:['#f5f5fb','#6b6b8a'],draft:['#fffbeb','#92400e'],
+  active:['rgba(0,229,160,0.12)','#00E5A0'],
+  closed:['rgba(255,255,255,0.06)','rgba(255,255,255,0.45)'],
+  draft:['rgba(245,158,11,0.12)','#F59E0B'],
 };
 
 const TIERS:Record<string,{label:string;icon:string;color:string;bg:string}>={
-  platinum:{label:'Platinum',icon:'💎',color:'#7c3aed',bg:'#f4f2ff'},
-  gold:    {label:'Gold',    icon:'🥇',color:'#d97706',bg:'#fffbeb'},
-  silver:  {label:'Silver',  icon:'🥈',color:'#6b7280',bg:'#f5f5fb'},
-  bronze:  {label:'Bronze',  icon:'🥉',color:'#92400e',bg:'#fef3c7'},
+  platinum:{label:'Platinum',icon:'💎',color:'#A78BFA',bg:'rgba(167,139,250,0.12)'},
+  gold:    {label:'Gold',    icon:'🥇',color:'#F59E0B',bg:'rgba(245,158,11,0.12)'},
+  silver:  {label:'Silver',  icon:'🥈',color:'#94A3B8',bg:'rgba(148,163,184,0.12)'},
+  bronze:  {label:'Bronze',  icon:'🥉',color:'#CD7C54',bg:'rgba(205,124,84,0.12)'},
 };
 
 function PostJobModal({onClose,onPosted}:{onClose:()=>void;onPosted:()=>void}){
@@ -32,30 +34,39 @@ function PostJobModal({onClose,onPosted}:{onClose:()=>void;onPosted:()=>void}){
     }catch(e:any){setErr(e.message||'Failed');}finally{setSaving(false);}
   }
   return (
-    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4" onClick={onClose}>
-      <div className="bg-white rounded-2xl p-6 w-full max-w-xl shadow-2xl max-h-[90vh] overflow-y-auto" onClick={e=>e.stopPropagation()}>
+    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4" onClick={onClose}>
+      <div className="rounded-2xl p-6 w-full max-w-xl shadow-2xl max-h-[90vh] overflow-y-auto" style={{background:'#0F1521', border:'1px solid rgba(255,255,255,0.09)'}} onClick={e=>e.stopPropagation()}>
         <div className="flex items-center justify-between mb-5">
-          <h3 className="font-syne font-bold text-[17px]">Post a New Job</h3>
-          <button onClick={onClose} className="w-8 h-8 rounded-xl bg-[#f5f5fb] border-0 cursor-pointer text-[#6b6b8a] grid place-items-center"><i className="fas fa-times text-xs"/></button>
+          <h3 className="font-jakarta font-bold text-[17px]" style={{color:'rgba(255,255,255,0.85)'}}>Post a New Job</h3>
+          <button onClick={onClose} className="w-8 h-8 rounded-xl border-0 cursor-pointer grid place-items-center transition-all" style={{background:'rgba(255,255,255,0.06)', color:'rgba(255,255,255,0.6)'}}>
+            <i className="fas fa-times text-xs"/>
+          </button>
         </div>
-        {err&&<div className="mb-4 p-3 bg-[#fef2f2] text-[#ef4444] text-sm rounded-xl">{err}</div>}
+        {err&&<div className="mb-4 p-3 rounded-xl text-sm" style={{background:'rgba(239,68,68,0.1)', color:'#EF4444', border:'1px solid rgba(239,68,68,0.2)'}}>{err}</div>}
         <div className="flex flex-col gap-3">
           {[{label:'Job Title *',key:'title',ph:'e.g. Senior Frontend Developer'},{label:'Location *',key:'location',ph:'e.g. Lagos or Remote'},{label:'Salary Range',key:'salary',ph:'e.g. ₦400k–₦600k/mo'},{label:'Required Skills (comma-separated)',key:'skills',ph:'React, TypeScript, Node.js'}].map(f=>(
             <div key={f.key}>
-              <label className="block text-xs font-semibold text-[#6b6b8a] mb-1">{f.label}</label>
-              <input value={(form as any)[f.key]} onChange={e=>set(f.key,e.target.value)} placeholder={f.ph} className="w-full px-3.5 py-2.5 border border-[#e8e8f0] rounded-xl text-sm font-[inherit] outline-none focus:border-[#5b4cf5] transition-all"/>
+              <label className="block text-xs font-semibold mb-1" style={{color:'rgba(255,255,255,0.45)'}}>{f.label}</label>
+              <input value={(form as any)[f.key]} onChange={e=>set(f.key,e.target.value)} placeholder={f.ph} 
+                className="w-full px-3.5 py-2.5 rounded-xl text-sm font-[inherit] outline-none transition-all"
+                style={{background:'rgba(255,255,255,0.05)', border:'1px solid rgba(255,255,255,0.08)', color:'rgba(255,255,255,0.85)'}}
+                onFocus={e => { e.target.style.border = '1px solid rgba(79,142,247,0.4)'; e.target.style.background = 'rgba(79,142,247,0.06)'; }}
+                onBlur={e => { e.target.style.border = '1px solid rgba(255,255,255,0.08)'; e.target.style.background = 'rgba(255,255,255,0.05)'; }}
+              />
             </div>
           ))}
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs font-semibold text-[#6b6b8a] mb-1">Job Type</label>
-              <select value={form.type} onChange={e=>set('type',e.target.value)} className="w-full px-3.5 py-2.5 border border-[#e8e8f0] rounded-xl text-sm font-[inherit] outline-none bg-white cursor-pointer">
+              <label className="block text-xs font-semibold mb-1" style={{color:'rgba(255,255,255,0.45)'}}>Job Type</label>
+              <select value={form.type} onChange={e=>set('type',e.target.value)} className="w-full px-3.5 py-2.5 rounded-xl text-sm font-[inherit] outline-none cursor-pointer"
+                style={{background:'rgba(255,255,255,0.05)', border:'1px solid rgba(255,255,255,0.08)', color:'rgba(255,255,255,0.85)'}}>
                 {['Full-time','Part-time','Contract','Remote','Internship'].map(t=><option key={t}>{t}</option>)}
               </select>
             </div>
             <div>
-              <label className="block text-xs font-semibold text-[#6b6b8a] mb-1">Min. Merit Tier</label>
-              <select value={form.minTier} onChange={e=>set('minTier',e.target.value)} className="w-full px-3.5 py-2.5 border border-[#e8e8f0] rounded-xl text-sm font-[inherit] outline-none bg-white cursor-pointer">
+              <label className="block text-xs font-semibold mb-1" style={{color:'rgba(255,255,255,0.45)'}}>Min. Merit Tier</label>
+              <select value={form.minTier} onChange={e=>set('minTier',e.target.value)} className="w-full px-3.5 py-2.5 rounded-xl text-sm font-[inherit] outline-none cursor-pointer"
+                style={{background:'rgba(255,255,255,0.05)', border:'1px solid rgba(255,255,255,0.08)', color:'rgba(255,255,255,0.85)'}}>
                 <option value="">Any (visible to all)</option>
                 <option value="bronze">🥉 Bronze+ (0+)</option>
                 <option value="silver">🥈 Silver+ (500+)</option>
@@ -65,17 +76,23 @@ function PostJobModal({onClose,onPosted}:{onClose:()=>void;onPosted:()=>void}){
             </div>
           </div>
           <div>
-            <label className="block text-xs font-semibold text-[#6b6b8a] mb-1">Job Description *</label>
-            <textarea value={form.description} onChange={e=>set('description',e.target.value)} rows={5} placeholder="Describe the role, responsibilities and requirements…" className="w-full px-3.5 py-2.5 border border-[#e8e8f0] rounded-xl text-sm font-[inherit] outline-none focus:border-[#5b4cf5] transition-all resize-none"/>
+            <label className="block text-xs font-semibold mb-1" style={{color:'rgba(255,255,255,0.45)'}}>Job Description *</label>
+            <textarea value={form.description} onChange={e=>set('description',e.target.value)} rows={5} placeholder="Describe the role, responsibilities and requirements…" 
+              className="w-full px-3.5 py-2.5 rounded-xl text-sm font-[inherit] outline-none transition-all resize-none"
+              style={{background:'rgba(255,255,255,0.05)', border:'1px solid rgba(255,255,255,0.08)', color:'rgba(255,255,255,0.85)'}}
+              onFocus={e => { e.target.style.border = '1px solid rgba(79,142,247,0.4)'; e.target.style.background = 'rgba(79,142,247,0.06)'; }}
+              onBlur={e => { e.target.style.border = '1px solid rgba(255,255,255,0.08)'; e.target.style.background = 'rgba(255,255,255,0.05)'; }}
+            />
           </div>
-          <label className="flex items-center gap-3 p-3 rounded-xl bg-[#f5f5fb] cursor-pointer">
-            <input type="checkbox" checked={form.isPremium} onChange={e=>set('isPremium',e.target.checked)} className="w-4 h-4 accent-[#5b4cf5]"/>
-            <div><div className="text-sm font-semibold">Mark as Featured / Sponsored</div><div className="text-[11px] text-[#6b6b8a]">Featured jobs appear as opportunity ads on student dashboards</div></div>
+          <label className="flex items-center gap-3 p-3 rounded-xl cursor-pointer" style={{background:'rgba(255,255,255,0.04)', border:'1px solid rgba(255,255,255,0.06)'}}>
+            <input type="checkbox" checked={form.isPremium} onChange={e=>set('isPremium',e.target.checked)} className="w-4 h-4 accent-[#4F8EF7]"/>
+            <div><div className="text-sm font-semibold" style={{color:'rgba(255,255,255,0.85)'}}>Mark as Featured / Sponsored</div><div className="text-[11px]" style={{color:'rgba(255,255,255,0.45)'}}>Featured jobs appear as opportunity ads on student dashboards</div></div>
           </label>
         </div>
         <div className="flex gap-2.5 mt-5">
-          <button onClick={onClose} className="flex-1 py-2.5 border border-[#e8e8f0] rounded-xl text-sm font-semibold text-[#6b6b8a] bg-white cursor-pointer hover:bg-[#f5f5fb] transition-all">Cancel</button>
-          <button onClick={submit} disabled={saving} className="flex-1 py-2.5 bg-[#5b4cf5] text-white rounded-xl text-sm font-semibold border-0 cursor-pointer hover:bg-[#7c6ff7] transition-all disabled:opacity-60">{saving?'Posting…':'Post Job'}</button>
+          <button onClick={onClose} className="flex-1 py-2.5 rounded-xl text-sm font-semibold border cursor-pointer transition-all" style={{background:'transparent', color:'rgba(255,255,255,0.6)', borderColor:'rgba(255,255,255,0.08)'}}>Cancel</button>
+          <button onClick={submit} disabled={saving} className="flex-1 py-2.5 text-white rounded-xl text-sm font-semibold border-0 cursor-pointer transition-all disabled:opacity-60"
+            style={{background:'#4F8EF7'}} onMouseEnter={e=>{(e.currentTarget as HTMLElement).style.background='#6BA0FF'}} onMouseLeave={e=>{(e.currentTarget as HTMLElement).style.background='#4F8EF7'}}>{saving?'Posting…':'Post Job'}</button>
         </div>
       </div>
     </div>
@@ -104,57 +121,67 @@ export default function JobsPage(){
   return (
     <EmployerAccessGuard>
     <SidebarLayout navItems={employerNavItems} pageTitle="Job Management">
-      {toast&&<div className="fixed top-5 right-5 z-50 bg-[#0a0a0f] text-white text-sm font-semibold px-5 py-3 rounded-xl shadow-xl flex items-center gap-2"><i className="fas fa-check-circle text-[#22c55e]"/>{toast}</div>}
+      {toast&&<div className="fixed top-5 right-5 z-50 text-white text-sm font-semibold px-5 py-3 rounded-xl shadow-xl flex items-center gap-2" style={{background:'#0F1521', border:'1px solid rgba(79,142,247,0.3)'}}><i className="fas fa-check-circle" style={{color:'#00E5A0'}}/>{toast}</div>}
       {showPost&&<PostJobModal onClose={()=>setShowPost(false)} onPosted={()=>{showToast('Job posted!');load();}}/>}
 
       <div className="flex items-center justify-between mb-5 flex-wrap gap-3">
-        <div><h1 className="font-syne font-bold text-[21px] tracking-tight">Job Management</h1><p className="text-[13px] text-[#6b6b8a]">Create, manage and track all your job postings.</p></div>
+        <div><h1 className="font-jakarta font-bold text-[21px] tracking-tight" style={{color:'#FFFFFF'}}>Job Management</h1><p className="text-[13px]" style={{color:'rgba(255,255,255,0.45)'}}>Create, manage and track all your job postings.</p></div>
         <div className="flex gap-2">
-          <select value={statusFilter} onChange={e=>setStatusFilter(e.target.value)} className="text-sm text-[#6b6b8a] border border-[#e8e8f0] rounded-lg px-3 py-2 bg-white outline-none font-[inherit] cursor-pointer">
+          <select value={statusFilter} onChange={e=>setStatusFilter(e.target.value)} 
+            className="text-sm rounded-lg px-3 py-2 outline-none font-[inherit] cursor-pointer"
+            style={{color:'rgba(255,255,255,0.6)', background:'rgba(255,255,255,0.05)', border:'1px solid rgba(255,255,255,0.08)'}}>
             <option value="">All Statuses</option>
             <option value="active">Active</option>
             <option value="closed">Closed</option>
             <option value="draft">Draft</option>
           </select>
-          <button onClick={()=>setShowPost(true)} className="inline-flex items-center gap-2 px-4 py-2.5 bg-[#5b4cf5] text-white text-sm font-semibold rounded-xl border-0 cursor-pointer hover:bg-[#7c6ff7] transition-all"><i className="fas fa-plus"/>Post Job</button>
+          <button onClick={()=>setShowPost(true)} className="inline-flex items-center gap-2 px-4 py-2.5 text-white text-sm font-semibold rounded-xl border-0 cursor-pointer transition-all"
+            style={{background:'#4F8EF7'}} onMouseEnter={e=>{(e.currentTarget as HTMLElement).style.background='#6BA0FF'}} onMouseLeave={e=>{(e.currentTarget as HTMLElement).style.background='#4F8EF7'}}>
+            <i className="fas fa-plus"/>Post Job
+          </button>
         </div>
       </div>
 
-      <div className="bg-white rounded-2xl p-5 border border-[#e8e8f0]">
+      <div className="rounded-2xl p-5" style={{background:'#0F1521', border:'1px solid rgba(255,255,255,0.07)'}}>
         {jobs===null?<div className="flex flex-col gap-3">{[1,2,3,4].map(i=><Sk key={i} h="h-16" r="rounded-xl"/>)}</div>
         :jobs.length===0?(
           <div className="py-16 text-center">
-            <i className="fas fa-briefcase text-5xl text-[#e8e8f0] mb-4 block"/>
-            <h3 className="font-syne font-bold text-[16px] mb-2">No jobs posted yet</h3>
-            <p className="text-sm text-[#9898b8] mb-4">Post your first job to start receiving applications.</p>
-            <button onClick={()=>setShowPost(true)} className="inline-flex items-center gap-2 px-5 py-2.5 bg-[#5b4cf5] text-white rounded-xl text-sm font-semibold border-0 cursor-pointer hover:bg-[#7c6ff7] transition-all"><i className="fas fa-plus"/>Post a Job</button>
+            <i className="fas fa-briefcase text-5xl mb-4 block" style={{color:'rgba(255,255,255,0.1)'}}/>
+            <h3 className="font-jakarta font-bold text-[16px] mb-2" style={{color:'rgba(255,255,255,0.85)'}}>No jobs posted yet</h3>
+            <p className="text-sm mb-4" style={{color:'rgba(255,255,255,0.45)'}}>Post your first job to start receiving applications.</p>
+            <button onClick={()=>setShowPost(true)} className="inline-flex items-center gap-2 px-5 py-2.5 text-white rounded-xl text-sm font-semibold border-0 cursor-pointer transition-all"
+              style={{background:'#4F8EF7'}} onMouseEnter={e=>{(e.currentTarget as HTMLElement).style.background='#6BA0FF'}} onMouseLeave={e=>{(e.currentTarget as HTMLElement).style.background='#4F8EF7'}}>
+              <i className="fas fa-plus"/>Post a Job
+            </button>
           </div>
         ):(
           <div className="overflow-x-auto">
             <table className="w-full text-sm border-collapse">
-              <thead><tr>{['Job Title','Type','Location','Min. Tier','Applicants','Featured','Status','Posted'].map(h=><th key={h} className="py-2.5 px-4 text-left text-[11px] font-semibold text-[#6b6b8a] border-b border-[#e8e8f0] uppercase tracking-wide whitespace-nowrap">{h}</th>)}</tr></thead>
+              <thead><tr>{['Job Title','Type','Location','Min. Tier','Applicants','Featured','Status','Posted'].map(h=>(
+                <th key={h} className="py-2.5 px-4 text-left text-[11px] font-semibold uppercase tracking-wide whitespace-nowrap" style={{color:'rgba(255,255,255,0.45)', borderBottom:'1px solid rgba(255,255,255,0.06)'}}>{h}</th>
+              ))}</thead>
               <tbody>{jobs.map((job:any)=>{
-                const [sbg,sc]=STATUS_STYLE[job.status]||['#f5f5fb','#6b6b8a'];
+                const [sbg,sc]=STATUS_STYLE[job.status]||['rgba(255,255,255,0.06)','rgba(255,255,255,0.45)'];
                 const tier=job.minTier?TIERS[job.minTier]:null;
                 return (
-                  <tr key={job.id} className="hover:bg-[#fafafd] transition-colors">
-                    <td className="py-3.5 px-4 border-b border-[#f0f0f8]">
-                      <div className="font-semibold text-[13px]">{job.title}</div>
-                      {job.salary&&<div className="text-[11px] text-[#9898b8]">{job.salary}</div>}
+                  <tr key={job.id} className="transition-colors" style={{borderBottom:'1px solid rgba(255,255,255,0.05)'}}>
+                    <td className="py-3.5 px-4">
+                      <div className="font-semibold text-[13px]" style={{color:'rgba(255,255,255,0.85)'}}>{job.title}</div>
+                      {job.salary&&<div className="text-[11px]" style={{color:'rgba(255,255,255,0.45)'}}>{job.salary}</div>}
                     </td>
-                    <td className="py-3.5 px-4 border-b border-[#f0f0f8] text-[#6b6b8a] text-[12px]">{job.type}</td>
-                    <td className="py-3.5 px-4 border-b border-[#f0f0f8] text-[#6b6b8a] text-[12px]">{job.location}</td>
-                    <td className="py-3.5 px-4 border-b border-[#f0f0f8]">
-                      {tier?<span className="inline-flex items-center gap-0.5 text-[10px] font-bold px-1.5 py-0.5 rounded-full" style={{background:tier.bg,color:tier.color}}>{tier.icon} {tier.label}+</span>:<span className="text-[11px] text-[#9898b8]">Any</span>}
+                    <td className="py-3.5 px-4 text-[12px]" style={{color:'rgba(255,255,255,0.45)'}}>{job.type} </td>
+                    <td className="py-3.5 px-4 text-[12px]" style={{color:'rgba(255,255,255,0.45)'}}>{job.location} </td>
+                    <td className="py-3.5 px-4">
+                      {tier?<span className="inline-flex items-center gap-0.5 text-[10px] font-bold px-1.5 py-0.5 rounded-full" style={{background:tier.bg,color:tier.color, border:`1px solid ${tier.color}20`}}>{tier.icon} {tier.label}+</span>:<span className="text-[11px]" style={{color:'rgba(255,255,255,0.35)'}}>Any</span>}
                     </td>
-                    <td className="py-3.5 px-4 border-b border-[#f0f0f8] font-semibold text-[#5b4cf5] text-[13px]">{job.applicantCount??0}</td>
-                    <td className="py-3.5 px-4 border-b border-[#f0f0f8]">
-                      {job.isPremium?<span className="text-[10px] font-bold text-white px-2 py-0.5 rounded-full bg-[#5b4cf5]">⭐ Featured</span>:<span className="text-[11px] text-[#9898b8]">—</span>}
+                    <td className="py-3.5 px-4 font-semibold text-[13px]" style={{color:'#4F8EF7'}}>{job.applicantCount??0}</td>
+                    <td className="py-3.5 px-4">
+                      {job.isPremium?<span className="text-[10px] font-bold text-white px-2 py-0.5 rounded-full" style={{background:'#4F8EF7'}}>⭐ Featured</span>:<span className="text-[11px]" style={{color:'rgba(255,255,255,0.35)'}}>—</span>}
                     </td>
-                    <td className="py-3.5 px-4 border-b border-[#f0f0f8]">
+                    <td className="py-3.5 px-4">
                       <span className="text-[11px] font-semibold px-2.5 py-0.5 rounded-full capitalize" style={{background:sbg,color:sc}}>{job.status}</span>
                     </td>
-                    <td className="py-3.5 px-4 border-b border-[#f0f0f8] text-[#9898b8] text-[11px]">{job.createdAt?new Date(job.createdAt).toLocaleDateString():'—'}</td>
+                    <td className="py-3.5 px-4 text-[11px]" style={{color:'rgba(255,255,255,0.35)'}}>{job.createdAt?new Date(job.createdAt).toLocaleDateString():'—'}</td>
                   </tr>
                 );
               })}</tbody>

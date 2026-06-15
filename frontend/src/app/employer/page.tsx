@@ -8,10 +8,10 @@ import { EmployerAccessGuard } from '@/app/employer/EmployerAccessGuard';
 
 /* ─── Tier helpers ─────────────────────────────────────────────────────── */
 const TIERS: Record<string, { label: string; icon: string; color: string; bg: string }> = {
-  platinum: { label:'Platinum', icon:'💎', color:'#7c3aed', bg:'#f4f2ff' },
-  gold:     { label:'Gold',     icon:'🥇', color:'#d97706', bg:'#fffbeb' },
-  silver:   { label:'Silver',   icon:'🥈', color:'#6b7280', bg:'#f5f5fb' },
-  bronze:   { label:'Bronze',   icon:'🥉', color:'#92400e', bg:'#fef3c7' },
+  platinum: { label:'Platinum', icon:'💎', color:'#A78BFA', bg:'rgba(167,139,250,0.12)' },
+  gold:     { label:'Gold',     icon:'🥇', color:'#F59E0B', bg:'rgba(245,158,11,0.12)' },
+  silver:   { label:'Silver',   icon:'🥈', color:'#94A3B8', bg:'rgba(148,163,184,0.12)' },
+  bronze:   { label:'Bronze',   icon:'🥉', color:'#CD7C54', bg:'rgba(205,124,84,0.12)' },
 };
 function getTier(c: number) { return c>=5000?'platinum':c>=2000?'gold':c>=500?'silver':'bronze'; }
 function MeritBadge({ coins }: { coins: number }) {
@@ -20,18 +20,18 @@ function MeritBadge({ coins }: { coins: number }) {
 }
 
 const STATUS_STYLE: Record<string, [string,string]> = {
-  applied:['#eff6ff','#1d4ed8'], reviewing:['#fffbeb','#92400e'], shortlisted:['#f0fdf4','#15803d'],
-  interviewing:['#f4f2ff','#5b4cf5'], hired:['#dcfce7','#15803d'], rejected:['#fef2f2','#dc2626'],
+  applied:['rgba(59,130,246,0.1)','#3B82F6'], reviewing:['rgba(245,158,11,0.1)','#F59E0B'], shortlisted:['rgba(0,229,160,0.1)','#00E5A0'],
+  interviewing:['rgba(79,142,247,0.1)','#4F8EF7'], hired:['rgba(0,229,160,0.15)','#00E5A0'], rejected:['rgba(239,68,68,0.1)','#EF4444'],
 };
 
-function Sk({ h='h-4', w='w-full', r='rounded' }: any) { return <div className={`${h} ${w} ${r} bg-[#f0f0f8] animate-pulse`} />; }
+function Sk({ h='h-4', w='w-full', r='rounded' }: any) { return <div className={`${h} ${w} ${r} animate-pulse`} style={{ background: 'rgba(255,255,255,0.06)' }} />; }
 
 function Avatar({ name, avatar, size=8 }: { name:string; avatar?:string; size?:number }) {
   const initials = (name||'U').split(' ').map((n:string)=>n[0]).join('').slice(0,2).toUpperCase();
-  const colors = ['#5b4cf5','#10b981','#f59e0b','#3b82f6','#ef4444','#8b5cf6','#ec4899','#06b6d4'];
+  const colors = ['#4F8EF7','#00E5A0','#F59E0B','#A78BFA','#EF4444','#38BDF8'];
   const color = colors[initials.charCodeAt(0)%colors.length];
   if (avatar) return <img src={avatar} alt={name} className={`w-${size} h-${size} rounded-full object-cover flex-shrink-0`}/>;
-  return <div className={`w-${size} h-${size} rounded-full flex-shrink-0 grid place-items-center font-syne font-bold text-white text-xs`} style={{background:color}}>{initials}</div>;
+  return <div className={`w-${size} h-${size} rounded-full flex-shrink-0 grid place-items-center font-jakarta font-bold text-white text-xs`} style={{background:color}}>{initials}</div>;
 }
 
 /* ─── Post Job Modal ───────────────────────────────────────────────────── */
@@ -49,31 +49,39 @@ function PostJobModal({ onClose, onPosted }: { onClose:()=>void; onPosted:()=>vo
     } catch(e:any){ setErr(e.message||'Failed'); } finally { setSaving(false); }
   }
   return (
-    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4" onClick={onClose}>
-      <div className="bg-white rounded-2xl p-6 w-full max-w-xl shadow-2xl max-h-[90vh] overflow-y-auto" onClick={e=>e.stopPropagation()}>
+    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4" onClick={onClose}>
+      <div className="rounded-2xl p-6 w-full max-w-xl shadow-2xl max-h-[90vh] overflow-y-auto" style={{ background: '#0F1521', border: '1px solid rgba(255,255,255,0.09)' }} onClick={e=>e.stopPropagation()}>
         <div className="flex items-center justify-between mb-5">
-          <h3 className="font-syne font-bold text-[17px]">Post a New Job</h3>
-          <button onClick={onClose} className="w-8 h-8 rounded-xl bg-[#f5f5fb] border-0 cursor-pointer text-[#6b6b8a] grid place-items-center"><i className="fas fa-times text-xs"/></button>
+          <h3 className="font-jakarta font-bold text-[17px]" style={{ color: 'rgba(255,255,255,0.85)' }}>Post a New Job</h3>
+          <button onClick={onClose} className="w-8 h-8 rounded-xl border-0 cursor-pointer grid place-items-center transition-all" style={{ background: 'rgba(255,255,255,0.06)', color: 'rgba(255,255,255,0.6)' }}>
+            <i className="fas fa-times text-xs"/>
+          </button>
         </div>
-        {err && <div className="mb-4 p-3 bg-[#fef2f2] text-[#ef4444] text-sm rounded-xl">{err}</div>}
+        {err && <div className="mb-4 p-3 rounded-xl text-sm" style={{ background: 'rgba(239,68,68,0.1)', color: '#EF4444', border: '1px solid rgba(239,68,68,0.2)' }}>{err}</div>}
         <div className="flex flex-col gap-3">
           {[{label:'Job Title *',key:'title',ph:'e.g. Senior Frontend Developer'},{label:'Location *',key:'location',ph:'e.g. Lagos or Remote'},{label:'Salary Range',key:'salary',ph:'e.g. ₦400k–₦600k/mo'},{label:'Skills (comma-separated)',key:'skills',ph:'React, TypeScript, Node.js'}].map(f=>(
             <div key={f.key}>
-              <label className="block text-xs font-semibold text-[#6b6b8a] mb-1">{f.label}</label>
+              <label className="block text-xs font-semibold mb-1" style={{ color: 'rgba(255,255,255,0.45)' }}>{f.label}</label>
               <input value={(form as any)[f.key]} onChange={e=>set(f.key,e.target.value)} placeholder={f.ph}
-                className="w-full px-3.5 py-2.5 border border-[#e8e8f0] rounded-xl text-sm font-[inherit] outline-none focus:border-[#5b4cf5] transition-all"/>
+                className="w-full px-3.5 py-2.5 rounded-xl text-sm font-[inherit] outline-none transition-all"
+                style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)', color: 'rgba(255,255,255,0.85)' }}
+                onFocus={e => { e.target.style.border = '1px solid rgba(79,142,247,0.4)'; e.target.style.background = 'rgba(79,142,247,0.06)'; }}
+                onBlur={e => { e.target.style.border = '1px solid rgba(255,255,255,0.08)'; e.target.style.background = 'rgba(255,255,255,0.05)'; }}
+              />
             </div>
           ))}
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs font-semibold text-[#6b6b8a] mb-1">Job Type</label>
-              <select value={form.type} onChange={e=>set('type',e.target.value)} className="w-full px-3.5 py-2.5 border border-[#e8e8f0] rounded-xl text-sm font-[inherit] outline-none bg-white cursor-pointer">
+              <label className="block text-xs font-semibold mb-1" style={{ color: 'rgba(255,255,255,0.45)' }}>Job Type</label>
+              <select value={form.type} onChange={e=>set('type',e.target.value)} className="w-full px-3.5 py-2.5 rounded-xl text-sm font-[inherit] outline-none cursor-pointer"
+                style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)', color: 'rgba(255,255,255,0.85)' }}>
                 {['Full-time','Part-time','Contract','Remote','Internship'].map(t=><option key={t}>{t}</option>)}
               </select>
             </div>
             <div>
-              <label className="block text-xs font-semibold text-[#6b6b8a] mb-1">Min. Merit Tier</label>
-              <select value={form.minTier} onChange={e=>set('minTier',e.target.value)} className="w-full px-3.5 py-2.5 border border-[#e8e8f0] rounded-xl text-sm font-[inherit] outline-none bg-white cursor-pointer">
+              <label className="block text-xs font-semibold mb-1" style={{ color: 'rgba(255,255,255,0.45)' }}>Min. Merit Tier</label>
+              <select value={form.minTier} onChange={e=>set('minTier',e.target.value)} className="w-full px-3.5 py-2.5 rounded-xl text-sm font-[inherit] outline-none cursor-pointer"
+                style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)', color: 'rgba(255,255,255,0.85)' }}>
                 <option value="">Any (visible to all)</option>
                 <option value="bronze">🥉 Bronze+ (0+ coins)</option>
                 <option value="silver">🥈 Silver+ (500+ coins)</option>
@@ -83,21 +91,31 @@ function PostJobModal({ onClose, onPosted }: { onClose:()=>void; onPosted:()=>vo
             </div>
           </div>
           <div>
-            <label className="block text-xs font-semibold text-[#6b6b8a] mb-1">Job Description *</label>
+            <label className="block text-xs font-semibold mb-1" style={{ color: 'rgba(255,255,255,0.45)' }}>Job Description *</label>
             <textarea value={form.description} onChange={e=>set('description',e.target.value)} rows={5} placeholder="Describe the role, responsibilities and requirements…"
-              className="w-full px-3.5 py-2.5 border border-[#e8e8f0] rounded-xl text-sm font-[inherit] outline-none focus:border-[#5b4cf5] transition-all resize-none"/>
+              className="w-full px-3.5 py-2.5 rounded-xl text-sm font-[inherit] outline-none transition-all resize-none"
+              style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)', color: 'rgba(255,255,255,0.85)' }}
+              onFocus={e => { e.target.style.border = '1px solid rgba(79,142,247,0.4)'; e.target.style.background = 'rgba(79,142,247,0.06)'; }}
+              onBlur={e => { e.target.style.border = '1px solid rgba(255,255,255,0.08)'; e.target.style.background = 'rgba(255,255,255,0.05)'; }}
+            />
           </div>
-          <label className="flex items-center gap-3 p-3 rounded-xl bg-[#f5f5fb] cursor-pointer">
-            <input type="checkbox" checked={form.isPremium} onChange={e=>set('isPremium',e.target.checked)} className="w-4 h-4 accent-[#5b4cf5]"/>
+          <label className="flex items-center gap-3 p-3 rounded-xl cursor-pointer" style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.06)' }}>
+            <input type="checkbox" checked={form.isPremium} onChange={e=>set('isPremium',e.target.checked)} className="w-4 h-4 accent-[#4F8EF7]"/>
             <div>
-              <div className="text-sm font-semibold">Mark as Featured / Sponsored</div>
-              <div className="text-[11px] text-[#6b6b8a]">Featured jobs appear as opportunity ads on student dashboards</div>
+              <div className="text-sm font-semibold" style={{ color: 'rgba(255,255,255,0.85)' }}>Mark as Featured / Sponsored</div>
+              <div className="text-[11px]" style={{ color: 'rgba(255,255,255,0.45)' }}>Featured jobs appear as opportunity ads on student dashboards</div>
             </div>
           </label>
         </div>
         <div className="flex gap-2.5 mt-5">
-          <button onClick={onClose} className="flex-1 py-2.5 border border-[#e8e8f0] rounded-xl text-sm font-semibold text-[#6b6b8a] bg-white cursor-pointer hover:bg-[#f5f5fb] transition-all">Cancel</button>
-          <button onClick={submit} disabled={saving} className="flex-1 py-2.5 bg-[#5b4cf5] text-white rounded-xl text-sm font-semibold border-0 cursor-pointer hover:bg-[#7c6ff7] transition-all disabled:opacity-60">
+          <button onClick={onClose} className="flex-1 py-2.5 rounded-xl text-sm font-semibold border cursor-pointer transition-all"
+            style={{ background: 'transparent', color: 'rgba(255,255,255,0.6)', borderColor: 'rgba(255,255,255,0.08)' }}>
+            Cancel
+          </button>
+          <button onClick={submit} disabled={saving} className="flex-1 py-2.5 text-white rounded-xl text-sm font-semibold border-0 cursor-pointer transition-all disabled:opacity-60"
+            style={{ background: '#4F8EF7' }}
+            onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = '#6BA0FF'; }}
+            onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = '#4F8EF7'; }}>
             {saving?'Posting…':'Post Job'}
           </button>
         </div>
@@ -137,37 +155,39 @@ export default function EmployerDashboardPage() {
   const tierBreak = overview?.tierBreakdown || {};
   const recent   = overview?.recentApplicants || [];
 
-  const PIPE_COLORS: Record<string,string> = { applied:'#e8e8f0', reviewing:'#3b82f6', shortlisted:'#f59e0b', interviewing:'#5b4cf5', hired:'#22c55e' };
+  const PIPE_COLORS: Record<string,string> = { applied:'#3B82F6', reviewing:'#F59E0B', shortlisted:'#00E5A0', interviewing:'#4F8EF7', hired:'#00E5A0' };
 
   return (
     <EmployerAccessGuard>
     <SidebarLayout navItems={employerNavItems} pageTitle="Dashboard">
       {toast && (
-        <div className="fixed top-5 right-5 z-50 bg-[#0a0a0f] text-white text-sm font-semibold px-5 py-3 rounded-xl shadow-xl flex items-center gap-2">
-          <i className="fas fa-check-circle text-[#22c55e]"/>{toast}
+        <div className="fixed top-5 right-5 z-50 text-white text-sm font-semibold px-5 py-3 rounded-xl shadow-xl flex items-center gap-2" style={{ background: '#0F1521', border: '1px solid rgba(79,142,247,0.3)' }}>
+          <i className="fas fa-check-circle" style={{ color: '#00E5A0' }}/>{toast}
         </div>
       )}
       {showPostJob && <PostJobModal onClose={()=>setShowPostJob(false)} onPosted={()=>{ showToast('Job posted successfully!'); loadOverview(); }}/>}
 
       {/* ── Welcome Banner ─────────────────────────────────────────────── */}
       <div className="rounded-2xl p-6 mb-5 flex items-center justify-between gap-4 flex-wrap relative overflow-hidden"
-        style={{ background:'linear-gradient(135deg,#0a0a0f,#1a1a2e)' }}>
-        <div className="absolute rounded-full pointer-events-none" style={{ top:-50,right:-50,width:200,height:200,background:'rgba(91,76,245,0.15)' }}/>
-        <div className="absolute rounded-full pointer-events-none" style={{ bottom:-40,right:100,width:130,height:130,background:'rgba(91,76,245,0.08)' }}/>
+        style={{ background: 'linear-gradient(135deg, #0A1628 0%, #0D1F3C 50%, #0A1628 100%)', border: '1px solid rgba(79,142,247,0.15)' }}>
+        <div className="absolute rounded-full pointer-events-none" style={{ top: -50, right: -50, width: 200, height: 200, background: 'rgba(79,142,247,0.15)' }}/>
+        <div className="absolute rounded-full pointer-events-none" style={{ bottom: -40, right: 100, width: 130, height: 130, background: 'rgba(0,229,160,0.08)' }}/>
         <div className="relative z-[1]">
           {employer ? (
             <>
-              <p className="text-white/60 text-sm mb-1">{greeting} 👋</p>
-              <h2 className="font-syne font-bold text-[22px] text-white mb-0.5">{fullName}</h2>
-              {company && <p className="text-white/50 text-[13px]">{company}</p>}
+              <p className="text-sm mb-1" style={{ color: 'rgba(79,142,247,0.8)' }}>{greeting} 👋</p>
+              <h2 className="font-jakarta font-bold text-[22px] mb-0.5" style={{ color: '#FFFFFF' }}>{fullName}</h2>
+              {company && <p className="text-[13px]" style={{ color: 'rgba(255,255,255,0.45)' }}>{company}</p>}
             </>
           ) : (
             <div className="flex flex-col gap-2"><Sk h="h-4" w="w-32" r="rounded"/><Sk h="h-7" w="w-48" r="rounded-lg"/><Sk h="h-3" w="w-24" r="rounded"/></div>
           )}
         </div>
         <button onClick={()=>setShowPostJob(true)}
-          className="relative z-[1] inline-flex items-center gap-2 px-5 py-3 text-white text-sm font-semibold rounded-xl border-0 cursor-pointer transition-all hover:-translate-y-px hover:shadow-[0_8px_24px_rgba(91,76,245,0.4)]"
-          style={{ background:'#5b4cf5' }}>
+          className="relative z-[1] inline-flex items-center gap-2 px-5 py-3 text-white text-sm font-semibold rounded-xl border-0 cursor-pointer transition-all hover:-translate-y-px"
+          style={{ background: '#4F8EF7', boxShadow: '0 4px 14px rgba(79,142,247,0.3)' }}
+          onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = '#6BA0FF'; (e.currentTarget as HTMLElement).style.transform = 'translateY(-2px)'; }}
+          onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = '#4F8EF7'; (e.currentTarget as HTMLElement).style.transform = 'translateY(0)'; }}>
           <i className="fas fa-plus"/> Post a Job
         </button>
       </div>
@@ -175,18 +195,20 @@ export default function EmployerDashboardPage() {
       {/* ── Stats ──────────────────────────────────────────────────────── */}
       <div className="grid grid-cols-4 gap-3 mb-4 max-md:grid-cols-2">
         {[
-          { icon:'fa-briefcase',  bg:'#f4f2ff', color:'#5b4cf5', value:stats?.activeJobs,     label:'Active Jobs' },
-          { icon:'fa-users',      bg:'#f0fdf4', color:'#22c55e', value:stats?.totalApplicants, label:'Total Applicants' },
-          { icon:'fa-user-check', bg:'#fffbeb', color:'#f59e0b', value:stats?.shortlisted,     label:'Shortlisted' },
-          { icon:'fa-handshake',  bg:'#eff6ff', color:'#3b82f6', value:stats?.hiredThisMonth,  label:'Hired This Month' },
+          { icon:'fa-briefcase',  color:'#4F8EF7', value:stats?.activeJobs,     label:'Active Jobs' },
+          { icon:'fa-users',      color:'#00E5A0', value:stats?.totalApplicants, label:'Total Applicants' },
+          { icon:'fa-user-check', color:'#F59E0B', value:stats?.shortlisted,     label:'Shortlisted' },
+          { icon:'fa-handshake',  color:'#A78BFA', value:stats?.hiredThisMonth,  label:'Hired This Month' },
         ].map(s=>(
-          <div key={s.label} className="bg-white rounded-2xl p-5 border border-[#e8e8f0] flex items-center gap-3 hover:-translate-y-0.5 hover:shadow-[0_4px_16px_rgba(0,0,0,0.07)] transition-all">
-            <div className="w-11 h-11 rounded-xl grid place-items-center text-[17px] flex-shrink-0" style={{background:s.bg,color:s.color}}>
-              <i className={`fas ${s.icon}`}/>
-            </div>
-            <div>
-              {s.value===undefined?<Sk h="h-7" w="w-10" r="rounded"/>:<div className="font-syne font-bold text-[22px]">{s.value??0}</div>}
-              <div className="text-xs text-[#6b6b8a]">{s.label}</div>
+          <div key={s.label} className="rounded-2xl p-5 transition-all hover:-translate-y-0.5" style={{ background: '#0F1521', border: '1px solid rgba(255,255,255,0.07)' }}>
+            <div className="flex items-center gap-3">
+              <div className="w-11 h-11 rounded-xl grid place-items-center text-[17px] flex-shrink-0" style={{ background: s.color + '18', color: s.color }}>
+                <i className={`fas ${s.icon}`}/>
+              </div>
+              <div>
+                {s.value===undefined?<Sk h="h-7" w="w-10" r="rounded"/>:<div className="font-jakarta font-bold text-[22px]" style={{ color: 'rgba(255,255,255,0.85)' }}>{s.value??0}</div>}
+                <div className="text-xs" style={{ color: 'rgba(255,255,255,0.45)' }}>{s.label}</div>
+              </div>
             </div>
           </div>
         ))}
@@ -194,31 +216,31 @@ export default function EmployerDashboardPage() {
 
       {/* ── Pipeline + Tier Breakdown ───────────────────────────────────── */}
       <div className="grid grid-cols-2 gap-4 mb-4 max-md:grid-cols-1">
-        <div className="bg-white rounded-2xl p-5 border border-[#e8e8f0]">
-          <span className="font-syne font-bold text-[15px] block mb-4">Hiring Pipeline</span>
+        <div className="rounded-2xl p-5" style={{ background: '#0F1521', border: '1px solid rgba(255,255,255,0.07)' }}>
+          <span className="font-jakarta font-bold text-[15px] block mb-4" style={{ color: 'rgba(255,255,255,0.85)' }}>Hiring Pipeline</span>
           {pipeline.length===0?<div className="flex flex-col gap-3">{[1,2,3,4,5].map(i=><Sk key={i} h="h-7" r="rounded-xl"/>)}</div>
            :pipeline.map((s:any)=>(
             <div key={s.stage} className="flex items-center gap-3 mb-3 last:mb-0">
-              <span className="text-[12px] text-[#6b6b8a] capitalize w-24 flex-shrink-0">{s.stage}</span>
-              <div className="flex-1 h-2.5 bg-[#f0f0f8] rounded-full overflow-hidden">
-                <div className="h-full rounded-full transition-all" style={{width:`${Math.max(s.pct,2)}%`,background:PIPE_COLORS[s.stage]||'#e8e8f0'}}/>
+              <span className="text-[12px] capitalize w-24 flex-shrink-0" style={{ color: 'rgba(255,255,255,0.45)' }}>{s.stage}</span>
+              <div className="flex-1 h-2.5 rounded-full overflow-hidden" style={{ background: 'rgba(255,255,255,0.08)' }}>
+                <div className="h-full rounded-full transition-all" style={{ width: `${Math.max(s.pct,2)}%`, background: PIPE_COLORS[s.stage] || '#4F8EF7' }}/>
               </div>
-              <span className="text-[12px] font-semibold w-6 text-right" style={{color:PIPE_COLORS[s.stage]||'#6b6b8a'}}>{s.count}</span>
+              <span className="text-[12px] font-semibold w-6 text-right" style={{ color: PIPE_COLORS[s.stage] || 'rgba(255,255,255,0.6)' }}>{s.count}</span>
             </div>
           ))}
         </div>
-        <div className="bg-white rounded-2xl p-5 border border-[#e8e8f0]">
-          <span className="font-syne font-bold text-[15px] block mb-1">Applicant Merit Tiers</span>
-          <p className="text-xs text-[#6b6b8a] mb-4">Learning achievement breakdown across all applicants.</p>
+        <div className="rounded-2xl p-5" style={{ background: '#0F1521', border: '1px solid rgba(255,255,255,0.07)' }}>
+          <span className="font-jakarta font-bold text-[15px] block mb-1" style={{ color: 'rgba(255,255,255,0.85)' }}>Applicant Merit Tiers</span>
+          <p className="text-xs mb-4" style={{ color: 'rgba(255,255,255,0.45)' }}>Learning achievement breakdown across all applicants.</p>
           {!stats?<div className="flex flex-col gap-3">{[1,2,3,4].map(i=><Sk key={i} h="h-12" r="rounded-xl"/>)}</div>
            :<div className="grid grid-cols-2 gap-2">
             {Object.entries(TIERS).map(([key,t])=>(
-              <div key={key} className="p-3 rounded-xl border border-[#e8e8f0]" style={{background:t.bg+'60'}}>
+              <div key={key} className="p-3 rounded-xl" style={{ background: t.bg, border: '1px solid rgba(255,255,255,0.06)' }}>
                 <div className="flex items-center justify-between mb-0.5">
                   <span className="text-sm">{t.icon}</span>
-                  <span className="font-syne font-bold text-[18px]" style={{color:t.color}}>{(tierBreak as any)[key]||0}</span>
+                  <span className="font-jakarta font-bold text-[18px]" style={{ color: t.color }}>{(tierBreak as any)[key]||0}</span>
                 </div>
-                <div className="text-[11px] font-semibold" style={{color:t.color}}>{t.label}</div>
+                <div className="text-[11px] font-semibold" style={{ color: t.color }}>{t.label}</div>
               </div>
             ))}
           </div>}
@@ -228,35 +250,35 @@ export default function EmployerDashboardPage() {
       {/* ── Quick Actions ───────────────────────────────────────────────── */}
       <div className="grid grid-cols-4 gap-3 mb-4 max-md:grid-cols-2">
         {[
-          { icon:'fa-plus',         label:'Post Job',        bg:'#f4f2ff', color:'#5b4cf5', action:()=>setShowPostJob(true) },
-          { icon:'fa-users',        label:'Applicants',      bg:'#f0fdf4', color:'#22c55e', href:'/employer/applicants' },
-          { icon:'fa-search',       label:'Find Talent',     bg:'#fffbeb', color:'#f59e0b', href:'/employer/talent' },
-          { icon:'fa-chart-bar',    label:'Analytics',       bg:'#eff6ff', color:'#3b82f6', href:'/employer/analytics' },
+          { icon:'fa-plus',         label:'Post Job',        color:'#4F8EF7', action:()=>setShowPostJob(true) },
+          { icon:'fa-users',        label:'Applicants',      color:'#00E5A0', href:'/employer/applicants' },
+          { icon:'fa-search',       label:'Find Talent',     color:'#F59E0B', href:'/employer/talent' },
+          { icon:'fa-chart-bar',    label:'Analytics',       color:'#A78BFA', href:'/employer/analytics' },
         ].map(a=>(
           a.action
-            ? <button key={a.label} onClick={a.action} className="flex flex-col items-center gap-2 py-4 rounded-2xl border border-[#e8e8f0] bg-white cursor-pointer hover:scale-105 transition-all">
-                <i className={`fas ${a.icon} text-xl`} style={{color:a.color}}/>
-                <span className="text-xs font-semibold" style={{color:a.color}}>{a.label}</span>
+            ? <button key={a.label} onClick={a.action} className="flex flex-col items-center gap-2 py-4 rounded-2xl cursor-pointer transition-all hover:scale-105" style={{ background: '#0F1521', border: '1px solid rgba(255,255,255,0.07)' }}>
+                <i className={`fas ${a.icon} text-xl`} style={{ color: a.color }}/>
+                <span className="text-xs font-semibold" style={{ color: a.color }}>{a.label}</span>
               </button>
-            : <a key={a.label} href={a.href} className="flex flex-col items-center gap-2 py-4 rounded-2xl border border-[#e8e8f0] bg-white no-underline hover:scale-105 transition-all">
-                <i className={`fas ${a.icon} text-xl`} style={{color:a.color}}/>
-                <span className="text-xs font-semibold" style={{color:a.color}}>{a.label}</span>
+            : <a key={a.label} href={a.href} className="flex flex-col items-center gap-2 py-4 rounded-2xl no-underline transition-all hover:scale-105" style={{ background: '#0F1521', border: '1px solid rgba(255,255,255,0.07)' }}>
+                <i className={`fas ${a.icon} text-xl`} style={{ color: a.color }}/>
+                <span className="text-xs font-semibold" style={{ color: a.color }}>{a.label}</span>
               </a>
         ))}
       </div>
 
       {/* ── Recent Applicants ───────────────────────────────────────────── */}
-      <div className="bg-white rounded-2xl p-5 border border-[#e8e8f0]">
+      <div className="rounded-2xl p-5" style={{ background: '#0F1521', border: '1px solid rgba(255,255,255,0.07)' }}>
         <div className="flex items-center justify-between mb-4">
-          <span className="font-syne font-bold text-[15px]">Recent Applicants</span>
-          <a href="/employer/applicants" className="text-xs font-semibold text-[#5b4cf5] bg-[#f5f5fb] px-3 py-1.5 rounded-lg no-underline hover:bg-[#f4f2ff] transition-all">View all →</a>
+          <span className="font-jakarta font-bold text-[15px]" style={{ color: 'rgba(255,255,255,0.85)' }}>Recent Applicants</span>
+          <a href="/employer/applicants" className="text-xs font-semibold px-3 py-1.5 rounded-lg no-underline transition-all" style={{ background: 'rgba(255,255,255,0.06)', color: '#4F8EF7', border: '1px solid rgba(255,255,255,0.08)' }}>View all →</a>
         </div>
         {!overview?<div className="flex flex-col gap-3">{[1,2,3,4,5].map(i=><Sk key={i} h="h-14" r="rounded-xl"/>)}</div>
          :recent.length===0?(
           <div className="py-10 text-center">
-            <i className="fas fa-users text-4xl text-[#e8e8f0] mb-3 block"/>
-            <p className="text-sm text-[#9898b8] mb-3">No applicants yet.</p>
-            <button onClick={()=>setShowPostJob(true)} className="inline-flex items-center gap-2 px-4 py-2 bg-[#5b4cf5] text-white rounded-xl text-sm font-semibold border-0 cursor-pointer hover:bg-[#7c6ff7] transition-all">
+            <i className="fas fa-users text-4xl mb-3 block" style={{ color: 'rgba(255,255,255,0.1)' }}/>
+            <p className="text-sm mb-3" style={{ color: 'rgba(255,255,255,0.45)' }}>No applicants yet.</p>
+            <button onClick={()=>setShowPostJob(true)} className="inline-flex items-center gap-2 px-4 py-2 text-white rounded-xl text-sm font-semibold border-0 cursor-pointer transition-all" style={{ background: '#4F8EF7' }}>
               Post your first job
             </button>
           </div>
@@ -264,23 +286,23 @@ export default function EmployerDashboardPage() {
           <div className="overflow-x-auto">
             <table className="w-full text-sm border-collapse">
               <thead><tr>{['Candidate','Applied For','Merit Tier','Certs','Projects','Status'].map(h=>(
-                <th key={h} className="py-2.5 px-4 text-left text-[11px] font-semibold text-[#6b6b8a] border-b border-[#e8e8f0] uppercase tracking-wide whitespace-nowrap">{h}</th>
-              ))}</tr></thead>
+                <th key={h} className="py-2.5 px-4 text-left text-[11px] font-semibold uppercase tracking-wide whitespace-nowrap" style={{ color: 'rgba(255,255,255,0.45)', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>{h}</th>
+              ))}</thead>
               <tbody>{recent.map((a:any)=>(
-                <tr key={a.applicationId} className="hover:bg-[#fafafd] transition-colors">
-                  <td className="py-3 px-4 border-b border-[#f0f0f8]">
+                <tr key={a.applicationId} className="transition-colors" style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+                  <td className="py-3 px-4">
                     <div className="flex items-center gap-2.5">
-                      <Avatar name={a.name} avatar={a.avatar}/>
-                      <span className="font-semibold text-[#0a0a0f] text-[13px]">{a.name}</span>
+                      <Avatar name={a.name} avatar={a.avatar} size={8}/>
+                      <span className="font-semibold text-[13px]" style={{ color: 'rgba(255,255,255,0.85)' }}>{a.name}</span>
                     </div>
-                  </td>
-                  <td className="py-3 px-4 border-b border-[#f0f0f8] text-[#6b6b8a] text-[12px]">{a.job?.title||'—'}</td>
-                  <td className="py-3 px-4 border-b border-[#f0f0f8]"><MeritBadge coins={a.meritCoins}/></td>
-                  <td className="py-3 px-4 border-b border-[#f0f0f8] font-semibold text-[13px]">{a.certCount}</td>
-                  <td className="py-3 px-4 border-b border-[#f0f0f8] font-semibold text-[13px]" style={{color:a.projectCount>0?'#22c55e':'#9898b8'}}>{a.projectCount}</td>
-                  <td className="py-3 px-4 border-b border-[#f0f0f8]">
-                    <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full capitalize" style={{background:(STATUS_STYLE[a.status]||['#f5f5fb','#6b6b8a'])[0],color:(STATUS_STYLE[a.status]||['#f5f5fb','#6b6b8a'])[1]}}>{a.status}</span>
-                  </td>
+                   </td>
+                  <td className="py-3 px-4 text-[12px]" style={{ color: 'rgba(255,255,255,0.45)' }}>{a.job?.title||'—'} </td>
+                  <td className="py-3 px-4"><MeritBadge coins={a.meritCoins}/> </td>
+                  <td className="py-3 px-4 font-semibold text-[13px]" style={{ color: 'rgba(255,255,255,0.7)' }}>{a.certCount} </td>
+                  <td className="py-3 px-4 font-semibold text-[13px]" style={{ color: a.projectCount>0 ? '#00E5A0' : 'rgba(255,255,255,0.3)' }}>{a.projectCount} </td>
+                  <td className="py-3 px-4">
+                    <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full capitalize" style={{ background:(STATUS_STYLE[a.status]||['rgba(255,255,255,0.08)','rgba(255,255,255,0.6)'])[0], color:(STATUS_STYLE[a.status]||['rgba(255,255,255,0.6)','rgba(255,255,255,0.6)'])[1] }}>{a.status}</span>
+                   </td>
                 </tr>
               ))}</tbody>
             </table>
