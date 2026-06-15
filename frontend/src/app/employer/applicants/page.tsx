@@ -89,28 +89,34 @@ export default function ApplicantsPage() {
           {applicants===null?<div className="flex flex-col gap-3">{[1,2,3,4,5].map(i=><Sk key={i} h="h-16" r="rounded-xl"/>)}</div>
            :applicants.length===0?<p className="text-sm py-8 text-center" style={{color:'rgba(255,255,255,0.35)'}}>No applicants match these filters.</p>
            :<div className="overflow-x-auto"><table className="w-full text-sm border-collapse">
-            <thead><tr>{['#','Candidate','Applied For','Merit Tier','Skills','Certs','Projects','Status'].map(h=>(
-              <th key={h} className="py-2.5 px-3 text-left text-[11px] font-semibold uppercase tracking-wide whitespace-nowrap" style={{color:'rgba(255,255,255,0.45)', borderBottom:'1px solid rgba(255,255,255,0.06)'}}>{h}</th>
-            ))}</thead>
-            <tbody>{applicants.map((a:any,idx:number)=>(
-              <tr key={a.applicationId} onClick={()=>setSelected(a)} className={`transition-colors cursor-pointer ${selected?.applicationId===a.applicationId?'bg-[rgba(79,142,247,0.08)]':''} ${a.meritCoins>=5000?'bg-[rgba(167,139,250,0.05)]':''}`} style={{borderBottom:'1px solid rgba(255,255,255,0.05)'}}>
-                <td className="py-3 px-3">
-                  <span className={`w-6 h-6 rounded-full grid place-items-center text-[11px] font-bold ${idx===0?'text-white':idx===1?'text-white':idx===2?'text-white':''}`} 
-                    style={idx===0?{background:'#F59E0B'}:idx===1?{background:'#94A3B8'}:idx===2?{background:'#CD7C54'}:{background:'rgba(255,255,255,0.06)', color:'rgba(255,255,255,0.6)'}}>{idx+1}</span>
-                </td>
-                <td className="py-3 px-3">
-                  <div className="flex items-center gap-2.5"><Avatar name={a.name} avatar={a.avatar}/><div><div className="font-semibold text-[13px]" style={{color:'rgba(255,255,255,0.85)'}}>{a.name}</div>{a.title&&<div className="text-[10px]" style={{color:'rgba(255,255,255,0.45)'}}>{a.title}</div>}</div></div>
-                </td>
-                <td className="py-3 px-3 text-[12px]" style={{color:'rgba(255,255,255,0.45)'}}>{a.job?.title||'—'} </td>
-                <td className="py-3 px-3"><MeritBadge coins={a.meritCoins}/> </td>
-                <td className="py-3 px-3">
-                  <div className="flex flex-wrap gap-1 max-w-[120px]">{a.skills?.slice(0,3).map((s:any)=><span key={s.name} className="text-[10px] px-1.5 py-0.5 rounded font-semibold" style={{background:'rgba(79,142,247,0.12)',color:'#4F8EF7'}}>{s.name}</span>)}{a.skills?.length>3&&<span className="text-[10px]" style={{color:'rgba(255,255,255,0.45)'}}>+{a.skills.length-3}</span>}</div>
-                </td>
-                <td className="py-3 px-3 font-semibold text-[13px]" style={{color:'rgba(255,255,255,0.7)'}}>{a.certCount} </td>
-                <td className="py-3 px-3 font-semibold text-[13px]" style={{color:a.projectCount>0?'#00E5A0':'rgba(255,255,255,0.3)'}}>{a.projectCount} </td>
-                <td className="py-3 px-3" onClick={e=>e.stopPropagation()}><StatusSelect appId={a.applicationId} current={a.status} onChange={onStatusChange}/></td>
+            <thead>
+              <tr>
+                {['#','Candidate','Applied For','Merit Tier','Skills','Certs','Projects','Status'].map(h=>(
+                  <th key={h} className="py-2.5 px-3 text-left text-[11px] font-semibold uppercase tracking-wide whitespace-nowrap" style={{color:'rgba(255,255,255,0.45)', borderBottom:'1px solid rgba(255,255,255,0.06)'}}>{h}</th>
+                ))}
               </tr>
-            ))}</tbody>
+            </thead>
+            <tbody>
+              {applicants.map((a:any,idx:number)=>(
+                <tr key={a.applicationId} onClick={()=>setSelected(a)} className={`transition-colors cursor-pointer ${selected?.applicationId===a.applicationId?'bg-[rgba(79,142,247,0.08)]':''} ${a.meritCoins>=5000?'bg-[rgba(167,139,250,0.05)]':''}`} style={{borderBottom:'1px solid rgba(255,255,255,0.05)'}}>
+                  <td className="py-3 px-3">
+                    <span className={`w-6 h-6 rounded-full grid place-items-center text-[11px] font-bold ${idx===0?'text-white':idx===1?'text-white':idx===2?'text-white':''}`} 
+                      style={idx===0?{background:'#F59E0B'}:idx===1?{background:'#94A3B8'}:idx===2?{background:'#CD7C54'}:{background:'rgba(255,255,255,0.06)', color:'rgba(255,255,255,0.6)'}}>{idx+1}</span>
+                  </td>
+                  <td className="py-3 px-3">
+                    <div className="flex items-center gap-2.5"><Avatar name={a.name} avatar={a.avatar}/><div><div className="font-semibold text-[13px]" style={{color:'rgba(255,255,255,0.85)'}}>{a.name}</div>{a.title&&<div className="text-[10px]" style={{color:'rgba(255,255,255,0.45)'}}>{a.title}</div>}</div></div>
+                  </td>
+                  <td className="py-3 px-3 text-[12px]" style={{color:'rgba(255,255,255,0.45)'}}>{a.job?.title||'—'} </td>
+                  <td className="py-3 px-3"><MeritBadge coins={a.meritCoins}/> </td>
+                  <td className="py-3 px-3">
+                    <div className="flex flex-wrap gap-1 max-w-[120px]">{a.skills?.slice(0,3).map((s:any)=><span key={s.name} className="text-[10px] px-1.5 py-0.5 rounded font-semibold" style={{background:'rgba(79,142,247,0.12)',color:'#4F8EF7'}}>{s.name}</span>)}{a.skills?.length>3&&<span className="text-[10px]" style={{color:'rgba(255,255,255,0.45)'}}>+{a.skills.length-3}</span>}</div>
+                  </td>
+                  <td className="py-3 px-3 font-semibold text-[13px]" style={{color:'rgba(255,255,255,0.7)'}}>{a.certCount} </td>
+                  <td className="py-3 px-3 font-semibold text-[13px]" style={{color:a.projectCount>0?'#00E5A0':'rgba(255,255,255,0.3)'}}>{a.projectCount} </td>
+                  <td className="py-3 px-3" onClick={e=>e.stopPropagation()}><StatusSelect appId={a.applicationId} current={a.status} onChange={onStatusChange}/></td>
+                </tr>
+              ))}
+            </tbody>
           </table></div>}
         </div>
 
