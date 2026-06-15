@@ -19,6 +19,7 @@ const navItems = [
     { href: '/dashboard/certificates',  icon: 'fa-certificate',       label: 'Certificates' },
     { href: '/dashboard/rewards',       icon: 'fa-coins',             label: 'Rewards' },
     { href: '/dashboard/settings',      icon: 'fa-gear',              label: 'Settings' },
+];
 
 const TIER: Record<string, { icon: string; accent: string }> = {
   platinum: { icon: '💎', accent: '#A78BFA' },
