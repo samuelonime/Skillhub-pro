@@ -243,17 +243,16 @@ export default function CareerOraclePage() {
           </p>
           <div className="flex gap-3">
             <input
-              <input
-                type="text"
-                id="eg-docker-kubernetes-react"
-                name="eg_docker_kubernetes_react"
-                placeholder="e.g. docker, kubernetes, react"
-                value={whatIfSkills}
-                onChange={e => setWhatIfSkills(e.target.value)}
-                onKeyDown={e => e.key === 'Enter' && runWhatIf()}
-                className="flex-1 px-4 py-2.5 rounded-xl text-[13px] outline-none text-white"
-                style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)' }}
-              />
+              type="text"
+              id="eg-docker-kubernetes-react"
+              name="eg_docker_kubernetes_react"
+              placeholder="e.g. docker, kubernetes, react"
+              value={whatIfSkills}
+              onChange={e => setWhatIfSkills(e.target.value)}
+              onKeyDown={e => e.key === 'Enter' && runWhatIf()}
+              className="flex-1 px-4 py-2.5 rounded-xl text-[13px] outline-none text-white"
+              style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)' }}
+            />
             <button
               onClick={runWhatIf}
               disabled={whatIfLoading}
