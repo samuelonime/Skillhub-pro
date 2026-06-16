@@ -429,7 +429,10 @@ export function SidebarLayout({ children, navItems, pageTitle }: SidebarLayoutPr
           {/* Search - hidden on mobile */}
           <div className="relative flex-1 max-w-[320px] hidden md:block">
             <i className="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-[12px]" style={{ color: 'rgba(255,255,255,0.2)' }} />
-            <input type="text" placeholder="Search courses, jobs, skills…"
+            <input type="text" 
+              id="search-courses-jobs-skills"
+              name="search_courses_jobs_skills"
+              placeholder="Search courses, jobs, skills…"
               className="w-full pl-8 pr-3 py-2 rounded-xl text-[13px] font-[inherit] outline-none transition-all"
               style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)', color: 'rgba(255,255,255,0.7)' }}
               onFocus={e => { e.target.style.border = '1px solid rgba(79,142,247,0.4)'; e.target.style.background = 'rgba(79,142,247,0.06)'; }}
