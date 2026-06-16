@@ -13,6 +13,7 @@ const navItems = [
   { href: '/dashboard/skill-decay',     icon: 'fa-chart-line',           label: 'Skill Decay' },
   { href: '/dashboard/ghost-recruiter', icon: 'fa-wand-magic-sparkles',  label: 'Ghost Recruiter' },
   { href: '/dashboard/portfolio', icon: 'fa-layer-group', label: 'Portfolio' },
+  { href: '/dashboard/resume',        icon: 'fa-file-lines',           label: 'Resume' },
   { href: '/dashboard/platforms', icon: 'fa-graduation-cap', label: 'Learning Platforms' },
   { href: '/dashboard/jobs', icon: 'fa-briefcase', label: 'Jobs' },
   { href: '/dashboard/certificates', icon: 'fa-certificate', label: 'Certificates' },

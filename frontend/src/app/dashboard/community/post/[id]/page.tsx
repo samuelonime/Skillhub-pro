@@ -11,6 +11,7 @@ const navItems = [
   { href: '/dashboard/courses',      icon: 'fa-book-open',    label: 'Courses' },
   { href: '/dashboard/community',    icon: 'fa-users',        label: 'Community' },
   { href: '/dashboard/portfolio',    icon: 'fa-layer-group',  label: 'Portfolio' },
+  { href: '/dashboard/resume',        icon: 'fa-file-lines',           label: 'Resume' },
   { href: '/dashboard/platforms',    icon: 'fa-graduation-cap', label: 'Learning Platforms' },
   { href: '/dashboard/jobs',         icon: 'fa-briefcase',    label: 'Jobs' },
   { href: '/dashboard/certificates', icon: 'fa-certificate',  label: 'Certificates' },

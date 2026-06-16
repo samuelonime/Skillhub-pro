@@ -664,10 +664,12 @@ export default function AboutPage() {
               <span className="text-[11px] font-medium" style={{ color: 'rgba(255,255,255,0.2)' }}>by Meritlives LLC</span>
             </Link>
             <div className="flex flex-wrap gap-2">
-              <SocialLink icon="fa-facebook-f"  label="Facebook"  href="https://web.facebook.com/meritlives1"                                          color="#1877F2" />
-              <SocialLink icon="fa-instagram"   label="Instagram" href="https://www.instagram.com/meritlives"                                          color="#E1306C" />
-              <SocialLink icon="fa-linkedin-in" label="LinkedIn"  href="https://www.linkedin.com/company/meritlives/"                                  color="#0A66C2" />
-              <SocialLink icon="fa-youtube"     label="YouTube"   href="https://youtube.com/channel/UCCh9OVlY9dBQFoaW0Hu7WQQ"                         color="#FF0000" />
+              <SocialLink icon="fa-facebook-f"  label="Facebook"  href="https://web.facebook.com/meritlives1"                       color="#1877F2" />
+              <SocialLink icon="fa-instagram"   label="Instagram" href="https://www.instagram.com/meritlivessillhub"                color="#E1306C" />
+              <SocialLink icon="fa-linkedin-in" label="LinkedIn"  href="https://www.linkedin.com/company/meritlives/"               color="#0A66C2" />
+              <SocialLink icon="fa-youtube"     label="YouTube"   href="https://youtube.com/channel/UCCh9OVlY9dBQFoaW0Hu7WQQ"      color="#FF0000" />
+              <SocialLink icon="fa-x-twitter"   label="X"         href="https://www.x.com/@skilhubb"                                color="#E7E9EA" />
+              <SocialLink icon="fa-tiktok"      label="TikTok"    href="https://www.tiktok.com/@meritlivesskillhub"                 color="#EE1D52" />
             </div>
           </div>
 
