@@ -28,15 +28,12 @@ function parseUserAgent(ua = '') {
   return { browser, os, device };
 }
 
+// Uses req.ip which honours Express's `trust proxy` setting (set in server.js).
+// This correctly handles Render, Railway, and other reverse-proxy deployments.
 function getClientIp(req) {
-  const forwarded = req.headers['x-forwarded-for'];
-  if (forwarded) return forwarded.split(',')[0].trim();
-  return req.socket?.remoteAddress || null;
+  return req.ip || req.socket?.remoteAddress || null;
 }
 
-// We throttle DB writes to once per 5 minutes per user to avoid hammering on
-// every single API call. We keep an in-memory map of userId → lastWriteMs.
-const lastWrite = new Map();
 const WRITE_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
 
 async function trackSession(req, res, next) {
@@ -45,13 +42,6 @@ async function trackSession(req, res, next) {
 
   const userId = req.user.id;
   const now = Date.now();
-
-  // Throttle
-  if (lastWrite.has(userId) && now - lastWrite.get(userId) < WRITE_INTERVAL_MS) {
-    return next();
-  }
-
-  lastWrite.set(userId, now);
 
   // Fire-and-forget — never block the request
   setImmediate(async () => {
@@ -62,14 +52,21 @@ async function trackSession(req, res, next) {
 
       // Expire old sessions after 30 days of inactivity
       const expiresAt = new Date(now + 30 * 24 * 60 * 60 * 1000);
+      const throttleCutoff = new Date(now - WRITE_INTERVAL_MS);
 
-      // Find the most-recent active session for this user+device combo
+      // Find the most-recent active session for this user+device combo.
+      // The lastSeenAt check acts as the throttle — if we've already written
+      // within WRITE_INTERVAL_MS, skip. This replaces the in-memory Map so
+      // the throttle survives server restarts without thundering-herd bursts.
       const existing = await prisma.userSession.findFirst({
         where: { userId, browser, os, device, isActive: true },
         orderBy: { lastSeenAt: 'desc' },
       });
 
       if (existing) {
+        // If updated recently enough, don't write again
+        if (existing.lastSeenAt > throttleCutoff) return;
+
         await prisma.userSession.update({
           where: { id: existing.id },
           data: { lastSeenAt: new Date(), ipAddress: ip, expiresAt },

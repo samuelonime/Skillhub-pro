@@ -13,7 +13,10 @@ const { trackSession } = require('./middleware/sessionTracker');
 
 // ENV validation
 const REQUIRED_ENV = ['JWT_SECRET', 'JWT_REFRESH_SECRET', 'DATABASE_URL'];
-const missing = REQUIRED_ENV.filter(k => !process.env[k] || process.env[k].startsWith('CHANGE_ME'));
+const BAD_PREFIXES  = ['CHANGE_ME', 'REPLACE_ME', 'YOUR_', 'sk_live_REPLACE'];
+const missing = REQUIRED_ENV.filter(k =>
+  !process.env[k] || BAD_PREFIXES.some(p => (process.env[k] || '').startsWith(p))
+);
 if (missing.length) {
   console.error(`\n❌ Missing env variables: ${missing.join(', ')}`);
   console.error('   Copy .env.example → .env and fill in real values.\n');
@@ -28,11 +31,26 @@ const IS_PROD = process.env.NODE_ENV === 'production';
 const PORT    = parseInt(process.env.PORT, 10) || 5000;
 const app     = express();
 
+// Trust the first proxy (Render, Railway, etc.) so req.ip is the real client IP
+// rather than the load balancer address.
+app.set('trust proxy', 1);
+
 app.use((req, _res, next) => { req.id = crypto.randomUUID(); next(); });
 
 app.use(helmet({
   crossOriginResourcePolicy: { policy: 'cross-origin' },
-  contentSecurityPolicy: IS_PROD ? undefined : false,
+  contentSecurityPolicy: IS_PROD ? {
+    directives: {
+      defaultSrc:              ["'self'"],
+      imgSrc:                  ["'self'", 'https://res.cloudinary.com', 'https://ui-avatars.com', 'https://randomuser.me', 'https://placehold.co', 'data:'],
+      scriptSrc:               ["'self'"],
+      styleSrc:                ["'self'", "'unsafe-inline'"],
+      connectSrc:              ["'self'"],
+      frameSrc:                ["'none'"],
+      objectSrc:               ["'none'"],
+      upgradeInsecureRequests: [],
+    },
+  } : false,
 }));
 
 app.use(compression());
@@ -55,17 +73,21 @@ app.use(cookieParser(process.env.COOKIE_SECRET || process.env.JWT_SECRET));
 
 // Webhook MUST receive raw body for signature verification
 app.use('/api/v1/payment/webhook', express.raw({ type: 'application/json' }));
+app.use('/api/v1/payment/paypal/webhook', express.raw({ type: 'application/json' }));
 app.use('/api/v1/platforms/webhook', express.raw({ type: 'application/json' }));
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
 const authLimiter = rateLimit({ windowMs: 15 * 60 * 1000, max: 20, standardHeaders: true, legacyHeaders: false });
+// Contact form: unauthenticated endpoint — tighter limit to prevent spam/flooding
+const contactLimiter = rateLimit({ windowMs: 60 * 60 * 1000, max: 5, standardHeaders: true, legacyHeaders: false, message: { success: false, message: 'Too many contact submissions. Please try again later.' } });
 const apiLimiter  = rateLimit({
   windowMs: parseInt(process.env.RATE_LIMIT_WINDOW_MS) || 900000,
   max:      parseInt(process.env.RATE_LIMIT_MAX) || 200,
   standardHeaders: true, legacyHeaders: false,
 });
 app.use('/api/v1/auth', authLimiter);
+app.use('/api/v1/contact', contactLimiter);
 app.use('/api', apiLimiter);
 
 // Resume files contain PII — serve them through an authenticated route that
@@ -108,7 +130,6 @@ app.use('/api/v1/resume',       require('./routes/resume'));
 app.use('/api/v1/skill-gap',    require('./routes/skillgap'));
 app.use('/api/v1/platforms',    require('./routes/platforms'));
 app.use('/api/v1/community',    require('./routes/community'));
-app.use('/api/v1/auth',         require('./routes/auth'));
 // ── AI Feature Routes (new) ────────────────────────────────────────────────
 app.use('/api/v1/career-oracle',    require('./routes/careerOracle'));
 app.use('/api/v1/skill-coach',      require('./routes/skillCoach'));
@@ -116,8 +137,6 @@ app.use('/api/v1/peer-genome',      require('./routes/peerGenome'));
 app.use('/api/v1/skill-decay',      require('./routes/skillDecay'));
 app.use('/api/v1/ghost-recruiter',  require('./routes/ghostRecruiter'));
 app.use('/api/v1/contact',          require('./routes/contact'));
-
- 
 
 app.get('/health', async (_req, res) => {
   let db = 'ok';

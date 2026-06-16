@@ -2,11 +2,15 @@ const router  = require('express').Router();
 const bcrypt  = require('bcryptjs');
 const crypto  = require('crypto');
 const { OAuth2Client } = require('google-auth-library');
+const { createRemoteJWKSet, jwtVerify } = require('jose');
 const { body, validationResult } = require('express-validator');
 const prisma  = require('../config/database');
 const { generateAccessToken, generateRefreshToken, verifyRefreshToken, sanitizeUser } = require('../utils/jwt');
 const { success, created, badRequest, unauthorized, error } = require('../utils/response');
 const { authenticate } = require('../middleware/auth');
+
+// Apple JWKS — cached by jose automatically (rotates when kid changes)
+const APPLE_JWKS = createRemoteJWKSet(new URL('https://appleid.apple.com/auth/keys'));
 
 const IS_PROD      = process.env.NODE_ENV === 'production';
 
@@ -97,7 +101,7 @@ router.post('/google', async (req, res) => {
       user = await prisma.user.create({
         data: {
           email,
-          password:      await bcrypt.hash(googleId + process.env.JWT_SECRET, 12),
+          password:      await bcrypt.hash(crypto.randomBytes(32).toString('hex'), 12),
           firstName:     given_name || email.split('@')[0],
           lastName:      family_name || '',
           role,
@@ -312,32 +316,19 @@ router.post('/apple', async (req, res) => {
   if (!id_token) return badRequest(res, 'Apple id_token required');
 
   try {
-    /* ── 1. Fetch Apple's public keys and verify the JWT ── */
-    const appleKeysRes = await fetch('https://appleid.apple.com/auth/keys');
-    const { keys } = await appleKeysRes.json();
+    /* ── 1. Verify the JWT using Apple's JWKS (jose handles key rotation + clock-skew) ── */
+    let payload;
+    try {
+      const { payload: verified } = await jwtVerify(id_token, APPLE_JWKS, {
+        issuer:   'https://appleid.apple.com',
+        audience: process.env.APPLE_CLIENT_ID,
+      });
+      payload = verified;
+    } catch (verifyErr) {
+      console.error('Apple JWT verification failed:', verifyErr.message);
+      return unauthorized(res, 'Invalid Apple token');
+    }
 
-    const [headerB64] = id_token.split('.');
-    const header = JSON.parse(Buffer.from(headerB64, 'base64').toString('utf8'));
-    const appleKey = keys.find((k) => k.kid === header.kid);
-    if (!appleKey) return unauthorized(res, 'Apple public key not found');
-
-    const { createPublicKey, verify: cryptoVerify } = require('crypto');
-    const jwkToPem = (jwk) => {
-      const keyObj = createPublicKey({ key: jwk, format: 'jwk' });
-      return keyObj.export({ type: 'spki', format: 'pem' });
-    };
-    const pem = jwkToPem(appleKey);
-
-    const [h, p, sig] = id_token.split('.');
-    const data = `${h}.${p}`;
-    const signature = Buffer.from(sig, 'base64url');
-    const isValid = cryptoVerify('sha256', Buffer.from(data), { key: pem, padding: crypto.constants?.RSA_PKCS1_PADDING ?? 1 }, signature);
-    if (!isValid) return unauthorized(res, 'Invalid Apple token signature');
-
-    const payload = JSON.parse(Buffer.from(p, 'base64').toString('utf8'));
-
-    if (payload.iss !== 'https://appleid.apple.com') return unauthorized(res, 'Invalid Apple token issuer');
-    if (payload.exp < Math.floor(Date.now() / 1000))  return unauthorized(res, 'Apple token expired');
     const appleId = payload.sub;
     const email   = payload.email || `${appleId}@privaterelay.appleid.com`;
 
@@ -357,7 +348,7 @@ router.post('/apple', async (req, res) => {
       user = await prisma.user.create({
         data: {
           email,
-          password:  await bcrypt.hash(appleId + process.env.JWT_SECRET, 12),
+          password:  await bcrypt.hash(crypto.randomBytes(32).toString('hex'), 12),
           firstName,
           lastName,
           role,

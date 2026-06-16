@@ -320,11 +320,19 @@ model UserSettings {
 model Payment {
   id             String         @id @default(uuid())
   userId         String
-  amount         Int
+  amount         Int            // always stored in kobo (NGN basis) for Paystack; USD cents for PayPal
   currency       String         @default("NGN")
+  provider       String         @default("paystack")  // "paystack" | "paypal"
   status         PaymentStatus  @default(pending)
-  paystackRef    String         @unique
+
+  // Paystack fields (null for PayPal payments)
+  paystackRef    String?        @unique
   paystackTrxRef String?
+
+  // PayPal fields (null for Paystack payments)
+  paypalOrderId  String?        @unique
+  paypalCaptureId String?
+
   purpose        PaymentPurpose
   metadata       Json?
   paidAt         DateTime?
@@ -334,6 +342,8 @@ model Payment {
   user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
   subscription Subscription?
 
+  @@index([userId])
+  @@index([userId, status])
   @@map("payments")
 }
 

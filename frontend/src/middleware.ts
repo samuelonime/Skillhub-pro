@@ -14,6 +14,20 @@ import type { NextRequest } from 'next/server';
  * or redirect to /login if refresh also fails.
  * Admin role verification happens on the client side and via API 403s.
  */
+
+/**
+ * Validates a redirect destination is safe (same-origin, relative path only).
+ * Rejects protocol-relative URLs like //evil.com which pass a naive startsWith('/') check.
+ */
+function isSafeRedirect(path: string | null): path is string {
+  if (!path) return false;
+  // Must start with / but NOT //  (protocol-relative URL attack)
+  if (!path.startsWith('/') || path.startsWith('//')) return false;
+  // No embedded newlines (HTTP response splitting)
+  if (/[\r\n]/.test(path)) return false;
+  return true;
+}
+
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
   const accessToken = request.cookies.get('sh_access')?.value;
@@ -37,7 +51,7 @@ export function middleware(request: NextRequest) {
   // BUT if they arrived via a shared link redirect param, honour it
   if (pathname === '/login' && isAuthenticated) {
     const redirect = request.nextUrl.searchParams.get('redirect');
-    const safeDest = redirect && redirect.startsWith('/') ? redirect : '/dashboard';
+    const safeDest = isSafeRedirect(redirect) ? redirect : '/dashboard';
     return NextResponse.redirect(new URL(safeDest, request.url));
   }
 

@@ -188,13 +188,19 @@ router.put('/jobs/:id', async (req, res) => {
 });
 
 router.get('/payments', async (req, res) => {
+  const { page = 1, limit = 50 } = req.query;
+  const skip = (parseInt(page) - 1) * parseInt(limit);
   try {
-    const payments = await prisma.payment.findMany({
-      include: { user: { select: { id: true, firstName: true, lastName: true, email: true } } },
-      orderBy: { createdAt: 'desc' },
-      take: 100,
-    });
-    return success(res, payments);
+    const [payments, total] = await Promise.all([
+      prisma.payment.findMany({
+        include: { user: { select: { id: true, firstName: true, lastName: true, email: true } } },
+        orderBy: { createdAt: 'desc' },
+        skip,
+        take: parseInt(limit),
+      }),
+      prisma.payment.count(),
+    ]);
+    return success(res, { payments, pagination: { page: parseInt(page), limit: parseInt(limit), total, pages: Math.ceil(total / parseInt(limit)) } });
   } catch (err) { 
     console.error(err);
     return error(res, 'Failed to fetch payments'); 

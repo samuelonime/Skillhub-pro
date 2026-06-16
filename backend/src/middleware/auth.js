@@ -2,13 +2,19 @@ const { verifyAccessToken } = require('../utils/jwt');
 const prisma = require('../config/database');
 const { unauthorized, forbidden, error } = require('../utils/response');
 
+const IS_PROD = process.env.NODE_ENV === 'production';
+
 const authenticate = async (req, res, next) => {
-  // Read from HttpOnly cookie first, fall back to Authorization header
+  // Read from HttpOnly cookie first — this is the primary auth mechanism.
+  // The Authorization Bearer fallback is retained for API clients (mobile apps, CLI tools)
+  // but is disabled in production browser contexts to enforce XSS protection.
   let token = req.cookies?.sh_access;
 
   if (!token) {
     const header = req.headers.authorization;
-    if (header && header.startsWith('Bearer ')) {
+    // In production, only accept Bearer tokens from explicit API clients (not browsers)
+    const isApiClient = req.headers['x-api-client'];
+    if (header && header.startsWith('Bearer ') && (!IS_PROD || isApiClient)) {
       token = header.split(' ')[1];
     }
   }
@@ -119,15 +125,14 @@ const requireEmployerAccess = async (req, res, next) => {
   }
 };
 
-module.exports = { authenticate, requireRole, requireEmployerAccess, optionalAuthenticate };
-
 // optionalAuthenticate — sets req.user if a valid token is present, but never blocks the request
 async function optionalAuthenticate(req, _res, next) {
   try {
     let token = req.cookies?.sh_access;
     if (!token) {
       const header = req.headers.authorization;
-      if (header?.startsWith('Bearer ')) token = header.split(' ')[1];
+      const isApiClient = req.headers['x-api-client'];
+      if (header?.startsWith('Bearer ') && (!IS_PROD || isApiClient)) token = header.split(' ')[1];
     }
     if (!token) return next();
     const { verifyAccessToken } = require('../utils/jwt');
@@ -137,3 +142,5 @@ async function optionalAuthenticate(req, _res, next) {
   } catch { /* ignore */ }
   next();
 }
+
+module.exports = { authenticate, requireRole, requireEmployerAccess, optionalAuthenticate };

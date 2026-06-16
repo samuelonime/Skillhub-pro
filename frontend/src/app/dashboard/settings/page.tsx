@@ -77,12 +77,16 @@ export default function SettingsPage() {
     try {
       const formData = new FormData();
       formData.append('avatar', file);
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/users/avatar`, {
+      // Use the native fetch wrapper here because apiFetch always sets
+      // Content-Type: application/json, which breaks multipart uploads.
+      // credentials: 'include' ensures the HttpOnly auth cookie is sent.
+      const raw = await fetch('/api/v1/users/avatar', {
         method:      'POST',
         credentials: 'include',
         body:        formData,
+        // DO NOT set Content-Type — the browser must set it with the multipart boundary
       });
-      const data = await res.json();
+      const data = await raw.json();
       if (data.success) {
         setProfile((p: any) => ({ ...p, avatar: data.data.avatarUrl }));
         showToast('Profile picture updated!');
