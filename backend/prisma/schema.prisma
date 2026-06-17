@@ -122,8 +122,6 @@ model Course {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  enrollments Enrollment[]
-
   @@map("courses")
 }
 
@@ -137,14 +135,25 @@ model Enrollment {
   id          String    @id @default(uuid())
   userId      String
   courseId    String
+  // 'local'      → courseId is a local Course.id (legacy/seeded courses)
+  // 'meritlives' → courseId is a Digital Skills course id; course data is
+  //                always fetched live from Digital Skills' API and never
+  //                duplicated or stored here. No FK constraint, since this
+  //                column can hold IDs from a different database entirely.
+  source      String    @default("local")
+  // Denormalized snapshot captured at enroll time, so analytics features
+  // (e.g. skill decay) don't need to join out to an external API for a
+  // value that essentially never changes after enrollment.
+  category    String?
+  title       String?
   progress    Int       @default(0)
   enrolledAt  DateTime  @default(now())
   completedAt DateTime?
 
-  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
-  course Course @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  @@unique([userId, courseId])
+  @@unique([userId, courseId, source])
+  @@index([courseId, source])
   @@map("enrollments")
 }
 

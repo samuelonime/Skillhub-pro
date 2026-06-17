@@ -43,7 +43,7 @@ router.get('/', authenticate, async (req, res) => {
         },
         enrollments: {
           where:  { completedAt: { not: null } },
-          select: { completedAt: true, course: { select: { category: true } } },
+          select: { completedAt: true, category: true },
           orderBy: { completedAt: 'desc' },
           take:   50,
         },

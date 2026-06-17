@@ -193,6 +193,134 @@ function normalisePayload(network, body) {
 //             POST /api/v1/platforms/webhook/rakuten/udemy
 // ═══════════════════════════════════════════════════════════════════════════
 
+// ═══════════════════════════════════════════════════════════════════════════
+// MERITLIVES (Digital Skills) INTEGRATION
+// Not an affiliate network — this is SkillHub's first-party LMS partner.
+// Digital Skills calls this the moment a course is approved/published, so
+// SkillHub can post a "new course" announcement to the community feed
+// immediately, instead of waiting on any polling/sync job.
+//
+// Registered ABOVE the generic '/webhook/:network/:platform' route below,
+// since Express matches routes in registration order and that route would
+// otherwise also match this URL shape.
+// ═══════════════════════════════════════════════════════════════════════════
+
+let _systemUserIdCache = null;
+
+/**
+ * Finds (or lazily creates) the "Meritlives" system account used as the
+ * author of auto-generated community announcements. Cached in-process so
+ * we don't hit the DB on every webhook call.
+ */
+async function getOrCreateSystemUser() {
+  if (_systemUserIdCache) return _systemUserIdCache;
+
+  const setting = await prisma.systemSetting.findUnique({ where: { key: 'meritlives_system_user_id' } });
+  if (setting?.value) {
+    const existing = await prisma.user.findUnique({ where: { id: setting.value } });
+    if (existing) {
+      _systemUserIdCache = existing.id;
+      return existing.id;
+    }
+  }
+
+  const bcrypt = require('bcryptjs');
+  const user = await prisma.user.create({
+    data: {
+      email: 'announcements@meritlives.com',
+      password: await bcrypt.hash(crypto.randomBytes(32).toString('hex'), 12),
+      firstName: 'Meritlives',
+      lastName: 'Courses',
+      role: 'instructor',
+      title: 'Course Announcements',
+      bio: 'Automated announcements when new courses go live on Digital Skills.',
+      verified: true,
+    },
+  });
+
+  await prisma.systemSetting.upsert({
+    where: { key: 'meritlives_system_user_id' },
+    update: { value: user.id },
+    create: { key: 'meritlives_system_user_id', value: user.id },
+  });
+
+  _systemUserIdCache = user.id;
+  return user.id;
+}
+
+function verifyMeritlivesSignature(rawBody, sig, secret) {
+  if (!sig || !secret) return false;
+  const expected = crypto
+    .createHmac('sha256', secret)
+    .update(rawBody)
+    .digest('hex');
+  if (sig.length !== expected.length) return false;
+  return crypto.timingSafeEqual(Buffer.from(sig), Buffer.from(expected));
+}
+
+router.post('/webhook/meritlives/course-published', async (req, res) => {
+  const secret = process.env.MERITLIVES_WEBHOOK_SECRET || '';
+
+  // This route sits under the '/api/v1/platforms/webhook' prefix, which is
+  // mounted with express.raw() in server.js (required for HMAC signature
+  // verification) — so req.body arrives here as a raw Buffer, not parsed
+  // JSON. Parse it ourselves after verifying the signature against the
+  // original bytes.
+  const rawBody = Buffer.isBuffer(req.body) ? req.body : Buffer.from(JSON.stringify(req.body || {}));
+  const signature = req.headers['x-meritlives-signature'] || '';
+
+  if (secret && !verifyMeritlivesSignature(rawBody, signature, secret)) {
+    console.warn('[Meritlives Webhook] Invalid signature');
+    return res.status(401).json({ error: 'Invalid signature' });
+  }
+
+  let payload;
+  try {
+    payload = JSON.parse(rawBody.toString('utf8'));
+  } catch {
+    return res.status(400).json({ error: 'Invalid JSON body' });
+  }
+
+  const { event, course_id, title, category, thumbnail, url, instructor } = payload;
+
+  if (event !== 'course.published' || !course_id || !title) {
+    // Always 200 so the sender doesn't retry forever on a payload it
+    // simply doesn't recognize.
+    return res.status(200).json({ received: true });
+  }
+
+  try {
+    // Idempotency: don't post the same announcement twice if Digital
+    // Skills retries the webhook (e.g. after a timeout on its end).
+    const existing = await prisma.communityPost.findFirst({
+      where: { projectUrl: url, type: 'resource', title: { startsWith: 'New course:' } },
+    });
+    if (existing) {
+      return res.status(200).json({ received: true, duplicate: true });
+    }
+
+    const authorId = await getOrCreateSystemUser();
+
+    const post = await prisma.communityPost.create({
+      data: {
+        authorId,
+        title: `New course: ${title}`,
+        body: `${instructor?.name ? `${instructor.name} just published` : 'A new course just went live'} "${title}"${category ? ` in ${category}` : ''} on Digital Skills. Check it out!`,
+        type: 'resource',
+        tags: [category, 'Digital Skills'].filter(Boolean).slice(0, 5),
+        imageUrl: thumbnail || null,
+        projectUrl: url || null,
+      },
+    });
+
+    return res.status(200).json({ received: true, postId: post.id });
+  } catch (err) {
+    console.error('[Meritlives Webhook] Failed to create announcement post:', err);
+    // Still 200 — this is a best-effort announcement, not critical path.
+    return res.status(200).json({ received: true, error: 'announcement_failed' });
+  }
+});
+
 router.post('/webhook/:network/:platform', async (req, res) => {
   const { network, platform } = req.params;
   const config = PLATFORM_CONFIG[platform];

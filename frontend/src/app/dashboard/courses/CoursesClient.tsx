@@ -173,6 +173,18 @@ export default function CoursesClient() {
   }
 
   function handleCourseAction(course: any) {
+    // Meritlives (Digital Skills) courses are first-class, in-app-enrollable
+    // courses — not affiliate link-outs. Once enrolled, send the student to
+    // the real lesson player on Digital Skills; if not yet enrolled, go
+    // through the normal enroll() flow just like a local course.
+    if (course.source === 'meritlives') {
+      if (course.enrolled && course.url) {
+        window.open(course.url, '_blank', 'noopener,noreferrer');
+      } else {
+        enroll(course.id, course.title);
+      }
+      return;
+    }
     if (course.enrolled || course.external || course.connected || course.platformKey) { openExternalCourse(course); return; }
     enroll(course.id, course.title);
   }
@@ -325,7 +337,7 @@ export default function CoursesClient() {
             {visible.map((course: any) => {
               const color = colorFor(course.id);
               return (
-                <div key={course.id} className="rounded-2xl overflow-hidden group hover:-translate-y-1 transition-all duration-200"
+                <div key={`${course.source || 'local'}-${course.id}`} className="rounded-2xl overflow-hidden group hover:-translate-y-1 transition-all duration-200"
                   style={{ background: D.card, border: `1px solid ${D.border}` }}>
                   {/* Card header / thumbnail */}
                   <div className="h-28 relative flex items-center justify-center" style={{ background: `linear-gradient(135deg, ${color}20, ${color}35)` }}>
@@ -372,18 +384,22 @@ export default function CoursesClient() {
                         <button onClick={() => handleCourseAction(course)}
                           className="w-full py-2.5 rounded-xl text-sm font-semibold border-0 cursor-pointer text-white transition-all hover:opacity-90"
                           style={{ background: color }}>
-                          {course.external || course.connected || course.platformKey
-                            ? `Open on ${course.platformLabel || course.provider}`
-                            : 'Continue Learning'}
+                          {course.source === 'meritlives'
+                            ? 'Continue on Meritlives'
+                            : course.external || course.connected || course.platformKey
+                              ? `Open on ${course.platformLabel || course.provider}`
+                              : 'Continue Learning'}
                         </button>
                       </>
                     ) : course.enrolled ? (
                       <button onClick={() => handleCourseAction(course)}
                         className="w-full py-2.5 rounded-xl text-sm font-semibold border-0 cursor-pointer text-white transition-all hover:opacity-90"
                         style={{ background: color }}>
-                        {course.external || course.connected || course.platformKey
-                          ? `Open on ${course.platformLabel || course.provider}`
-                          : 'Start Learning'}
+                        {course.source === 'meritlives'
+                          ? 'Start on Meritlives'
+                          : course.external || course.connected || course.platformKey
+                            ? `Open on ${course.platformLabel || course.provider}`
+                            : 'Start Learning'}
                       </button>
                     ) : (
                       <>
