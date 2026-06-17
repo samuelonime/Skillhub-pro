@@ -24,7 +24,7 @@ interface Job {
   status: string; createdAt: string; _count: { applications: number };
 }
 interface Payment {
-  id: string; amount: number; currency: string; status: string; purpose: string;
+  id: string; amount: number; currency: string; provider: string; status: string; purpose: string;
   createdAt: string; user: { firstName: string; lastName: string; email: string };
 }
 interface AffiliateEarning {
@@ -212,7 +212,8 @@ export default function AdminPage() {
     setLoad('payments', true);
     try {
       const r = await apiFetch('/admin/payments');
-      if (r.success) setPayments(r.data || []);
+      // Backend now returns paginated: { payments: [...], pagination: {...} }
+      if (r.success) setPayments(r.data?.payments || r.data || []);
     } catch { showToast('Failed to load payments', 'error'); }
     finally { setLoad('payments', false); }
   }, []);
@@ -703,16 +704,24 @@ export default function AdminPage() {
             <div>
               <div className="flex items-center justify-between mb-5">
                 <div className="text-[12px] text-[#3a3a55]">{payments.length} recent payments</div>
-                <div className="font-syne font-bold text-lg text-[#10b981]">
-                  ₦{fmt(payments.filter(p => p.status === 'success').reduce((s, p) => s + p.amount, 0) / 100)}
-                  <span className="text-[12px] font-normal text-[#3a3a55] ml-1">total revenue</span>
+                <div className="flex items-center gap-4">
+                  {/* NGN revenue from Paystack payments */}
+                  <div className="font-syne font-bold text-lg text-[#10b981]">
+                    ₦{fmt(payments.filter(p => p.status === 'success' && p.currency === 'NGN').reduce((s, p) => s + p.amount, 0) / 100)}
+                    <span className="text-[12px] font-normal text-[#3a3a55] ml-1">NGN</span>
+                  </div>
+                  {/* USD revenue from PayPal payments */}
+                  <div className="font-syne font-bold text-lg text-[#4F8EF7]">
+                    ${(payments.filter(p => p.status === 'success' && p.currency === 'USD').reduce((s, p) => s + p.amount, 0) / 100).toFixed(2)}
+                    <span className="text-[12px] font-normal text-[#3a3a55] ml-1">USD</span>
+                  </div>
                 </div>
               </div>
               <div className="bg-[#0d0d18] border border-[#1e1e2e] rounded-2xl overflow-hidden">
                 <table className="w-full">
                   <thead>
                     <tr className="border-b border-[#1e1e2e]">
-                      {['User', 'Purpose', 'Amount', 'Status', 'Date'].map(h => (
+                      {['User', 'Purpose', 'Amount', 'Provider', 'Status', 'Date'].map(h => (
                         <th key={h} className="px-5 py-3.5 text-left text-[11px] font-bold text-[#3a3a55] uppercase tracking-wider">{h}</th>
                       ))}
                     </tr>
@@ -721,27 +730,42 @@ export default function AdminPage() {
                     {loading.payments ? (
                       [...Array(8)].map((_, i) => (
                         <tr key={i} className="border-b border-[#13131f]">
-                          {[...Array(5)].map((_, j) => <td key={j} className="px-5 py-4"><Sk h="h-4" w="w-24" /></td>)}
+                          {[...Array(6)].map((_, j) => <td key={j} className="px-5 py-4"><Sk h="h-4" w="w-24" /></td>)}
                         </tr>
                       ))
-                    ) : payments.map(p => (
-                      <tr key={p.id} className="border-b border-[#13131f] hover:bg-[#0a0a14] transition-colors">
-                        <td className="px-5 py-3.5">
-                          <div className="text-[13px] font-semibold text-white">{p.user.firstName} {p.user.lastName}</div>
-                          <div className="text-[11px] text-[#3a3a55]">{p.user.email}</div>
-                        </td>
-                        <td className="px-5 py-3.5">
-                          <span className="text-[12px] text-[#6b6b8a] capitalize">{p.purpose.replace('_', ' ')}</span>
-                        </td>
-                        <td className="px-5 py-3.5">
-                          <span className="font-syne font-bold text-[14px] text-white">₦{fmt(p.amount / 100)}</span>
-                        </td>
-                        <td className="px-5 py-3.5"><Badge text={p.status} /></td>
-                        <td className="px-5 py-3.5 text-[12px] text-[#4a4a65]">{fmtDate(p.createdAt)}</td>
-                      </tr>
-                    ))}
+                    ) : payments.map(p => {
+                      const isUsd       = p.currency === 'USD';
+                      const amountLabel = isUsd
+                        ? `$${(p.amount / 100).toFixed(2)}`
+                        : `₦${fmt(p.amount / 100)}`;
+                      const providerLabel = p.provider === 'paypal' ? 'PayPal' : 'Paystack';
+                      const providerColor = p.provider === 'paypal' ? '#003087' : '#5b4cf5';
+                      return (
+                        <tr key={p.id} className="border-b border-[#13131f] hover:bg-[#0a0a14] transition-colors">
+                          <td className="px-5 py-3.5">
+                            <div className="text-[13px] font-semibold text-white">{p.user.firstName} {p.user.lastName}</div>
+                            <div className="text-[11px] text-[#3a3a55]">{p.user.email}</div>
+                          </td>
+                          <td className="px-5 py-3.5">
+                            <span className="text-[12px] text-[#6b6b8a] capitalize">{p.purpose.replace('_', ' ')}</span>
+                          </td>
+                          <td className="px-5 py-3.5">
+                            <span className="font-syne font-bold text-[14px] text-white">{amountLabel}</span>
+                          </td>
+                          <td className="px-5 py-3.5">
+                            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[10.5px] font-bold"
+                              style={{ background: providerColor + '18', color: providerColor }}>
+                              <i className={`${p.provider === 'paypal' ? 'fab fa-paypal' : 'fas fa-credit-card'} text-[9px]`} />
+                              {providerLabel}
+                            </span>
+                          </td>
+                          <td className="px-5 py-3.5"><Badge text={p.status} /></td>
+                          <td className="px-5 py-3.5 text-[12px] text-[#4a4a65]">{fmtDate(p.createdAt)}</td>
+                        </tr>
+                      );
+                    })}
                     {!loading.payments && payments.length === 0 && (
-                      <tr><td colSpan={5} className="px-5 py-16 text-center text-[#3a3a55] text-sm">No payments found</td></tr>
+                      <tr><td colSpan={6} className="px-5 py-16 text-center text-[#3a3a55] text-sm">No payments found</td></tr>
                     )}
                   </tbody>
                 </table>

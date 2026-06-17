@@ -1,6 +1,6 @@
 const router = require('express').Router();
 const prisma  = require('../config/database');
-const { authenticate, requireRole } = require('../middleware/auth');
+const { authenticate, requireRole, invalidateBillingCache } = require('../middleware/auth');
 const { success, notFound, error, badRequest } = require('../utils/response');
 
 router.use(authenticate, requireRole('admin'));
@@ -237,6 +237,9 @@ router.put('/settings/billing', async (req, res) => {
       update: { value: String(enabled), updatedBy: req.user.id },
       create: { key: 'employer_billing_enabled', value: String(enabled), updatedBy: req.user.id },
     });
+    // Immediately invalidate the in-memory cache in requireEmployerAccess
+    // so the new setting takes effect on the very next employer API request.
+    invalidateBillingCache();
     return success(res, {
       employer_billing_enabled: setting.value === 'true',
     }, `Employer billing ${enabled ? 'enabled' : 'disabled'} successfully`);

@@ -192,6 +192,13 @@ router.post('/login', [
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) return unauthorized(res, 'Invalid credentials');
 
+    // Fire-and-forget: purge this user's expired refresh tokens so the table
+    // doesn't accumulate orphaned rows from sessions where the browser closed
+    // without a logout. Does not block the login response.
+    prisma.refreshToken.deleteMany({
+      where: { userId: user.id, expiresAt: { lt: new Date() } },
+    }).catch(() => {});
+
     await issueTokens(res, user);
     return success(res, { user: sanitizeUser(user) }, 'Login successful');
   } catch (err) {

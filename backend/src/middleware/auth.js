@@ -4,6 +4,25 @@ const { unauthorized, forbidden, error } = require('../utils/response');
 
 const IS_PROD = process.env.NODE_ENV === 'production';
 
+// ── Billing setting cache ──────────────────────────────────────────────────
+// Avoids a DB hit on every employer API request. TTL: 60 seconds.
+// Call invalidateBillingCache() in the PUT /admin/settings/billing handler
+// so the new value takes effect immediately after an admin toggle.
+let _billingCache   = null;
+let _billingCacheAt = 0;
+const BILLING_CACHE_TTL = 60 * 1000;
+
+async function getBillingEnabled() {
+  const now = Date.now();
+  if (_billingCache !== null && now - _billingCacheAt < BILLING_CACHE_TTL) return _billingCache;
+  const setting   = await prisma.systemSetting.findUnique({ where: { key: 'employer_billing_enabled' } });
+  _billingCache   = setting?.value === 'true';
+  _billingCacheAt = now;
+  return _billingCache;
+}
+
+function invalidateBillingCache() { _billingCache = null; _billingCacheAt = 0; }
+
 const authenticate = async (req, res, next) => {
   // Read from HttpOnly cookie first — this is the primary auth mechanism.
   // The Authorization Bearer fallback is retained for API clients (mobile apps, CLI tools)
@@ -12,9 +31,7 @@ const authenticate = async (req, res, next) => {
 
   if (!token) {
     const header = req.headers.authorization;
-    // In production, only accept Bearer tokens from explicit API clients (not browsers)
-    const isApiClient = req.headers['x-api-client'];
-    if (header && header.startsWith('Bearer ') && (!IS_PROD || isApiClient)) {
+    if (header && header.startsWith('Bearer ')) {
       token = header.split(' ')[1];
     }
   }
@@ -70,11 +87,8 @@ const requireEmployerAccess = async (req, res, next) => {
       return next();
     }
 
-    // ── 0. Check global billing toggle ────────────────────────────────────
-    const billingSetting = await prisma.systemSetting.findUnique({
-      where: { key: 'employer_billing_enabled' },
-    });
-    const billingEnabled = billingSetting?.value === 'true';
+    // ── 0. Check global billing toggle (cached, 60s TTL) ──────────────────
+    const billingEnabled = await getBillingEnabled();
 
     if (!billingEnabled) {
       req.employerAccess = { type: 'free', active: true };
@@ -125,14 +139,15 @@ const requireEmployerAccess = async (req, res, next) => {
   }
 };
 
+module.exports = { authenticate, requireRole, requireEmployerAccess, optionalAuthenticate, invalidateBillingCache };
+
 // optionalAuthenticate — sets req.user if a valid token is present, but never blocks the request
 async function optionalAuthenticate(req, _res, next) {
   try {
     let token = req.cookies?.sh_access;
     if (!token) {
       const header = req.headers.authorization;
-      const isApiClient = req.headers['x-api-client'];
-      if (header?.startsWith('Bearer ') && (!IS_PROD || isApiClient)) token = header.split(' ')[1];
+      if (header?.startsWith('Bearer ')) token = header.split(' ')[1];
     }
     if (!token) return next();
     const { verifyAccessToken } = require('../utils/jwt');
@@ -142,5 +157,3 @@ async function optionalAuthenticate(req, _res, next) {
   } catch { /* ignore */ }
   next();
 }
-
-module.exports = { authenticate, requireRole, requireEmployerAccess, optionalAuthenticate };
