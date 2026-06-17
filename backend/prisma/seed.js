@@ -93,24 +93,30 @@ async function main() {
   
   // Enroll student in first two courses
   console.log('📝 Enrolling student in courses...');
-  
+
   for (const course of allCourses.slice(0, 2)) {
     await prisma.enrollment.upsert({
-      where: { 
-        userId_courseId: { 
-          userId: student.id, 
-          courseId: course.id 
-        } 
+      where: {
+        userId_courseId_source: {
+          userId: student.id,
+          courseId: course.id,
+          source: 'local'
+        }
       },
-      update: {},
-      create: { 
-        userId: student.id, 
-        courseId: course.id, 
-        progress: course.title.includes('React') ? 65 : 30 
+      update: {
+        progress: course.title.includes('React') ? 65 : 30
       },
+      create: {
+        userId: student.id,
+        courseId: course.id,
+        source: 'local',
+        title: course.title,
+        category: course.category,
+        progress: course.title.includes('React') ? 65 : 30
+      }
     });
   }
-  
+
   console.log('✅ Student enrolled in courses');
 
   // Jobs
