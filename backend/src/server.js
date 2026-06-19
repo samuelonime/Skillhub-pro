@@ -130,6 +130,7 @@ app.use('/api/v1/resume',       require('./routes/resume'));
 app.use('/api/v1/skill-gap',    require('./routes/skillgap'));
 app.use('/api/v1/platforms',    require('./routes/platforms'));
 app.use('/api/v1/community',    require('./routes/community'));
+app.use('/api/v1/sso',          require('./routes/sso'));
 // ── AI Feature Routes (new) ────────────────────────────────────────────────
 app.use('/api/v1/career-oracle',    require('./routes/careerOracle'));
 app.use('/api/v1/skill-coach',      require('./routes/skillCoach'));

@@ -70,6 +70,7 @@ function normalize(course) {
   return {
     id: course.id,
     source: 'meritlives',
+    slug: course.slug,
     title: course.title,
     provider: 'Meritlives',
     category: course.category,
