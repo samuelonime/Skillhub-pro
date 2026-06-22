@@ -1,15 +1,29 @@
 // routes/resume.js — Resume upload + Portfolio visibility toggle
-// NEW ADDITIONS: POST /generate (AI resume), GET /ai (fetch AI resume)
 const router  = require('express').Router();
 const multer  = require('multer');
 const prisma  = require('../config/database');
-const Anthropic = require('@anthropic-ai/sdk');
 const { authenticate } = require('../middleware/auth');
 const { uploadRaw, deleteFile } = require('../utils/cloudinary');
 const { logActivity } = require('../utils/activityLogger');
 const { success, created, error, badRequest } = require('../utils/response');
 
-const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+// ── DeepSeek Configuration ──────────────────────────────────────────────────
+const OpenAI = require('openai');
+
+// Check if API key exists
+const DEEPSEEK_API_KEY = process.env.DEEPSEEK_API_KEY;
+if (!DEEPSEEK_API_KEY) {
+  console.warn('[Resume] ⚠️ DEEPSEEK_API_KEY is not set. AI resume generation will not work.');
+}
+
+const deepseek = new OpenAI({
+  apiKey: DEEPSEEK_API_KEY || 'missing-api-key',
+  baseURL: 'https://api.deepseek.com/v1',
+});
+
+function isDeepSeekConfigured() {
+  return !!DEEPSEEK_API_KEY;
+}
 
 // ── Multer config — memory storage, buffer goes straight to Cloudinary ─────────
 const upload = multer({
@@ -120,7 +134,7 @@ router.get('/visibility', authenticate, async (req, res) => {
   }
 });
 
-// ── NEW: GET /api/v1/resume/ai — fetch last AI-generated resume ───────────────
+// ── GET /api/v1/resume/ai — fetch last AI-generated resume ───────────────────
 router.get('/ai', authenticate, async (req, res) => {
   try {
     const aiResume = await prisma.aiResume.findUnique({ where: { userId: req.user.id } });
@@ -130,11 +144,14 @@ router.get('/ai', authenticate, async (req, res) => {
   }
 });
 
-// ── NEW: POST /api/v1/resume/generate — AI resume generation ─────────────────
-// Fetches all student progress data, sends to Claude, returns markdown resume.
-// Persists result in AiResume table (one per user, upsert).
+// ── POST /api/v1/resume/generate — AI resume generation using DeepSeek ──────
 router.post('/generate', authenticate, async (req, res) => {
   try {
+    // Check if DeepSeek is configured
+    if (!isDeepSeekConfigured()) {
+      return error(res, 'AI service not configured. Please set DEEPSEEK_API_KEY.');
+    }
+
     const userId = req.user.id;
 
     // Gather all available data for this student in parallel
@@ -226,17 +243,24 @@ Rules:
 - Format dates as "Month YYYY". Omit sections with no data.
 - Return ONLY the Markdown resume — no preamble, no explanation.`;
 
-    const aiResponse = await anthropic.messages.create({
-      model:      'claude-sonnet-4-6',
-      max_tokens: 2000,
-      system:     systemPrompt,
-      messages:   [{ role: 'user', content: `Here is the student's SkillHub Pro data:\n\n${JSON.stringify(dataPayload, null, 2)}` }],
+    const userPrompt = `Here is the student's SkillHub Pro data:\n\n${JSON.stringify(dataPayload, null, 2)}`;
+
+    // ── Call DeepSeek API ──────────────────────────────────────────────────
+    const aiResponse = await deepseek.chat.completions.create({
+      model: 'deepseek-chat',
+      messages: [
+        { role: 'system', content: systemPrompt },
+        { role: 'user', content: userPrompt },
+      ],
+      temperature: 0.7,
+      max_tokens: 4000,
     });
 
-    const resumeMarkdown = aiResponse.content
-      .filter(b => b.type === 'text')
-      .map(b => b.text)
-      .join('');
+    const resumeMarkdown = aiResponse.choices[0].message.content;
+
+    if (!resumeMarkdown) {
+      return error(res, 'AI failed to generate resume. Please try again.');
+    }
 
     const dataSummary = {
       completedCourses: completedCourses.length,
@@ -271,7 +295,11 @@ Rules:
       metadata: dataSummary,
     });
 
-    return success(res, { resume: resumeMarkdown, generatedAt: new Date() }, 'Resume generated');
+    return success(res, { 
+      resume: resumeMarkdown, 
+      generatedAt: new Date(),
+      dataSummary,
+    }, 'Resume generated successfully ✨');
   } catch (err) {
     console.error('AI resume generation error:', err);
     return error(res, 'Failed to generate resume. Please try again.');
