@@ -230,6 +230,8 @@ export default function CoursesClient() {
       setTimeout(() => setToast(''), 3000);
       return;
     }
+    // Extract the course slug from course.url if not directly on the object
+    // course.url looks like https://digitalskills.meritlives.com/courses/{slug}
     const slug = course.slug || course.url?.split('/courses/')?.[1]?.split('?')?.[0];
     if (!slug) {
       window.open(course.url, '_blank', 'noopener,noreferrer');
@@ -240,9 +242,11 @@ export default function CoursesClient() {
         method: 'POST',
         body: JSON.stringify({ courseSlug: slug }),
       });
-      if (res.success && res.url) {
-        window.open(res.url, '_blank', 'noopener,noreferrer');
+      // FIXED: Use res.data?.url instead of res.url
+      if (res.success && res.data?.url) {
+        window.open(res.data.url, '_blank', 'noopener,noreferrer');
       } else {
+        // Fallback: open course page directly (student may need to log in manually)
         window.open(course.url, '_blank', 'noopener,noreferrer');
       }
     } catch {
