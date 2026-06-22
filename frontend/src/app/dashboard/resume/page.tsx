@@ -153,11 +153,8 @@ function ResumeCard({
 
   return (
     <div className="rounded-2xl overflow-hidden" style={{ background: D.card, border: `1px solid ${D.border}` }}>
-      {/* Top banner */}
       <div className="h-1.5" style={{ background: `linear-gradient(90deg, ${D.accent}, ${D.green})` }} />
-
       <div className="p-6 flex items-center gap-5">
-        {/* File type icon */}
         <div className="w-16 h-16 rounded-2xl grid place-items-center flex-shrink-0 relative"
           style={{ background: `${extColor}15`, border: `1px solid ${extColor}30` }}>
           <i className="fas fa-file-lines text-[22px]" style={{ color: extColor }} />
@@ -166,8 +163,6 @@ function ResumeCard({
             {ext}
           </span>
         </div>
-
-        {/* Info */}
         <div className="flex-1 min-w-0">
           <p className="font-jakarta font-bold text-[15px] truncate mb-1" style={{ color: D.text }}>
             {resume.fileName}
@@ -182,8 +177,6 @@ function ResumeCard({
             </span>
           </div>
         </div>
-
-        {/* Actions */}
         <div className="flex items-center gap-2 flex-shrink-0 flex-wrap">
           <a href={resume.fileUrl} target="_blank" rel="noreferrer"
             className="flex items-center gap-2 px-4 py-2 rounded-xl text-[12.5px] font-semibold no-underline transition-all hover:opacity-80"
@@ -210,8 +203,6 @@ function ResumeCard({
             onChange={e => { const f = e.target.files?.[0]; if (f) onReplace(f); }} />
         </div>
       </div>
-
-      {/* Employer access note */}
       <div className="px-6 pb-5">
         <div className="flex items-center gap-2.5 p-3 rounded-xl text-[12px]"
           style={{ background: 'rgba(255,255,255,0.03)', border: `1px solid ${D.border}` }}>
@@ -262,8 +253,7 @@ function ResumeChecklist({ profile }: { profile: any }) {
               style={{ background: c.done ? `${D.green}20` : 'rgba(255,255,255,0.06)', color: c.done ? D.green : D.muted }}>
               <i className={`fas ${c.done ? 'fa-check' : c.icon}`} />
             </div>
-            <span className="text-[12.5px] flex-1" style={{ color: c.done ? D.text : D.muted,
-              textDecoration: c.done ? 'none' : 'none' }}>
+            <span className="text-[12.5px] flex-1" style={{ color: c.done ? D.text : D.muted }}>
               {c.label}
             </span>
             {!c.done && (
@@ -275,6 +265,61 @@ function ResumeChecklist({ profile }: { profile: any }) {
           </div>
         ))}
       </div>
+    </div>
+  );
+}
+
+/* ── AI Resume Section ──────────────────────────────────────────────────────── */
+interface AiResume {
+  id: string;
+  content: string;
+  dataSummary?: {
+    completedCourses: number;
+    skills: number;
+    projects: number;
+    certificates: number;
+  };
+  generatedAt: string;
+  updatedAt: string;
+}
+
+function renderMarkdown(md: string): string {
+  return md
+    .replace(/^## (.+)$/gm, '<h2 style="font-size:17px;font-weight:700;color:#e2e8f0;margin:20px 0 8px;border-bottom:2px solid rgba(255,255,255,0.08);padding-bottom:4px">$1</h2>')
+    .replace(/^### (.+)$/gm, '<h3 style="font-size:15px;font-weight:700;color:#cbd5e1;margin:14px 0 6px">$1</h3>')
+    .replace(/^# (.+)$/gm, '<h1 style="font-size:22px;font-weight:800;color:#f1f5f9;margin:0 0 4px">$1</h1>')
+    .replace(/\*\*(.+?)\*\*/g, '<strong style="color:#f1f5f9">$1</strong>')
+    .replace(/\*(.+?)\*/g, '<em style="color:#94a3b8">$1</em>')
+    .replace(/^\- (.+)$/gm, '<li style="margin:3px 0;color:#cbd5e1">$1</li>')
+    .replace(/(<li.*<\/li>)/gs, '<ul style="margin:6px 0;padding-left:20px">$1</ul>')
+    .replace(/\[(.+?)\]\((.+?)\)/g, '<a href="$2" target="_blank" style="color:#4F8EF7">$1</a>')
+    .replace(/^---$/gm, '<hr style="border:none;border-top:1px solid rgba(255,255,255,0.08);margin:12px 0">')
+    .replace(/\n\n/g, '<br><br>')
+    .replace(/\n/g, '<br>');
+}
+
+function DataSummaryBar({ summary }: { summary: AiResume['dataSummary'] }) {
+  if (!summary) return null;
+  const stats = [
+    { icon: '🎓', label: 'Courses', value: summary.completedCourses },
+    { icon: '✨', label: 'Skills', value: summary.skills },
+    { icon: '🚀', label: 'Projects', value: summary.projects },
+    { icon: '📜', label: 'Certs', value: summary.certificates },
+  ];
+  return (
+    <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', marginBottom: 16 }}>
+      {stats.map(s => (
+        <div key={s.label} style={{
+          background: 'rgba(255,255,255,0.05)', borderRadius: 10, padding: '8px 16px',
+          display: 'flex', alignItems: 'center', gap: 6, border: '1px solid rgba(255,255,255,0.07)',
+        }}>
+          <span style={{ fontSize: 18 }}>{s.icon}</span>
+          <div>
+            <div style={{ fontSize: 18, fontWeight: 800, color: '#f1f5f9', lineHeight: 1 }}>{s.value}</div>
+            <div style={{ fontSize: 11, color: '#94a3b8', fontWeight: 500 }}>{s.label}</div>
+          </div>
+        </div>
+      ))}
     </div>
   );
 }
@@ -291,6 +336,13 @@ export default function ResumePage() {
   const [visibility, setVisibility] = useState(true);
   const [togglingVis, setTogglingVis] = useState(false);
 
+  // AI Resume state
+  const [aiResume, setAiResume] = useState<AiResume | null>(null);
+  const [generating, setGenerating] = useState(false);
+  const [genError, setGenError] = useState('');
+  const [copied, setCopied] = useState(false);
+  const [aiTab, setAiTab] = useState<'view' | 'preview'>('view');
+
   const showToast = useCallback((msg: string, type: 'ok' | 'err' = 'ok') => {
     setToast(msg);
     setToastType(type);
@@ -302,10 +354,11 @@ export default function ResumePage() {
       apiFetch('/resume'),
       apiFetch('/resume/visibility'),
       apiFetch('/dashboard'),
-    ]).then(([r, v, dash]) => {
+      apiFetch('/resume/ai'),
+    ]).then(([r, v, dash, ai]) => {
       setResume(r.data || null);
       setVisibility(v.data?.portfolioPublic ?? true);
-      // Build profile object for checklist
+      if (ai.success && ai.data) setAiResume(ai.data);
       if (dash.success && dash.data) {
         const u = dash.data.user || dash.data;
         setProfile({
@@ -394,6 +447,62 @@ export default function ResumePage() {
     }
   }
 
+  /* ── Generate AI Resume ───────────────────────────────────────── */
+  async function generateAIResume() {
+    setGenerating(true);
+    setGenError('');
+    try {
+      const r = await fetch('/api/v1/resume/generate', {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+      });
+      const data = await r.json();
+      if (data.success) {
+        const ai = await apiFetch('/resume/ai');
+        if (ai.success && ai.data) setAiResume(ai.data);
+        showToast('AI resume generated successfully! ✨');
+      } else {
+        setGenError(data.message || 'Generation failed. Please try again.');
+      }
+    } catch {
+      setGenError('Network error. Please try again.');
+    } finally {
+      setGenerating(false);
+    }
+  }
+
+  function copyToClipboard() {
+    if (!aiResume) return;
+    navigator.clipboard.writeText(aiResume.content);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  }
+
+  function downloadMarkdown() {
+    if (!aiResume) return;
+    const blob = new Blob([aiResume.content], { type: 'text/markdown' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'ai-resume.md';
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
+  function downloadTxt() {
+    if (!aiResume) return;
+    const txt = aiResume.content
+      .replace(/[#*_`]/g, '').replace(/\[(.+?)\]\(.+?\)/g, '$1').replace(/\n{3,}/g, '\n\n');
+    const blob = new Blob([txt], { type: 'text/plain' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'ai-resume.txt';
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
   /* ── Render ───────────────────────────────────────────────────── */
   return (
     <SidebarLayout navItems={navItems} pageTitle="Resume">
@@ -409,7 +518,6 @@ export default function ResumePage() {
               Upload, manage, and share your professional resume with employers.
             </p>
           </div>
-          {/* Visibility toggle */}
           <div className="flex items-center gap-3 px-4 py-3 rounded-2xl"
             style={{ background: D.card, border: `1px solid ${D.border}` }}>
             <div className="text-right">
@@ -426,6 +534,90 @@ export default function ResumePage() {
               <div className="absolute top-0.5 w-5 h-5 bg-white rounded-full shadow transition-all"
                 style={{ left: visibility ? '22px' : '2px' }} />
             </button>
+          </div>
+        </div>
+
+        {/* ── AI Resume Section ──────────────────────────────────── */}
+        <div className="rounded-2xl overflow-hidden" style={{ background: D.card, border: `1px solid ${D.border}` }}>
+          <div className="h-1" style={{ background: `linear-gradient(90deg, #8B5CF6, ${D.accent})` }} />
+          <div className="p-6">
+            <div className="flex items-start justify-between gap-4 flex-wrap mb-4">
+              <div>
+                <h2 className="font-jakarta font-bold text-[16px] text-white flex items-center gap-2">
+                  <span style={{ color: '#8B5CF6' }}>🤖</span> AI-Powered Resume
+                </h2>
+                <p className="text-[12px]" style={{ color: D.subtext }}>
+                  Generate a professional resume from your SkillHub progress, skills, and certificates.
+                </p>
+              </div>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={generateAIResume}
+                  disabled={generating}
+                  className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-[13px] font-semibold border-0 cursor-pointer transition-all disabled:opacity-50"
+                  style={{ background: 'linear-gradient(135deg, #8B5CF6, #6366F1)', color: '#fff' }}>
+                  {generating ? (
+                    <><i className="fas fa-spinner fa-spin" /> Generating…</>
+                  ) : (
+                    <><i className="fas fa-wand-magic-sparkles" /> {aiResume ? 'Regenerate' : 'Generate'}</>
+                  )}
+                </button>
+                {aiResume && (
+                  <>
+                    <button onClick={copyToClipboard}
+                      className="flex items-center gap-2 px-3.5 py-2.5 rounded-xl text-[12px] font-semibold border-0 cursor-pointer transition-all hover:opacity-80"
+                      style={{ background: 'rgba(255,255,255,0.06)', color: D.text, border: `1px solid ${D.border}` }}>
+                      <i className={`fas ${copied ? 'fa-check' : 'fa-copy'}`} /> {copied ? 'Copied' : 'Copy'}
+                    </button>
+                    <button onClick={downloadMarkdown}
+                      className="flex items-center gap-2 px-3.5 py-2.5 rounded-xl text-[12px] font-semibold border-0 cursor-pointer transition-all hover:opacity-80"
+                      style={{ background: 'rgba(255,255,255,0.06)', color: D.text, border: `1px solid ${D.border}` }}>
+                      <i className="fas fa-download" /> .md
+                    </button>
+                    <button onClick={downloadTxt}
+                      className="flex items-center gap-2 px-3.5 py-2.5 rounded-xl text-[12px] font-semibold border-0 cursor-pointer transition-all hover:opacity-80"
+                      style={{ background: 'rgba(255,255,255,0.06)', color: D.text, border: `1px solid ${D.border}` }}>
+                      <i className="fas fa-file-lines" /> .txt
+                    </button>
+                  </>
+                )}
+              </div>
+            </div>
+
+            {genError && (
+              <div className="rounded-xl p-3 text-[13px] mb-4"
+                style={{ background: `${D.red}15`, border: `1px solid ${D.red}30`, color: D.red }}>
+                ⚠️ {genError}
+              </div>
+            )}
+
+            {generating ? (
+              <div className="py-16 text-center">
+                <div className="text-5xl mb-4 animate-pulse">🤖</div>
+                <p className="font-semibold text-[15px]" style={{ color: '#8B5CF6' }}>AI is building your resume…</p>
+                <p className="text-[13px] mt-1" style={{ color: D.subtext }}>Reading your courses, skills, projects and certificates…</p>
+              </div>
+            ) : aiResume ? (
+              <div>
+                <DataSummaryBar summary={aiResume.dataSummary} />
+                <div className="rounded-xl p-6 max-h-[600px] overflow-y-auto"
+                  style={{ background: 'rgba(255,255,255,0.03)', border: `1px solid ${D.border}` }}>
+                  <div style={{ fontFamily: '"Georgia", serif', lineHeight: 1.7, color: '#e2e8f0' }}
+                    dangerouslySetInnerHTML={{ __html: renderMarkdown(aiResume.content) }} />
+                </div>
+                <div className="mt-3 text-[11px]" style={{ color: D.muted }}>
+                  Last generated: {new Date(aiResume.generatedAt).toLocaleString()}
+                </div>
+              </div>
+            ) : (
+              <div className="py-12 text-center">
+                <div className="text-5xl mb-4">📄</div>
+                <p className="font-semibold text-[15px]" style={{ color: D.text }}>No AI resume yet</p>
+                <p className="text-[13px]" style={{ color: D.subtext }}>
+                  Click "Generate" to let AI build your professional resume from your SkillHub progress.
+                </p>
+              </div>
+            )}
           </div>
         </div>
 

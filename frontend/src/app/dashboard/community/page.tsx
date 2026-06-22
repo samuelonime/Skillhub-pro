@@ -6,24 +6,25 @@ import { SidebarLayout } from '@/components/layout/SidebarLayout';
 import { apiFetch, getCachedUser } from '@/lib/api';
 
 const navItems = [
-  { href: '/dashboard',              icon: 'fa-home',                 label: 'Dashboard' },
-  { href: '/dashboard/courses',      icon: 'fa-book-open',            label: 'Courses' },
-  { href: '/dashboard/career-oracle',   icon: 'fa-brain',             label: 'Career Oracle' },
-  { href: '/dashboard/skill-coach',     icon: 'fa-heart-pulse',       label: 'Skill Coach' },
-  { href: '/dashboard/peer-genome',     icon: 'fa-users',             label: 'Peer Genome' },
-  { href: '/dashboard/skill-decay',     icon: 'fa-chart-line',        label: 'Skill Decay' },
-  { href: '/dashboard/ghost-recruiter', icon: 'fa-wand-magic-sparkles', label: 'Ghost Recruiter' },
-  { href: '/dashboard/community',    icon: 'fa-users',                label: 'Community' },
-  { href: '/dashboard/portfolio',    icon: 'fa-layer-group',          label: 'Portfolio' },
-  { href: '/dashboard/resume',        icon: 'fa-file-lines',           label: 'Resume' },
-  { href: '/dashboard/platforms',    icon: 'fa-graduation-cap',       label: 'Learning Platforms' },
-  { href: '/dashboard/jobs',         icon: 'fa-briefcase',            label: 'Jobs' },
-  { href: '/dashboard/certificates', icon: 'fa-certificate',          label: 'Certificates' },
-  { href: '/dashboard/rewards',      icon: 'fa-coins',                label: 'Rewards' },
-  { href: '/dashboard/settings',     icon: 'fa-gear',                 label: 'Settings' },
+  { href: '/dashboard',                 icon: 'fa-home',                  label: 'Dashboard' },
+  { href: '/dashboard/courses',         icon: 'fa-book-open',             label: 'Courses' },
+  { href: '/dashboard/career-oracle',   icon: 'fa-brain',                 label: 'Career Oracle' },
+  { href: '/dashboard/skill-coach',     icon: 'fa-heart-pulse',           label: 'Skill Coach' },
+  { href: '/dashboard/peer-genome',     icon: 'fa-users',                 label: 'Peer Genome' },
+  { href: '/dashboard/skill-decay',     icon: 'fa-chart-line',            label: 'Skill Decay' },
+  { href: '/dashboard/ghost-recruiter', icon: 'fa-wand-magic-sparkles',   label: 'Ghost Recruiter' },
+  { href: '/dashboard/community',       icon: 'fa-users',                 label: 'Community' },
+  { href: '/dashboard/portfolio',       icon: 'fa-layer-group',           label: 'Portfolio' },
+  { href: '/dashboard/resume',          icon: 'fa-file-lines',            label: 'Resume' },
+  { href: '/dashboard/platforms',       icon: 'fa-graduation-cap',        label: 'Learning Platforms' },
+  { href: '/dashboard/jobs',            icon: 'fa-briefcase',             label: 'Jobs' },
+  { href: '/dashboard/job-scout',       icon: 'fa-magnifying-glass',      label: 'Job Scout' },
+  { href: '/dashboard/certificates',    icon: 'fa-certificate',           label: 'Certificates' },
+  { href: '/dashboard/rewards',         icon: 'fa-coins',                 label: 'Rewards' },
+  { href: '/dashboard/settings',        icon: 'fa-gear',                  label: 'Settings' },
 ];
 
-/* ── Design tokens (match dashboard) ─────────────────────────────────────── */
+/* ── Design tokens ─────────────────────────────────────────────────────────── */
 const D = {
   card:    '#0F1521',
   border:  'rgba(255,255,255,0.07)',
@@ -54,6 +55,25 @@ const TYPE_META: Record<string, { color: string; icon: string }> = {
   resource:   { color: '#38BDF8', icon: 'fa-link'            },
   question:   { color: D.amber,   icon: 'fa-question-circle' },
   showcase:   { color: D.red,     icon: 'fa-star'            },
+};
+
+// ── Activity type display metadata ─────────────────────────────────────────
+const ACTIVITY_META: Record<string, { icon: string; color: string; label: string }> = {
+  course_enrolled:          { icon: '📚', color: D.accent,  label: 'Enrolled in a course' },
+  course_completed:         { icon: '🎓', color: D.green,   label: 'Completed a course' },
+  course_progress:          { icon: '⚡', color: D.amber,   label: 'Course milestone' },
+  digital_skills_enrolled:  { icon: '🌐', color: D.purple,  label: 'Joined Digital Skills' },
+  digital_skills_completed: { icon: '🏅', color: D.green,   label: 'Completed Digital Skills' },
+  badge_earned:             { icon: '🏆', color: D.amber,   label: 'Earned a badge' },
+  certificate_added:        { icon: '📜', color: '#38BDF8', label: 'Added a certificate' },
+  project_added:            { icon: '🚀', color: '#F472B6', label: 'Published a project' },
+  job_applied:              { icon: '💼', color: D.green,   label: 'Applied to a job' },
+  job_saved:                { icon: '🔖', color: D.muted,   label: 'Saved a job' },
+  skill_added:              { icon: '✨', color: D.purple,  label: 'Added a new skill' },
+  community_post:           { icon: '💬', color: D.amber,   label: 'Shared in Community' },
+  resume_generated:         { icon: '📄', color: '#38BDF8', label: 'Generated AI resume' },
+  profile_completed:        { icon: '👤', color: D.accent,  label: 'Completed profile' },
+  streak_milestone:         { icon: '🔥', color: D.red,     label: 'Learning streak' },
 };
 
 function timeAgo(d: string) {
@@ -89,25 +109,7 @@ function Card({ children, className = '' }: { children: React.ReactNode; classNa
   );
 }
 
-function DarkInput({ value, onChange, placeholder, className = '' }: any) {
-  return (
-    <input
-      value={value}
-      onChange={onChange}
-      placeholder={placeholder}
-      className={`w-full px-3.5 py-2.5 rounded-xl text-[13.5px] font-[inherit] outline-none transition-all ${className}`}
-      style={{
-        background: D.input,
-        border: `1px solid ${D.border}`,
-        color: D.text,
-      }}
-      onFocus={e => (e.target.style.borderColor = D.accent)}
-      onBlur={e => (e.target.style.borderColor = D.border)}
-    />
-  );
-}
-
-/* ── Media preview ───────────────────────────────────────────────────────── */
+/* ── Media helpers ───────────────────────────────────────────────────────── */
 function detectMediaType(url: string) {
   if (!url) return 'image';
   const lower = url.toLowerCase();
@@ -157,6 +159,151 @@ function StatsBar({ stats }: { stats: any }) {
   );
 }
 
+/* ═══════════════════════════════════════════════════════════════════════════
+   NEW: Activity Feed Component
+   ═══════════════════════════════════════════════════════════════════════════ */
+const ACTIVITY_FILTERS = [
+  { value: '',                       label: '🌐 All' },
+  { value: 'course_enrolled',        label: '📚 Enrollments' },
+  { value: 'course_completed',       label: '🎓 Completions' },
+  { value: 'digital_skills_enrolled',label: '🌐 Digital Skills' },
+  { value: 'certificate_added',      label: '📜 Certificates' },
+  { value: 'project_added',          label: '🚀 Projects' },
+  { value: 'job_applied',            label: '💼 Jobs' },
+  { value: 'badge_earned',           label: '🏆 Badges' },
+  { value: 'community_post',         label: '💬 Posts' },
+  { value: 'resume_generated',       label: '📄 Resumes' },
+  { value: 'skill_added',            label: '✨ Skills' },
+];
+
+function ActivityFeed() {
+  const [items, setItems]     = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [page, setPage]       = useState(1);
+  const [hasMore, setHasMore] = useState(true);
+  const [filter, setFilter]   = useState('');
+  const loaderRef             = useRef<HTMLDivElement>(null);
+
+  const fetchFeed = useCallback(async (p: number, f: string) => {
+    try {
+      const params = new URLSearchParams({ page: String(p), ...(f && { type: f }) });
+      const res = await apiFetch(`/community/activity-feed?${params}`);
+      if (res.success) {
+        setItems(prev => p === 1 ? res.data.activities : [...prev, ...res.data.activities]);
+        setHasMore(p < res.data.pages);
+      }
+    } catch { /* ignore */ }
+    finally { setLoading(false); }
+  }, []);
+
+  useEffect(() => { setPage(1); setItems([]); setLoading(true); fetchFeed(1, filter); }, [filter, fetchFeed]);
+  useEffect(() => { if (page > 1) fetchFeed(page, filter); }, [page, fetchFeed, filter]);
+
+  // Infinite scroll
+  useEffect(() => {
+    const obs = new IntersectionObserver(entries => {
+      if (entries[0].isIntersecting && hasMore && !loading) setPage(p => p + 1);
+    }, { threshold: 0.1 });
+    if (loaderRef.current) obs.observe(loaderRef.current);
+    return () => obs.disconnect();
+  }, [hasMore, loading]);
+
+  return (
+    <div>
+      {/* Filter chips */}
+      <div className="flex flex-wrap gap-2 mb-5">
+        {ACTIVITY_FILTERS.map(f => (
+          <button key={f.value} onClick={() => setFilter(f.value)}
+            className="text-[12px] font-semibold px-3.5 py-1.5 rounded-full cursor-pointer transition-all border-0"
+            style={{
+              background: filter === f.value ? D.accent : D.input,
+              color:      filter === f.value ? '#fff'   : D.muted,
+            }}>
+            {f.label}
+          </button>
+        ))}
+      </div>
+
+      {loading && items.length === 0 && (
+        <div className="grid gap-3">
+          {[1,2,3,4].map(i => (
+            <div key={i} className="rounded-2xl p-4" style={{ background: D.card, border: `1px solid ${D.border}` }}>
+              <div className="flex items-center gap-3 mb-3">
+                <Skeleton h="h-10" w="w-10" /><div className="flex-1"><Skeleton h="h-3" w="w-1/3" /><div className="mt-1.5"><Skeleton h="h-2.5" w="w-1/5" /></div></div>
+              </div>
+              <Skeleton h="h-4" w="w-3/4" />
+            </div>
+          ))}
+        </div>
+      )}
+
+      {!loading && items.length === 0 && (
+        <div className="rounded-2xl p-14 text-center" style={{ background: D.card, border: `1px solid ${D.border}` }}>
+          <div className="text-5xl mb-4">🌱</div>
+          <h3 className="font-jakarta font-bold text-[16px] text-white mb-2">No activity yet</h3>
+          <p className="text-[13px]" style={{ color: D.subtext }}>
+            Start learning to see your progress appear here for the whole community!
+          </p>
+        </div>
+      )}
+
+      <div className="grid gap-3">
+        {items.map(item => {
+          const meta = ACTIVITY_META[item.type] || { icon: '📌', color: D.muted, label: item.type };
+          return (
+            <div key={item.id} className="rounded-2xl p-4 hover:-translate-y-0.5 transition-all duration-200"
+              style={{ background: D.card, border: `1px solid ${D.border}` }}>
+              <div className="flex gap-3 items-start">
+                {/* Activity icon bubble */}
+                <div className="w-10 h-10 rounded-xl flex-shrink-0 grid place-items-center text-lg"
+                  style={{ background: meta.color + '18', border: `1px solid ${meta.color}30` }}>
+                  {meta.icon}
+                </div>
+                <div className="flex-1 min-w-0">
+                  {/* User row */}
+                  <div className="flex items-center gap-2 mb-1 flex-wrap">
+                    <Avatar user={item.user} size={6} />
+                    <span className="font-semibold text-[13px] text-white">
+                      {item.user.firstName} {item.user.lastName}
+                    </span>
+                    {item.user.interestNiche && (
+                      <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full"
+                        style={{ background: D.accent + '18', color: D.accent }}>
+                        {item.user.interestNiche}
+                      </span>
+                    )}
+                    <span className="ml-auto text-[11px]" style={{ color: D.muted }}>{timeAgo(item.createdAt)}</span>
+                  </div>
+                  {/* Title */}
+                  <p className="text-[13.5px] font-semibold mb-1" style={{ color: D.text }}>{item.title}</p>
+                  {/* Body excerpt */}
+                  {item.body && (
+                    <p className="text-[12px] mb-1.5" style={{ color: D.subtext }}>
+                      {item.body.slice(0, 120)}{item.body.length > 120 ? '…' : ''}
+                    </p>
+                  )}
+                  {/* Type badge */}
+                  <span className="inline-block text-[10.5px] font-semibold px-2.5 py-0.5 rounded-full"
+                    style={{ background: meta.color + '15', color: meta.color }}>
+                    {meta.label}
+                  </span>
+                </div>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      <div ref={loaderRef} className="h-10 flex items-center justify-center">
+        {!hasMore && items.length > 0 && (
+          <span className="text-[12px]" style={{ color: D.muted }}>You're all caught up 🎉</span>
+        )}
+      </div>
+    </div>
+  );
+}
+/* ═══════════════════════════════════════════════════════════════════════════ */
+
 /* ── Post card ───────────────────────────────────────────────────────────── */
 function PostCard({ post, onLike, onMessage, onEdit, onDelete, currentUserId }: {
   post: any; onLike: (id: string) => void; onMessage: (user: any) => void;
@@ -198,19 +345,18 @@ function PostCard({ post, onLike, onMessage, onEdit, onDelete, currentUserId }: 
           <span className="text-[10.5px] font-semibold px-2.5 py-1 rounded-full" style={{ background: tm.color + '18', color: tm.color, border: `1px solid ${tm.color}30` }}>
             <i className={`fas ${tm.icon} mr-1`} />{post.type.charAt(0).toUpperCase() + post.type.slice(1)}
           </span>
-          {post.isPinned && <span className="text-[10px] font-bold px-2 py-0.5 rounded-full" style={{ background: D.amber + '20', color: D.amber }}>📌 Pinned</span>}
-          <button onClick={() => onMessage(post.author)}
-            className="w-7 h-7 rounded-lg border-0 cursor-pointer grid place-items-center text-[11px] transition-all hover:opacity-80"
-            style={{ background: D.accent + '18', color: D.accent }}><i className="fas fa-paper-plane" /></button>
+          {post.isPinned && <span className="text-base">📌</span>}
           {isOwner && (
             <div className="relative">
               <button onClick={() => setShowActions(v => !v)}
-                className="w-7 h-7 rounded-lg border-0 cursor-pointer grid place-items-center text-[11px] transition-all"
-                style={{ background: D.input, color: D.muted }}><i className="fas fa-ellipsis-v" /></button>
+                className="w-7 h-7 rounded-lg border-0 cursor-pointer grid place-items-center transition-all hover:opacity-80"
+                style={{ background: D.input, color: D.muted }}>
+                <i className="fas fa-ellipsis-h text-[11px]" />
+              </button>
               {showActions && (
                 <>
                   <div className="fixed inset-0 z-[100]" onClick={() => setShowActions(false)} />
-                  <div className="absolute right-0 top-full mt-1 z-[101] rounded-xl overflow-hidden w-[140px] shadow-2xl"
+                  <div className="absolute right-0 top-full mt-1.5 z-[101] rounded-2xl overflow-hidden w-[150px] shadow-2xl"
                     style={{ background: '#0D1525', border: `1px solid ${D.border}` }}>
                     <button onClick={() => { setShowActions(false); onEdit(post); }}
                       className="w-full flex items-center gap-2.5 px-3.5 py-2.5 text-[13px] font-medium border-0 bg-transparent cursor-pointer text-left transition-all hover:opacity-80"
@@ -264,7 +410,7 @@ function PostCard({ post, onLike, onMessage, onEdit, onDelete, currentUserId }: 
       <div className="flex items-center justify-between mt-3.5 pt-3.5" style={{ borderTop: `1px solid ${D.border}` }}>
         <div className="flex items-center gap-2">
           <button onClick={() => onLike(post.id)}
-            className={`flex items-center gap-2 px-3.5 py-2 rounded-xl font-semibold text-[13px] border-0 cursor-pointer transition-all select-none`}
+            className="flex items-center gap-2 px-3.5 py-2 rounded-xl font-semibold text-[13px] border-0 cursor-pointer transition-all select-none"
             style={{
               background: post.likedByMe ? D.red + '20' : D.input,
               color: post.likedByMe ? D.red : D.muted,
@@ -289,7 +435,6 @@ function PostCard({ post, onLike, onMessage, onEdit, onDelete, currentUserId }: 
 
         <div className="flex items-center gap-2">
           <span className="text-[11px]" style={{ color: D.muted }}>{timeAgo(post.createdAt)}</span>
-
           <div className="relative">
             <button onClick={() => setShowShareMenu(v => !v)}
               className="flex items-center gap-1.5 px-3 py-2 rounded-xl font-semibold text-[12.5px] border-0 cursor-pointer transition-all"
@@ -306,10 +451,10 @@ function PostCard({ post, onLike, onMessage, onEdit, onDelete, currentUserId }: 
                     <p className="text-[11px] font-semibold uppercase tracking-wide" style={{ color: D.muted }}>Share via</p>
                   </div>
                   {[
-                    { icon: 'fa-link',                    label: 'Copy link',   action: 'copy',      color: D.accent  },
-                    { icon: 'fa-brands fa-x-twitter',     label: 'X / Twitter', action: 'twitter',   color: '#E2E8F0' },
-                    { icon: 'fa-brands fa-linkedin',      label: 'LinkedIn',    action: 'linkedin',  color: '#38BDF8' },
-                    { icon: 'fa-brands fa-whatsapp',      label: 'WhatsApp',    action: 'whatsapp',  color: D.green   },
+                    { icon: 'fa-link',               label: 'Copy link',   action: 'copy',      color: D.accent  },
+                    { icon: 'fa-brands fa-x-twitter', label: 'X / Twitter', action: 'twitter',   color: '#E2E8F0' },
+                    { icon: 'fa-brands fa-linkedin',  label: 'LinkedIn',    action: 'linkedin',  color: '#38BDF8' },
+                    { icon: 'fa-brands fa-whatsapp',  label: 'WhatsApp',    action: 'whatsapp',  color: D.green   },
                   ].map(item => (
                     <button key={item.action} onClick={() => handleShare(item.action)}
                       className="w-full flex items-center gap-3 px-3.5 py-2.5 text-[13px] font-medium border-0 bg-transparent cursor-pointer text-left transition-all hover:opacity-80"
@@ -350,7 +495,7 @@ function EditPostModal({ post, onClose, onUpdated }: { post: any; onClose: () =>
         style={{ background: '#0D1525', border: `1px solid ${D.border}` }} onClick={e => e.stopPropagation()}>
         <div className="flex items-center justify-between mb-5">
           <h2 className="font-jakarta font-bold text-[17px] text-white">Edit Post</h2>
-          <button onClick={onClose} className="w-8 h-8 rounded-xl border-0 cursor-pointer grid place-items-center transition-all hover:opacity-80"
+          <button onClick={onClose} className="w-8 h-8 rounded-xl border-0 cursor-pointer grid place-items-center"
             style={{ background: D.input, color: D.muted }}><i className="fas fa-times text-sm" /></button>
         </div>
         {err && <div className="rounded-xl px-4 py-2.5 mb-4 text-[13px]" style={{ background: D.red + '20', color: D.red }}>{err}</div>}
@@ -372,10 +517,10 @@ function EditPostModal({ post, onClose, onUpdated }: { post: any; onClose: () =>
           </div>
         ))}
         <div className="flex gap-3 mt-5">
-          <button onClick={onClose} className="flex-1 py-3 rounded-xl text-[13.5px] font-semibold font-[inherit] cursor-pointer transition-all hover:opacity-80"
+          <button onClick={onClose} className="flex-1 py-3 rounded-xl text-[13.5px] font-semibold font-[inherit] cursor-pointer"
             style={{ border: `1px solid ${D.border}`, color: D.muted, background: 'transparent' }}>Cancel</button>
           <button onClick={submit} disabled={saving}
-            className="flex-1 py-3 rounded-xl text-[13.5px] font-semibold font-[inherit] cursor-pointer transition-all disabled:opacity-60 text-white"
+            className="flex-1 py-3 rounded-xl text-[13.5px] font-semibold font-[inherit] cursor-pointer disabled:opacity-60 text-white"
             style={{ background: D.accent }}>
             {saving ? 'Saving…' : 'Save changes'}
           </button>
@@ -388,18 +533,18 @@ function EditPostModal({ post, onClose, onUpdated }: { post: any; onClose: () =>
 /* ── New Post Modal ──────────────────────────────────────────────────────── */
 function NewPostModal({ onClose, onCreated }: { onClose: () => void; onCreated: (p: any) => void }) {
   const [form, setForm] = useState({ title: '', body: '', type: 'discussion', tags: '', projectUrl: '', imageUrl: '' });
-  const [saving, setSaving]   = useState(false);
+  const [saving, setSaving]       = useState(false);
   const [uploading, setUploading] = useState(false);
-  const [err, setErr]         = useState('');
+  const [err, setErr]             = useState('');
   const [mediaPreview, setMediaPreview] = useState<{ url: string; type: string } | null>(null);
-  const [mediaTab, setMediaTab] = useState<'url' | 'upload'>('url');
-  const [mediaUrl, setMediaUrl] = useState('');
+  const [mediaTab, setMediaTab]   = useState<'url' | 'upload'>('url');
+  const [mediaUrl, setMediaUrl]   = useState('');
   const fileRef = useRef<HTMLInputElement>(null);
 
   function handleMediaUrl() {
     if (!mediaUrl.trim()) return;
-    const isGif   = mediaUrl.toLowerCase().includes('.gif') || mediaUrl.includes('giphy');
-    const isVideo  = /\.(mp4|webm|mov)/.test(mediaUrl.toLowerCase());
+    const isGif  = mediaUrl.toLowerCase().includes('.gif') || mediaUrl.includes('giphy');
+    const isVideo = /\.(mp4|webm|mov)/.test(mediaUrl.toLowerCase());
     setMediaPreview({ url: mediaUrl, type: isGif ? 'gif' : isVideo ? 'video' : 'image' });
     setForm(f => ({ ...f, imageUrl: mediaUrl }));
   }
@@ -470,9 +615,9 @@ function NewPostModal({ onClose, onCreated }: { onClose: () => void; onCreated: 
         </div>
 
         {[
-          { label: 'Title', key: 'title', type: 'input', placeholder: "What's on your mind?" },
-          { label: 'Content', key: 'body', type: 'textarea', placeholder: 'Share your ideas, projects, or questions...' },
-          { label: 'Tags (comma-separated)', key: 'tags', type: 'input', placeholder: 'react, typescript, career' },
+          { label: 'Title',                    key: 'title', type: 'input',    placeholder: "What's on your mind?" },
+          { label: 'Content',                  key: 'body',  type: 'textarea', placeholder: 'Share your ideas, projects, or questions...' },
+          { label: 'Tags (comma-separated)',    key: 'tags',  type: 'input',    placeholder: 'react, typescript, career' },
         ].map(({ label, key, type, placeholder }) => (
           <div key={key} className="mb-3.5">
             <label className="block text-[12px] font-semibold mb-1.5 uppercase tracking-wide" style={{ color: D.muted }}>{label}</label>
@@ -525,13 +670,13 @@ function NewPostModal({ onClose, onCreated }: { onClose: () => void; onCreated: 
                   <input value={mediaUrl} onChange={e => setMediaUrl(e.target.value)} placeholder="Paste image or GIF URL..."
                     onKeyDown={e => e.key === 'Enter' && handleMediaUrl()}
                     className="flex-1 px-3 py-2 rounded-lg text-[12.5px] font-[inherit] outline-none" style={fieldStyle} />
-                  <button onClick={handleMediaUrl} className="px-3 py-2 rounded-lg border-0 cursor-pointer text-[12px] font-semibold text-white transition-all hover:opacity-80"
+                  <button onClick={handleMediaUrl} className="px-3 py-2 rounded-lg border-0 cursor-pointer text-[12px] font-semibold text-white"
                     style={{ background: D.accent }}>Add</button>
                 </div>
               ) : (
                 <div>
                   <input ref={fileRef} type="file" accept="image/*,video/mp4,video/webm" onChange={handleFileUpload} className="hidden" id="media-upload" />
-                  <label htmlFor="media-upload" className="flex flex-col items-center justify-center gap-2 py-5 cursor-pointer rounded-lg transition-all hover:opacity-80"
+                  <label htmlFor="media-upload" className="flex flex-col items-center justify-center gap-2 py-5 cursor-pointer rounded-lg"
                     style={{ border: `1px solid ${D.border}`, background: D.card }}>
                     <div className="w-10 h-10 rounded-xl grid place-items-center text-lg" style={{ background: D.accent + '18', color: D.accent }}>
                       <i className="fas fa-cloud-upload-alt" />
@@ -548,10 +693,10 @@ function NewPostModal({ onClose, onCreated }: { onClose: () => void; onCreated: 
         </div>
 
         <div className="flex gap-2.5 mt-5">
-          <button onClick={onClose} className="flex-1 py-2.5 rounded-xl text-[13px] font-semibold font-[inherit] cursor-pointer transition-all hover:opacity-80"
+          <button onClick={onClose} className="flex-1 py-2.5 rounded-xl text-[13px] font-semibold font-[inherit] cursor-pointer"
             style={{ border: `1px solid ${D.border}`, color: D.muted, background: 'transparent' }}>Cancel</button>
           <button onClick={submit} disabled={saving || uploading}
-            className="flex-1 py-2.5 rounded-xl text-[13px] font-semibold border-0 cursor-pointer transition-all disabled:opacity-60 text-white"
+            className="flex-1 py-2.5 rounded-xl text-[13px] font-semibold border-0 cursor-pointer disabled:opacity-60 text-white"
             style={{ background: D.accent }}>
             {uploading ? <><i className="fas fa-spinner fa-spin mr-1.5" />Uploading…</> : saving ? <><i className="fas fa-spinner fa-spin mr-1.5" />Publishing…</> : 'Publish Post'}
           </button>
@@ -564,8 +709,8 @@ function NewPostModal({ onClose, onCreated }: { onClose: () => void; onCreated: 
 /* ── Chat Panel ──────────────────────────────────────────────────────────── */
 function ChatPanel({ user, onClose }: { user: any; onClose: () => void }) {
   const [messages, setMessages] = useState<any[]>([]);
-  const [text, setText] = useState('');
-  const [status, setStatus] = useState('');
+  const [text, setText]         = useState('');
+  const [status, setStatus]     = useState('');
   const [isSending, setIsSending] = useState(false);
   const [minimized, setMinimized] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
@@ -601,14 +746,13 @@ function ChatPanel({ user, onClose }: { user: any; onClose: () => void }) {
             style={{ background: 'rgba(255,255,255,0.2)', color: 'white' }}><i className="fas fa-times" /></button>
         </div>
       </div>
-
       {!minimized && (
         <>
           <div className="flex-1 overflow-y-auto p-3.5 space-y-2.5" style={{ background: D.card }}>
             <div className="text-center text-[10.5px] mb-2" style={{ color: D.muted }}>Today</div>
             {messages.map(msg => (
               <div key={msg.id} className={`flex ${msg.from === 'me' ? 'justify-end' : 'justify-start'} gap-2`}>
-                <div className={`max-w-[75%] px-3.5 py-2.5 rounded-2xl text-[12.5px] leading-relaxed`}
+                <div className="max-w-[75%] px-3.5 py-2.5 rounded-2xl text-[12.5px] leading-relaxed"
                   style={{
                     background: msg.from === 'me' ? D.accent : 'rgba(255,255,255,0.07)',
                     color: msg.from === 'me' ? 'white' : D.text,
@@ -627,7 +771,7 @@ function ChatPanel({ user, onClose }: { user: any; onClose: () => void }) {
               className="flex-1 px-3.5 py-2.5 rounded-xl text-[12.5px] font-[inherit] outline-none transition-all"
               style={{ background: D.input, border: `1px solid ${D.border}`, color: D.text }} />
             <button onClick={sendMessage} disabled={!text.trim() || isSending}
-              className="w-9 h-9 rounded-xl border-0 cursor-pointer grid place-items-center disabled:opacity-50 transition-all hover:opacity-80 flex-shrink-0"
+              className="w-9 h-9 rounded-xl border-0 cursor-pointer grid place-items-center disabled:opacity-50 flex-shrink-0"
               style={{ background: D.accent }}><i className="fas fa-paper-plane text-[12px] text-white" /></button>
           </div>
           {status && <div className="px-4 pb-3 text-[12px]" style={{ color: D.accent }}>{status}</div>}
@@ -640,8 +784,8 @@ function ChatPanel({ user, onClose }: { user: any; onClose: () => void }) {
 /* ── Portfolio Spotlights ────────────────────────────────────────────────── */
 function PortfolioSpotlights({ onMessage }: { onMessage: (u: any) => void }) {
   const [portfolios, setPortfolios] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [collapsed, setCollapsed] = useState(false);
+  const [loading, setLoading]       = useState(true);
+  const [collapsed, setCollapsed]   = useState(false);
 
   useEffect(() => {
     apiFetch('/portfolio/community-feed?limit=6')
@@ -675,9 +819,9 @@ function PortfolioSpotlights({ onMessage }: { onMessage: (u: any) => void }) {
           </div>
         </div>
         <div className="flex items-center gap-2">
-          <a href="/dashboard/portfolio" className="text-[11.5px] font-semibold no-underline px-3 py-1.5 rounded-lg transition-all hover:opacity-80"
+          <a href="/dashboard/portfolio" className="text-[11.5px] font-semibold no-underline px-3 py-1.5 rounded-lg"
             style={{ background: D.accent + '18', color: D.accent, border: `1px solid ${D.accent}20` }}>Share yours</a>
-          <button onClick={() => setCollapsed(v => !v)} className="w-7 h-7 rounded-lg border-0 cursor-pointer grid place-items-center text-[11px] transition-all hover:opacity-80"
+          <button onClick={() => setCollapsed(v => !v)} className="w-7 h-7 rounded-lg border-0 cursor-pointer grid place-items-center text-[11px]"
             style={{ background: D.input, color: D.muted }}><i className={`fas fa-chevron-${collapsed ? 'down' : 'up'}`} /></button>
         </div>
       </div>
@@ -714,7 +858,7 @@ function PortfolioSpotlights({ onMessage }: { onMessage: (u: any) => void }) {
                     <i className="fas fa-layer-group mr-1" />{u.projects.length} project{u.projects.length !== 1 ? 's' : ''}
                   </span>
                   <button onClick={() => onMessage(u)}
-                    className="flex items-center gap-1 text-[10.5px] font-semibold px-2 py-1 rounded-lg border-0 cursor-pointer transition-all hover:opacity-80"
+                    className="flex items-center gap-1 text-[10.5px] font-semibold px-2 py-1 rounded-lg border-0 cursor-pointer"
                     style={{ background: D.accent + '18', color: D.accent }}>
                     <i className="fas fa-paper-plane text-[9px]" />Message
                   </button>
@@ -731,6 +875,7 @@ function PortfolioSpotlights({ onMessage }: { onMessage: (u: any) => void }) {
 /* ── Main Page ───────────────────────────────────────────────────────────── */
 export default function CommunityPage() {
   const user = getCachedUser();
+  const [activeTab, setActiveTab] = useState<'activity' | 'posts'>('activity'); // NEW: tabs
   const [posts,    setPosts]    = useState<any[]>([]);
   const [stats,    setStats]    = useState<any>(null);
   const [loading,  setLoading]  = useState(true);
@@ -774,6 +919,11 @@ export default function CommunityPage() {
     catch { } finally { setDeleting(null); }
   }
 
+  const TABS = [
+    { id: 'activity', icon: 'fa-bolt',     label: 'Activity Feed' },
+    { id: 'posts',    icon: 'fa-comments', label: 'Discussions' },
+  ] as const;
+
   return (
     <SidebarLayout navItems={navItems} pageTitle="Community">
       <div style={{ color: D.text }}>
@@ -794,12 +944,12 @@ export default function CommunityPage() {
             </div>
             <div className="flex items-center gap-2 flex-shrink-0">
               <Link href="/dashboard/community/messages"
-                className="flex items-center gap-2 px-4 py-2.5 font-semibold text-[13px] rounded-xl no-underline transition-all hover:opacity-80"
+                className="flex items-center gap-2 px-4 py-2.5 font-semibold text-[13px] rounded-xl no-underline"
                 style={{ background: 'rgba(255,255,255,0.08)', color: 'rgba(255,255,255,0.8)', border: `1px solid ${D.border}` }}>
                 <i className="fas fa-inbox" />Messages
               </Link>
-              <button onClick={() => setShowNew(true)}
-                className="flex items-center gap-2 px-5 py-2.5 font-semibold text-[13.5px] rounded-xl border-0 cursor-pointer transition-all hover:opacity-90 text-white"
+              <button onClick={() => { setShowNew(true); setActiveTab('posts'); }}
+                className="flex items-center gap-2 px-5 py-2.5 font-semibold text-[13.5px] rounded-xl border-0 cursor-pointer text-white"
                 style={{ background: `linear-gradient(135deg, ${D.accent}, #38BDF8)` }}>
                 <i className="fas fa-plus" />New Post
               </button>
@@ -810,105 +960,127 @@ export default function CommunityPage() {
         {/* Stats */}
         <StatsBar stats={stats} />
 
-        {/* Portfolio spotlights */}
-        <PortfolioSpotlights onMessage={setChatUser} />
-
-        {/* Controls */}
-        <div className="flex flex-wrap items-center gap-3 mb-4">
-          <div className="flex-1 min-w-[200px] relative">
-            <i className="fas fa-search absolute left-3.5 top-1/2 -translate-y-1/2 text-[12px]" style={{ color: D.muted }} />
-            <input value={search} onChange={e => setSearch(e.target.value)}
-              onKeyDown={e => e.key === 'Enter' && fetchPosts(1, type, sort, search)}
-              placeholder="Search posts…"
-              className="w-full pl-9 pr-3 py-2.5 rounded-xl text-[13px] font-[inherit] outline-none transition-all"
-              style={{ background: D.input, border: `1px solid ${D.border}`, color: D.text }} />
-          </div>
-          <select value={sort} onChange={e => setSort(e.target.value)}
-            className="px-3 py-2.5 rounded-xl text-[13px] font-[inherit] outline-none cursor-pointer transition-all"
-            style={{ background: D.input, border: `1px solid ${D.border}`, color: D.text }}>
-            <option value="latest">Latest</option>
-            <option value="popular">Most Liked</option>
-            <option value="trending">Trending</option>
-          </select>
+        {/* NEW: Tab switcher */}
+        <div className="flex gap-1 mb-5 rounded-2xl p-1" style={{ background: D.card, border: `1px solid ${D.border}`, width: 'fit-content' }}>
+          {TABS.map(t => (
+            <button key={t.id} onClick={() => setActiveTab(t.id)}
+              className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-[13px] font-semibold cursor-pointer transition-all border-0"
+              style={{
+                background: activeTab === t.id ? D.accent : 'transparent',
+                color:      activeTab === t.id ? '#fff'   : D.muted,
+              }}>
+              <i className={`fas ${t.icon} text-[12px]`} />{t.label}
+            </button>
+          ))}
         </div>
 
-        {/* Type filter tabs */}
-        <div className="flex flex-wrap gap-2 mb-5">
-          {POST_TYPES.map(t => {
-            const tm = TYPE_META[t.value];
-            const active = type === t.value;
-            return (
-              <button key={t.value} onClick={() => setType(t.value)}
-                className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-[12.5px] font-semibold cursor-pointer transition-all"
-                style={{
-                  background: active ? (tm?.color || D.accent) + '20' : D.input,
-                  color: active ? (tm?.color || D.accent) : D.muted,
-                  border: `1px solid ${active ? (tm?.color || D.accent) + '50' : D.border}`,
-                }}>
-                <i className={`fas ${t.icon} text-[11px]`} />{t.label}
-              </button>
-            );
-          })}
-        </div>
+        {/* NEW: Activity Feed Tab */}
+        {activeTab === 'activity' && <ActivityFeed />}
 
-        {/* Posts */}
-        {loading ? (
-          <div className="grid gap-3.5">{[1,2,3].map(i => (
-            <div key={i} className="rounded-2xl p-5" style={{ background: D.card, border: `1px solid ${D.border}` }}>
-              <div className="flex items-center gap-3 mb-3">
-                <Skeleton h="h-9" w="w-9" />
-                <div className="flex-1"><Skeleton h="h-3" w="w-1/3" /><div className="mt-1.5"><Skeleton h="h-2.5" w="w-1/5" /></div></div>
+        {/* Posts Tab */}
+        {activeTab === 'posts' && (
+          <>
+            {/* Portfolio spotlights */}
+            <PortfolioSpotlights onMessage={setChatUser} />
+
+            {/* Controls */}
+            <div className="flex flex-wrap items-center gap-3 mb-4">
+              <div className="flex-1 min-w-[200px] relative">
+                <i className="fas fa-search absolute left-3.5 top-1/2 -translate-y-1/2 text-[12px]" style={{ color: D.muted }} />
+                <input value={search} onChange={e => setSearch(e.target.value)}
+                  onKeyDown={e => e.key === 'Enter' && fetchPosts(1, type, sort, search)}
+                  placeholder="Search posts…"
+                  className="w-full pl-9 pr-3 py-2.5 rounded-xl text-[13px] font-[inherit] outline-none transition-all"
+                  style={{ background: D.input, border: `1px solid ${D.border}`, color: D.text }} />
               </div>
-              <Skeleton h="h-4" w="w-3/4" /><div className="mt-2"><Skeleton h="h-3" /></div><div className="mt-1.5"><Skeleton h="h-3" w="w-4/5" /></div>
+              <select value={sort} onChange={e => setSort(e.target.value)}
+                className="px-3 py-2.5 rounded-xl text-[13px] font-[inherit] outline-none cursor-pointer"
+                style={{ background: D.input, border: `1px solid ${D.border}`, color: D.text }}>
+                <option value="latest">Latest</option>
+                <option value="popular">Most Liked</option>
+                <option value="trending">Trending</option>
+              </select>
             </div>
-          ))}</div>
-        ) : posts.length === 0 ? (
-          <div className="rounded-2xl p-12 text-center" style={{ background: D.card, border: `1px solid ${D.border}` }}>
-            <div className="w-16 h-16 rounded-2xl grid place-items-center mx-auto mb-4" style={{ background: D.accent + '18' }}>
-              <i className="fas fa-comments text-2xl" style={{ color: D.accent }} />
-            </div>
-            <h3 className="font-jakarta font-bold text-[16px] text-white mb-2">{type || search ? 'No posts found' : 'Be the first to post!'}</h3>
-            <p className="text-[13px] mb-5" style={{ color: D.subtext }}>
-              {type || search ? 'Try a different filter or search term.' : 'Share your projects, ask questions, or start a discussion.'}
-            </p>
-            {!type && !search && (
-              <button onClick={() => setShowNew(true)}
-                className="px-5 py-2.5 rounded-xl text-[13.5px] font-semibold border-0 cursor-pointer text-white transition-all hover:opacity-90"
-                style={{ background: D.accent }}>
-                <i className="fas fa-plus mr-2" />Create first post
-              </button>
-            )}
-          </div>
-        ) : (
-          <div className="grid gap-3.5">
-            {posts.map(post => (
-              <PostCard key={post.id} post={post} onLike={handleLike}
-                onMessage={setChatUser} onEdit={setEditPost} onDelete={handleDeletePost} currentUserId={user?.id} />
-            ))}
-          </div>
-        )}
 
-        {/* Pagination */}
-        {pages > 1 && (
-          <div className="flex items-center justify-center gap-2 mt-6">
-            <button onClick={() => fetchPosts(page - 1)} disabled={page === 1}
-              className="w-9 h-9 rounded-xl border-0 grid place-items-center cursor-pointer transition-all disabled:opacity-40 disabled:cursor-not-allowed hover:opacity-80"
-              style={{ background: D.input, color: D.muted }}>
-              <i className="fas fa-chevron-left" />
-            </button>
-            {Array.from({ length: Math.min(pages, 7) }, (_, i) => i + 1).map(p => (
-              <button key={p} onClick={() => fetchPosts(p)}
-                className="w-9 h-9 rounded-xl text-[13px] font-semibold border-0 cursor-pointer transition-all"
-                style={{ background: p === page ? D.accent : D.input, color: p === page ? 'white' : D.muted }}>
-                {p}
-              </button>
-            ))}
-            <button onClick={() => fetchPosts(page + 1)} disabled={page === pages}
-              className="w-9 h-9 rounded-xl border-0 grid place-items-center cursor-pointer transition-all disabled:opacity-40 disabled:cursor-not-allowed hover:opacity-80"
-              style={{ background: D.input, color: D.muted }}>
-              <i className="fas fa-chevron-right" />
-            </button>
-          </div>
+            {/* Type filter tabs */}
+            <div className="flex flex-wrap gap-2 mb-5">
+              {POST_TYPES.map(t => {
+                const tm = TYPE_META[t.value];
+                const active = type === t.value;
+                return (
+                  <button key={t.value} onClick={() => setType(t.value)}
+                    className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-[12.5px] font-semibold cursor-pointer transition-all"
+                    style={{
+                      background: active ? (tm?.color || D.accent) + '20' : D.input,
+                      color: active ? (tm?.color || D.accent) : D.muted,
+                      border: `1px solid ${active ? (tm?.color || D.accent) + '50' : D.border}`,
+                    }}>
+                    <i className={`fas ${t.icon} text-[11px]`} />{t.label}
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* Posts */}
+            {loading ? (
+              <div className="grid gap-3.5">{[1,2,3].map(i => (
+                <div key={i} className="rounded-2xl p-5" style={{ background: D.card, border: `1px solid ${D.border}` }}>
+                  <div className="flex items-center gap-3 mb-3">
+                    <Skeleton h="h-9" w="w-9" />
+                    <div className="flex-1"><Skeleton h="h-3" w="w-1/3" /><div className="mt-1.5"><Skeleton h="h-2.5" w="w-1/5" /></div></div>
+                  </div>
+                  <Skeleton h="h-4" w="w-3/4" /><div className="mt-2"><Skeleton h="h-3" /></div><div className="mt-1.5"><Skeleton h="h-3" w="w-4/5" /></div>
+                </div>
+              ))}</div>
+            ) : posts.length === 0 ? (
+              <div className="rounded-2xl p-12 text-center" style={{ background: D.card, border: `1px solid ${D.border}` }}>
+                <div className="w-16 h-16 rounded-2xl grid place-items-center mx-auto mb-4" style={{ background: D.accent + '18' }}>
+                  <i className="fas fa-comments text-2xl" style={{ color: D.accent }} />
+                </div>
+                <h3 className="font-jakarta font-bold text-[16px] text-white mb-2">{type || search ? 'No posts found' : 'Be the first to post!'}</h3>
+                <p className="text-[13px] mb-5" style={{ color: D.subtext }}>
+                  {type || search ? 'Try a different filter or search term.' : 'Share your projects, ask questions, or start a discussion.'}
+                </p>
+                {!type && !search && (
+                  <button onClick={() => setShowNew(true)}
+                    className="px-5 py-2.5 rounded-xl text-[13.5px] font-semibold border-0 cursor-pointer text-white"
+                    style={{ background: D.accent }}>
+                    <i className="fas fa-plus mr-2" />Create first post
+                  </button>
+                )}
+              </div>
+            ) : (
+              <div className="grid gap-3.5">
+                {posts.map(post => (
+                  <PostCard key={post.id} post={post} onLike={handleLike}
+                    onMessage={setChatUser} onEdit={setEditPost} onDelete={handleDeletePost} currentUserId={user?.id} />
+                ))}
+              </div>
+            )}
+
+            {/* Pagination */}
+            {pages > 1 && (
+              <div className="flex items-center justify-center gap-2 mt-6">
+                <button onClick={() => fetchPosts(page - 1)} disabled={page === 1}
+                  className="w-9 h-9 rounded-xl border-0 grid place-items-center cursor-pointer disabled:opacity-40"
+                  style={{ background: D.input, color: D.muted }}>
+                  <i className="fas fa-chevron-left" />
+                </button>
+                {Array.from({ length: Math.min(pages, 7) }, (_, i) => i + 1).map(p => (
+                  <button key={p} onClick={() => fetchPosts(p)}
+                    className="w-9 h-9 rounded-xl text-[13px] font-semibold border-0 cursor-pointer transition-all"
+                    style={{ background: p === page ? D.accent : D.input, color: p === page ? 'white' : D.muted }}>
+                    {p}
+                  </button>
+                ))}
+                <button onClick={() => fetchPosts(page + 1)} disabled={page === pages}
+                  className="w-9 h-9 rounded-xl border-0 grid place-items-center cursor-pointer disabled:opacity-40"
+                  style={{ background: D.input, color: D.muted }}>
+                  <i className="fas fa-chevron-right" />
+                </button>
+              </div>
+            )}
+          </>
         )}
       </div>
     </SidebarLayout>

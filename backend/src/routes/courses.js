@@ -3,12 +3,11 @@ const prisma  = require('../config/database');
 const { authenticate } = require('../middleware/auth');
 const { success, notFound, badRequest, error } = require('../utils/response');
 const meritlives = require('../services/meritlivesClient');
+const { logActivity } = require('../utils/activityLogger'); // NEW
 
 /**
  * Merges local (Prisma) courses with live Meritlives courses into one
  * unified list, attaching the current user's enrollment/progress to each.
- * Meritlives course data is never stored — it's fetched fresh from
- * meritlivesClient (which holds only a short-lived in-memory cache).
  */
 async function buildUnifiedCourseList(userId, filters = {}) {
   const { category, level, search } = filters;
@@ -92,7 +91,7 @@ router.get('/enrolled', authenticate, async (req, res) => {
     const result = enrollments
       .map(e => {
         const course = byKey.get(`${e.source}:${e.courseId}`);
-        if (!course) return null; // course was deleted/unpublished on its source system
+        if (!course) return null;
         return { ...course, enrolled: true, progress: e.progress };
       })
       .filter(Boolean);
@@ -164,7 +163,7 @@ router.post('/:id/enroll', authenticate, async (req, res) => {
     const { course, source } = await findCourseAnySource(req.params.id);
     if (!course) return notFound(res, 'Course not found');
 
-    // ── Premium gate: check if course requires premium and user isn't premium ──
+    // ── Premium gate ──────────────────────────────────────────────────────
     if (course.isPremium && !req.user.isPremium) {
       return res.status(402).json({
         success: false,
@@ -194,10 +193,6 @@ router.post('/:id/enroll', authenticate, async (req, res) => {
         data: { enrollCount: { increment: 1 } },
       });
     }
-    // Meritlives enrollCount lives in Digital Skills' own database and is
-    // already incremented there when a student enrolls through that flow;
-    // SkillHub doesn't write to it to avoid two systems racing to update
-    // the same counter.
 
     await prisma.user.update({
       where: { id: req.user.id },
@@ -211,6 +206,16 @@ router.post('/:id/enroll', authenticate, async (req, res) => {
         title: 'Course Enrolled',
         message: `You enrolled in ${course.title}`,
       },
+    });
+
+    // NEW: log to activity feed
+    const isDigital = source === 'meritlives';
+    await logActivity({
+      userId:   req.user.id,
+      type:     isDigital ? 'digital_skills_enrolled' : 'course_enrolled',
+      title:    `Enrolled in "${course.title}"`,
+      metadata: { courseTitle: course.title, courseId: course.id, source, category: course.category },
+      courseId: course.id,
     });
 
     return success(res, { enrolled: true }, `Enrolled in ${course.title}!`);
@@ -233,15 +238,22 @@ router.put('/:id/progress', authenticate, async (req, res) => {
     });
     if (!enrollment) return notFound(res, 'Not enrolled in this course');
 
+    const prevProgress  = enrollment.progress;
+    const isNowComplete = progress === 100;
+    const wasComplete   = !!enrollment.completedAt;
+
     await prisma.enrollment.update({
       where: { userId_courseId_source: { userId: req.user.id, courseId: req.params.id, source } },
       data: {
         progress,
-        ...(progress === 100 ? { completedAt: new Date() } : {}),
+        ...(isNowComplete && !wasComplete ? { completedAt: new Date() } : {}),
       },
     });
 
-    if (progress === 100) {
+    const courseName = enrollment.title ?? 'your course';
+    const isDigital  = source === 'meritlives';
+
+    if (isNowComplete && !wasComplete) {
       await prisma.user.update({
         where: { id: req.user.id },
         data: { meritCoins: { increment: 1 } },
@@ -252,9 +264,31 @@ router.put('/:id/progress', authenticate, async (req, res) => {
           type: 'success',
           icon: 'certificate',
           title: 'Course Completed!',
-          message: `You completed ${enrollment.title ?? 'your course'}. +1 Merit Coin!`,
+          message: `You completed ${courseName}. +1 Merit Coin!`,
         },
       });
+
+      // NEW: log completion to activity feed
+      await logActivity({
+        userId:   req.user.id,
+        type:     isDigital ? 'digital_skills_completed' : 'course_completed',
+        title:    `Completed "${courseName}" 🎉`,
+        metadata: { courseId: req.params.id, source, courseTitle: courseName },
+        courseId: req.params.id,
+      });
+    } else {
+      // NEW: log 25 / 50 / 75 % milestones to activity feed
+      const milestones = [25, 50, 75];
+      const crossed = milestones.find(m => prevProgress < m && progress >= m);
+      if (crossed) {
+        await logActivity({
+          userId:   req.user.id,
+          type:     'course_progress',
+          title:    `Reached ${crossed}% in "${courseName}"`,
+          metadata: { courseId: req.params.id, source, milestone: crossed, courseTitle: courseName },
+          courseId: req.params.id,
+        });
+      }
     }
 
     return success(res, { progress }, 'Progress updated');

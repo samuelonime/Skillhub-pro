@@ -10,6 +10,7 @@ const crypto      = require('crypto');
 const path        = require('path');
 const prisma      = require('./config/database');
 const { trackSession } = require('./middleware/sessionTracker');
+const { startJobScoutCron } = require('./cron/jobScoutCron');
 
 // ENV validation
 const REQUIRED_ENV = ['JWT_SECRET', 'JWT_REFRESH_SECRET', 'DATABASE_URL'];
@@ -138,6 +139,7 @@ app.use('/api/v1/peer-genome',      require('./routes/peerGenome'));
 app.use('/api/v1/skill-decay',      require('./routes/skillDecay'));
 app.use('/api/v1/ghost-recruiter',  require('./routes/ghostRecruiter'));
 app.use('/api/v1/contact',          require('./routes/contact'));
+app.use('/api/v1/job-scout', require('./routes/jobScout'));
 
 app.get('/health', async (_req, res) => {
   let db = 'ok';
@@ -171,6 +173,8 @@ async function start() {
     console.log(`💳 Paystack: ${process.env.PAYSTACK_SECRET_KEY ? 'configured ✅' : 'not configured ⚠️'}`);
     if (!IS_PROD) console.log('⚠️  Running in development mode\n');
   });
+
+  startJobScoutCron();
 
   const shutdown = (sig) => {
     console.log(`\n${sig} — shutting down…`);

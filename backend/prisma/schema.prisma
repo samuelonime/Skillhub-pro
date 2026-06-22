@@ -67,6 +67,9 @@ model User {
   communityComments    CommunityComment[]     @relation("AuthorComments")
   communityLikes       CommunityLike[]
   sessions             UserSession[]
+  activityFeed         ActivityFeed[]
+  aiResume             AiResume?
+  jobScoutAlerts       JobScoutAlert[]
 
   @@map("users")
 }
@@ -664,6 +667,7 @@ enum PostType {
   question
   showcase
 }
+
 model SystemSetting {
   id        String   @id @default(uuid())
   key       String   @unique
@@ -694,4 +698,121 @@ model UserSession {
   @@index([userId])
   @@index([lastSeenAt])
   @@map("user_sessions")
+}
+
+// ── Activity Feed ────────────────────────────────────────────────────────────
+// Every significant user action (course enroll/complete, badge, job apply,
+// achievement, community post) is recorded here and surfaced in the community
+// activity stream so the feed feels alive and auto-populated.
+
+model ActivityFeed {
+  id         String       @id @default(uuid())
+  userId     String
+  type       ActivityType
+  title      String
+  body       String?
+  // Generic payload — course title, job title, badge name, etc.
+  metadata   Json?
+  // Optional foreign keys so we can deep-link from activity items
+  courseId   String?
+  jobId      String?
+  postId     String?
+  isPublic   Boolean      @default(true)
+  createdAt  DateTime     @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([createdAt])
+  @@index([type])
+  @@map("activity_feed")
+}
+
+enum ActivityType {
+  course_enrolled
+  course_completed
+  course_progress        // milestone: 25 / 50 / 75 %
+  digital_skills_enrolled
+  digital_skills_completed
+  badge_earned
+  certificate_added
+  project_added
+  job_applied
+  job_saved
+  skill_added
+  community_post
+  resume_generated
+  profile_completed
+  streak_milestone       // 7-day / 30-day learning streak
+}
+
+// ── AI-Generated Resume ──────────────────────────────────────────────────────
+// Stores the last AI-generated resume snapshot for a user.
+// Generated on-demand; the backend calls Claude to build it from live data.
+
+model AiResume {
+  id          String   @id @default(uuid())
+  userId      String   @unique
+  // Full markdown/HTML resume text produced by the AI
+  content     String   @db.Text
+  // Summary of what data was used (for display / transparency)
+  dataSummary Json?
+  generatedAt DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("ai_resumes")
+}
+
+// ── Job Scout ────────────────────────────────────────────────────────────────
+// Stores AI-discovered job leads before they are sent to students.
+// The Job Scout cron searches the web and persists results here,
+// then a notification job fans them out to matching students.
+
+model JobScoutLead {
+  id          String           @id @default(uuid())
+  title       String
+  company     String
+  location    String?
+  type        String?          // full-time | part-time | remote | contract
+  salary      String?
+  description String?          @db.Text
+  url         String
+  source      String           // "linkedin" | "indeed" | "twitter" | "web"
+  niche       String           // matches User.interestNiche
+  skills      String[]         @default([])
+  postedAt    DateTime?
+  fetchedAt   DateTime         @default(now())
+  status      JobScoutStatus   @default(pending)
+
+  sentAlerts JobScoutAlert[]
+
+  @@index([niche])
+  @@index([status])
+  @@index([fetchedAt])
+  @@map("job_scout_leads")
+}
+
+enum JobScoutStatus {
+  pending   // fetched, not yet sent
+  sent      // alerts dispatched
+  expired   // older than 7 days
+}
+
+// ── Job Scout Alert (per-student delivery record) ────────────────────────────
+model JobScoutAlert {
+  id        String   @id @default(uuid())
+  leadId    String
+  userId    String
+  sentAt    DateTime @default(now())
+  opened    Boolean  @default(false)
+  applied   Boolean  @default(false)
+
+  lead JobScoutLead @relation(fields: [leadId], references: [id], onDelete: Cascade)
+  user User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([leadId, userId])
+  @@index([userId])
+  @@map("job_scout_alerts")
 }

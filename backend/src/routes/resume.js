@@ -1,10 +1,15 @@
 // routes/resume.js — Resume upload + Portfolio visibility toggle
+// NEW ADDITIONS: POST /generate (AI resume), GET /ai (fetch AI resume)
 const router  = require('express').Router();
 const multer  = require('multer');
 const prisma  = require('../config/database');
+const Anthropic = require('@anthropic-ai/sdk');
 const { authenticate } = require('../middleware/auth');
 const { uploadRaw, deleteFile } = require('../utils/cloudinary');
+const { logActivity } = require('../utils/activityLogger');
 const { success, created, error, badRequest } = require('../utils/response');
+
+const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
 // ── Multer config — memory storage, buffer goes straight to Cloudinary ─────────
 const upload = multer({
@@ -112,6 +117,164 @@ router.get('/visibility', authenticate, async (req, res) => {
     return success(res, { portfolioPublic: user?.portfolioPublic ?? false });
   } catch (err) {
     return error(res, 'Failed to get visibility');
+  }
+});
+
+// ── NEW: GET /api/v1/resume/ai — fetch last AI-generated resume ───────────────
+router.get('/ai', authenticate, async (req, res) => {
+  try {
+    const aiResume = await prisma.aiResume.findUnique({ where: { userId: req.user.id } });
+    return success(res, aiResume || null);
+  } catch (err) {
+    return error(res, 'Failed to fetch AI resume');
+  }
+});
+
+// ── NEW: POST /api/v1/resume/generate — AI resume generation ─────────────────
+// Fetches all student progress data, sends to Claude, returns markdown resume.
+// Persists result in AiResume table (one per user, upsert).
+router.post('/generate', authenticate, async (req, res) => {
+  try {
+    const userId = req.user.id;
+
+    // Gather all available data for this student in parallel
+    const [user, enrollments, certificates, projects, skills, externalCerts, applications] =
+      await Promise.all([
+        prisma.user.findUnique({
+          where:  { id: userId },
+          select: {
+            firstName: true, lastName: true, email: true, title: true,
+            bio: true, location: true, phone: true, interestNiche: true,
+            profileStrength: true,
+          },
+        }),
+        prisma.enrollment.findMany({
+          where:   { userId },
+          select:  { title: true, category: true, progress: true, completedAt: true, source: true },
+          orderBy: { enrolledAt: 'desc' },
+        }),
+        prisma.certificate.findMany({
+          where:   { userId, status: 'verified' },
+          select:  { title: true, provider: true, issueDate: true, credentialUrl: true },
+          orderBy: { issueDate: 'desc' },
+        }),
+        prisma.project.findMany({
+          where:   { userId },
+          select:  { title: true, description: true, technologies: true, liveUrl: true, githubUrl: true, score: true },
+          orderBy: { createdAt: 'desc' },
+        }),
+        prisma.userSkill.findMany({
+          where:   { userId },
+          select:  { name: true, level: true, verified: true },
+          orderBy: { updatedAt: 'desc' },
+        }),
+        prisma.externalCertificate.findMany({
+          where:   { userId },
+          select:  { title: true, platform: true, issuer: true, completedAt: true, credentialUrl: true, skills: true },
+          orderBy: { completedAt: 'desc' },
+        }),
+        prisma.application.findMany({
+          where:  { userId, status: { in: ['hired', 'interviewing'] } },
+          select: { status: true, job: { select: { title: true, company: true } } },
+          take: 5,
+        }),
+      ]);
+
+    const completedCourses  = enrollments.filter(e => e.completedAt || e.progress === 100);
+    const inProgressCourses = enrollments.filter(e => !e.completedAt && e.progress < 100 && e.progress > 0);
+
+    const dataPayload = {
+      profile: user,
+      completedCourses: completedCourses.map(e => ({
+        title:    e.title || 'Untitled Course',
+        category: e.category,
+        source:   e.source === 'meritlives' ? 'Digital Skills (MeritLives)' : 'SkillHub',
+      })),
+      inProgressCourses: inProgressCourses.map(e => ({
+        title:    e.title || 'Untitled Course',
+        progress: e.progress,
+      })),
+      certificates: [
+        ...certificates,
+        ...externalCerts.map(c => ({
+          title:         c.title,
+          provider:      `${c.issuer} (${c.platform})`,
+          issueDate:     c.completedAt,
+          credentialUrl: c.credentialUrl,
+        })),
+      ],
+      projects,
+      skills,
+      notableJobs: applications.map(a => ({
+        status:  a.status,
+        title:   a.job?.title,
+        company: a.job?.company,
+      })),
+    };
+
+    const systemPrompt = `You are a professional resume writer specialising in tech and digital skills candidates.
+Given structured data about a student's progress on SkillHub Pro, produce a complete, polished, ATS-friendly resume in Markdown format.
+
+Rules:
+- Use clean Markdown with clear sections: Contact, Summary, Skills, Education & Courses, Projects, Certifications, (Experience if data available).
+- Write a compelling 2–3 sentence professional summary that reflects their niche (${user.interestNiche || 'technology'}) and trajectory.
+- For completed courses, list the top 6 most relevant. Skip in-progress ones in the Courses section — mention them lightly in summary only.
+- Skills: group by category (Languages, Frameworks, Tools, Soft Skills). Only include verified skills or those with level intermediate+.
+- Projects: include up to 4, highlighting tech stack and live/GitHub links.
+- Certifications: list all verified ones with issuer and date.
+- Keep it concise — 1–2 pages equivalent. No filler, no clichés like "results-driven".
+- Format dates as "Month YYYY". Omit sections with no data.
+- Return ONLY the Markdown resume — no preamble, no explanation.`;
+
+    const aiResponse = await anthropic.messages.create({
+      model:      'claude-sonnet-4-6',
+      max_tokens: 2000,
+      system:     systemPrompt,
+      messages:   [{ role: 'user', content: `Here is the student's SkillHub Pro data:\n\n${JSON.stringify(dataPayload, null, 2)}` }],
+    });
+
+    const resumeMarkdown = aiResponse.content
+      .filter(b => b.type === 'text')
+      .map(b => b.text)
+      .join('');
+
+    const dataSummary = {
+      completedCourses: completedCourses.length,
+      skills:           skills.length,
+      projects:         projects.length,
+      certificates:     certificates.length + externalCerts.length,
+    };
+
+    // Check if this is a first-time generation before upsert
+    const existing = await prisma.aiResume.findUnique({ where: { userId } });
+
+    // Persist the generated resume
+    await prisma.aiResume.upsert({
+      where:  { userId },
+      create: { userId, content: resumeMarkdown, dataSummary, generatedAt: new Date() },
+      update: { content: resumeMarkdown, dataSummary, generatedAt: new Date(), updatedAt: new Date() },
+    });
+
+    // Award merit coins on very first generation
+    if (!existing) {
+      await prisma.user.update({
+        where: { id: userId },
+        data:  { meritCoins: { increment: 2 } },
+      });
+    }
+
+    // Log to activity feed
+    await logActivity({
+      userId,
+      type:     'resume_generated',
+      title:    'Generated an AI-powered resume',
+      metadata: dataSummary,
+    });
+
+    return success(res, { resume: resumeMarkdown, generatedAt: new Date() }, 'Resume generated');
+  } catch (err) {
+    console.error('AI resume generation error:', err);
+    return error(res, 'Failed to generate resume. Please try again.');
   }
 });
 

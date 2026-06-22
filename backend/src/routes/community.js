@@ -4,14 +4,16 @@ const multer   = require('multer');
 const prisma   = require('../config/database');
 const { authenticate } = require('../middleware/auth');
 const { uploadMedia } = require('../utils/cloudinary');
+const { logActivity } = require('../utils/activityLogger');
 const { success, created, badRequest, notFound, error } = require('../utils/response');
 
-const PAGE_SIZE = 15;
+const PAGE_SIZE      = 15;
+const FEED_PAGE_SIZE = 20;
 
 // ── Multer — memory storage, buffer goes straight to Cloudinary ────────────
 const upload = multer({
   storage: multer.memoryStorage(),
-  limits:  { fileSize: 50 * 1024 * 1024 }, // 50 MB (covers short videos)
+  limits:  { fileSize: 50 * 1024 * 1024 },
   fileFilter: (_req, file, cb) => {
     const allowed = ['image/jpeg', 'image/png', 'image/webp', 'image/gif',
                      'video/mp4', 'video/webm', 'video/quicktime'];
@@ -51,6 +53,79 @@ const postSelect = {
   author: { select: { id: true, firstName: true, lastName: true, avatar: true, title: true } },
   _count: { select: { comments: true } },
 };
+
+// ── Activity type display metadata ─────────────────────────────────────────
+const ACTIVITY_META = {
+  course_enrolled:          { icon: '📚', color: '#4F8EF7', label: 'Enrolled in a course' },
+  course_completed:         { icon: '🎓', color: '#00E5A0', label: 'Completed a course' },
+  course_progress:          { icon: '⚡', color: '#F59E0B', label: 'Course milestone reached' },
+  digital_skills_enrolled:  { icon: '🌐', color: '#A78BFA', label: 'Joined Digital Skills course' },
+  digital_skills_completed: { icon: '🏅', color: '#00E5A0', label: 'Completed Digital Skills course' },
+  badge_earned:             { icon: '🏆', color: '#F59E0B', label: 'Earned a badge' },
+  certificate_added:        { icon: '📜', color: '#38BDF8', label: 'Added a certificate' },
+  project_added:            { icon: '🚀', color: '#F472B6', label: 'Published a project' },
+  job_applied:              { icon: '💼', color: '#00E5A0', label: 'Applied to a job' },
+  job_saved:                { icon: '🔖', color: '#94a3b8', label: 'Saved a job' },
+  skill_added:              { icon: '✨', color: '#A78BFA', label: 'Added a new skill' },
+  community_post:           { icon: '💬', color: '#F59E0B', label: 'Shared in Community' },
+  resume_generated:         { icon: '📄', color: '#38BDF8', label: 'Generated AI resume' },
+  profile_completed:        { icon: '👤', color: '#4F8EF7', label: 'Completed profile' },
+  streak_milestone:         { icon: '🔥', color: '#F87171', label: 'Learning streak' },
+};
+
+// ─────────────────────────────────────────────────────────────────────────────
+// NEW: GET /activity-feed — community-wide activity stream
+// Returns recent public activities from ALL users, enriched with display meta.
+// Supports ?page, ?type filter, ?userId (filter to a specific user).
+// ─────────────────────────────────────────────────────────────────────────────
+router.get('/activity-feed', authenticate, async (req, res) => {
+  try {
+    const { page = 1, type, userId: filterUserId } = req.query;
+    const skip = (parseInt(page) - 1) * FEED_PAGE_SIZE;
+
+    const where = {
+      isPublic: true,
+      ...(type         && { type }),
+      ...(filterUserId && { userId: filterUserId }),
+    };
+
+    const [items, total] = await prisma.$transaction([
+      prisma.activityFeed.findMany({
+        where,
+        orderBy: { createdAt: 'desc' },
+        skip,
+        take: FEED_PAGE_SIZE,
+        select: {
+          id: true, type: true, title: true, body: true,
+          metadata: true, courseId: true, jobId: true, postId: true,
+          createdAt: true,
+          user: {
+            select: {
+              id: true, firstName: true, lastName: true,
+              avatar: true, title: true, interestNiche: true,
+            },
+          },
+        },
+      }),
+      prisma.activityFeed.count({ where }),
+    ]);
+
+    const enriched = items.map(item => ({
+      ...item,
+      ...(ACTIVITY_META[item.type] || { icon: '📌', color: '#64748b', label: item.type }),
+    }));
+
+    return success(res, {
+      activities: enriched,
+      total,
+      page: parseInt(page),
+      pages: Math.ceil(total / FEED_PAGE_SIZE),
+    });
+  } catch (e) {
+    console.error(e);
+    return error(res, 'Failed to fetch activity feed');
+  }
+});
 
 // ── GET /  — list posts (paginated, filterable) ────────────────────────────
 router.get('/', authenticate, async (req, res) => {
@@ -117,6 +192,16 @@ router.post('/', authenticate, async (req, res) => {
       select: postSelect,
     });
 
+    // NEW: log to activity feed
+    await logActivity({
+      userId:   req.user.id,
+      type:     'community_post',
+      title:    `Shared a ${type} post: "${title.trim().slice(0, 60)}"`,
+      body:     body.trim().slice(0, 120),
+      postId:   post.id,
+      metadata: { postType: type },
+    });
+
     return created(res, post, 'Post created successfully');
   } catch (e) {
     console.error(e);
@@ -177,13 +262,7 @@ router.get('/contacts', authenticate, async (req, res) => {
       take: 20,
       select: {
         author: {
-          select: {
-            id: true,
-            firstName: true,
-            lastName: true,
-            avatar: true,
-            title: true,
-          },
+          select: { id: true, firstName: true, lastName: true, avatar: true, title: true },
         },
       },
     });
@@ -222,7 +301,7 @@ router.get('/contacts', authenticate, async (req, res) => {
 });
 
 // ── GET /stats/overview  — community stats ────────────────────────────────
-// IMPORTANT: This MUST be placed BEFORE the /:id route to avoid conflict
+// IMPORTANT: MUST be placed BEFORE /:id route to avoid conflict
 router.get('/stats/overview', authenticate, async (req, res) => {
   try {
     const [totalPosts, totalComments, totalMembers, recentActive] = await prisma.$transaction([
