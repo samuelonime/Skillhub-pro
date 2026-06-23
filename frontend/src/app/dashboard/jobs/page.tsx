@@ -1,28 +1,28 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { SidebarLayout } from '@/components/layout/SidebarLayout';
 import { apiFetch } from '@/lib/api';
 
 const navItems = [
-  { href: '/dashboard',            icon: 'fa-home',                label: 'Dashboard' },
-  { href: '/dashboard/courses',    icon: 'fa-book-open',           label: 'Courses' },
-  { href: '/dashboard/career-oracle',   icon: 'fa-brain',          label: 'Career Oracle' },
-  { href: '/dashboard/skill-coach',     icon: 'fa-heart-pulse',    label: 'Skill Coach' },
-  { href: '/dashboard/peer-genome',     icon: 'fa-users',          label: 'Peer Genome' },
-  { href: '/dashboard/skill-decay',     icon: 'fa-chart-line',     label: 'Skill Decay' },
+  { href: '/dashboard',                 icon: 'fa-home',                label: 'Dashboard' },
+  { href: '/dashboard/courses',         icon: 'fa-book-open',           label: 'Courses' },
+  { href: '/dashboard/career-oracle',   icon: 'fa-brain',               label: 'Career Oracle' },
+  { href: '/dashboard/skill-coach',     icon: 'fa-heart-pulse',         label: 'Skill Coach' },
+  { href: '/dashboard/peer-genome',     icon: 'fa-users',               label: 'Peer Genome' },
+  { href: '/dashboard/skill-decay',     icon: 'fa-chart-line',          label: 'Skill Decay' },
   { href: '/dashboard/ghost-recruiter', icon: 'fa-wand-magic-sparkles', label: 'Ghost Recruiter' },
-  { href: '/dashboard/community',  icon: 'fa-users',               label: 'Community' },
-  { href: '/dashboard/portfolio',  icon: 'fa-layer-group',         label: 'Portfolio' },
-  { href: '/dashboard/resume',        icon: 'fa-file-lines',           label: 'Resume' },
-  { href: '/dashboard/platforms',  icon: 'fa-graduation-cap',      label: 'Learning Platforms' },
-  { href: '/dashboard/jobs',       icon: 'fa-briefcase',           label: 'Jobs' },
-  { href: '/dashboard/certificates', icon: 'fa-certificate',       label: 'Certificates' },
-  { href: '/dashboard/rewards',    icon: 'fa-coins',               label: 'Rewards' },
-  { href: '/dashboard/settings',   icon: 'fa-gear',                label: 'Settings' },
+  { href: '/dashboard/community',       icon: 'fa-users',               label: 'Community' },
+  { href: '/dashboard/portfolio',       icon: 'fa-layer-group',         label: 'Portfolio' },
+  { href: '/dashboard/resume',          icon: 'fa-file-lines',          label: 'Resume' },
+  { href: '/dashboard/platforms',       icon: 'fa-graduation-cap',      label: 'Learning Platforms' },
+  { href: '/dashboard/jobs',            icon: 'fa-briefcase',           label: 'Jobs' },
+  { href: '/dashboard/certificates',    icon: 'fa-certificate',         label: 'Certificates' },
+  { href: '/dashboard/rewards',         icon: 'fa-coins',               label: 'Rewards' },
+  { href: '/dashboard/settings',        icon: 'fa-gear',                label: 'Settings' },
 ];
 
-/* ── Design tokens ────────────────────────────────────────────────────────── */
+/* ── Design tokens ─────────────────────────────────────────────────────────── */
 const D = {
   card:    '#0F1521',
   border:  'rgba(255,255,255,0.07)',
@@ -30,6 +30,7 @@ const D = {
   green:   '#00E5A0',
   amber:   '#F59E0B',
   purple:  '#A78BFA',
+  indigo:  '#6366f1',
   red:     '#F87171',
   muted:   'rgba(255,255,255,0.35)',
   text:    'rgba(255,255,255,0.85)',
@@ -37,6 +38,7 @@ const D = {
   input:   'rgba(255,255,255,0.06)',
 };
 
+/* ── Tiers ──────────────────────────────────────────────────────────────────── */
 const TIERS = {
   platinum: { label: 'Platinum', icon: '💎', color: D.purple, gradient: 'linear-gradient(135deg,#5b4cf5,#7c3aed)' },
   gold:     { label: 'Gold',     icon: '🥇', color: D.amber,  gradient: 'linear-gradient(135deg,#d97706,#f59e0b)' },
@@ -45,13 +47,29 @@ const TIERS = {
 } as const;
 type TierKey = keyof typeof TIERS;
 
-function getTier(coins: number): TierKey {
-  if (coins >= 5000) return 'platinum';
-  if (coins >= 2000) return 'gold';
-  if (coins >= 500)  return 'silver';
-  return 'bronze';
-}
+/* ── Job Scout source metadata ──────────────────────────────────────────────── */
+const SCOUT_SOURCE: Record<string, { icon: string; color: string }> = {
+  linkedin:     { icon: '💼', color: '#0a66c2' },
+  indeed:       { icon: '🔵', color: '#003a9b' },
+  twitter:      { icon: '🐦', color: '#1da1f2' },
+  glassdoor:    { icon: '🟢', color: '#0caa41' },
+  jobberman:    { icon: '🇳🇬', color: '#00823b' },
+  ngcareers:    { icon: '📋', color: '#e25c00' },
+  myjobmag:     { icon: '📌', color: '#c0392b' },
+  company_site: { icon: '🏢', color: D.purple },
+  web:          { icon: '🌐', color: '#64748b' },
+  other:        { icon: '🔍', color: '#94a3b8' },
+};
 
+const SCOUT_TYPE_COLOR: Record<string, string> = {
+  'full-time':  D.green,
+  'part-time':  D.amber,
+  'remote':     D.indigo,
+  'contract':   '#ec4899',
+  'internship': '#0ea5e9',
+};
+
+/* ── Helpers ────────────────────────────────────────────────────────────────── */
 const LOGO_COLORS = [D.accent, D.green, D.amber, '#38BDF8', D.red, D.purple, '#ec4899', '#14b8a6'];
 function logoColor(str: string) {
   let h = 0;
@@ -64,15 +82,19 @@ function matchColor(pct: number): [string, string] {
   return [D.red + '20', D.red];
 }
 function timeAgo(d: string) {
-  const days = Math.floor((Date.now() - new Date(d).getTime()) / 86400000);
-  if (days === 0) return 'Today'; if (days === 1) return 'Yesterday';
-  if (days < 7) return `${days}d ago`; return `${Math.floor(days/7)}w ago`;
+  const sec = (Date.now() - new Date(d).getTime()) / 1000;
+  if (sec < 3600)  return `${Math.floor(sec / 60)}m ago`;
+  if (sec < 86400) return `${Math.floor(sec / 3600)}h ago`;
+  const days = Math.floor(sec / 86400);
+  if (days === 0) return 'Today';
+  if (days === 1) return 'Yesterday';
+  if (days < 7) return `${days}d ago`;
+  return `${Math.floor(days / 7)}w ago`;
 }
 
-function Sk({ h = 'h-4', w = 'w-full', r = 'rounded-xl' }: any) {
+function Sk({ h = 'h-4', w = 'w-full', r = 'rounded-xl' }: { h?: string; w?: string; r?: string }) {
   return <div className={`${h} ${w} ${r} animate-pulse`} style={{ background: 'rgba(255,255,255,0.06)' }} />;
 }
-
 function Card({ children, className = '' }: { children: React.ReactNode; className?: string }) {
   return (
     <div className={`rounded-2xl p-5 ${className}`} style={{ background: D.card, border: `1px solid ${D.border}` }}>
@@ -81,7 +103,7 @@ function Card({ children, className = '' }: { children: React.ReactNode; classNa
   );
 }
 
-/* ── Job card ─────────────────────────────────────────────────────────────── */
+/* ── Employer job card ──────────────────────────────────────────────────────── */
 function OpportunityAd({ job, userTier, onApply, onSave, applying, saving }: any) {
   const jobTier = (job.minTier || 'bronze') as TierKey;
   const t  = TIERS[jobTier] || TIERS.bronze;
@@ -91,14 +113,10 @@ function OpportunityAd({ job, userTier, onApply, onSave, applying, saving }: any
   return (
     <div className="relative rounded-2xl overflow-hidden group hover:-translate-y-0.5 transition-all duration-200"
       style={{ background: D.card, border: `1px solid ${job.isPremium ? D.purple + '50' : D.border}` }}>
-      {/* Hover glow */}
       <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none rounded-2xl"
         style={{ background: `radial-gradient(circle at 10% 10%, ${lc}08 0%, transparent 60%)` }} />
-
       {job.isPremium && <div className="h-[2px] w-full" style={{ background: t.gradient }} />}
-
       <div className="p-5 relative">
-        {/* Header */}
         <div className="flex items-start justify-between gap-3 mb-3">
           <div className="flex items-center gap-3 flex-1 min-w-0">
             <div className="w-11 h-11 rounded-xl grid place-items-center font-jakarta font-bold text-base text-white flex-shrink-0" style={{ background: lc }}>
@@ -121,16 +139,12 @@ function OpportunityAd({ job, userTier, onApply, onSave, applying, saving }: any
             )}
           </div>
         </div>
-
-        {/* Meta */}
         <div className="flex items-center gap-3 flex-wrap mb-3">
           {job.type && <span className="inline-flex items-center gap-1 text-[11px]" style={{ color: D.subtext }}><i className="fas fa-briefcase text-[9px]" />{job.type}</span>}
           {job.salary && <span className="inline-flex items-center gap-1 text-[11px]" style={{ color: D.subtext }}><i className="fas fa-money-bill-wave text-[9px]" />{job.salary}</span>}
           {job.createdAt && <span className="inline-flex items-center gap-1 text-[11px]" style={{ color: D.muted }}><i className="fas fa-clock text-[9px]" />{timeAgo(job.createdAt)}</span>}
         </div>
-
         {job.description && <p className="text-[12.5px] leading-relaxed line-clamp-2 mb-3" style={{ color: D.subtext }}>{job.description}</p>}
-
         {job.skills?.length > 0 && (
           <div className="flex flex-wrap gap-1.5 mb-4">
             {job.skills.slice(0, 5).map((s: string) => (
@@ -139,8 +153,6 @@ function OpportunityAd({ job, userTier, onApply, onSave, applying, saving }: any
             {job.skills.length > 5 && <span className="text-[10px]" style={{ color: D.muted }}>+{job.skills.length - 5}</span>}
           </div>
         )}
-
-        {/* Actions */}
         <div className="flex gap-2">
           <button disabled={job.applied || applying === job.id} onClick={() => !job.applied && onApply(job.id)}
             className="flex-1 py-2.5 text-sm font-semibold rounded-xl border-0 cursor-pointer transition-all disabled:opacity-60 disabled:cursor-not-allowed text-white"
@@ -153,7 +165,6 @@ function OpportunityAd({ job, userTier, onApply, onSave, applying, saving }: any
             <i className="fas fa-bookmark text-sm" />
           </button>
         </div>
-
         {job.isPremium && (
           <div className="mt-2.5 flex items-center gap-1 text-[10px]" style={{ color: D.muted }}>
             <i className="fas fa-ad text-[9px]" /> Sponsored opportunity
@@ -164,7 +175,7 @@ function OpportunityAd({ job, userTier, onApply, onSave, applying, saving }: any
   );
 }
 
-/* ── Locked tier teaser ──────────────────────────────────────────────────── */
+/* ── Locked tier teaser ─────────────────────────────────────────────────────── */
 function LockedTierTeaser({ targetTier, coinsNeeded }: { targetTier: TierKey; coinsNeeded: number }) {
   const t = TIERS[targetTier];
   return (
@@ -186,29 +197,278 @@ function LockedTierTeaser({ targetTier, coinsNeeded }: { targetTier: TierKey; co
   );
 }
 
-/* ── Main Page ───────────────────────────────────────────────────────────── */
+/* ── Job Scout alert card ───────────────────────────────────────────────────── */
+interface JobScoutLead {
+  id: string; title: string; company: string; location?: string;
+  type?: string; salary?: string; description?: string;
+  url: string; source: string; niche: string; skills: string[];
+  postedAt?: string; fetchedAt: string;
+}
+interface ScoutAlert {
+  id: string; sentAt: string; opened: boolean; applied: boolean;
+  lead: JobScoutLead;
+}
+
+function ScoutCard({ alert, onUpdate }: { alert: ScoutAlert; onUpdate: () => void }) {
+  const { lead } = alert;
+  const [applying, setApplying] = useState(false);
+  const src = SCOUT_SOURCE[lead.source] || SCOUT_SOURCE['other'];
+
+  const markOpened = useCallback(async () => {
+    if (alert.opened) return;
+    try { await apiFetch(`/job-scout/alerts/${alert.id}/open`, { method: 'POST' }); onUpdate(); } catch {}
+  }, [alert.id, alert.opened, onUpdate]);
+
+  const markApplied = async () => {
+    setApplying(true);
+    try { await apiFetch(`/job-scout/alerts/${alert.id}/applied`, { method: 'POST' }); onUpdate(); } catch {}
+    setApplying(false);
+  };
+
+  return (
+    <div
+      style={{
+        background: D.card, borderRadius: 16, padding: 20,
+        border: `1px solid ${alert.opened ? D.border : D.indigo + '40'}`,
+        borderLeft: `4px solid ${alert.opened ? D.border : D.indigo}`,
+        transition: 'all 0.15s', position: 'relative',
+      }}
+      onMouseEnter={e => { (e.currentTarget as HTMLDivElement).style.boxShadow = '0 4px 24px rgba(0,0,0,0.25)'; }}
+      onMouseLeave={e => { (e.currentTarget as HTMLDivElement).style.boxShadow = ''; }}
+    >
+      {!alert.opened && (
+        <div style={{ position: 'absolute', top: 14, right: 14, width: 9, height: 9, borderRadius: '50%', background: D.indigo }} />
+      )}
+
+      {/* Header */}
+      <div style={{ display: 'flex', gap: 12, alignItems: 'flex-start', marginBottom: 10 }}>
+        <div style={{
+          width: 42, height: 42, borderRadius: 10, background: `${src.color}22`,
+          display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20, flexShrink: 0,
+        }}>{src.icon}</div>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <h3 style={{ margin: 0, fontSize: 14, fontWeight: 700, color: D.text, lineHeight: 1.3 }}>{lead.title}</h3>
+          <p style={{ margin: '2px 0 0', fontSize: 12, color: D.subtext, fontWeight: 600 }}>{lead.company}</p>
+        </div>
+      </div>
+
+      {/* Badges */}
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 5, marginBottom: 10 }}>
+        {lead.location && (
+          <span style={{ fontSize: 11, color: D.subtext, background: D.input, padding: '2px 9px', borderRadius: 8 }}>📍 {lead.location}</span>
+        )}
+        {lead.type && (
+          <span style={{ fontSize: 11, color: '#fff', fontWeight: 700, background: SCOUT_TYPE_COLOR[lead.type] || '#64748b', padding: '2px 9px', borderRadius: 8 }}>
+            {lead.type}
+          </span>
+        )}
+        {lead.salary && (
+          <span style={{ fontSize: 11, color: D.green, fontWeight: 700, background: D.green + '18', padding: '2px 9px', borderRadius: 8 }}>💰 {lead.salary}</span>
+        )}
+        <span style={{ fontSize: 11, color: src.color, background: `${src.color}18`, padding: '2px 9px', borderRadius: 8 }}>
+          {src.icon} {lead.source.replace('_', ' ')}
+        </span>
+      </div>
+
+      {lead.description && (
+        <p style={{ margin: '0 0 10px', fontSize: 12, color: D.subtext, lineHeight: 1.6 }}>
+          {lead.description.slice(0, 180)}{lead.description.length > 180 ? '…' : ''}
+        </p>
+      )}
+
+      {lead.skills.length > 0 && (
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 5, marginBottom: 10 }}>
+          {lead.skills.slice(0, 6).map(s => (
+            <span key={s} style={{ fontSize: 10, color: D.indigo, background: `${D.indigo}18`, padding: '2px 8px', borderRadius: 6 }}>{s}</span>
+          ))}
+          {lead.skills.length > 6 && <span style={{ fontSize: 10, color: D.muted }}>+{lead.skills.length - 6}</span>}
+        </div>
+      )}
+
+      {/* Footer */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 8, paddingTop: 10, borderTop: `1px solid ${D.border}` }}>
+        <span style={{ fontSize: 11, color: D.muted }}>
+          {lead.postedAt ? `Posted ${timeAgo(lead.postedAt)} · ` : ''}Scouted {timeAgo(alert.sentAt)}
+        </span>
+        <div style={{ display: 'flex', gap: 7 }}>
+          {alert.applied ? (
+            <span style={{ fontSize: 12, color: D.green, fontWeight: 700 }}>✅ Applied</span>
+          ) : (
+            <button onClick={markApplied} disabled={applying} style={{
+              padding: '6px 14px', borderRadius: 9, border: `1px solid ${D.border}`,
+              background: D.input, color: D.text, cursor: 'pointer', fontSize: 12, fontWeight: 600,
+              opacity: applying ? 0.6 : 1,
+            }}>{applying ? '…' : '✓ Mark Applied'}</button>
+          )}
+          <button onClick={() => { markOpened(); window.open(lead.url, '_blank', 'noreferrer'); }} style={{
+            padding: '6px 16px', borderRadius: 9, border: 'none',
+            background: `linear-gradient(135deg, ${D.indigo}, ${D.purple})`,
+            color: '#fff', cursor: 'pointer', fontSize: 12, fontWeight: 700,
+          }}>View Job →</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ── Job Scout tab panel ────────────────────────────────────────────────────── */
+function JobScoutTab() {
+  const [alerts, setAlerts]     = useState<ScoutAlert[]>([]);
+  const [loading, setLoading]   = useState(true);
+  const [page, setPage]         = useState(1);
+  const [hasMore, setHasMore]   = useState(true);
+  const [unread, setUnread]     = useState(0);
+  const [total, setTotal]       = useState(0);
+  const [filter, setFilter]     = useState<'all' | 'unread' | 'applied'>('all');
+  const loaderRef               = useRef<HTMLDivElement>(null);
+
+  const fetchAlerts = useCallback(async (p: number) => {
+    try {
+      const res = await apiFetch<{ alerts: ScoutAlert[]; total: number; unread: number; pages: number }>(
+        `/job-scout/my-alerts?page=${p}&limit=15`
+      );
+      if (res.success && res.data) {
+        setAlerts(prev => p === 1 ? res.data!.alerts : [...prev, ...res.data!.alerts]);
+        setHasMore(p < res.data.pages);
+        setUnread(res.data.unread);
+        setTotal(res.data.total);
+      }
+    } catch {}
+    setLoading(false);
+  }, []);
+
+  useEffect(() => { setPage(1); setAlerts([]); setLoading(true); fetchAlerts(1); }, [fetchAlerts]);
+  useEffect(() => { if (page > 1) fetchAlerts(page); }, [page, fetchAlerts]);
+
+  useEffect(() => {
+    const obs = new IntersectionObserver(entries => {
+      if (entries[0].isIntersecting && hasMore && !loading) setPage(p => p + 1);
+    }, { threshold: 0.1 });
+    if (loaderRef.current) obs.observe(loaderRef.current);
+    return () => obs.disconnect();
+  }, [hasMore, loading]);
+
+  const refresh = () => { setPage(1); setAlerts([]); setLoading(true); fetchAlerts(1); };
+
+  const filtered =
+    filter === 'unread'  ? alerts.filter(a => !a.opened) :
+    filter === 'applied' ? alerts.filter(a => a.applied) :
+    alerts;
+
+  return (
+    <div>
+      {/* Stats row */}
+      <div style={{ display: 'flex', gap: 12, marginBottom: 20, flexWrap: 'wrap' }}>
+        {[
+          { icon: '📬', label: 'Total',   value: total,                              color: D.indigo },
+          { icon: '🔔', label: 'Unread',  value: unread,                             color: D.amber },
+          { icon: '✅', label: 'Applied', value: alerts.filter(a => a.applied).length, color: D.green },
+        ].map(s => (
+          <div key={s.label} style={{
+            background: D.card, borderRadius: 12, padding: '12px 18px',
+            border: `1px solid ${D.border}`, display: 'flex', gap: 10, alignItems: 'center', flex: '1 1 110px',
+          }}>
+            <span style={{ fontSize: 22 }}>{s.icon}</span>
+            <div>
+              <div style={{ fontSize: 20, fontWeight: 800, color: s.color }}>{s.value}</div>
+              <div style={{ fontSize: 11, color: D.muted }}>{s.label}</div>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* Filter tabs */}
+      <div style={{ display: 'flex', gap: 3, background: D.input, borderRadius: 10, padding: 3, marginBottom: 18, width: 'fit-content', border: `1px solid ${D.border}` }}>
+        {(['all', 'unread', 'applied'] as const).map(f => (
+          <button key={f} onClick={() => setFilter(f)} style={{
+            padding: '6px 16px', borderRadius: 8, border: 'none', cursor: 'pointer',
+            background: filter === f ? D.indigo : 'transparent',
+            color: filter === f ? '#fff' : D.muted,
+            fontWeight: filter === f ? 700 : 500, fontSize: 13, textTransform: 'capitalize',
+          }}>{f}</button>
+        ))}
+      </div>
+
+      {/* Empty state */}
+      {!loading && total === 0 && (
+        <div style={{
+          background: `linear-gradient(135deg, ${D.indigo}10, ${D.purple}10)`,
+          border: `1px solid ${D.indigo}25`, borderRadius: 18, padding: 36, textAlign: 'center',
+        }}>
+          <div style={{ fontSize: 52, marginBottom: 12 }}>🤖</div>
+          <h3 style={{ color: '#fff', fontWeight: 800, fontSize: 18, margin: '0 0 8px' }}>Job Scout is warming up…</h3>
+          <p style={{ color: D.subtext, fontSize: 13, margin: '0 0 20px', lineHeight: 1.7 }}>
+            The AI scans <strong style={{ color: D.text }}>LinkedIn, Indeed, Jobberman, Glassdoor, Twitter/X</strong> daily
+            for jobs matching your niche. Set your <strong style={{ color: D.text }}>Interest Niche</strong> in Settings to activate it.
+          </p>
+          <a href="/dashboard/settings" style={{
+            display: 'inline-block',
+            background: `linear-gradient(135deg, ${D.indigo}, ${D.purple})`,
+            color: '#fff', padding: '9px 22px', borderRadius: 10,
+            textDecoration: 'none', fontWeight: 700, fontSize: 13,
+          }}>⚙️ Set my niche</a>
+        </div>
+      )}
+
+      {loading && <div style={{ textAlign: 'center', padding: 50, color: D.muted }}>Loading alerts…</div>}
+
+      {!loading && filtered.length === 0 && total > 0 && (
+        <div style={{ textAlign: 'center', padding: 40, color: D.muted }}>
+          No {filter} alerts.{' '}
+          <button onClick={() => setFilter('all')} style={{ background: 'none', border: 'none', color: D.indigo, cursor: 'pointer', fontWeight: 700, fontSize: 'inherit' }}>
+            View all
+          </button>
+        </div>
+      )}
+
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+        {filtered.map(alert => <ScoutCard key={alert.id} alert={alert} onUpdate={refresh} />)}
+      </div>
+
+      <div ref={loaderRef} style={{ height: 40, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        {!hasMore && total > 0 && <span style={{ color: D.muted, fontSize: 12 }}>You've seen all alerts 🎉</span>}
+      </div>
+    </div>
+  );
+}
+
+/* ── Main Page ──────────────────────────────────────────────────────────────── */
 export default function JobsPage() {
-  const [featured, setFeatured]   = useState<any>(null);
-  const [allJobs, setAllJobs]     = useState<any[] | null>(null);
-  const [selected, setSelected]   = useState<string | null>(null);
-  const [search, setSearch]       = useState('');
-  const [activeTab, setActiveTab] = useState<'opportunities' | 'all' | 'saved' | 'applications'>('opportunities');
-  const [saved, setSaved]         = useState<any[] | null>(null);
+  const [featured, setFeatured]       = useState<any>(null);
+  const [allJobs, setAllJobs]         = useState<any[] | null>(null);
+  const [selected, setSelected]       = useState<string | null>(null);
+  const [search, setSearch]           = useState('');
+  const [activeTab, setActiveTab]     = useState<'opportunities' | 'all' | 'saved' | 'applications' | 'scout'>('opportunities');
+  const [saved, setSaved]             = useState<any[] | null>(null);
   const [applications, setApplications] = useState<any[] | null>(null);
-  const [applying, setApplying]   = useState<string | null>(null);
-  const [saving, setSaving]       = useState<string | null>(null);
-  const [toast, setToast]         = useState('');
+  const [applying, setApplying]       = useState<string | null>(null);
+  const [saving, setSaving]           = useState<string | null>(null);
+  const [toast, setToast]             = useState('');
+  const [scoutUnread, setScoutUnread] = useState(0);
 
   function showToast(msg: string) { setToast(msg); setTimeout(() => setToast(''), 3000); }
 
+  // Fetch scout unread count for badge on the tab
   useEffect(() => {
-    apiFetch('/jobs/featured').then(r => { if (r.success) setFeatured(r.data); else setFeatured({ jobs: [], userTier: 'bronze', userCoins: 0 }); }).catch(() => setFeatured({ jobs: [], userTier: 'bronze', userCoins: 0 }));
-    apiFetch('/jobs').then(r => { if (r.success) { setAllJobs(r.data); if (r.data.length > 0) setSelected(r.data[0].id); } else setAllJobs([]); }).catch(() => setAllJobs([]));
+    apiFetch<{ alerts: any[]; unread: number }>('/job-scout/my-alerts?page=1&limit=1')
+      .then(r => { if (r.success && r.data) setScoutUnread(r.data.unread); })
+      .catch(() => {});
   }, []);
 
   useEffect(() => {
-    if (activeTab === 'saved') apiFetch('/jobs/saved').then(r => { if (r.success) setSaved(r.data); else setSaved([]); }).catch(() => setSaved([]));
+    apiFetch('/jobs/featured')
+      .then(r => { if (r.success) setFeatured(r.data); else setFeatured({ jobs: [], userTier: 'bronze', userCoins: 0 }); })
+      .catch(() => setFeatured({ jobs: [], userTier: 'bronze', userCoins: 0 }));
+    apiFetch('/jobs')
+      .then(r => { if (r.success) { setAllJobs(r.data); if (r.data.length > 0) setSelected(r.data[0].id); } else setAllJobs([]); })
+      .catch(() => setAllJobs([]));
+  }, []);
+
+  useEffect(() => {
+    if (activeTab === 'saved')        apiFetch('/jobs/saved').then(r => { if (r.success) setSaved(r.data); else setSaved([]); }).catch(() => setSaved([]));
     if (activeTab === 'applications') apiFetch('/jobs/applications').then(r => { if (r.success) setApplications(r.data); else setApplications([]); }).catch(() => setApplications([]));
+    // Clear badge when user opens Scout tab
+    if (activeTab === 'scout')        setScoutUnread(0);
   }, [activeTab]);
 
   async function applyJob(jobId: string) {
@@ -235,26 +495,34 @@ export default function JobsPage() {
     } catch {} finally { setSaving(null); }
   }
 
-  const coins     = featured?.userCoins || 0;
-  const userTier  = (featured?.userTier || 'bronze') as TierKey;
-  const tier      = TIERS[userTier];
-  const premiumAds   = (featured?.jobs || []).filter((j: any) => j.isPremium);
-  const standardJobs = (featured?.jobs || []).filter((j: any) => !j.isPremium);
+  const coins      = featured?.userCoins || 0;
+  const userTier   = (featured?.userTier || 'bronze') as TierKey;
+  const tier       = TIERS[userTier];
+  const premiumAds    = (featured?.jobs || []).filter((j: any) => j.isPremium);
+  const standardJobs  = (featured?.jobs || []).filter((j: any) => !j.isPremium);
   const TIER_ORDER: TierKey[] = ['bronze', 'silver', 'gold', 'platinum'];
-  const lockedTiers = TIER_ORDER.slice(TIER_ORDER.indexOf(userTier) + 1);
-  const filtered = (allJobs || []).filter(j =>
+  const lockedTiers   = TIER_ORDER.slice(TIER_ORDER.indexOf(userTier) + 1);
+  const filtered      = (allJobs || []).filter(j =>
     j.title?.toLowerCase().includes(search.toLowerCase()) || j.company?.toLowerCase().includes(search.toLowerCase())
   );
   const detail = (allJobs || []).find(j => j.id === selected);
 
   const APP_STATUS_COLOR: Record<string, [string, string]> = {
-    applied:      [D.accent + '20', D.accent],
-    reviewing:    [D.amber + '20',  D.amber],
-    shortlisted:  [D.green + '20',  D.green],
-    interviewing: [D.purple + '20', D.purple],
-    hired:        [D.green + '20',  D.green],
-    rejected:     [D.red + '20',    D.red],
+    applied:      [D.accent + '20',  D.accent],
+    reviewing:    [D.amber + '20',   D.amber],
+    shortlisted:  [D.green + '20',   D.green],
+    interviewing: [D.purple + '20',  D.purple],
+    hired:        [D.green + '20',   D.green],
+    rejected:     [D.red + '20',     D.red],
   };
+
+  const tabs = [
+    { key: 'opportunities', label: '⭐ Opportunities' },
+    { key: 'all',           label: 'All Jobs' },
+    { key: 'saved',         label: 'Saved' },
+    { key: 'applications',  label: 'My Applications' },
+    { key: 'scout',         label: '🔍 Job Scout', badge: scoutUnread },
+  ] as const;
 
   return (
     <SidebarLayout navItems={navItems} pageTitle="Jobs">
@@ -275,7 +543,7 @@ export default function JobsPage() {
             <div>
               <div className="text-[12px] font-semibold uppercase tracking-[0.12em] mb-2" style={{ color: D.amber + 'cc' }}>Career Hub</div>
               <h1 className="font-jakarta font-bold text-[2rem] text-white leading-tight mb-1">Job Opportunities</h1>
-              <p className="text-[13px]" style={{ color: D.subtext }}>Jobs matched to your skills — higher Merit Coins unlock better opportunities.</p>
+              <p className="text-[13px]" style={{ color: D.subtext }}>Jobs matched to your skills · AI-scouted alerts · higher Merit Coins unlock better roles.</p>
             </div>
             <div className="flex items-center gap-3 px-4 py-2.5 rounded-2xl" style={{ background: tier.color + '18', border: `1px solid ${tier.color}30` }}>
               <span className="text-xl">{tier.icon}</span>
@@ -288,25 +556,29 @@ export default function JobsPage() {
         </div>
 
         {/* Tabs */}
-        <div className="flex gap-1 p-1 rounded-xl w-fit mb-5 flex-wrap" style={{ background: D.input, border: `1px solid ${D.border}` }}>
-          {([
-            ['opportunities', '⭐ Opportunities'],
-            ['all',           'All Jobs'],
-            ['saved',         'Saved'],
-            ['applications',  'My Applications'],
-          ] as const).map(([key, label]) => (
+        <div className="flex gap-1 p-1 rounded-xl mb-5 flex-wrap" style={{ background: D.input, border: `1px solid ${D.border}`, width: 'fit-content' }}>
+          {tabs.map(({ key, label, badge }) => (
             <button key={key} onClick={() => setActiveTab(key)}
-              className="px-4 py-2 rounded-[9px] text-sm font-medium font-[inherit] cursor-pointer transition-all border-0 whitespace-nowrap"
+              className="relative px-4 py-2 rounded-[9px] text-sm font-medium font-[inherit] cursor-pointer transition-all border-0 whitespace-nowrap"
               style={{
-                background: activeTab === key ? D.accent : 'transparent',
+                background: activeTab === key ? (key === 'scout' ? D.indigo : D.accent) : 'transparent',
                 color: activeTab === key ? 'white' : D.muted,
               }}>
               {label}
+              {badge != null && badge > 0 && (
+                <span style={{
+                  position: 'absolute', top: 2, right: 2,
+                  background: D.amber, color: '#000', fontSize: 9,
+                  fontWeight: 800, borderRadius: '50%', minWidth: 16,
+                  height: 16, display: 'flex', alignItems: 'center',
+                  justifyContent: 'center', padding: '0 4px',
+                }}>{badge > 99 ? '99+' : badge}</span>
+              )}
             </button>
           ))}
         </div>
 
-        {/* ── Opportunities Tab ───────────────────────────────────────────── */}
+        {/* ── Opportunities Tab ──────────────────────────────────────────────── */}
         {activeTab === 'opportunities' && (
           <div>
             {featured === null ? (
@@ -314,30 +586,22 @@ export default function JobsPage() {
             ) : premiumAds.length > 0 && (
               <div className="mb-6">
                 <div className="flex items-center gap-2 mb-3">
-                  <span className="text-[11px] font-bold text-white px-2.5 py-1 rounded-full" style={{ background: D.purple + '40', border: `1px solid ${D.purple}50` }}>
-                    ⭐ FEATURED
-                  </span>
+                  <span className="text-[11px] font-bold text-white px-2.5 py-1 rounded-full" style={{ background: D.purple + '40', border: `1px solid ${D.purple}50` }}>⭐ FEATURED</span>
                   <span className="text-[11px]" style={{ color: D.muted }}>Posted by verified employers · matched to your {tier.label} tier</span>
                 </div>
                 <div className="grid grid-cols-2 gap-4 max-md:grid-cols-1">
-                  {premiumAds.map((job: any) => (
-                    <OpportunityAd key={job.id} job={job} userTier={userTier} onApply={applyJob} onSave={saveJob} applying={applying} saving={saving} />
-                  ))}
+                  {premiumAds.map((job: any) => <OpportunityAd key={job.id} job={job} userTier={userTier} onApply={applyJob} onSave={saveJob} applying={applying} saving={saving} />)}
                 </div>
               </div>
             )}
-
             {standardJobs.length > 0 && (
               <div className="mb-6">
                 <div className="text-[11px] font-semibold uppercase tracking-wide mb-3" style={{ color: D.muted }}>Matched Jobs ({standardJobs.length})</div>
                 <div className="grid grid-cols-2 gap-4 max-md:grid-cols-1">
-                  {standardJobs.map((job: any) => (
-                    <OpportunityAd key={job.id} job={job} userTier={userTier} onApply={applyJob} onSave={saveJob} applying={applying} saving={saving} />
-                  ))}
+                  {standardJobs.map((job: any) => <OpportunityAd key={job.id} job={job} userTier={userTier} onApply={applyJob} onSave={saveJob} applying={applying} saving={saving} />)}
                 </div>
               </div>
             )}
-
             {featured !== null && premiumAds.length === 0 && standardJobs.length === 0 && (
               <div className="rounded-2xl p-12 text-center mb-6" style={{ background: D.card, border: `1px solid ${D.border}` }}>
                 <i className="fas fa-briefcase text-4xl block mb-3" style={{ color: D.muted }} />
@@ -345,7 +609,6 @@ export default function JobsPage() {
                 <p className="text-sm" style={{ color: D.subtext }}>Check back soon — employers are posting!</p>
               </div>
             )}
-
             {lockedTiers.length > 0 && (
               <div>
                 <div className="text-[11px] font-semibold uppercase tracking-wide mb-3" style={{ color: D.muted }}>Unlock More Opportunities</div>
@@ -360,7 +623,7 @@ export default function JobsPage() {
           </div>
         )}
 
-        {/* ── All Jobs Tab ────────────────────────────────────────────────── */}
+        {/* ── All Jobs Tab ───────────────────────────────────────────────────── */}
         {activeTab === 'all' && (
           <>
             <div className="relative mb-4 max-w-md">
@@ -369,12 +632,10 @@ export default function JobsPage() {
                 className="w-full pl-9 pr-4 py-3 rounded-xl text-sm font-[inherit] outline-none transition-all"
                 style={{ background: D.input, border: `1px solid ${D.border}`, color: D.text }} />
             </div>
-
             {allJobs === null ? (
               <div className="flex flex-col gap-3">{[1,2,3,4].map(i => <Sk key={i} h="h-28" r="rounded-2xl" />)}</div>
             ) : (
               <div className="flex gap-4">
-                {/* Job list */}
                 <div className="flex flex-col gap-3 flex-1 min-w-0">
                   {filtered.length === 0 ? (
                     <div className="text-center py-16">
@@ -388,11 +649,8 @@ export default function JobsPage() {
                     const lc = logoColor(job.company || '');
                     return (
                       <div key={job.id} onClick={() => setSelected(job.id)}
-                        className="rounded-2xl p-4 cursor-pointer transition-all hover:-translate-y-0.5 group"
-                        style={{
-                          background: D.card,
-                          border: `2px solid ${isActive ? D.accent : D.border}`,
-                        }}>
+                        className="rounded-2xl p-4 cursor-pointer transition-all hover:-translate-y-0.5"
+                        style={{ background: D.card, border: `2px solid ${isActive ? D.accent : D.border}` }}>
                         {job.isPremium && <div className="h-0.5 w-full rounded-full mb-3" style={{ background: 'linear-gradient(90deg,#5b4cf5,#7c3aed)' }} />}
                         <div className="flex items-start gap-3">
                           <div className="w-10 h-10 rounded-xl grid place-items-center font-jakarta font-bold text-sm text-white flex-shrink-0" style={{ background: lc }}>
@@ -421,8 +679,6 @@ export default function JobsPage() {
                     );
                   })}
                 </div>
-
-                {/* Detail panel */}
                 {detail && (
                   <div className="w-[340px] flex-shrink-0 max-[1100px]:hidden">
                     <div className="rounded-2xl p-5 sticky top-20" style={{ background: D.card, border: `1px solid ${D.border}` }}>
@@ -493,7 +749,7 @@ export default function JobsPage() {
           </>
         )}
 
-        {/* ── Saved Tab ──────────────────────────────────────────────────── */}
+        {/* ── Saved Tab ─────────────────────────────────────────────────────── */}
         {activeTab === 'saved' && (
           <div>
             {saved === null ? (
@@ -506,15 +762,13 @@ export default function JobsPage() {
               </div>
             ) : (
               <div className="grid grid-cols-2 gap-4 max-md:grid-cols-1">
-                {saved.map((job: any) => (
-                  <OpportunityAd key={job.id} job={job} userTier={userTier} onApply={applyJob} onSave={saveJob} applying={applying} saving={saving} />
-                ))}
+                {saved.map((job: any) => <OpportunityAd key={job.id} job={job} userTier={userTier} onApply={applyJob} onSave={saveJob} applying={applying} saving={saving} />)}
               </div>
             )}
           </div>
         )}
 
-        {/* ── Applications Tab ───────────────────────────────────────────── */}
+        {/* ── Applications Tab ──────────────────────────────────────────────── */}
         {activeTab === 'applications' && (
           <Card>
             <span className="font-jakarta font-bold text-[15px] text-white block mb-4">My Applications</span>
@@ -556,6 +810,9 @@ export default function JobsPage() {
             )}
           </Card>
         )}
+
+        {/* ── Job Scout Tab ─────────────────────────────────────────────────── */}
+        {activeTab === 'scout' && <JobScoutTab />}
       </div>
     </SidebarLayout>
   );
