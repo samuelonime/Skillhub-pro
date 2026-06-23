@@ -516,13 +516,14 @@ export default function JobsPage() {
     rejected:     [D.red + '20',     D.red],
   };
 
-  const tabs = [
+  // ── Define tabs with proper typing ──────────────────────────────────────
+  const tabs: Array<{ key: 'opportunities' | 'all' | 'saved' | 'applications' | 'scout'; label: string; badge?: number }> = [
     { key: 'opportunities', label: '⭐ Opportunities' },
     { key: 'all',           label: 'All Jobs' },
     { key: 'saved',         label: 'Saved' },
     { key: 'applications',  label: 'My Applications' },
     { key: 'scout',         label: '🔍 Job Scout', badge: scoutUnread },
-  ] as const;
+  ];
 
   return (
     <SidebarLayout navItems={navItems} pageTitle="Jobs">
@@ -558,21 +559,37 @@ export default function JobsPage() {
         {/* Tabs */}
         <div className="flex gap-1 p-1 rounded-xl mb-5 flex-wrap" style={{ background: D.input, border: `1px solid ${D.border}`, width: 'fit-content' }}>
           {tabs.map(({ key, label, badge }) => (
-            <button key={key} onClick={() => setActiveTab(key)}
+            <button
+              key={key}
+              onClick={() => setActiveTab(key)}
               className="relative px-4 py-2 rounded-[9px] text-sm font-medium font-[inherit] cursor-pointer transition-all border-0 whitespace-nowrap"
               style={{
                 background: activeTab === key ? (key === 'scout' ? D.indigo : D.accent) : 'transparent',
                 color: activeTab === key ? 'white' : D.muted,
-              }}>
+              }}
+            >
               {label}
-              {badge != null && badge > 0 && (
-                <span style={{
-                  position: 'absolute', top: 2, right: 2,
-                  background: D.amber, color: '#000', fontSize: 9,
-                  fontWeight: 800, borderRadius: '50%', minWidth: 16,
-                  height: 16, display: 'flex', alignItems: 'center',
-                  justifyContent: 'center', padding: '0 4px',
-                }}>{badge > 99 ? '99+' : badge}</span>
+              {badge !== undefined && badge > 0 && (
+                <span
+                  style={{
+                    position: 'absolute',
+                    top: -4,
+                    right: -4,
+                    background: D.amber,
+                    color: '#000',
+                    fontSize: 9,
+                    fontWeight: 800,
+                    borderRadius: '50%',
+                    minWidth: 16,
+                    height: 16,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    padding: '0 4px',
+                  }}
+                >
+                  {badge > 99 ? '99+' : badge}
+                </span>
               )}
             </button>
           ))}
