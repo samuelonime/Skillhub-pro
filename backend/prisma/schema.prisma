@@ -788,6 +788,7 @@ model JobScoutLead {
 
   sentAlerts JobScoutAlert[]
 
+  @@unique([url, niche])
   @@index([niche])
   @@index([status])
   @@index([fetchedAt])

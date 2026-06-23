@@ -191,10 +191,16 @@ async function scoutForNiche(niche) {
   console.log(`[JobScout] Scouting for niche: "${niche}"`);
 
   // ── Step 1: Search the web using Tavily ──────────────────────────
-  const searchResults = await performWebSearch(niche);
+  let searchResults = await performWebSearch(niche);
+
+  // Fallback to DuckDuckGo if Tavily returned nothing
+  if (!searchResults || searchResults.length === 0) {
+    console.warn(`[JobScout] No Tavily results for "${niche}", trying DuckDuckGo fallback`);
+    searchResults = await performDuckDuckGoSearch(niche);
+  }
 
   if (!searchResults || searchResults.length === 0) {
-    console.warn(`[JobScout] No search results for niche "${niche}"`);
+    console.warn(`[JobScout] No search results at all for niche "${niche}"`);
     return;
   }
 
@@ -292,12 +298,19 @@ async function performWebSearch(niche) {
     }
 
     // Try multiple search queries for better coverage
+    // Targeted queries including Africa/Nigeria for relevant market coverage
     const queries = [
-      `${niche} jobs hiring`,
-      `${niche} career opportunities`,
-      `remote ${niche} jobs`,
-      `${niche} job listings`,
-      `${niche} employment`,
+      `${niche} jobs hiring 2024`,
+      `${niche} remote jobs`,
+      `${niche} jobs Nigeria Africa`,
+      `${niche} job vacancies`,
+    ];
+
+    // Job platforms: global + African/Nigerian boards + Twitter/X
+    const JOB_DOMAINS = [
+      'linkedin.com', 'indeed.com', 'glassdoor.com', 'ziprecruiter.com', 'monster.com',
+      'x.com', 'twitter.com',
+      'jobberman.com', 'ngcareers.com', 'myjobmag.com', 'naukri.com', 'workable.com',
     ];
 
     let allResults = [];
@@ -314,7 +327,7 @@ async function performWebSearch(niche) {
             query: query,
             search_depth: 'basic', // or 'advanced' for more results
             max_results: 10,
-            include_domains: ['linkedin.com', 'indeed.com', 'glassdoor.com', 'ziprecruiter.com', 'monster.com'],
+            include_domains: JOB_DOMAINS,
             exclude_domains: ['pinterest.com', 'facebook.com', 'instagram.com', 'youtube.com'],
           }),
         });
@@ -379,11 +392,11 @@ Each job must have these fields:
 - salary: string or null (if visible)
 - description: string (2-3 sentence summary)
 - url: string (direct application link)
-- source: "linkedin" | "indeed" | "glassdoor" | "twitter" | "company_site" | "other"
+- source: "linkedin" | "indeed" | "glassdoor" | "twitter" | "jobberman" | "ngcareers" | "myjobmag" | "company_site" | "other"
 - skills: array of strings
 - postedAt: string or null (date in YYYY-MM-DD format)
 
-Return a JSON array of job objects. If you can't find jobs, return an empty array.`;
+Return a JSON object with a "jobs" key containing an array of job objects. Example: {"jobs": [...]}. If no jobs found, return {"jobs": []}.`;
 
     const userPrompt = `Extract job listings from these search results for "${niche}":
 
