@@ -129,7 +129,7 @@ function GoogleButton({ onAlert, role, niche, label = 'Continue with Google' }: 
           if (!d.success) {
             if (d.message === 'Google account not registered') {
               onAlert('Google account not found. Please sign up with Google.', 'err');
-              router.push('/login?tab=register');
+              window.location.href = '/login?tab=register';
               return;
             }
             onAlert(d.message || 'Google sign-in failed');
@@ -220,7 +220,7 @@ function AppleButton({ onAlert, role, niche, label = 'Continue with Apple' }: {
       if (!d.success) {
         if (d.message?.includes('not registered')) {
           onAlert('Apple account not found. Please sign up first.', 'err');
-          router.push('/login?tab=register');
+          window.location.href = '/login?tab=register';
           return;
         }
         onAlert(d.message || 'Apple sign-in failed');
