@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
 import { SidebarLayout } from '@/components/layout/SidebarLayout';
-import { apiFetch, getCachedUser } from '@/lib/api';
+import { apiFetch } from '@/lib/api';
 
 const navItems = [
   { href: '/dashboard',                 icon: 'fa-home',                  label: 'Dashboard' },
@@ -92,7 +92,11 @@ export default function CommunityPostPage() {
   const [editCommentId,     setEditCommentId]     = useState<string | null>(null);
   const [editCommentBody,   setEditCommentBody]   = useState('');
   const [deletingCommentId, setDeletingCommentId] = useState<string | null>(null);
-  const currentUser = getCachedUser();
+  const [currentUser, setCurrentUser] = useState<any>(null);
+
+  useEffect(() => {
+    apiFetch('/auth/me').then(r => { if (r.success && r.data) setCurrentUser(r.data); }).catch(() => {});
+  }, []);
 
   useEffect(() => {
     if (!postId) return;

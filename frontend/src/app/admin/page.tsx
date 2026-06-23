@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { apiFetch, getCachedUser } from '@/lib/api';
+import { apiFetch } from '@/lib/api';
 
 /* ─── Types ─────────────────────────────────────────────────────────────── */
 interface Stats {
@@ -236,12 +236,13 @@ export default function AdminPage() {
 
   /* ── Effects (all BEFORE early return) ── */
   useEffect(() => {
-    const user = getCachedUser();
-    if (!user || user.role !== 'admin') {
-      window.location.href = '/dashboard';
-      return;
-    }
-    setAuthorized(true);
+    apiFetch('/auth/me').then(r => {
+      if (r.success && r.data?.role === 'admin') {
+        setAuthorized(true);
+      } else {
+        window.location.href = '/dashboard';
+      }
+    }).catch(() => { window.location.href = '/dashboard'; });
   }, []);
 
   useEffect(() => { loadStats(); loadBilling(); }, [loadStats, loadBilling]);

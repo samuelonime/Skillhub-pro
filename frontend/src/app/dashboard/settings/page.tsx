@@ -126,7 +126,11 @@ export default function SettingsPage() {
           apiFetch('/users/profile'),
           apiFetch('/settings'),
         ]);
-        if (profileRes.success) setProfile(profileRes.data);
+        if (profileRes.success) {
+          const d = profileRes.data;
+          if (Array.isArray(d.skills)) d.skills = d.skills.map((s: any) => typeof s === "string" ? s : s.name).filter(Boolean);
+          setProfile(d);
+        }
         if (settingsRes.success) setSettings(settingsRes.data);
       } catch {}
       finally { setLoading(false); }
@@ -137,18 +141,13 @@ export default function SettingsPage() {
   async function saveProfile() {
     setSaving(true);
     try {
-      const { id, email, role, meritCoins, profileStrength, verified, createdAt, ...safeProfile } = profile;
+      const { id, email, role, meritCoins, profileStrength, verified, createdAt, skills, ...safeProfile } = profile;
       const res = await apiFetch('/users/profile', {
         method: 'PUT',
         body: JSON.stringify(safeProfile),
       });
       if (res.success) {
         showToast('Profile saved!');
-        const stored = localStorage.getItem('sh_user');
-        if (stored) {
-          const user = JSON.parse(stored);
-          localStorage.setItem('sh_user', JSON.stringify({ ...user, ...res.data }));
-        }
       } else {
         showToast(res.message || 'Failed to save', 'err');
       }
@@ -181,7 +180,7 @@ export default function SettingsPage() {
       });
       if (res.success) {
         showToast('Password updated! Please log in again.');
-        setTimeout(() => { localStorage.clear(); window.location.href = '/login'; }, 2000);
+        setTimeout(() => { window.location.href = '/login'; }, 2000);
       } else {
         showToast(res.message || 'Failed to change password', 'err');
       }

@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import Link from 'next/link';
 import { SidebarLayout } from '@/components/layout/SidebarLayout';
-import { apiFetch, getCachedUser } from '@/lib/api';
+import { apiFetch } from '@/lib/api';
 
 const navItems = [
   { href: '/dashboard',                 icon: 'fa-home',                  label: 'Dashboard' },
@@ -874,7 +874,7 @@ function PortfolioSpotlights({ onMessage }: { onMessage: (u: any) => void }) {
 
 /* ── Main Page ───────────────────────────────────────────────────────────── */
 export default function CommunityPage() {
-  const user = getCachedUser();
+  const [user, setUser] = useState<any>(null);
   const [activeTab, setActiveTab] = useState<'activity' | 'posts'>('activity'); // NEW: tabs
   const [posts,    setPosts]    = useState<any[]>([]);
   const [stats,    setStats]    = useState<any>(null);
@@ -888,6 +888,10 @@ export default function CommunityPage() {
   const [chatUser, setChatUser] = useState<any>(null);
   const [editPost, setEditPost] = useState<any>(null);
   const [deleting, setDeleting] = useState<string | null>(null);
+
+  useEffect(() => {
+    apiFetch('/auth/me').then(r => { if (r.success && r.data) setUser(r.data); }).catch(() => {});
+  }, []);
 
   const fetchPosts = useCallback(async (p = 1, t = type, s = sort, q = search) => {
     setLoading(true);

@@ -5,7 +5,7 @@
  * - Tokens are NEVER stored in localStorage or JS-readable storage
  * - The browser sends cookies automatically on every request
  * - credentials: 'include' is required for cross-origin cookie sending
- * - Non-sensitive user data (name, role) is cached in localStorage for instant UI
+ * - Non-sensitive user data (name, role) is cached in memory for instant UI
  */
 
 // Always use the same-origin proxy path — Next.js rewrites /api/v1/* to the backend.
@@ -84,14 +84,12 @@ async function silentRefresh(): Promise<boolean> {
   }
 }
 
-/* ── Non-sensitive user cache (name, role, avatar for instant UI display) ── */
+/* ── Non-sensitive user cache (in-memory; no localStorage) ── */
 
-const USER_KEY = 'sh_user';
+let _cachedUser: any | null = null;
 
 export function setCachedUser(user: any) {
-  if (typeof window === 'undefined') return;
-  // Only store safe, non-sensitive display fields
-  const safe = {
+  _cachedUser = {
     id:              user.id,
     firstName:       user.firstName,
     lastName:        user.lastName,
@@ -104,26 +102,17 @@ export function setCachedUser(user: any) {
     profileStrength: user.profileStrength,
     interestNiche:   user.interestNiche || null,
   };
-  localStorage.setItem(USER_KEY, JSON.stringify(safe));
 }
 
 export function getCachedUser(): any | null {
-  try {
-    if (typeof window === 'undefined') return null;
-    const raw = localStorage.getItem(USER_KEY);
-    return raw ? JSON.parse(raw) : null;
-  } catch {
-    return null;
-  }
+  return _cachedUser;
 }
 
 export function clearCachedUser() {
-  if (typeof window !== 'undefined') localStorage.removeItem(USER_KEY);
+  _cachedUser = null;
 }
 
-/**
- * Full logout — clears server-side cookies and local cache.
- */
+
 export async function logout() {
   try {
     await fetch(`${API_BASE}/auth/logout`, {

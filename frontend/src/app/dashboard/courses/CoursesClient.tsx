@@ -3,7 +3,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { SidebarLayout } from '@/components/layout/SidebarLayout';
-import { apiFetch, getCachedUser } from '@/lib/api';
+import { apiFetch } from '@/lib/api';
 
 const navItems = [
   { href: '/dashboard', icon: 'fa-home', label: 'Dashboard' },
@@ -134,10 +134,15 @@ export default function CoursesClient() {
   useEffect(() => {
     const platformParam = searchParams.get('platform');
     const categoryParam = searchParams.get('category');
-    const user = getCachedUser();
     if (platformParam) setPlatform(platformParam);
-    if (categoryParam) setCategory(categoryParam);
-    else if (user?.interestNiche) setCategory(user.interestNiche);
+    if (categoryParam) {
+      setCategory(categoryParam);
+    } else {
+      // Fetch interestNiche from API instead of localStorage cache
+      apiFetch('/users/profile').then(r => {
+        if (r.success && r.data?.interestNiche) setCategory(r.data.interestNiche);
+      }).catch(() => {});
+    }
   }, [searchParams?.toString()]);
 
   async function loadCourses() {

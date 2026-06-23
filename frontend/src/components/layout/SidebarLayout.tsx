@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { apiFetch, getCachedUser, logout } from '@/lib/api';
+import { apiFetch, logout } from '@/lib/api';
 
 interface NavItem {
   href:   string;
@@ -256,9 +256,6 @@ export function SidebarLayout({ children, navItems, pageTitle }: SidebarLayoutPr
 
   // Fetch user data
   useEffect(() => {
-    const cached = getCachedUser();
-    if (cached) setUser(cached);
-    
     apiFetch('/auth/me').then(r => { 
       if (r.success && r.data) setUser(r.data); 
     }).catch(() => {});
