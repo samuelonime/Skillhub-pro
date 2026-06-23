@@ -43,7 +43,7 @@ router.get('/', authenticate, async (req, res) => {
   try {
     const [projects, certificates] = await Promise.all([
       prisma.project.findMany({ where: { userId: req.user.id }, orderBy: { createdAt: 'desc' } }),
-      prisma.certificate.findMany({ where: { userId: req.user.id, status: 'verified' } }),
+      prisma.certificate.findMany({ where: { userId: req.user.id }, orderBy: { createdAt: 'desc' } }),
     ]);
 
     // req.user.skills is UserSkill[] — map to plain name strings for the frontend

@@ -64,7 +64,7 @@ export default function CertificatesPage() {
   const [toast, setToast]       = useState('');
   const [toastOk, setToastOk]   = useState(true);
   const [showUpload, setShowUpload] = useState(false);
-  const [form, setForm]         = useState({ name: '', issuer: '', issueDate: '' });
+  const [form, setForm]         = useState({ title: '', provider: '', issueDate: '' });
   const [uploading, setUploading] = useState(false);
 
   function showMsg(msg: string, ok = true) {
@@ -87,14 +87,14 @@ export default function CertificatesPage() {
   useEffect(() => { load(); }, []);
 
   async function uploadCert() {
-    if (!form.name || !form.issuer || !form.issueDate) return;
+    if (!form.title || !form.provider || !form.issueDate) return;
     setUploading(true);
     try {
       const res = await apiFetch('/certificates', { method: 'POST', body: JSON.stringify(form) });
       if (res.success) {
         showMsg('Certificate added!');
         setShowUpload(false);
-        setForm({ name: '', issuer: '', issueDate: '' });
+        setForm({ title: '', provider: '', issueDate: '' });
         load();
       } else showMsg(res.message || 'Failed to add certificate', false);
     } catch { showMsg('Failed to add certificate', false); }
@@ -111,7 +111,7 @@ export default function CertificatesPage() {
   }
 
   function share(cert: any, platform: string) {
-    const text = `I earned the "${cert.name}" certificate from ${cert.issuer} on SkillHub Pro! 🎓`;
+    const text = `I earned the "${cert.title || cert.name}" certificate from ${cert.provider || cert.issuer} on SkillHub Pro! 🎓`;
     const url  = `https://skillhub.pro/verify/${cert.credentialId || cert.id}`;
     if (platform === 'linkedin') window.open(`https://www.linkedin.com/shareArticle?mini=true&url=${encodeURIComponent(url)}&title=${encodeURIComponent(text)}`, '_blank');
     else if (platform === 'twitter') window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(text + ' ' + url)}`, '_blank');
@@ -157,8 +157,8 @@ export default function CertificatesPage() {
             <h3 className="font-jakarta font-bold text-[15px] text-white mb-4">Add External Certificate</h3>
             <div className="grid grid-cols-3 gap-4 max-md:grid-cols-1">
               {[
-                { label: 'Certificate Name', key: 'name', type: 'text', placeholder: 'e.g. AWS Solutions Architect' },
-                { label: 'Issuing Organization', key: 'issuer', type: 'text', placeholder: 'e.g. Amazon Web Services' },
+                { label: 'Certificate Name', key: 'title', type: 'text', placeholder: 'e.g. AWS Solutions Architect' },
+                { label: 'Issuing Organization', key: 'provider', type: 'text', placeholder: 'e.g. Amazon Web Services' },
                 { label: 'Issue Date', key: 'issueDate', type: 'date', placeholder: '' },
               ].map(({ label, key, type, placeholder }) => (
                 <div key={key}>
@@ -263,7 +263,7 @@ export default function CertificatesPage() {
                           {/* Info */}
                           <div className="flex-1 min-w-0">
                             <div className="flex items-center gap-2 mb-0.5 flex-wrap">
-                              <h3 className="font-jakarta font-bold text-[15px] tracking-tight text-white">{cert.name}</h3>
+                              <h3 className="font-jakarta font-bold text-[15px] tracking-tight text-white">{cert.title || cert.name}</h3>
                               {cert.verified !== false && (
                                 <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full flex-shrink-0"
                                   style={{ background: D.green + '20', color: D.green }}>
@@ -272,7 +272,7 @@ export default function CertificatesPage() {
                               )}
                             </div>
                             <p className="text-xs mb-1" style={{ color: D.subtext }}>
-                              {cert.issuer}{date ? ` · Issued ${date}` : ''}
+                              {cert.provider || cert.issuer}{date ? ` · Issued ${date}` : ''}
                             </p>
                             {cert.credentialId && (
                               <p className="text-[11px] font-mono" style={{ color: D.muted }}>ID: {cert.credentialId}</p>
@@ -384,8 +384,8 @@ export default function CertificatesPage() {
                       <div className="w-20 h-20 rounded-2xl grid place-items-center text-4xl mb-3" style={{ background: color + '20', color }}>
                         <i className="fas fa-certificate" />
                       </div>
-                      <div className="font-jakarta font-bold text-[14px] text-white text-center mb-0.5">{cert.name}</div>
-                      <div className="text-[11px]" style={{ color: D.muted }}>{cert.issuer}</div>
+                      <div className="font-jakarta font-bold text-[14px] text-white text-center mb-0.5">{cert.title || cert.name}</div>
+                      <div className="text-[11px]" style={{ color: D.muted }}>{cert.provider || cert.issuer}</div>
                       {cert.verified !== false && (
                         <span className="mt-2.5 inline-flex items-center gap-1 text-[10px] font-bold px-2.5 py-1 rounded-full"
                           style={{ background: D.green + '20', color: D.green }}>

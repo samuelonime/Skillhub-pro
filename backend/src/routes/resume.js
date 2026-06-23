@@ -171,7 +171,7 @@ router.post('/generate', authenticate, async (req, res) => {
           orderBy: { enrolledAt: 'desc' },
         }),
         prisma.certificate.findMany({
-          where:   { userId, status: 'verified' },
+          where:   { userId },
           select:  { title: true, provider: true, issueDate: true, credentialUrl: true },
           orderBy: { issueDate: 'desc' },
         }),
