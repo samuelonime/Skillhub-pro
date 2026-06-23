@@ -182,7 +182,8 @@ export default function CoursesClient() {
         setExternalCourses(imported);
         setCategories(prev => {
           const importedCats = imported.map((c: any) => c.category).filter(Boolean);
-          return ['All', ...Array.from(new Set([...prev, ...importedCats]))];
+          const existing = prev.filter(c => c !== 'All');
+          return ['All', ...Array.from(new Set([...existing, ...importedCats]))];
         });
       }
     } catch {} finally {
