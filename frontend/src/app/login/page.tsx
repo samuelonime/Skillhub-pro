@@ -48,6 +48,36 @@ function Spinner() {
   return <div className="w-[17px] h-[17px] border-2 border-white/30 border-t-white rounded-full mx-auto" style={{ animation: 'spin 0.7s linear infinite' }} />;
 }
 
+
+/**
+ * FIX: After a successful login/OAuth, redirect to the ?redirect param if present and safe,
+ * otherwise fall back to the role-based default page.
+ * This is what makes shared links work — the middleware preserved the destination
+ * in the URL, and now we honour it after authentication.
+ */
+function usePostLoginRedirect() {
+  const router       = useRouter();
+  const searchParams = useSearchParams();
+
+  function isSafeRedirect(path: string | null): path is string {
+    if (!path) return false;
+    if (!path.startsWith('/') || path.startsWith('//')) return false;
+    if (/[\r\n]/.test(path)) return false;
+    return true;
+  }
+
+  return function redirect(role: string, delayMs = 800) {
+    const param    = searchParams.get('redirect');
+    const safeDest = isSafeRedirect(param)
+      ? param
+      : role === 'employer' ? '/employer'
+      : role === 'admin'    ? '/admin'
+      : '/dashboard';
+
+    setTimeout(() => router.push(safeDest), delayMs);
+  };
+}
+
 /* ── Google Button ───────────────────────────────────────────────────────── */
 function GoogleButton({ onAlert, role, niche, label = 'Continue with Google' }: {
   onAlert: (msg: string, type?: AlertType) => void;
@@ -55,7 +85,7 @@ function GoogleButton({ onAlert, role, niche, label = 'Continue with Google' }: 
   niche?: string;
   label?: string;
 }) {
-  const router = useRouter();
+  const postLoginRedirect = usePostLoginRedirect();
   const [gLoading, setGLoading] = useState(false);
 
   useEffect(() => {
@@ -107,8 +137,8 @@ function GoogleButton({ onAlert, role, niche, label = 'Continue with Google' }: 
           }
           setCachedUser(d.data.user);
           onAlert('Google sign-in successful! Redirecting…', 'ok');
-          const userRole = d.data.user.role;
-          setTimeout(() => router.push(userRole === 'employer' ? '/employer' : userRole === 'admin' ? '/admin' : '/dashboard'), 800);
+          // FIX: honour ?redirect param so shared links work
+          postLoginRedirect(d.data.user.role);
         } catch {
           onAlert('Google sign-in failed. Please check your connection.');
         } finally {
@@ -118,7 +148,7 @@ function GoogleButton({ onAlert, role, niche, label = 'Continue with Google' }: 
     });
 
     client.requestCode();
-  }, [role, niche, onAlert, router]);
+  }, [role, niche, onAlert, postLoginRedirect]);
 
   return (
     <button
@@ -149,7 +179,7 @@ function AppleButton({ onAlert, role, niche, label = 'Continue with Apple' }: {
   niche?: string;
   label?: string;
 }) {
-  const router = useRouter();
+  const postLoginRedirect = usePostLoginRedirect();
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
@@ -198,8 +228,8 @@ function AppleButton({ onAlert, role, niche, label = 'Continue with Apple' }: {
       }
       setCachedUser(d.data.user);
       onAlert('Apple sign-in successful! Redirecting…', 'ok');
-      const userRole = d.data.user.role;
-      setTimeout(() => router.push(userRole === 'employer' ? '/employer' : userRole === 'admin' ? '/admin' : '/dashboard'), 800);
+      // FIX: honour ?redirect param so shared links work
+      postLoginRedirect(d.data.user.role);
     } catch (err: any) {
       if (err?.error === 'popup_closed_by_user' || err?.error === 'user_cancelled_authorize') {
         setLoading(false);
@@ -209,7 +239,7 @@ function AppleButton({ onAlert, role, niche, label = 'Continue with Apple' }: {
     } finally {
       setLoading(false);
     }
-  }, [role, onAlert, router]);
+  }, [role, niche, onAlert, postLoginRedirect]);
 
   return (
     <button
@@ -232,7 +262,7 @@ function AppleButton({ onAlert, role, niche, label = 'Continue with Apple' }: {
 
 /* ── Login Form ──────────────────────────────────────────────────────────── */
 function LoginForm({ onAlert }: { onAlert: (msg: string, type?: AlertType) => void }) {
-  const router = useRouter();
+  const postLoginRedirect = usePostLoginRedirect();
   const [email, setEmail] = useState('');
   const [pwd, setPwd] = useState('');
   const [showPwd, setShowPwd] = useState(false);
@@ -254,8 +284,8 @@ function LoginForm({ onAlert }: { onAlert: (msg: string, type?: AlertType) => vo
       if (!d.success) return onAlert(d.message || 'Login failed');
       setCachedUser(d.data.user);
       onAlert('Login successful! Redirecting…', 'ok');
-      const role = d.data.user.role;
-      setTimeout(() => router.push(role === 'employer' ? '/employer' : role === 'admin' ? '/admin' : '/dashboard'), 800);
+      // FIX: honour ?redirect param so shared links work
+      postLoginRedirect(d.data.user.role);
     } catch { onAlert('Cannot reach server. Please check your connection.'); }
     finally { setLoading(false); }
   }
@@ -314,7 +344,7 @@ function LoginForm({ onAlert }: { onAlert: (msg: string, type?: AlertType) => vo
 
 /* ── Register Form ───────────────────────────────────────────────────────── */
 function RegisterForm({ onAlert }: { onAlert: (msg: string, type?: AlertType) => void }) {
-  const router = useRouter();
+  const postLoginRedirect = usePostLoginRedirect();
   const [role, setRole] = useState<Role>('student');
   const [fields, setFields] = useState({ fn: '', ln: '', email: '', pwd: '', pwdC: '', company: '' });
   const [niche, setNiche] = useState('');
@@ -342,7 +372,8 @@ function RegisterForm({ onAlert }: { onAlert: (msg: string, type?: AlertType) =>
       if (!d.success) { const msg = d.errors ? d.errors.map((x: any) => x.msg).join('. ') : (d.message || 'Registration failed'); return onAlert(msg); }
       setCachedUser(d.data.user);
       onAlert('Account created! Redirecting…', 'ok');
-      setTimeout(() => router.push(role === 'employer' ? '/employer' : '/dashboard'), 800);
+      // FIX: honour ?redirect param so shared links work
+      postLoginRedirect(d.data.user.role);
     } catch { onAlert('Cannot reach server. Please check your connection.'); }
     finally { setLoading(false); }
   }

@@ -12,7 +12,6 @@ import type { NextRequest } from 'next/server';
  * Real token validity is enforced by the backend on every API call.
  * If the token is expired, apiFetch() will silently refresh via sh_refresh,
  * or redirect to /login if refresh also fails.
- * Admin role verification happens on the client side and via API 403s.
  */
 
 /**
@@ -30,25 +29,31 @@ function isSafeRedirect(path: string | null): path is string {
 
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
-  const accessToken = request.cookies.get('sh_access')?.value;
-  const isAuthenticated = Boolean(accessToken);
+  const accessToken   = request.cookies.get('sh_access')?.value;
+  const refreshToken  = request.cookies.get('sh_refresh')?.value;
+
+  // Consider authenticated if EITHER cookie is present.
+  // If sh_access is expired but sh_refresh exists, apiFetch() will silently
+  // renew on the first API call — the user should NOT be kicked to login.
+  const isAuthenticated = Boolean(accessToken || refreshToken);
 
   // Protect dashboard, employer, and admin routes
   const isProtected =
-    pathname.startsWith('/dashboard') || 
+    pathname.startsWith('/dashboard') ||
     pathname.startsWith('/employer') ||
     pathname.startsWith('/admin');
 
   if (isProtected && !isAuthenticated) {
     const loginUrl = new URL('/login', request.url);
-    // Preserve the full path+query so the user lands back here after login
+    // FIX: Preserve the FULL original URL (path + query) so after login the
+    // user lands exactly on the shared link they clicked — not just /dashboard.
     const fullPath = pathname + (request.nextUrl.search || '');
     loginUrl.searchParams.set('redirect', fullPath);
     return NextResponse.redirect(loginUrl);
   }
 
-  // Redirect already-authenticated users away from login
-  // BUT if they arrived via a shared link redirect param, honour it
+  // Redirect already-authenticated users away from /login.
+  // If they arrived via a shared link (redirect param), honour it after login.
   if (pathname === '/login' && isAuthenticated) {
     const redirect = request.nextUrl.searchParams.get('redirect');
     const safeDest = isSafeRedirect(redirect) ? redirect : '/dashboard';
