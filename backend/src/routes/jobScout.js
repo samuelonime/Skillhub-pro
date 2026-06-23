@@ -6,10 +6,24 @@ const { success, error, badRequest } = require('../utils/response');
 // ── DeepSeek Configuration ──────────────────────────────────────────────────
 const OpenAI = require('openai');
 
+// Check if API key exists
+const DEEPSEEK_API_KEY = process.env.DEEPSEEK_API_KEY;
+if (!DEEPSEEK_API_KEY) {
+  console.warn('[JobScout] ⚠️ DEEPSEEK_API_KEY is not set. Job Scout will be disabled.');
+}
+
 const deepseek = new OpenAI({
-  apiKey: process.env.DEEPSEEK_API_KEY,
+  apiKey: DEEPSEEK_API_KEY || 'missing-api-key',
   baseURL: 'https://api.deepseek.com/v1',
 });
+
+function isDeepSeekConfigured() {
+  return !!DEEPSEEK_API_KEY;
+}
+
+function isTavilyConfigured() {
+  return !!process.env.TAVILY_API_KEY;
+}
 
 // ── GET /my-alerts  — student's personalised job alerts ───────────────────
 router.get('/my-alerts', authenticate, async (req, res) => {
@@ -94,9 +108,28 @@ router.get('/niches', authenticate, requireRole('admin'), async (req, res) => {
   }
 });
 
+// ── GET /status ────────────────────────────────────────────────────────────
+router.get('/status', authenticate, requireRole('admin'), async (req, res) => {
+  return success(res, {
+    deepseekConfigured: isDeepSeekConfigured(),
+    tavilyConfigured: isTavilyConfigured(),
+    deepseekKeySet: !!process.env.DEEPSEEK_API_KEY,
+    tavilyKeySet: !!process.env.TAVILY_API_KEY,
+    enabled: process.env.JOB_SCOUT_DISABLED !== 'true',
+  });
+});
+
 // ── POST /run  — trigger a scout run (cron / admin only) ─────────────────
 router.post('/run', authenticate, requireRole('admin'), async (req, res) => {
   try {
+    // Check if configured
+    if (!isDeepSeekConfigured()) {
+      return error(res, 'DeepSeek API key not configured. Please set DEEPSEEK_API_KEY.');
+    }
+    if (!isTavilyConfigured()) {
+      return error(res, 'Tavily API key not configured. Please set TAVILY_API_KEY.');
+    }
+
     // Start async; respond immediately so cron doesn't time out
     res.json({ success: true, message: 'Job Scout run started' });
     runJobScout().catch(e => console.error('[JobScout] Fatal error:', e));
@@ -106,11 +139,21 @@ router.post('/run', authenticate, requireRole('admin'), async (req, res) => {
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Core Scout Logic — DeepSeek + Web Search
+// Core Scout Logic — DeepSeek + Tavily
 // ─────────────────────────────────────────────────────────────────────────────
 
 async function runJobScout() {
   console.log('[JobScout] Starting run…');
+
+  // Check if configured
+  if (!isDeepSeekConfigured()) {
+    console.warn('[JobScout] DeepSeek not configured. Aborting run.');
+    return;
+  }
+  if (!isTavilyConfigured()) {
+    console.warn('[JobScout] Tavily not configured. Aborting run.');
+    return;
+  }
 
   // 1. Get all distinct niches with at least one active student
   const nicheRows = await prisma.user.groupBy({
@@ -140,9 +183,14 @@ async function runJobScout() {
 }
 
 async function scoutForNiche(niche) {
+  if (!isDeepSeekConfigured()) {
+    console.warn(`[JobScout] DeepSeek not configured. Skipping niche "${niche}"`);
+    return;
+  }
+
   console.log(`[JobScout] Scouting for niche: "${niche}"`);
 
-  // ── Step 1: Search the web using Serper.dev or similar ──────────
+  // ── Step 1: Search the web using Tavily ──────────────────────────
   const searchResults = await performWebSearch(niche);
 
   if (!searchResults || searchResults.length === 0) {
@@ -234,9 +282,15 @@ async function scoutForNiche(niche) {
   console.log(`[JobScout] "${niche}": ${leads.length} leads → ${students.length} students`);
 }
 
-// ── Web Search using Serper.dev ──────────────────────────────────────────
+// ── Web Search using Tavily ──────────────────────────────────────────────
 async function performWebSearch(niche) {
   try {
+    // Check if Tavily API key exists
+    if (!process.env.TAVILY_API_KEY) {
+      console.warn('[JobScout] TAVILY_API_KEY not set. Web search will fail.');
+      return [];
+    }
+
     // Try multiple search queries for better coverage
     const queries = [
       `${niche} jobs hiring`,
@@ -250,30 +304,42 @@ async function performWebSearch(niche) {
 
     for (const query of queries) {
       try {
-        const response = await fetch(
-          `https://google.serper.dev/search?q=${encodeURIComponent(query)}`,
-          {
-            headers: {
-              'X-API-KEY': process.env.SERPER_API_KEY,
-              'Content-Type': 'application/json',
-            },
-          }
-        );
+        const response = await fetch('https://api.tavily.com/search', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            api_key: process.env.TAVILY_API_KEY,
+            query: query,
+            search_depth: 'basic', // or 'advanced' for more results
+            max_results: 10,
+            include_domains: ['linkedin.com', 'indeed.com', 'glassdoor.com', 'ziprecruiter.com', 'monster.com'],
+            exclude_domains: ['pinterest.com', 'facebook.com', 'instagram.com', 'youtube.com'],
+          }),
+        });
 
         if (!response.ok) {
-          throw new Error(`Serper API error: ${response.status}`);
+          throw new Error(`Tavily API error: ${response.status}`);
         }
 
         const data = await response.json();
 
-        if (data.organic && data.organic.length > 0) {
-          allResults = allResults.concat(data.organic);
+        if (data.results && data.results.length > 0) {
+          allResults = allResults.concat(
+            data.results.map((result) => ({
+              title: result.title || '',
+              link: result.url || '',
+              snippet: result.content || '',
+              source: result.domain || 'web',
+            }))
+          );
         }
 
         // Small delay between queries
         await delay(500);
       } catch (e) {
-        console.warn(`[JobScout] Search failed for "${query}":`, e.message);
+        console.warn(`[JobScout] Tavily search failed for "${query}":`, e.message);
       }
     }
 
@@ -286,9 +352,10 @@ async function performWebSearch(niche) {
       return true;
     });
 
+    console.log(`[JobScout] Found ${uniqueResults.length} unique search results for "${niche}"`);
     return uniqueResults.slice(0, 25); // Limit to 25 results
   } catch (e) {
-    console.error('[JobScout] Web search failed:', e.message);
+    console.error('[JobScout] Tavily web search failed:', e.message);
     return [];
   }
 }
@@ -296,6 +363,11 @@ async function performWebSearch(niche) {
 // ── Parse jobs from search results using DeepSeek ──────────────────────
 async function parseJobsWithDeepSeek(niche, searchResults) {
   try {
+    if (!isDeepSeekConfigured()) {
+      console.warn('[JobScout] DeepSeek not configured. Cannot parse jobs.');
+      return [];
+    }
+
     const systemPrompt = `You are a job extraction AI. Extract job listings from search results for "${niche}" positions.
 You must output ONLY valid JSON. No markdown, no explanation, no preamble.
 
@@ -383,29 +455,6 @@ Return ONLY the JSON array.`;
   }
 }
 
-// ── Fallback search using Google Custom Search API ──────────────────────
-async function performGoogleSearch(niche) {
-  try {
-    const apiKey = process.env.GOOGLE_SEARCH_API_KEY;
-    const cx = process.env.GOOGLE_SEARCH_CX;
-    const query = encodeURIComponent(`${niche} jobs hiring`);
-
-    const response = await fetch(
-      `https://www.googleapis.com/customsearch/v1?key=${apiKey}&cx=${cx}&q=${query}`
-    );
-
-    if (!response.ok) {
-      throw new Error(`Google Search API error: ${response.status}`);
-    }
-
-    const data = await response.json();
-    return data.items || [];
-  } catch (e) {
-    console.error('[JobScout] Google Search failed:', e.message);
-    return [];
-  }
-}
-
 // ── Fallback search using DuckDuckGo (no API key needed) ──────────────
 async function performDuckDuckGoSearch(niche) {
   try {
@@ -425,6 +474,7 @@ async function performDuckDuckGoSearch(niche) {
       title: item.Text || '',
       link: item.FirstURL || '',
       snippet: item.Text || '',
+      source: 'duckduckgo',
     }));
   } catch (e) {
     console.error('[JobScout] DuckDuckGo search failed:', e.message);
@@ -436,3 +486,4 @@ const delay = ms => new Promise(r => setTimeout(r, ms));
 
 module.exports = router;
 module.exports.runJobScout = runJobScout;
+module.exports.isDeepSeekConfigured = isDeepSeekConfigured;
