@@ -6,10 +6,11 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { apiFetch, logout } from '@/lib/api';
 
 interface NavItem {
-  href:   string;
-  icon:   string;
-  label:  string;
-  badge?: number;
+  href?:     string;
+  icon:      string;
+  label:     string;
+  badge?:    number;
+  children?: NavItem[];
 }
 
 interface SidebarLayoutProps {
@@ -239,9 +240,32 @@ export function SidebarLayout({ children, navItems, pageTitle }: SidebarLayoutPr
   const [user, setUser] = useState<any>(null);
   const notifRef = useRef<HTMLDivElement>(null);
   const profileRef = useRef<HTMLDivElement>(null);
+  const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({});
 
   // Determine if employer route
   const isEmployer = pathname?.startsWith('/employer') || false;
+
+  const isItemActive = (item: NavItem): boolean => {
+    if (item.children) return item.children.some(isItemActive);
+    if (!item.href) return false;
+    return item.href === '/dashboard' || item.href === '/employer'
+      ? pathname === item.href
+      : pathname === item.href || pathname?.startsWith(item.href + '/');
+  };
+
+  // Auto-expand a group if one of its children is the active route
+  useEffect(() => {
+    const updates: Record<string, boolean> = {};
+    navItems.forEach(item => {
+      if (item.children && item.children.some(isItemActive)) {
+        updates[item.label] = true;
+      }
+    });
+    if (Object.keys(updates).length) {
+      setOpenGroups(prev => ({ ...prev, ...updates }));
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pathname]);
 
   // Close mobile menu when window resizes to desktop
   useEffect(() => {
@@ -349,13 +373,63 @@ export function SidebarLayout({ children, navItems, pageTitle }: SidebarLayoutPr
               Navigation
             </div>
             {navItems.map(item => {
-              const active = item.href === '/dashboard' || item.href === '/employer'
-                ? pathname === item.href
-                : pathname === item.href || pathname?.startsWith(item.href + '/');
+              if (item.children) {
+                const groupActive = item.children.some(isItemActive);
+                const isOpen = !!openGroups[item.label];
+                return (
+                  <div key={item.label} className="mb-0.5">
+                    <button
+                      type="button"
+                      onClick={() => setOpenGroups(prev => ({ ...prev, [item.label]: !prev[item.label] }))}
+                      className="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-[10px] text-[13px] font-medium no-underline transition-all relative"
+                      style={{
+                        background: groupActive ? 'rgba(79,142,247,0.12)' : 'transparent',
+                        color: groupActive ? '#4F8EF7' : 'rgba(255,255,255,0.4)',
+                        border: groupActive ? '1px solid rgba(79,142,247,0.2)' : '1px solid transparent',
+                      }}
+                    >
+                      {groupActive && (
+                        <div className="absolute left-0 top-1/2 -translate-y-1/2 w-0.5 h-4 rounded-full" style={{ background: '#4F8EF7' }} />
+                      )}
+                      <i className={`fas ${item.icon} w-4 text-center text-[12px]`} />
+                      <span className="flex-1 text-left">{item.label}</span>
+                      <i className={`fas fa-chevron-down text-[10px] transition-transform ${isOpen ? 'rotate-180' : ''}`} />
+                    </button>
+                    {isOpen && (
+                      <div className="mt-0.5 ml-3 pl-2 flex flex-col gap-0.5" style={{ borderLeft: '1px solid rgba(255,255,255,0.08)' }}>
+                        {item.children.map(child => {
+                          const active = isItemActive(child);
+                          return (
+                            <Link
+                              key={child.href}
+                              href={child.href!}
+                              onClick={() => setMobileOpen(false)}
+                              className="flex items-center gap-2.5 px-3 py-2 rounded-[10px] text-[12.5px] font-medium no-underline transition-all relative"
+                              style={{
+                                background: active ? 'rgba(79,142,247,0.12)' : 'transparent',
+                                color: active ? '#4F8EF7' : 'rgba(255,255,255,0.4)',
+                                border: active ? '1px solid rgba(79,142,247,0.2)' : '1px solid transparent',
+                              }}
+                            >
+                              {active && (
+                                <div className="absolute left-0 top-1/2 -translate-y-1/2 w-0.5 h-4 rounded-full" style={{ background: '#4F8EF7' }} />
+                              )}
+                              <i className={`fas ${child.icon} w-4 text-center text-[11px]`} />
+                              <span className="flex-1 text-left">{child.label}</span>
+                            </Link>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+                );
+              }
+
+              const active = isItemActive(item);
               return (
                 <Link 
                   key={item.href} 
-                  href={item.href}
+                  href={item.href!}
                   onClick={() => setMobileOpen(false)} // Close mobile menu on navigation
                   className="flex items-center gap-2.5 px-3 py-2.5 rounded-[10px] text-[13px] font-medium mb-0.5 no-underline transition-all relative"
                   style={{

@@ -7,22 +7,27 @@ import { SidebarLayout } from '@/components/layout/SidebarLayout';
 import { apiFetch } from '@/lib/api';
 
 const navItems = [
-  { href: '/dashboard',                 icon: 'fa-home',                  label: 'Dashboard' },
-  { href: '/dashboard/courses',         icon: 'fa-book-open',             label: 'Courses' },
-  { href: '/dashboard/career-oracle',   icon: 'fa-brain',                 label: 'Career Oracle' },
-  { href: '/dashboard/skill-coach',     icon: 'fa-heart-pulse',           label: 'Skill Coach' },
-  { href: '/dashboard/peer-genome',     icon: 'fa-users',                 label: 'Peer Genome' },
-  { href: '/dashboard/skill-decay',     icon: 'fa-chart-line',            label: 'Skill Decay' },
-  { href: '/dashboard/ghost-recruiter', icon: 'fa-wand-magic-sparkles',   label: 'Ghost Recruiter' },
-  { href: '/dashboard/community',       icon: 'fa-users',                 label: 'Community' },
-  { href: '/dashboard/portfolio',       icon: 'fa-layer-group',           label: 'Portfolio' },
-  { href: '/dashboard/resume',          icon: 'fa-file-lines',            label: 'Resume' },
-  { href: '/dashboard/platforms',       icon: 'fa-graduation-cap',        label: 'Learning Platforms' },
-  { href: '/dashboard/jobs',            icon: 'fa-briefcase',             label: 'Jobs' },
-  { href: '/dashboard/job-scout',       icon: 'fa-magnifying-glass',      label: 'Job Scout' },
-  { href: '/dashboard/certificates',    icon: 'fa-certificate',           label: 'Certificates' },
-  { href: '/dashboard/rewards',         icon: 'fa-coins',                 label: 'Rewards' },
-  { href: '/dashboard/settings',        icon: 'fa-gear',                  label: 'Settings' },
+  { href: '/dashboard',             icon: 'fa-home',          label: 'Dashboard' },
+  { href: '/dashboard/courses',     icon: 'fa-book-open',     label: 'Courses' },
+  {
+    icon: 'fa-sparkles',
+    label: 'Next Generation',
+    children: [
+      { href: '/dashboard/career-oracle',   icon: 'fa-brain',               label: 'Career Oracle' },
+      { href: '/dashboard/skill-coach',     icon: 'fa-heart-pulse',         label: 'Skill Coach' },
+      { href: '/dashboard/skill-decay',     icon: 'fa-chart-line',          label: 'Skill Decay' },
+      { href: '/dashboard/peer-genome',     icon: 'fa-users',               label: 'Peer Genome' },
+      { href: '/dashboard/ghost-recruiter', icon: 'fa-wand-magic-sparkles', label: 'Ghost Recruiter' },
+    ],
+  },
+  { href: '/dashboard/community',   icon: 'fa-users',         label: 'Community' },
+  { href: '/dashboard/portfolio',   icon: 'fa-layer-group',   label: 'Portfolio' },
+  { href: '/dashboard/resume',        icon: 'fa-file-lines',           label: 'Resume' },
+  { href: '/dashboard/platforms',   icon: 'fa-graduation-cap',label: 'Learning Platforms' },
+  { href: '/dashboard/jobs',        icon: 'fa-briefcase',     label: 'Jobs' },
+  { href: '/dashboard/certificates',icon: 'fa-certificate',   label: 'Certificates' },
+  { href: '/dashboard/rewards',     icon: 'fa-coins',         label: 'Rewards' },
+  { href: '/dashboard/settings',    icon: 'fa-gear',          label: 'Settings' },
 ];
 
 /* ── Design tokens (matches all other dashboard pages) ─────────────────── */
