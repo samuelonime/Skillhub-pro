@@ -137,6 +137,7 @@ router.get('/', authenticate, async (req, res) => {
   const coins  = req.user.meritCoins || 0;
   const tier   = tierOf(coins);
   const skills = req.user.skills || [];
+  const niche  = req.user.interestNiche || null;
 
   try {
     const jobs = await prisma.job.findMany({
@@ -155,16 +156,60 @@ router.get('/', authenticate, async (req, res) => {
       orderBy: [{ isPremium: 'desc' }, { createdAt: 'desc' }],
     });
 
-    const result = jobs
+    const employerResult = jobs
       .filter(j => meetsMinTier(tier, j.minTier))
       .map(j => ({
         ...j,
+        kind:             'employer',
         applied:          j.applications.length > 0,
         saved:            j.savedBy.length > 0,
         applicationCount: j._count.applications,
         match:            matchScore(skills, j.skills || []),
         applications: undefined, savedBy: undefined, _count: undefined,
       }));
+
+    // ── Merge in AI-scouted leads matching the student's niche ─────────────
+    let scoutedResult = [];
+    if (niche) {
+      const leads = await prisma.jobScoutLead.findMany({
+        where: {
+          niche,
+          status: { in: ['pending', 'sent'] },
+          ...(type     ? { type: { equals: type, mode: 'insensitive' } } : {}),
+          ...(location ? { location: { contains: location, mode: 'insensitive' } } : {}),
+          ...(search   ? { OR: [{ title: { contains: search, mode: 'insensitive' } }, { company: { contains: search, mode: 'insensitive' } }] } : {}),
+        },
+        orderBy: [{ fetchedAt: 'desc' }],
+        take: 50,
+      });
+
+      scoutedResult = leads.map(lead => ({
+        id:               lead.id,
+        kind:             'scouted',
+        title:            lead.title,
+        company:          lead.company,
+        location:         lead.location,
+        type:             lead.type,
+        salary:           lead.salary,
+        description:      lead.description,
+        skills:           lead.skills,
+        applyUrl:         lead.url,
+        source:           lead.source,
+        createdAt:        lead.postedAt || lead.fetchedAt,
+        isPremium:        false,
+        minTier:          null,
+        applied:          false,
+        saved:            false,
+        applicationCount: 0,
+        match:            matchScore(skills, lead.skills || []),
+      }));
+    }
+
+    const result = [...employerResult, ...scoutedResult]
+      .sort((a, b) => {
+        if (b.isPremium !== a.isPremium) return b.isPremium ? 1 : -1;
+        return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+      });
 
     return success(res, result);
   } catch (err) { console.error(err); return error(res, 'Failed to fetch jobs'); }

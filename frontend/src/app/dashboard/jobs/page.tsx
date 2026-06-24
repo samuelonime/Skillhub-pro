@@ -5,8 +5,8 @@ import { SidebarLayout } from '@/components/layout/SidebarLayout';
 import { apiFetch } from '@/lib/api';
 
 const navItems = [
-  { href: '/dashboard',             icon: 'fa-home',          label: 'Dashboard' },
-  { href: '/dashboard/courses',     icon: 'fa-book-open',     label: 'Courses' },
+  { href: '/dashboard',                 icon: 'fa-home',                label: 'Dashboard' },
+  { href: '/dashboard/courses',         icon: 'fa-book-open',           label: 'Courses' },
   {
     icon: 'fa-sparkles',
     label: 'Next Generation',
@@ -18,14 +18,14 @@ const navItems = [
       { href: '/dashboard/ghost-recruiter', icon: 'fa-wand-magic-sparkles', label: 'Ghost Recruiter' },
     ],
   },
-  { href: '/dashboard/community',   icon: 'fa-users',         label: 'Community' },
-  { href: '/dashboard/portfolio',   icon: 'fa-layer-group',   label: 'Portfolio' },
-  { href: '/dashboard/resume',        icon: 'fa-file-lines',           label: 'Resume' },
-  { href: '/dashboard/platforms',   icon: 'fa-graduation-cap',label: 'Learning Platforms' },
-  { href: '/dashboard/jobs',        icon: 'fa-briefcase',     label: 'Jobs' },
-  { href: '/dashboard/certificates',icon: 'fa-certificate',   label: 'Certificates' },
-  { href: '/dashboard/rewards',     icon: 'fa-coins',         label: 'Rewards' },
-  { href: '/dashboard/settings',    icon: 'fa-gear',          label: 'Settings' },
+  { href: '/dashboard/community',       icon: 'fa-users',               label: 'Community' },
+  { href: '/dashboard/portfolio',       icon: 'fa-layer-group',         label: 'Portfolio' },
+  { href: '/dashboard/resume',          icon: 'fa-file-lines',          label: 'Resume' },
+  { href: '/dashboard/platforms',       icon: 'fa-graduation-cap',      label: 'Learning Platforms' },
+  { href: '/dashboard/jobs',            icon: 'fa-briefcase',           label: 'Jobs' },
+  { href: '/dashboard/certificates',    icon: 'fa-certificate',         label: 'Certificates' },
+  { href: '/dashboard/rewards',         icon: 'fa-coins',               label: 'Rewards' },
+  { href: '/dashboard/settings',        icon: 'fa-gear',                label: 'Settings' },
 ];
 
 /* ── Design tokens ─────────────────────────────────────────────────────────── */
@@ -203,240 +203,6 @@ function LockedTierTeaser({ targetTier, coinsNeeded }: { targetTier: TierKey; co
   );
 }
 
-/* ── Job Scout alert card ───────────────────────────────────────────────────── */
-interface JobScoutLead {
-  id: string; title: string; company: string; location?: string;
-  type?: string; salary?: string; description?: string;
-  url: string; source: string; niche: string; skills: string[];
-  postedAt?: string; fetchedAt: string;
-}
-interface ScoutAlert {
-  id: string; sentAt: string; opened: boolean; applied: boolean;
-  lead: JobScoutLead;
-}
-
-function ScoutCard({ alert, onUpdate }: { alert: ScoutAlert; onUpdate: () => void }) {
-  const { lead } = alert;
-  const [applying, setApplying] = useState(false);
-  const src = SCOUT_SOURCE[lead.source] || SCOUT_SOURCE['other'];
-
-  const markOpened = useCallback(async () => {
-    if (alert.opened) return;
-    try { await apiFetch(`/job-scout/alerts/${alert.id}/open`, { method: 'POST' }); onUpdate(); } catch {}
-  }, [alert.id, alert.opened, onUpdate]);
-
-  const markApplied = async () => {
-    setApplying(true);
-    try { await apiFetch(`/job-scout/alerts/${alert.id}/applied`, { method: 'POST' }); onUpdate(); } catch {}
-    setApplying(false);
-  };
-
-  return (
-    <div
-      style={{
-        background: D.card, borderRadius: 16, padding: 20,
-        border: `1px solid ${alert.opened ? D.border : D.indigo + '40'}`,
-        borderLeft: `4px solid ${alert.opened ? D.border : D.indigo}`,
-        transition: 'all 0.15s', position: 'relative',
-      }}
-      onMouseEnter={e => { (e.currentTarget as HTMLDivElement).style.boxShadow = '0 4px 24px rgba(0,0,0,0.25)'; }}
-      onMouseLeave={e => { (e.currentTarget as HTMLDivElement).style.boxShadow = ''; }}
-    >
-      {!alert.opened && (
-        <div style={{ position: 'absolute', top: 14, right: 14, width: 9, height: 9, borderRadius: '50%', background: D.indigo }} />
-      )}
-
-      {/* Header */}
-      <div style={{ display: 'flex', gap: 12, alignItems: 'flex-start', marginBottom: 10 }}>
-        <div style={{
-          width: 42, height: 42, borderRadius: 10, background: `${src.color}22`,
-          display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20, flexShrink: 0,
-        }}>{src.icon}</div>
-        <div style={{ flex: 1, minWidth: 0 }}>
-          <h3 style={{ margin: 0, fontSize: 14, fontWeight: 700, color: D.text, lineHeight: 1.3 }}>{lead.title}</h3>
-          <p style={{ margin: '2px 0 0', fontSize: 12, color: D.subtext, fontWeight: 600 }}>{lead.company}</p>
-        </div>
-      </div>
-
-      {/* Badges */}
-      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 5, marginBottom: 10 }}>
-        {lead.location && (
-          <span style={{ fontSize: 11, color: D.subtext, background: D.input, padding: '2px 9px', borderRadius: 8 }}>📍 {lead.location}</span>
-        )}
-        {lead.type && (
-          <span style={{ fontSize: 11, color: '#fff', fontWeight: 700, background: SCOUT_TYPE_COLOR[lead.type] || '#64748b', padding: '2px 9px', borderRadius: 8 }}>
-            {lead.type}
-          </span>
-        )}
-        {lead.salary && (
-          <span style={{ fontSize: 11, color: D.green, fontWeight: 700, background: D.green + '18', padding: '2px 9px', borderRadius: 8 }}>💰 {lead.salary}</span>
-        )}
-        <span style={{ fontSize: 11, color: src.color, background: `${src.color}18`, padding: '2px 9px', borderRadius: 8 }}>
-          {src.icon} {lead.source.replace('_', ' ')}
-        </span>
-      </div>
-
-      {lead.description && (
-        <p style={{ margin: '0 0 10px', fontSize: 12, color: D.subtext, lineHeight: 1.6 }}>
-          {lead.description.slice(0, 180)}{lead.description.length > 180 ? '…' : ''}
-        </p>
-      )}
-
-      {lead.skills.length > 0 && (
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 5, marginBottom: 10 }}>
-          {lead.skills.slice(0, 6).map(s => (
-            <span key={s} style={{ fontSize: 10, color: D.indigo, background: `${D.indigo}18`, padding: '2px 8px', borderRadius: 6 }}>{s}</span>
-          ))}
-          {lead.skills.length > 6 && <span style={{ fontSize: 10, color: D.muted }}>+{lead.skills.length - 6}</span>}
-        </div>
-      )}
-
-      {/* Footer */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 8, paddingTop: 10, borderTop: `1px solid ${D.border}` }}>
-        <span style={{ fontSize: 11, color: D.muted }}>
-          {lead.postedAt ? `Posted ${timeAgo(lead.postedAt)} · ` : ''}Scouted {timeAgo(alert.sentAt)}
-        </span>
-        <div style={{ display: 'flex', gap: 7 }}>
-          {alert.applied ? (
-            <span style={{ fontSize: 12, color: D.green, fontWeight: 700 }}>✅ Applied</span>
-          ) : (
-            <button onClick={markApplied} disabled={applying} style={{
-              padding: '6px 14px', borderRadius: 9, border: `1px solid ${D.border}`,
-              background: D.input, color: D.text, cursor: 'pointer', fontSize: 12, fontWeight: 600,
-              opacity: applying ? 0.6 : 1,
-            }}>{applying ? '…' : '✓ Mark Applied'}</button>
-          )}
-          <button onClick={() => { markOpened(); window.open(lead.url, '_blank', 'noreferrer'); }} style={{
-            padding: '6px 16px', borderRadius: 9, border: 'none',
-            background: `linear-gradient(135deg, ${D.indigo}, ${D.purple})`,
-            color: '#fff', cursor: 'pointer', fontSize: 12, fontWeight: 700,
-          }}>View Job →</button>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-/* ── Job Scout tab panel ────────────────────────────────────────────────────── */
-function JobScoutTab() {
-  const [alerts, setAlerts]     = useState<ScoutAlert[]>([]);
-  const [loading, setLoading]   = useState(true);
-  const [page, setPage]         = useState(1);
-  const [hasMore, setHasMore]   = useState(true);
-  const [unread, setUnread]     = useState(0);
-  const [total, setTotal]       = useState(0);
-  const [filter, setFilter]     = useState<'all' | 'unread' | 'applied'>('all');
-  const loaderRef               = useRef<HTMLDivElement>(null);
-
-  const fetchAlerts = useCallback(async (p: number) => {
-    try {
-      const res = await apiFetch<{ alerts: ScoutAlert[]; total: number; unread: number; pages: number }>(
-        `/job-scout/my-alerts?page=${p}&limit=15`
-      );
-      if (res.success && res.data) {
-        setAlerts(prev => p === 1 ? res.data!.alerts : [...prev, ...res.data!.alerts]);
-        setHasMore(p < res.data.pages);
-        setUnread(res.data.unread);
-        setTotal(res.data.total);
-      }
-    } catch {}
-    setLoading(false);
-  }, []);
-
-  useEffect(() => { setPage(1); setAlerts([]); setLoading(true); fetchAlerts(1); }, [fetchAlerts]);
-  useEffect(() => { if (page > 1) fetchAlerts(page); }, [page, fetchAlerts]);
-
-  useEffect(() => {
-    const obs = new IntersectionObserver(entries => {
-      if (entries[0].isIntersecting && hasMore && !loading) setPage(p => p + 1);
-    }, { threshold: 0.1 });
-    if (loaderRef.current) obs.observe(loaderRef.current);
-    return () => obs.disconnect();
-  }, [hasMore, loading]);
-
-  const refresh = () => { setPage(1); setAlerts([]); setLoading(true); fetchAlerts(1); };
-
-  const filtered =
-    filter === 'unread'  ? alerts.filter(a => !a.opened) :
-    filter === 'applied' ? alerts.filter(a => a.applied) :
-    alerts;
-
-  return (
-    <div>
-      {/* Stats row */}
-      <div style={{ display: 'flex', gap: 12, marginBottom: 20, flexWrap: 'wrap' }}>
-        {[
-          { icon: '📬', label: 'Total',   value: total,                              color: D.indigo },
-          { icon: '🔔', label: 'Unread',  value: unread,                             color: D.amber },
-          { icon: '✅', label: 'Applied', value: alerts.filter(a => a.applied).length, color: D.green },
-        ].map(s => (
-          <div key={s.label} style={{
-            background: D.card, borderRadius: 12, padding: '12px 18px',
-            border: `1px solid ${D.border}`, display: 'flex', gap: 10, alignItems: 'center', flex: '1 1 110px',
-          }}>
-            <span style={{ fontSize: 22 }}>{s.icon}</span>
-            <div>
-              <div style={{ fontSize: 20, fontWeight: 800, color: s.color }}>{s.value}</div>
-              <div style={{ fontSize: 11, color: D.muted }}>{s.label}</div>
-            </div>
-          </div>
-        ))}
-      </div>
-
-      {/* Filter tabs */}
-      <div style={{ display: 'flex', gap: 3, background: D.input, borderRadius: 10, padding: 3, marginBottom: 18, width: 'fit-content', border: `1px solid ${D.border}` }}>
-        {(['all', 'unread', 'applied'] as const).map(f => (
-          <button key={f} onClick={() => setFilter(f)} style={{
-            padding: '6px 16px', borderRadius: 8, border: 'none', cursor: 'pointer',
-            background: filter === f ? D.indigo : 'transparent',
-            color: filter === f ? '#fff' : D.muted,
-            fontWeight: filter === f ? 700 : 500, fontSize: 13, textTransform: 'capitalize',
-          }}>{f}</button>
-        ))}
-      </div>
-
-      {/* Empty state */}
-      {!loading && total === 0 && (
-        <div style={{
-          background: `linear-gradient(135deg, ${D.indigo}10, ${D.purple}10)`,
-          border: `1px solid ${D.indigo}25`, borderRadius: 18, padding: 36, textAlign: 'center',
-        }}>
-          <div style={{ fontSize: 52, marginBottom: 12 }}>🤖</div>
-          <h3 style={{ color: '#fff', fontWeight: 800, fontSize: 18, margin: '0 0 8px' }}>Job Scout is warming up…</h3>
-          <p style={{ color: D.subtext, fontSize: 13, margin: '0 0 20px', lineHeight: 1.7 }}>
-            The AI scans <strong style={{ color: D.text }}>LinkedIn, Indeed, Jobberman, Glassdoor, Twitter/X</strong> daily
-            for jobs matching your niche. Set your <strong style={{ color: D.text }}>Interest Niche</strong> in Settings to activate it.
-          </p>
-          <a href="/dashboard/settings" style={{
-            display: 'inline-block',
-            background: `linear-gradient(135deg, ${D.indigo}, ${D.purple})`,
-            color: '#fff', padding: '9px 22px', borderRadius: 10,
-            textDecoration: 'none', fontWeight: 700, fontSize: 13,
-          }}>⚙️ Set my niche</a>
-        </div>
-      )}
-
-      {loading && <div style={{ textAlign: 'center', padding: 50, color: D.muted }}>Loading alerts…</div>}
-
-      {!loading && filtered.length === 0 && total > 0 && (
-        <div style={{ textAlign: 'center', padding: 40, color: D.muted }}>
-          No {filter} alerts.{' '}
-          <button onClick={() => setFilter('all')} style={{ background: 'none', border: 'none', color: D.indigo, cursor: 'pointer', fontWeight: 700, fontSize: 'inherit' }}>
-            View all
-          </button>
-        </div>
-      )}
-
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-        {filtered.map(alert => <ScoutCard key={alert.id} alert={alert} onUpdate={refresh} />)}
-      </div>
-
-      <div ref={loaderRef} style={{ height: 40, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        {!hasMore && total > 0 && <span style={{ color: D.muted, fontSize: 12 }}>You've seen all alerts 🎉</span>}
-      </div>
-    </div>
-  );
-}
 
 /* ── Main Page ──────────────────────────────────────────────────────────────── */
 export default function JobsPage() {
@@ -444,22 +210,14 @@ export default function JobsPage() {
   const [allJobs, setAllJobs]         = useState<any[] | null>(null);
   const [selected, setSelected]       = useState<string | null>(null);
   const [search, setSearch]           = useState('');
-  const [activeTab, setActiveTab]     = useState<'opportunities' | 'all' | 'saved' | 'applications' | 'scout'>('opportunities');
+  const [activeTab, setActiveTab]     = useState<'opportunities' | 'all' | 'saved' | 'applications'>('opportunities');
   const [saved, setSaved]             = useState<any[] | null>(null);
   const [applications, setApplications] = useState<any[] | null>(null);
   const [applying, setApplying]       = useState<string | null>(null);
   const [saving, setSaving]           = useState<string | null>(null);
   const [toast, setToast]             = useState('');
-  const [scoutUnread, setScoutUnread] = useState(0);
 
   function showToast(msg: string) { setToast(msg); setTimeout(() => setToast(''), 3000); }
-
-  // Fetch scout unread count for badge on the tab
-  useEffect(() => {
-    apiFetch<{ alerts: any[]; unread: number }>('/job-scout/my-alerts?page=1&limit=1')
-      .then(r => { if (r.success && r.data) setScoutUnread(r.data.unread); })
-      .catch(() => {});
-  }, []);
 
   useEffect(() => {
     apiFetch('/jobs/featured')
@@ -473,11 +231,14 @@ export default function JobsPage() {
   useEffect(() => {
     if (activeTab === 'saved')        apiFetch('/jobs/saved').then(r => { if (r.success) setSaved(r.data); else setSaved([]); }).catch(() => setSaved([]));
     if (activeTab === 'applications') apiFetch('/jobs/applications').then(r => { if (r.success) setApplications(r.data); else setApplications([]); }).catch(() => setApplications([]));
-    // Clear badge when user opens Scout tab
-    if (activeTab === 'scout')        setScoutUnread(0);
   }, [activeTab]);
 
   async function applyJob(jobId: string) {
+    const job = (allJobs || []).find(j => j.id === jobId);
+    if (job?.kind === 'scouted') {
+      window.open(job.applyUrl, '_blank', 'noreferrer');
+      return;
+    }
     setApplying(jobId);
     try {
       const res = await apiFetch(`/jobs/${jobId}/apply`, { method: 'POST' });
@@ -490,6 +251,8 @@ export default function JobsPage() {
   }
 
   async function saveJob(jobId: string, isSaved: boolean) {
+    const job = (allJobs || []).find(j => j.id === jobId);
+    if (job?.kind === 'scouted') return; // scouted leads aren't saved server-side
     setSaving(jobId);
     try {
       const res = await apiFetch(`/jobs/${jobId}/save`, { method: isSaved ? 'DELETE' : 'POST' });
@@ -523,12 +286,11 @@ export default function JobsPage() {
   };
 
   // ── Define tabs with proper typing ──────────────────────────────────────
-  const tabs: Array<{ key: 'opportunities' | 'all' | 'saved' | 'applications' | 'scout'; label: string; badge?: number }> = [
+  const tabs: Array<{ key: 'opportunities' | 'all' | 'saved' | 'applications'; label: string; badge?: number }> = [
     { key: 'opportunities', label: '⭐ Opportunities' },
     { key: 'all',           label: 'All Jobs' },
     { key: 'saved',         label: 'Saved' },
     { key: 'applications',  label: 'My Applications' },
-    { key: 'scout',         label: '🔍 Job Scout', badge: scoutUnread },
   ];
 
   return (
@@ -570,7 +332,7 @@ export default function JobsPage() {
               onClick={() => setActiveTab(key)}
               className="relative px-4 py-2 rounded-[9px] text-sm font-medium font-[inherit] cursor-pointer transition-all border-0 whitespace-nowrap"
               style={{
-                background: activeTab === key ? (key === 'scout' ? D.indigo : D.accent) : 'transparent',
+                background: activeTab === key ? D.accent : 'transparent',
                 color: activeTab === key ? 'white' : D.muted,
               }}
             >
@@ -693,6 +455,11 @@ export default function JobsPage() {
                               {job.type && <span className="text-xs" style={{ color: D.subtext }}>{job.type}</span>}
                               {job.salary && <><span className="text-xs" style={{ color: D.muted }}>·</span><span className="text-xs" style={{ color: D.subtext }}>{job.salary}</span></>}
                               {job.isPremium && <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full" style={{ background: D.purple + '20', color: D.purple }}>⭐ Featured</span>}
+                              {job.kind === 'scouted' && (
+                                <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full" style={{ background: D.indigo + '20', color: D.indigo }}>
+                                  {(SCOUT_SOURCE[job.source] || SCOUT_SOURCE.other).icon} AI Scouted
+                                </span>
+                              )}
                               {job.applied && <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full" style={{ background: D.green + '20', color: D.green }}>✓ Applied</span>}
                               {job.saved && <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full" style={{ background: D.amber + '20', color: D.amber }}>🔖 Saved</span>}
                             </div>
@@ -706,6 +473,11 @@ export default function JobsPage() {
                   <div className="w-[340px] flex-shrink-0 max-[1100px]:hidden">
                     <div className="rounded-2xl p-5 sticky top-20" style={{ background: D.card, border: `1px solid ${D.border}` }}>
                       {detail.isPremium && <div className="h-[2px] w-full rounded-full mb-4" style={{ background: 'linear-gradient(90deg,#5b4cf5,#7c3aed)' }} />}
+                      {detail.kind === 'scouted' && (
+                        <div className="mb-3 inline-flex items-center gap-1.5 text-[11px] font-bold px-2.5 py-1 rounded-full" style={{ background: D.indigo + '20', color: D.indigo }}>
+                          {(SCOUT_SOURCE[detail.source] || SCOUT_SOURCE.other).icon} AI-Scouted from {detail.source?.replace('_', ' ')}
+                        </div>
+                      )}
                       <div className="flex items-center gap-3 mb-4">
                         <div className="w-12 h-12 rounded-xl grid place-items-center font-jakarta font-bold text-lg text-white" style={{ background: logoColor(detail.company || '') }}>
                           {(detail.company || '?')[0].toUpperCase()}
@@ -753,16 +525,19 @@ export default function JobsPage() {
                         </div>
                       )}
                       <div className="flex flex-col gap-2">
-                        <button disabled={detail.applied || applying === detail.id} onClick={() => !detail.applied && applyJob(detail.id)}
+                        <button disabled={detail.kind !== 'scouted' && (detail.applied || applying === detail.id)}
+                          onClick={() => { if (detail.kind === 'scouted') applyJob(detail.id); else if (!detail.applied) applyJob(detail.id); }}
                           className="w-full py-3 rounded-xl text-sm font-semibold border-0 cursor-pointer transition-all disabled:opacity-60 disabled:cursor-not-allowed text-white"
-                          style={{ background: detail.applied ? 'rgba(255,255,255,0.1)' : detail.isPremium ? 'linear-gradient(135deg,#5b4cf5,#7c3aed)' : D.accent }}>
-                          {applying === detail.id ? 'Applying…' : detail.applied ? '✓ Applied' : 'Apply Now'}
+                          style={{ background: detail.kind === 'scouted' ? `linear-gradient(135deg, ${D.indigo}, ${D.purple})` : detail.applied ? 'rgba(255,255,255,0.1)' : detail.isPremium ? 'linear-gradient(135deg,#5b4cf5,#7c3aed)' : D.accent }}>
+                          {detail.kind === 'scouted' ? 'View & Apply ↗' : applying === detail.id ? 'Applying…' : detail.applied ? '✓ Applied' : 'Apply Now'}
                         </button>
+                        {detail.kind !== 'scouted' && (
                         <button disabled={saving === detail.id} onClick={() => saveJob(detail.id, detail.saved)}
                           className="w-full py-3 rounded-xl text-sm font-semibold border-0 cursor-pointer transition-all hover:opacity-80"
                           style={{ background: D.input, color: detail.saved ? D.accent : D.muted }}>
                           <i className="fas fa-bookmark mr-1.5" />{detail.saved ? 'Saved' : 'Save Job'}
                         </button>
+                        )}
                       </div>
                     </div>
                   </div>
@@ -833,9 +608,6 @@ export default function JobsPage() {
             )}
           </Card>
         )}
-
-        {/* ── Job Scout Tab ─────────────────────────────────────────────────── */}
-        {activeTab === 'scout' && <JobScoutTab />}
       </div>
     </SidebarLayout>
   );

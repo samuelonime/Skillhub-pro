@@ -3,22 +3,22 @@ const prisma = require('../config/database');
 const { authenticate, requireRole } = require('../middleware/auth');
 const { success, error, badRequest } = require('../utils/response');
 
-// ── DeepSeek Configuration ──────────────────────────────────────────────────
+// ── Groq Configuration ───────────────────────────────────────────────────────
 const OpenAI = require('openai');
 
 // Check if API key exists
-const DEEPSEEK_API_KEY = process.env.DEEPSEEK_API_KEY;
-if (!DEEPSEEK_API_KEY) {
-  console.warn('[JobScout] ⚠️ DEEPSEEK_API_KEY is not set. Job Scout will be disabled.');
+const GROQ_API_KEY = process.env.GROQ_API_KEY;
+if (!GROQ_API_KEY) {
+  console.warn('[JobScout] ⚠️ GROQ_API_KEY is not set. Job Scout will be disabled.');
 }
 
-const deepseek = new OpenAI({
-  apiKey: DEEPSEEK_API_KEY || 'missing-api-key',
-  baseURL: 'https://api.deepseek.com/v1',
+const groq = new OpenAI({
+  apiKey: GROQ_API_KEY || 'missing-api-key',
+  baseURL: 'https://api.groq.com/openai/v1',
 });
 
-function isDeepSeekConfigured() {
-  return !!DEEPSEEK_API_KEY;
+function isGroqConfigured() {
+  return !!GROQ_API_KEY;
 }
 
 function isTavilyConfigured() {
@@ -111,9 +111,9 @@ router.get('/niches', authenticate, requireRole('admin'), async (req, res) => {
 // ── GET /status ────────────────────────────────────────────────────────────
 router.get('/status', authenticate, requireRole('admin'), async (req, res) => {
   return success(res, {
-    deepseekConfigured: isDeepSeekConfigured(),
+    groqConfigured: isGroqConfigured(),
     tavilyConfigured: isTavilyConfigured(),
-    deepseekKeySet: !!process.env.DEEPSEEK_API_KEY,
+    groqKeySet: !!process.env.GROQ_API_KEY,
     tavilyKeySet: !!process.env.TAVILY_API_KEY,
     enabled: process.env.JOB_SCOUT_DISABLED !== 'true',
   });
@@ -123,8 +123,8 @@ router.get('/status', authenticate, requireRole('admin'), async (req, res) => {
 router.post('/run', authenticate, requireRole('admin'), async (req, res) => {
   try {
     // Check if configured
-    if (!isDeepSeekConfigured()) {
-      return error(res, 'DeepSeek API key not configured. Please set DEEPSEEK_API_KEY.');
+    if (!isGroqConfigured()) {
+      return error(res, 'Groq API key not configured. Please set GROQ_API_KEY.');
     }
     if (!isTavilyConfigured()) {
       return error(res, 'Tavily API key not configured. Please set TAVILY_API_KEY.');
@@ -139,15 +139,15 @@ router.post('/run', authenticate, requireRole('admin'), async (req, res) => {
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Core Scout Logic — DeepSeek + Tavily
+// Core Scout Logic — Groq + Tavily
 // ─────────────────────────────────────────────────────────────────────────────
 
 async function runJobScout() {
   console.log('[JobScout] Starting run…');
 
   // Check if configured
-  if (!isDeepSeekConfigured()) {
-    console.warn('[JobScout] DeepSeek not configured. Aborting run.');
+  if (!isGroqConfigured()) {
+    console.warn('[JobScout] Groq not configured. Aborting run.');
     return;
   }
   if (!isTavilyConfigured()) {
@@ -183,8 +183,8 @@ async function runJobScout() {
 }
 
 async function scoutForNiche(niche) {
-  if (!isDeepSeekConfigured()) {
-    console.warn(`[JobScout] DeepSeek not configured. Skipping niche "${niche}"`);
+  if (!isGroqConfigured()) {
+    console.warn(`[JobScout] Groq not configured. Skipping niche "${niche}"`);
     return;
   }
 
@@ -204,8 +204,8 @@ async function scoutForNiche(niche) {
     return;
   }
 
-  // ── Step 2: Parse search results with DeepSeek ──────────────────
-  const jobs = await parseJobsWithDeepSeek(niche, searchResults);
+  // ── Step 2: Parse search results with Groq ──────────────────
+  const jobs = await parseJobsWithGroq(niche, searchResults);
 
   if (!jobs || jobs.length === 0) {
     console.warn(`[JobScout] No jobs parsed for niche "${niche}"`);
@@ -373,11 +373,11 @@ async function performWebSearch(niche) {
   }
 }
 
-// ── Parse jobs from search results using DeepSeek ──────────────────────
-async function parseJobsWithDeepSeek(niche, searchResults) {
+// ── Parse jobs from search results using Groq ──────────────────────
+async function parseJobsWithGroq(niche, searchResults) {
   try {
-    if (!isDeepSeekConfigured()) {
-      console.warn('[JobScout] DeepSeek not configured. Cannot parse jobs.');
+    if (!isGroqConfigured()) {
+      console.warn('[JobScout] Groq not configured. Cannot parse jobs.');
       return [];
     }
 
@@ -404,8 +404,8 @@ ${JSON.stringify(searchResults, null, 2)}
 
 Return ONLY the JSON array.`;
 
-    const response = await deepseek.chat.completions.create({
-      model: 'deepseek-chat',
+    const response = await groq.chat.completions.create({
+      model: 'llama-3.3-70b-versatile',
       messages: [
         { role: 'system', content: systemPrompt },
         { role: 'user', content: userPrompt },
@@ -418,7 +418,7 @@ Return ONLY the JSON array.`;
     const content = response.choices[0].message.content;
 
     if (!content) {
-      console.warn('[JobScout] Empty response from DeepSeek');
+      console.warn('[JobScout] Empty response from Groq');
       return [];
     }
 
@@ -463,7 +463,7 @@ Return ONLY the JSON array.`;
       }));
 
   } catch (e) {
-    console.error('[JobScout] DeepSeek parsing failed:', e.message);
+    console.error('[JobScout] Groq parsing failed:', e.message);
     return [];
   }
 }
@@ -499,4 +499,4 @@ const delay = ms => new Promise(r => setTimeout(r, ms));
 
 module.exports = router;
 module.exports.runJobScout = runJobScout;
-module.exports.isDeepSeekConfigured = isDeepSeekConfigured;
+module.exports.isGroqConfigured = isGroqConfigured;

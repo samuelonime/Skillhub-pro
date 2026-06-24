@@ -7,22 +7,22 @@ const { uploadRaw, deleteFile } = require('../utils/cloudinary');
 const { logActivity } = require('../utils/activityLogger');
 const { success, created, error, badRequest } = require('../utils/response');
 
-// ── DeepSeek Configuration ──────────────────────────────────────────────────
+// ── Groq Configuration ───────────────────────────────────────────────────────
 const OpenAI = require('openai');
 
 // Check if API key exists
-const DEEPSEEK_API_KEY = process.env.DEEPSEEK_API_KEY;
-if (!DEEPSEEK_API_KEY) {
-  console.warn('[Resume] ⚠️ DEEPSEEK_API_KEY is not set. AI resume generation will not work.');
+const GROQ_API_KEY = process.env.GROQ_API_KEY;
+if (!GROQ_API_KEY) {
+  console.warn('[Resume] ⚠️ GROQ_API_KEY is not set. AI resume generation will not work.');
 }
 
-const deepseek = new OpenAI({
-  apiKey: DEEPSEEK_API_KEY || 'missing-api-key',
-  baseURL: 'https://api.deepseek.com/v1',
+const groq = new OpenAI({
+  apiKey: GROQ_API_KEY || 'missing-api-key',
+  baseURL: 'https://api.groq.com/openai/v1',
 });
 
-function isDeepSeekConfigured() {
-  return !!DEEPSEEK_API_KEY;
+function isGroqConfigured() {
+  return !!GROQ_API_KEY;
 }
 
 // ── Multer config — memory storage, buffer goes straight to Cloudinary ─────────
@@ -144,12 +144,12 @@ router.get('/ai', authenticate, async (req, res) => {
   }
 });
 
-// ── POST /api/v1/resume/generate — AI resume generation using DeepSeek ──────
+// ── POST /api/v1/resume/generate — AI resume generation using Groq ──────
 router.post('/generate', authenticate, async (req, res) => {
   try {
-    // Check if DeepSeek is configured
-    if (!isDeepSeekConfigured()) {
-      return error(res, 'AI service not configured. Please set DEEPSEEK_API_KEY.');
+    // Check if Groq is configured
+    if (!isGroqConfigured()) {
+      return error(res, 'AI service not configured. Please set GROQ_API_KEY.');
     }
 
     const userId = req.user.id;
@@ -245,9 +245,9 @@ Rules:
 
     const userPrompt = `Here is the student's SkillHub Pro data:\n\n${JSON.stringify(dataPayload, null, 2)}`;
 
-    // ── Call DeepSeek API ──────────────────────────────────────────────────
-    const aiResponse = await deepseek.chat.completions.create({
-      model: 'deepseek-chat',
+    // ── Call Groq API ──────────────────────────────────────────────────────
+    const aiResponse = await groq.chat.completions.create({
+      model: 'llama-3.3-70b-versatile',
       messages: [
         { role: 'system', content: systemPrompt },
         { role: 'user', content: userPrompt },
