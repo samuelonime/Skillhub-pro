@@ -7,22 +7,40 @@ const { uploadRaw, deleteFile } = require('../utils/cloudinary');
 const { logActivity } = require('../utils/activityLogger');
 const { success, created, error, badRequest } = require('../utils/response');
 
-// ── Groq Configuration ───────────────────────────────────────────────────────
-const OpenAI = require('openai');
-
-// Check if API key exists
-const GROQ_API_KEY = process.env.GROQ_API_KEY;
-if (!GROQ_API_KEY) {
-  console.warn('[Resume] ⚠️ GROQ_API_KEY is not set. AI resume generation will not work.');
+// ── Gemini Configuration ─────────────────────────────────────────────────────
+const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
+if (!GEMINI_API_KEY) {
+  console.warn('[Resume] ⚠️ GEMINI_API_KEY is not set. AI resume generation will not work.');
 }
 
-const groq = new OpenAI({
-  apiKey: GROQ_API_KEY || 'missing-api-key',
-  baseURL: 'https://api.groq.com/openai/v1',
-});
+function isGeminiConfigured() {
+  return !!GEMINI_API_KEY;
+}
 
-function isGroqConfigured() {
-  return !!GROQ_API_KEY;
+async function callGemini(systemPrompt, userPrompt, temperature = 0.7, maxTokens = 4000) {
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`;
+
+  const res = await fetch(url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      contents: [
+        { role: 'user', parts: [{ text: `${systemPrompt}\n\n${userPrompt}` }] },
+      ],
+      generationConfig: {
+        temperature,
+        maxOutputTokens: maxTokens,
+      },
+    }),
+  });
+
+  if (!res.ok) {
+    const err = await res.text();
+    throw new Error(`Gemini API error: ${err}`);
+  }
+
+  const data = await res.json();
+  return data.candidates?.[0]?.content?.parts?.[0]?.text ?? '';
 }
 
 // ── Multer config — memory storage, buffer goes straight to Cloudinary ─────────
@@ -144,12 +162,11 @@ router.get('/ai', authenticate, async (req, res) => {
   }
 });
 
-// ── POST /api/v1/resume/generate — AI resume generation using Groq ──────
+// ── POST /api/v1/resume/generate — AI resume generation using Gemini ──────────
 router.post('/generate', authenticate, async (req, res) => {
   try {
-    // Check if Groq is configured
-    if (!isGroqConfigured()) {
-      return error(res, 'AI service not configured. Please set GROQ_API_KEY.');
+    if (!isGeminiConfigured()) {
+      return error(res, 'AI service not configured. Please set GEMINI_API_KEY.');
     }
 
     const userId = req.user.id;
@@ -245,18 +262,8 @@ Rules:
 
     const userPrompt = `Here is the student's SkillHub Pro data:\n\n${JSON.stringify(dataPayload, null, 2)}`;
 
-    // ── Call Groq API ──────────────────────────────────────────────────────
-    const aiResponse = await groq.chat.completions.create({
-      model: 'llama-3.3-70b-versatile',
-      messages: [
-        { role: 'system', content: systemPrompt },
-        { role: 'user', content: userPrompt },
-      ],
-      temperature: 0.7,
-      max_tokens: 4000,
-    });
-
-    const resumeMarkdown = aiResponse.choices[0].message.content;
+    // ── Call Gemini API ────────────────────────────────────────────────────
+    const resumeMarkdown = await callGemini(systemPrompt, userPrompt, 0.7, 4000);
 
     if (!resumeMarkdown) {
       return error(res, 'AI failed to generate resume. Please try again.');
@@ -295,8 +302,8 @@ Rules:
       metadata: dataSummary,
     });
 
-    return success(res, { 
-      resume: resumeMarkdown, 
+    return success(res, {
+      resume: resumeMarkdown,
       generatedAt: new Date(),
       dataSummary,
     }, 'Resume generated successfully ✨');

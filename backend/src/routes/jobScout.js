@@ -3,26 +3,45 @@ const prisma = require('../config/database');
 const { authenticate, requireRole } = require('../middleware/auth');
 const { success, error, badRequest } = require('../utils/response');
 
-// ── Groq Configuration ───────────────────────────────────────────────────────
-const OpenAI = require('openai');
-
-// Check if API key exists
-const GROQ_API_KEY = process.env.GROQ_API_KEY;
-if (!GROQ_API_KEY) {
-  console.warn('[JobScout] ⚠️ GROQ_API_KEY is not set. Job Scout will be disabled.');
+// ── Gemini Configuration ─────────────────────────────────────────────────────
+const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
+if (!GEMINI_API_KEY) {
+  console.warn('[JobScout] ⚠️ GEMINI_API_KEY is not set. Job Scout will be disabled.');
 }
 
-const groq = new OpenAI({
-  apiKey: GROQ_API_KEY || 'missing-api-key',
-  baseURL: 'https://api.groq.com/openai/v1',
-});
-
-function isGroqConfigured() {
-  return !!GROQ_API_KEY;
+function isGeminiConfigured() {
+  return !!GEMINI_API_KEY;
 }
 
 function isTavilyConfigured() {
   return !!process.env.TAVILY_API_KEY;
+}
+
+async function callGemini(systemPrompt, userPrompt, temperature = 0.2, maxTokens = 2000) {
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`;
+
+  const res = await fetch(url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      contents: [
+        { role: 'user', parts: [{ text: `${systemPrompt}\n\n${userPrompt}` }] },
+      ],
+      generationConfig: {
+        temperature,
+        maxOutputTokens: maxTokens,
+        responseMimeType: 'application/json',
+      },
+    }),
+  });
+
+  if (!res.ok) {
+    const err = await res.text();
+    throw new Error(`Gemini API error: ${err}`);
+  }
+
+  const data = await res.json();
+  return data.candidates?.[0]?.content?.parts?.[0]?.text ?? '';
 }
 
 // ── GET /my-alerts  — student's personalised job alerts ───────────────────
@@ -111,9 +130,9 @@ router.get('/niches', authenticate, requireRole('admin'), async (req, res) => {
 // ── GET /status ────────────────────────────────────────────────────────────
 router.get('/status', authenticate, requireRole('admin'), async (req, res) => {
   return success(res, {
-    groqConfigured: isGroqConfigured(),
+    geminiConfigured: isGeminiConfigured(),
     tavilyConfigured: isTavilyConfigured(),
-    groqKeySet: !!process.env.GROQ_API_KEY,
+    geminiKeySet: !!process.env.GEMINI_API_KEY,
     tavilyKeySet: !!process.env.TAVILY_API_KEY,
     enabled: process.env.JOB_SCOUT_DISABLED !== 'true',
   });
@@ -122,9 +141,8 @@ router.get('/status', authenticate, requireRole('admin'), async (req, res) => {
 // ── POST /run  — trigger a scout run (cron / admin only) ─────────────────
 router.post('/run', authenticate, requireRole('admin'), async (req, res) => {
   try {
-    // Check if configured
-    if (!isGroqConfigured()) {
-      return error(res, 'Groq API key not configured. Please set GROQ_API_KEY.');
+    if (!isGeminiConfigured()) {
+      return error(res, 'Gemini API key not configured. Please set GEMINI_API_KEY.');
     }
     if (!isTavilyConfigured()) {
       return error(res, 'Tavily API key not configured. Please set TAVILY_API_KEY.');
@@ -139,15 +157,14 @@ router.post('/run', authenticate, requireRole('admin'), async (req, res) => {
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Core Scout Logic — Groq + Tavily
+// Core Scout Logic — Gemini + Tavily
 // ─────────────────────────────────────────────────────────────────────────────
 
 async function runJobScout() {
   console.log('[JobScout] Starting run…');
 
-  // Check if configured
-  if (!isGroqConfigured()) {
-    console.warn('[JobScout] Groq not configured. Aborting run.');
+  if (!isGeminiConfigured()) {
+    console.warn('[JobScout] Gemini not configured. Aborting run.');
     return;
   }
   if (!isTavilyConfigured()) {
@@ -183,8 +200,8 @@ async function runJobScout() {
 }
 
 async function scoutForNiche(niche) {
-  if (!isGroqConfigured()) {
-    console.warn(`[JobScout] Groq not configured. Skipping niche "${niche}"`);
+  if (!isGeminiConfigured()) {
+    console.warn(`[JobScout] Gemini not configured. Skipping niche "${niche}"`);
     return;
   }
 
@@ -204,8 +221,8 @@ async function scoutForNiche(niche) {
     return;
   }
 
-  // ── Step 2: Parse search results with Groq ──────────────────
-  const jobs = await parseJobsWithGroq(niche, searchResults);
+  // ── Step 2: Parse search results with Gemini ─────────────────────
+  const jobs = await parseJobsWithGemini(niche, searchResults);
 
   if (!jobs || jobs.length === 0) {
     console.warn(`[JobScout] No jobs parsed for niche "${niche}"`);
@@ -291,14 +308,11 @@ async function scoutForNiche(niche) {
 // ── Web Search using Tavily ──────────────────────────────────────────────
 async function performWebSearch(niche) {
   try {
-    // Check if Tavily API key exists
     if (!process.env.TAVILY_API_KEY) {
       console.warn('[JobScout] TAVILY_API_KEY not set. Web search will fail.');
       return [];
     }
 
-    // Try multiple search queries for better coverage
-    // Targeted queries including Africa/Nigeria for relevant market coverage
     const queries = [
       `${niche} jobs hiring 2024`,
       `${niche} remote jobs`,
@@ -306,7 +320,6 @@ async function performWebSearch(niche) {
       `${niche} job vacancies`,
     ];
 
-    // Job platforms: global + African/Nigerian boards + Twitter/X
     const JOB_DOMAINS = [
       'linkedin.com', 'indeed.com', 'glassdoor.com', 'ziprecruiter.com', 'monster.com',
       'x.com', 'twitter.com',
@@ -319,44 +332,39 @@ async function performWebSearch(niche) {
       try {
         const response = await fetch('https://api.tavily.com/search', {
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
+          headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             api_key: process.env.TAVILY_API_KEY,
-            query: query,
-            search_depth: 'basic', // or 'advanced' for more results
+            query,
+            search_depth: 'basic',
             max_results: 10,
             include_domains: JOB_DOMAINS,
             exclude_domains: ['pinterest.com', 'facebook.com', 'instagram.com', 'youtube.com'],
           }),
         });
 
-        if (!response.ok) {
-          throw new Error(`Tavily API error: ${response.status}`);
-        }
+        if (!response.ok) throw new Error(`Tavily API error: ${response.status}`);
 
         const data = await response.json();
 
         if (data.results && data.results.length > 0) {
           allResults = allResults.concat(
-            data.results.map((result) => ({
-              title: result.title || '',
-              link: result.url || '',
+            data.results.map(result => ({
+              title:   result.title || '',
+              link:    result.url || '',
               snippet: result.content || '',
-              source: result.domain || 'web',
+              source:  result.domain || 'web',
             }))
           );
         }
 
-        // Small delay between queries
         await delay(500);
       } catch (e) {
         console.warn(`[JobScout] Tavily search failed for "${query}":`, e.message);
       }
     }
 
-    // Deduplicate results by URL
+    // Deduplicate by URL
     const seenUrls = new Set();
     const uniqueResults = allResults.filter(result => {
       const url = result.link || result.url || '';
@@ -366,18 +374,18 @@ async function performWebSearch(niche) {
     });
 
     console.log(`[JobScout] Found ${uniqueResults.length} unique search results for "${niche}"`);
-    return uniqueResults.slice(0, 25); // Limit to 25 results
+    return uniqueResults.slice(0, 25);
   } catch (e) {
     console.error('[JobScout] Tavily web search failed:', e.message);
     return [];
   }
 }
 
-// ── Parse jobs from search results using Groq ──────────────────────
-async function parseJobsWithGroq(niche, searchResults) {
+// ── Parse jobs from search results using Gemini ───────────────────────────
+async function parseJobsWithGemini(niche, searchResults) {
   try {
-    if (!isGroqConfigured()) {
-      console.warn('[JobScout] Groq not configured. Cannot parse jobs.');
+    if (!isGeminiConfigured()) {
+      console.warn('[JobScout] Gemini not configured. Cannot parse jobs.');
       return [];
     }
 
@@ -398,31 +406,15 @@ Each job must have these fields:
 
 Return a JSON object with a "jobs" key containing an array of job objects. Example: {"jobs": [...]}. If no jobs found, return {"jobs": []}.`;
 
-    const userPrompt = `Extract job listings from these search results for "${niche}":
+    const userPrompt = `Extract job listings from these search results for "${niche}":\n\n${JSON.stringify(searchResults, null, 2)}\n\nReturn ONLY the JSON object.`;
 
-${JSON.stringify(searchResults, null, 2)}
-
-Return ONLY the JSON array.`;
-
-    const response = await groq.chat.completions.create({
-      model: 'llama-3.3-70b-versatile',
-      messages: [
-        { role: 'system', content: systemPrompt },
-        { role: 'user', content: userPrompt },
-      ],
-      temperature: 0.2,
-      max_tokens: 2000,
-      response_format: { type: 'json_object' },
-    });
-
-    const content = response.choices[0].message.content;
+    const content = await callGemini(systemPrompt, userPrompt, 0.2, 2000);
 
     if (!content) {
-      console.warn('[JobScout] Empty response from Groq');
+      console.warn('[JobScout] Empty response from Gemini');
       return [];
     }
 
-    // Clean and parse JSON
     const clean = content.replace(/```json|```/g, '').trim();
     const parsed = JSON.parse(clean);
 
@@ -437,7 +429,6 @@ Return ONLY the JSON array.`;
     } else if (parsed.data && Array.isArray(parsed.data)) {
       jobs = parsed.data;
     } else {
-      // Try to extract any array from the parsed object
       for (const key of Object.keys(parsed)) {
         if (Array.isArray(parsed[key]) && parsed[key].length > 0) {
           jobs = parsed[key];
@@ -450,20 +441,20 @@ Return ONLY the JSON array.`;
     return jobs
       .filter(job => job.title && job.company && job.url)
       .map(job => ({
-        title: String(job.title || '').trim(),
-        company: String(job.company || '').trim(),
-        location: job.location ? String(job.location).trim() : null,
-        type: job.type || 'full-time',
-        salary: job.salary ? String(job.salary).trim() : null,
+        title:       String(job.title || '').trim(),
+        company:     String(job.company || '').trim(),
+        location:    job.location ? String(job.location).trim() : null,
+        type:        job.type || 'full-time',
+        salary:      job.salary ? String(job.salary).trim() : null,
         description: job.description ? String(job.description).trim().slice(0, 500) : null,
-        url: String(job.url || '').trim(),
-        source: job.source || 'web',
-        skills: Array.isArray(job.skills) ? job.skills.map(s => String(s).trim()).filter(Boolean) : [],
-        postedAt: job.postedAt || null,
+        url:         String(job.url || '').trim(),
+        source:      job.source || 'web',
+        skills:      Array.isArray(job.skills) ? job.skills.map(s => String(s).trim()).filter(Boolean) : [],
+        postedAt:    job.postedAt || null,
       }));
 
   } catch (e) {
-    console.error('[JobScout] Groq parsing failed:', e.message);
+    console.error('[JobScout] Gemini parsing failed:', e.message);
     return [];
   }
 }
@@ -472,22 +463,17 @@ Return ONLY the JSON array.`;
 async function performDuckDuckGoSearch(niche) {
   try {
     const query = encodeURIComponent(`${niche} jobs`);
-    const response = await fetch(
-      `https://api.duckduckgo.com/?q=${query}&format=json`
-    );
+    const response = await fetch(`https://api.duckduckgo.com/?q=${query}&format=json`);
 
-    if (!response.ok) {
-      throw new Error(`DuckDuckGo API error: ${response.status}`);
-    }
+    if (!response.ok) throw new Error(`DuckDuckGo API error: ${response.status}`);
 
     const data = await response.json();
-    // DuckDuckGo returns related topics
     const results = data.RelatedTopics || [];
     return results.map(item => ({
-      title: item.Text || '',
-      link: item.FirstURL || '',
+      title:   item.Text || '',
+      link:    item.FirstURL || '',
       snippet: item.Text || '',
-      source: 'duckduckgo',
+      source:  'duckduckgo',
     }));
   } catch (e) {
     console.error('[JobScout] DuckDuckGo search failed:', e.message);
@@ -499,4 +485,4 @@ const delay = ms => new Promise(r => setTimeout(r, ms));
 
 module.exports = router;
 module.exports.runJobScout = runJobScout;
-module.exports.isGroqConfigured = isGroqConfigured;
+module.exports.isGeminiConfigured = isGeminiConfigured;
