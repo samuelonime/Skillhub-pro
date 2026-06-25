@@ -34,13 +34,22 @@ async function callGemini(systemPrompt, userPrompt, temperature = 0.7, maxTokens
     }),
   });
 
+  const data = await res.json();
+
+  // Log full response so we can see exactly what Gemini returns
+  console.log('[Gemini] Status:', res.status);
+  console.log('[Gemini] Response:', JSON.stringify(data).slice(0, 500));
+
   if (!res.ok) {
-    const err = await res.text();
-    throw new Error(`Gemini API error: ${err}`);
+    throw new Error(`Gemini API error: ${JSON.stringify(data.error || data)}`);
   }
 
-  const data = await res.json();
-  return data.candidates?.[0]?.content?.parts?.[0]?.text ?? '';
+  const text = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+  if (!text) {
+    throw new Error(`Gemini returned no text. Full response: ${JSON.stringify(data).slice(0, 300)}`);
+  }
+
+  return text;
 }
 
 // ── Multer config — memory storage, buffer goes straight to Cloudinary ─────────
