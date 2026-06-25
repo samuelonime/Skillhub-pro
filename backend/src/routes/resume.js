@@ -266,7 +266,7 @@ Rules:
     const resumeMarkdown = await callGemini(systemPrompt, userPrompt, 0.7, 4000);
 
     if (!resumeMarkdown) {
-      return error(res, err?.message || 'Unknown error');
+      return error(res, 'AI failed to generate resume. Please try again.');
     }
 
     const dataSummary = {
@@ -309,7 +309,7 @@ Rules:
     }, 'Resume generated successfully ✨');
   } catch (err) {
     console.error('AI resume generation error:', err);
-    return error(res, 'Failed to generate resume. Please try again.');
+    return error(res, err?.message || 'Unknown error');
   }
 });
 
