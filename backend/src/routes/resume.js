@@ -18,7 +18,7 @@ function isGeminiConfigured() {
 }
 
 async function callGemini(systemPrompt, userPrompt, temperature = 0.7, maxTokens = 4000) {
-  const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`;
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_API_KEY}`;
 
   const res = await fetch(url, {
     method: 'POST',
@@ -309,7 +309,7 @@ Rules:
     }, 'Resume generated successfully ✨');
   } catch (err) {
     console.error('AI resume generation error:', err);
-    return error(res, err?.message || 'Unknown error');
+    return error(res, 'Failed to generate resume. Please try again.');
   }
 });
 
