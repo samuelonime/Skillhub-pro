@@ -78,12 +78,17 @@ router.post('/google', async (req, res) => {
     );
 
     const { tokens } = await oAuth2Client.getToken(code);
-    const ticket = await oAuth2Client.verifyIdToken({
-      idToken:  tokens.id_token,
-      audience: process.env.GOOGLE_CLIENT_ID,
-      certsUrl:  'https://www.googleapis.com/oauth2/v3/certs'
-    });
-    const payload = ticket.getPayload();
+
+    // Decode JWT payload directly — avoids cert fetch which is blocked on Render
+    const idToken = tokens.id_token;
+    const payload = JSON.parse(
+      Buffer.from(idToken.split('.')[1], 'base64url').toString('utf8')
+    );
+    const now = Math.floor(Date.now() / 1000);
+    if (payload.exp < now) return unauthorized(res, 'Google token expired');
+    if (payload.aud !== process.env.GOOGLE_CLIENT_ID) return unauthorized(res, 'Invalid Google token');
+    if (!payload.email_verified) return unauthorized(res, 'Google email not verified');
+
     const { email, given_name, family_name, picture, sub: googleId } = payload;
 
     let user = await prisma.user.findUnique({ where: { email } });
