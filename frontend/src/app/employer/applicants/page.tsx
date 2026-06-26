@@ -156,7 +156,18 @@ export default function ApplicantsPage() {
               </div>
             )}
             <div className="flex flex-col gap-2 mt-4">
-              <button className="w-full py-2.5 text-white rounded-xl text-sm font-semibold border-0 cursor-pointer transition-all" style={{background:'#4F8EF7'}} onMouseEnter={e=>{(e.currentTarget as HTMLElement).style.background='#6BA0FF'}} onMouseLeave={e=>{(e.currentTarget as HTMLElement).style.background='#4F8EF7'}}>Send Message</button>
+              <button
+                onClick={() => {
+                  if (!selected.email) { alert('This applicant has no contact email on file.'); return; }
+                  const subject = encodeURIComponent(`Regarding your application${selected.job?.title ? ' for ' + selected.job.title : ''}`);
+                  const body = encodeURIComponent(`Hi ${selected.name?.split(' ')[0] || ''},\n\nThank you for applying${selected.job?.title ? ' for the ' + selected.job.title + ' role' : ''}. We'd love to learn more about you.\n\nBest regards,`);
+                  window.location.href = `mailto:${selected.email}?subject=${subject}&body=${body}`;
+                }}
+                className="w-full py-2.5 text-white rounded-xl text-sm font-semibold border-0 cursor-pointer transition-all"
+                style={{background:'#4F8EF7'}}
+                onMouseEnter={e=>{(e.currentTarget as HTMLElement).style.background='#6BA0FF'}}
+                onMouseLeave={e=>{(e.currentTarget as HTMLElement).style.background='#4F8EF7'}}
+              >Send Message</button>
               <button onClick={()=>{ onStatusChange(selected.applicationId,'shortlisted'); setSelected((p:any)=>({...p,status:'shortlisted'})); }} className="w-full py-2.5 rounded-xl text-sm font-semibold border cursor-pointer transition-all" style={{background:'rgba(0,229,160,0.12)', color:'#00E5A0', borderColor:'rgba(0,229,160,0.2)'}}>Shortlist</button>
             </div>
           </div>

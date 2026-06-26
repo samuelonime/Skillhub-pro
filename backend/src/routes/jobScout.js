@@ -3,45 +3,11 @@ const prisma = require('../config/database');
 const { authenticate, requireRole } = require('../middleware/auth');
 const { success, error, badRequest } = require('../utils/response');
 
-// ── Gemini Configuration ─────────────────────────────────────────────────────
-const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
-if (!GEMINI_API_KEY) {
-  console.warn('[JobScout] ⚠️ GEMINI_API_KEY is not set. Job Scout will be disabled.');
-}
-
-function isGeminiConfigured() {
-  return !!GEMINI_API_KEY;
-}
+// ── AI client (multi-provider with automatic fallback) ───────────────────────
+const { generateText, isAIConfigured } = require('../utils/aiClient');
 
 function isTavilyConfigured() {
   return !!process.env.TAVILY_API_KEY;
-}
-
-async function callGemini(systemPrompt, userPrompt, temperature = 0.2, maxTokens = 2000) {
-  const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_API_KEY}`;
-
-  const res = await fetch(url, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      contents: [
-        { role: 'user', parts: [{ text: `${systemPrompt}\n\n${userPrompt}` }] },
-      ],
-      generationConfig: {
-        temperature,
-        maxOutputTokens: maxTokens,
-        responseMimeType: 'application/json',
-      },
-    }),
-  });
-
-  if (!res.ok) {
-    const err = await res.text();
-    throw new Error(`Gemini API error: ${err}`);
-  }
-
-  const data = await res.json();
-  return data.candidates?.[0]?.content?.parts?.[0]?.text ?? '';
 }
 
 // ── GET /my-alerts  — student's personalised job alerts ───────────────────
@@ -130,9 +96,11 @@ router.get('/niches', authenticate, requireRole('admin'), async (req, res) => {
 // ── GET /status ────────────────────────────────────────────────────────────
 router.get('/status', authenticate, requireRole('admin'), async (req, res) => {
   return success(res, {
-    geminiConfigured: isGeminiConfigured(),
+    aiConfigured: isAIConfigured(),
     tavilyConfigured: isTavilyConfigured(),
     geminiKeySet: !!process.env.GEMINI_API_KEY,
+    groqKeySet: !!process.env.GROQ_API_KEY,
+    openrouterKeySet: !!process.env.OPENROUTER_API_KEY,
     tavilyKeySet: !!process.env.TAVILY_API_KEY,
     enabled: process.env.JOB_SCOUT_DISABLED !== 'true',
   });
@@ -141,8 +109,8 @@ router.get('/status', authenticate, requireRole('admin'), async (req, res) => {
 // ── POST /run  — trigger a scout run (cron / admin only) ─────────────────
 router.post('/run', authenticate, requireRole('admin'), async (req, res) => {
   try {
-    if (!isGeminiConfigured()) {
-      return error(res, 'Gemini API key not configured. Please set GEMINI_API_KEY.');
+    if (!isAIConfigured()) {
+      return error(res, 'AI not configured. Set GEMINI_API_KEY, GROQ_API_KEY, or OPENROUTER_API_KEY.');
     }
     if (!isTavilyConfigured()) {
       return error(res, 'Tavily API key not configured. Please set TAVILY_API_KEY.');
@@ -163,7 +131,7 @@ router.post('/run', authenticate, requireRole('admin'), async (req, res) => {
 async function runJobScout() {
   console.log('[JobScout] Starting run…');
 
-  if (!isGeminiConfigured()) {
+  if (!isAIConfigured()) {
     console.warn('[JobScout] Gemini not configured. Aborting run.');
     return;
   }
@@ -200,7 +168,7 @@ async function runJobScout() {
 }
 
 async function scoutForNiche(niche) {
-  if (!isGeminiConfigured()) {
+  if (!isAIConfigured()) {
     console.warn(`[JobScout] Gemini not configured. Skipping niche "${niche}"`);
     return;
   }
@@ -271,28 +239,39 @@ async function scoutForNiche(niche) {
     select: { id: true },
   });
 
+  // Batched fan-out: build all rows in memory, then two bulk inserts.
+  // skipDuplicates lets the DB ignore alerts that already exist (the
+  // @@unique([leadId, userId]) constraint), so re-runs are idempotent.
+  // This replaces leads×students sequential writes (potentially tens of
+  // thousands) with just 2 round-trips, which is essential at scale.
+  const alertRows = [];
+  const notifRows = [];
   for (const lead of leads) {
     for (const student of students) {
-      try {
-        await prisma.jobScoutAlert.upsert({
-          where: { leadId_userId: { leadId: lead.id, userId: student.id } },
-          create: { leadId: lead.id, userId: student.id },
-          update: {},
-        });
+      alertRows.push({ leadId: lead.id, userId: student.id });
+      notifRows.push({
+        userId: student.id,
+        type: 'info',
+        icon: 'briefcase',
+        title: `New ${niche} Job Alert 🔍`,
+        message: `${lead.title} at ${lead.company}${lead.location ? ' · ' + lead.location : ''} — check your Job Scout feed!`,
+      });
+    }
+  }
 
-        // In-app notification
-        await prisma.notification.create({
-          data: {
-            userId: student.id,
-            type: 'info',
-            icon: 'briefcase',
-            title: `New ${niche} Job Alert 🔍`,
-            message: `${lead.title} at ${lead.company}${lead.location ? ' · ' + lead.location : ''} — check your Job Scout feed!`,
-          },
-        }).catch(() => { });
-      } catch (e) {
-        // Likely duplicate — ignore
-      }
+  if (alertRows.length) {
+    // Chunk to stay well under PostgreSQL parameter limits on huge fan-outs.
+    const CHUNK = 1000;
+    for (let i = 0; i < alertRows.length; i += CHUNK) {
+      await prisma.jobScoutAlert.createMany({
+        data: alertRows.slice(i, i + CHUNK),
+        skipDuplicates: true,
+      });
+    }
+    for (let i = 0; i < notifRows.length; i += CHUNK) {
+      await prisma.notification.createMany({
+        data: notifRows.slice(i, i + CHUNK),
+      }).catch(() => {});
     }
   }
 
@@ -384,7 +363,7 @@ async function performWebSearch(niche) {
 // ── Parse jobs from search results using Gemini ───────────────────────────
 async function parseJobsWithGemini(niche, searchResults) {
   try {
-    if (!isGeminiConfigured()) {
+    if (!isAIConfigured()) {
       console.warn('[JobScout] Gemini not configured. Cannot parse jobs.');
       return [];
     }
@@ -408,7 +387,7 @@ Return a JSON object with a "jobs" key containing an array of job objects. Examp
 
     const userPrompt = `Extract job listings from these search results for "${niche}":\n\n${JSON.stringify(searchResults, null, 2)}\n\nReturn ONLY the JSON object.`;
 
-    const content = await callGemini(systemPrompt, userPrompt, 0.2, 2000);
+    const { text: content } = await generateText(systemPrompt, userPrompt, { temperature: 0.2, maxTokens: 2000, json: true });
 
     if (!content) {
       console.warn('[JobScout] Empty response from Gemini');
@@ -485,4 +464,4 @@ const delay = ms => new Promise(r => setTimeout(r, ms));
 
 module.exports = router;
 module.exports.runJobScout = runJobScout;
-module.exports.isGeminiConfigured = isGeminiConfigured;
+module.exports.isAIConfigured = isAIConfigured;

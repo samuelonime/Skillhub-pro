@@ -7,50 +7,8 @@ const { uploadRaw, deleteFile } = require('../utils/cloudinary');
 const { logActivity } = require('../utils/activityLogger');
 const { success, created, error, badRequest } = require('../utils/response');
 
-// ── Gemini Configuration ─────────────────────────────────────────────────────
-const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
-if (!GEMINI_API_KEY) {
-  console.warn('[Resume] ⚠️ GEMINI_API_KEY is not set. AI resume generation will not work.');
-}
-
-function isGeminiConfigured() {
-  return !!GEMINI_API_KEY;
-}
-
-async function callGemini(systemPrompt, userPrompt, temperature = 0.7, maxTokens = 4000) {
-  const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_API_KEY}`;
-
-  const res = await fetch(url, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      contents: [
-        { role: 'user', parts: [{ text: `${systemPrompt}\n\n${userPrompt}` }] },
-      ],
-      generationConfig: {
-        temperature,
-        maxOutputTokens: maxTokens,
-      },
-    }),
-  });
-
-  const data = await res.json();
-
-  // Log full response so we can see exactly what Gemini returns
-  console.log('[Gemini] Status:', res.status);
-  console.log('[Gemini] Response:', JSON.stringify(data).slice(0, 500));
-
-  if (!res.ok) {
-    throw new Error(`Gemini API error: ${JSON.stringify(data.error || data)}`);
-  }
-
-  const text = data?.candidates?.[0]?.content?.parts?.[0]?.text;
-  if (!text) {
-    throw new Error(`Gemini returned no text. Full response: ${JSON.stringify(data).slice(0, 300)}`);
-  }
-
-  return text;
-}
+// ── AI client (multi-provider with automatic fallback) ───────────────────────
+const { generateText, isAIConfigured } = require('../utils/aiClient');
 
 // ── Multer config — memory storage, buffer goes straight to Cloudinary ─────────
 const upload = multer({
@@ -174,8 +132,8 @@ router.get('/ai', authenticate, async (req, res) => {
 // ── POST /api/v1/resume/generate — AI resume generation using Gemini ──────────
 router.post('/generate', authenticate, async (req, res) => {
   try {
-    if (!isGeminiConfigured()) {
-      return error(res, 'AI service not configured. Please set GEMINI_API_KEY.');
+    if (!isAIConfigured()) {
+      return error(res, 'AI service not configured. Set GEMINI_API_KEY, GROQ_API_KEY, or OPENROUTER_API_KEY.');
     }
 
     const userId = req.user.id;
@@ -272,7 +230,8 @@ Rules:
     const userPrompt = `Here is the student's SkillHub Pro data:\n\n${JSON.stringify(dataPayload, null, 2)}`;
 
     // ── Call Gemini API ────────────────────────────────────────────────────
-    const resumeMarkdown = await callGemini(systemPrompt, userPrompt, 0.7, 4000);
+    const { text: resumeMarkdown, provider } = await generateText(systemPrompt, userPrompt, { temperature: 0.7, maxTokens: 4000 });
+    console.log(`[Resume] Generated via provider: ${provider}`);
 
     if (!resumeMarkdown) {
       return error(res, 'AI failed to generate resume. Please try again.');

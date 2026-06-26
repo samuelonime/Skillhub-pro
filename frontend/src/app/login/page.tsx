@@ -267,6 +267,30 @@ function LoginForm({ onAlert }: { onAlert: (msg: string, type?: AlertType) => vo
   const [pwd, setPwd] = useState('');
   const [showPwd, setShowPwd] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [forgotSending, setForgotSending] = useState(false);
+
+  async function forgotPassword() {
+    if (!email.trim()) {
+      return onAlert('Enter your email above first, then click "Forgot password?"');
+    }
+    setForgotSending(true);
+    onAlert('');
+    try {
+      const res = await fetch(`${API_BASE}/auth/forgot-password`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: email.trim() }),
+        credentials: 'include',
+      });
+      const d = await res.json().catch(() => ({}));
+      // Backend always returns success to avoid leaking which emails exist
+      onAlert(d.message || 'If that email exists, a reset link has been sent.', 'ok');
+    } catch {
+      onAlert('Cannot reach server. Please check your connection.');
+    } finally {
+      setForgotSending(false);
+    }
+  }
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
@@ -321,8 +345,8 @@ function LoginForm({ onAlert }: { onAlert: (msg: string, type?: AlertType) => vo
           </button>
         </div>
       </div>
-      <button type="button" className="block text-right text-[12px] text-[#2f81f7] mb-5 w-full hover:underline">
-        Forgot password?
+      <button type="button" onClick={forgotPassword} disabled={forgotSending} className="block text-right text-[12px] text-[#2f81f7] mb-5 w-full hover:underline disabled:opacity-60">
+        {forgotSending ? 'Sending reset link…' : 'Forgot password?'}
       </button>
       <button
         type="submit"
@@ -471,8 +495,8 @@ function RegisterForm({ onAlert }: { onAlert: (msg: string, type?: AlertType) =>
       </div>
       <p className="text-[0.72rem] text-[#7d8590] text-left leading-relaxed mt-4">
         By creating an account you agree to our{' '}
-        <a href="#" className="text-[#2f81f7] hover:underline">Terms of Service</a>{' '}
-        and <a href="#" className="text-[#2f81f7] hover:underline">Privacy Policy</a>.
+        <a href="/privacy" className="text-[#2f81f7] hover:underline">Terms of Service</a>{' '}
+        and <a href="/privacy" className="text-[#2f81f7] hover:underline">Privacy Policy</a>.
       </p>
     </form>
   );

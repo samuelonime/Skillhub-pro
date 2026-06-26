@@ -447,6 +447,11 @@ export default function SettingsPage() {
                   <h3 className="font-jakarta font-semibold text-[14px] mb-1" style={{ color: '#EF4444' }}>Danger Zone</h3>
                   <p className="text-[13px] mb-3" style={{ color: 'rgba(255,255,255,0.45)' }}>Permanently delete your account and all associated data.</p>
                   <button 
+                    onClick={() => {
+                      if (confirm('Account deletion is permanent and cannot be undone. To proceed, our support team will verify your identity and remove your account within 48 hours. Continue?')) {
+                        window.location.href = 'mailto:support@skillhub.meritlives.com?subject=Account%20Deletion%20Request';
+                      }
+                    }}
                     className="px-4 py-2.5 text-sm font-semibold rounded-xl border cursor-pointer transition-all"
                     style={{ background: 'rgba(239,68,68,0.1)', color: '#EF4444', border: '1px solid rgba(239,68,68,0.2)' }}
                     onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = '#EF4444'; (e.currentTarget as HTMLElement).style.color = 'white'; }}
@@ -500,7 +505,8 @@ export default function SettingsPage() {
                 >
                   {saving ? 'Saving…' : 'Save Changes'}
                 </button>
-                <button 
+                <button
+                  onClick={() => window.location.reload()}
                   className="px-6 py-2.5 text-sm font-semibold rounded-xl cursor-pointer transition-all"
                   style={{ background: 'rgba(255,255,255,0.05)', color: 'rgba(255,255,255,0.6)', border: '1px solid rgba(255,255,255,0.08)' }}
                   onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.08)'; }}

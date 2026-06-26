@@ -191,7 +191,7 @@ router.get('/applicants', ...guard, async (req, res) => {
         job: { select: { id: true, title: true } },
         user: {
           select: {
-            id: true, firstName: true, lastName: true, avatar: true,
+            id: true, firstName: true, lastName: true, avatar: true, email: true,
             meritCoins: true, profileStrength: true, location: true, title: true,
             skills: { select: { name: true, level: true, verified: true } },
             certificates: { where: { status: 'verified' }, select: { id:true, title:true, provider:true } },
@@ -212,6 +212,7 @@ router.get('/applicants', ...guard, async (req, res) => {
         job:           a.job,
         id:            a.user.id,
         name:          `${a.user.firstName} ${a.user.lastName}`,
+        email:         a.user.email,
         avatar:        a.user.avatar,
         location:      a.user.location,
         title:         a.user.title,

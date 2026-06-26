@@ -268,6 +268,15 @@ export default function MessagesPage() {
                   <div style={{ display: 'flex', gap: 6 }}>
                     {[{ icon: 'fa-phone' }, { icon: 'fa-video' }, { icon: 'fa-ellipsis-v' }].map(btn => (
                       <button key={btn.icon}
+                        onClick={() => {
+                          const labels: Record<string,string> = {
+                            'fa-phone': 'Voice calls are not available yet.',
+                            'fa-video': 'Video calls are not available yet.',
+                            'fa-ellipsis-v': activeContact?.title || 'No extra options yet.',
+                          };
+                          setStatus(labels[btn.icon] || '');
+                          setTimeout(() => setStatus(''), 3000);
+                        }}
                         style={{ width: 32, height: 32, borderRadius: 10, border: 'none', cursor: 'pointer', background: D.input, color: D.subtext, display: 'grid', placeItems: 'center', fontSize: 12, transition: 'all 0.15s' }}
                         onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.background = `${D.accent}20`; (e.currentTarget as HTMLButtonElement).style.color = D.accent; }}
                         onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = D.input; (e.currentTarget as HTMLButtonElement).style.color = D.subtext; }}>
@@ -338,6 +347,14 @@ export default function MessagesPage() {
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '12px 16px', borderTop: `1px solid ${D.border}`, background: D.card, flexShrink: 0 }}>
                   {[{ icon: 'fa-image' }, { icon: 'fa-smile' }].map(btn => (
                     <button key={btn.icon}
+                      onClick={() => {
+                        if (btn.icon === 'fa-smile') {
+                          setText(t => t + '🙂');
+                        } else {
+                          setStatus('Image attachments are not supported in messages yet — share a link instead.');
+                          setTimeout(() => setStatus(''), 3000);
+                        }
+                      }}
                       style={{ width: 34, height: 34, borderRadius: 10, border: 'none', cursor: 'pointer', background: D.input, color: D.muted, display: 'grid', placeItems: 'center', fontSize: 13, flexShrink: 0, transition: 'all 0.15s' }}
                       onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.color = D.accent; }}
                       onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.color = D.muted; }}>
