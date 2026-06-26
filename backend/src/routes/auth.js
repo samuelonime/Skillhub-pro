@@ -81,6 +81,7 @@ router.post('/google', async (req, res) => {
     const ticket = await oAuth2Client.verifyIdToken({
       idToken:  tokens.id_token,
       audience: process.env.GOOGLE_CLIENT_ID,
+      certsUrl:  'https://www.googleapis.com/oauth2/v3/certs'
     });
     const payload = ticket.getPayload();
     const { email, given_name, family_name, picture, sub: googleId } = payload;
