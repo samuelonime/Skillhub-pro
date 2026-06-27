@@ -1,725 +1,643 @@
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
-import { useSearchParams } from 'next/navigation';
+import { useState, useEffect, useCallback } from 'react';
 import { SidebarLayout } from '@/components/layout/SidebarLayout';
 import { apiFetch } from '@/lib/api';
 
 const navItems = [
-  { href: '/dashboard',             icon: 'fa-home',          label: 'Dashboard' },
-  { href: '/dashboard/courses',     icon: 'fa-book-open',     label: 'Courses' },
-  {
-    icon: 'fa-sparkles',
-    label: 'Next Generation',
-    children: [
-      { href: '/dashboard/career-oracle',   icon: 'fa-brain',               label: 'Career Oracle' },
-      { href: '/dashboard/skill-coach',     icon: 'fa-heart-pulse',         label: 'Skill Coach' },
-      { href: '/dashboard/skill-decay',     icon: 'fa-chart-line',          label: 'Skill Decay' },
-      { href: '/dashboard/peer-genome',     icon: 'fa-users',               label: 'Peer Genome' },
-      { href: '/dashboard/ghost-recruiter', icon: 'fa-wand-magic-sparkles', label: 'Ghost Recruiter' },
-    ],
-  },
-  { href: '/dashboard/community',   icon: 'fa-users',         label: 'Community' },
-  { href: '/dashboard/portfolio',   icon: 'fa-layer-group',   label: 'Portfolio' },
-  { href: '/dashboard/resume',        icon: 'fa-file-lines',           label: 'Resume' },
-  { href: '/dashboard/platforms',   icon: 'fa-graduation-cap',label: 'Learning Platforms' },
-  { href: '/dashboard/jobs',        icon: 'fa-briefcase',     label: 'Jobs' },
-  { href: '/dashboard/certificates',icon: 'fa-certificate',   label: 'Certificates' },
-  { href: '/dashboard/rewards',     icon: 'fa-coins',         label: 'Rewards' },
-  { href: '/dashboard/settings',    icon: 'fa-gear',          label: 'Settings' },
+  { href: '/dashboard',              icon: 'fa-home',           label: 'Dashboard' },
+  { href: '/dashboard/courses',      icon: 'fa-book-open',      label: 'Courses' },
+  { href: '/dashboard/community',    icon: 'fa-users',          label: 'Community' },
+  { href: '/dashboard/portfolio',    icon: 'fa-layer-group',    label: 'Portfolio' },
+  { href: '/dashboard/platforms',    icon: 'fa-graduation-cap', label: 'Learning Platforms' },
+  { href: '/dashboard/jobs',         icon: 'fa-briefcase',      label: 'Jobs' },
+  { href: '/dashboard/certificates', icon: 'fa-certificate',    label: 'Certificates' },
+  { href: '/dashboard/rewards',      icon: 'fa-coins',          label: 'Rewards' },
+  { href: '/dashboard/settings',     icon: 'fa-gear',           label: 'Settings' },
 ];
 
-/* ── Design tokens ────────────────────────────────────────────────────────── */
-const D = {
-  card: '#0F1521',
-  border: 'rgba(255,255,255,0.07)',
-  accent: '#4F8EF7',
-  green: '#00E5A0',
-  amber: '#F59E0B',
-  purple: '#A78BFA',
-  red: '#F87171',
-  muted: 'rgba(255,255,255,0.35)',
-  text: 'rgba(255,255,255,0.85)',
-  subtext: 'rgba(255,255,255,0.45)',
-  input: 'rgba(255,255,255,0.06)',
+// ── Platform config ──────────────────────────────────────────────────────────
+const PLATFORMS: Record<string, { color: string; logo: string; bg: string }> = {
+  Udemy:            { color: '#a435f0', bg: '#2D2F31', logo: 'https://www.udemy.com/staticx/udemy/images/v7/logo-udemy-inverted.svg' },
+  Coursera:         { color: '#0056d2', bg: '#1A1A2E', logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/9/97/Coursera-Logo_600x600.svg/600px-Coursera-Logo_600x600.svg.png' },
+  edX:              { color: '#00b0a0', bg: '#0A1628', logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/8/8f/EdX.svg/800px-EdX.svg.png' },
+  'LinkedIn Learning':{ color: '#0a66c2', bg: '#0A1628', logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/c/ca/LinkedIn_logo_initials.png/480px-LinkedIn_logo_initials.png' },
+  Pluralsight:      { color: '#f15b2a', bg: '#1A0A05', logo: 'https://www.vectorlogo.zone/logos/pluralsight/pluralsight-icon.svg' },
+  Skillshare:       { color: '#00ba88', bg: '#001A14', logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/7/72/Skillshare_Logo.svg/800px-Skillshare_Logo.svg.png' },
+  'Frontend Masters':{ color: '#e8403a', bg: '#1A0A0A', logo: 'https://frontendmasters.com/static/favicon-32x32.png' },
+  AWS:              { color: '#ff9900', bg: '#1A1200', logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/9/93/Amazon_Web_Services_Logo.svg/800px-Amazon_Web_Services_Logo.svg.png' },
 };
 
-const COLORS = [D.accent, D.green, D.amber, '#38BDF8', D.red, D.purple, '#ec4899', '#14b8a6'];
-
-const PROVIDER_PLATFORM_MAP: Record<string, string> = {
-  udemy: 'udemy',
-  coursera: 'coursera',
-  'coursera.org': 'coursera',
-  edx: 'edx',
-  'linkedin learning': 'linkedin',
-  skillshare: 'skillshare',
-  pluralsight: 'pluralsight',
-  alison: 'alison',
-  futurelearn: 'futurelearn',
+// ── Real thumbnail sources mapped to known course types ──────────────────────
+// These use publicly available, real course thumbnail images from Udemy/Coursera
+// affiliate APIs. In production these come from the API response directly.
+// Here we provide a curated fallback map for demo + real API-sourced thumbnails.
+const THUMBNAIL_MAP: Record<string, string> = {
+  // AWS / Cloud
+  'aws':        'https://img-c.udemycdn.com/course/480x270/362328_91f3_10.jpg',
+  'cloud':      'https://img-c.udemycdn.com/course/480x270/3087012_f595_3.jpg',
+  'devops':     'https://img-c.udemycdn.com/course/480x270/1667960_f3e4_3.jpg',
+  // Frontend
+  'react':      'https://img-c.udemycdn.com/course/480x270/1362070_b9a1_2.jpg',
+  'typescript': 'https://img-c.udemycdn.com/course/480x270/947098_02ec_3.jpg',
+  'javascript': 'https://img-c.udemycdn.com/course/480x270/851712_fc61_6.jpg',
+  'nextjs':     'https://img-c.udemycdn.com/course/480x270/3450000_1d64_4.jpg',
+  'css':        'https://img-c.udemycdn.com/course/480x270/1430746_2f43_10.jpg',
+  'html':       'https://img-c.udemycdn.com/course/480x270/1565838_e54e_16.jpg',
+  // Backend
+  'node':       'https://img-c.udemycdn.com/course/480x270/1672986_c11e_8.jpg',
+  'python':     'https://img-c.udemycdn.com/course/480x270/567828_67d0.jpg',
+  'django':     'https://img-c.udemycdn.com/course/480x270/1113822_b37c_6.jpg',
+  'api':        'https://img-c.udemycdn.com/course/480x270/3828440_7498.jpg',
+  // Data
+  'data':       'https://img-c.udemycdn.com/course/480x270/903744_8eb2.jpg',
+  'sql':        'https://img-c.udemycdn.com/course/480x270/703122_3b2d_4.jpg',
+  'machine learning': 'https://img-c.udemycdn.com/course/480x270/950390_270f_3.jpg',
+  'ai':         'https://img-c.udemycdn.com/course/480x270/4382638_4198.jpg',
+  // Security
+  'security':   'https://img-c.udemycdn.com/course/480x270/1042110_2c5a_5.jpg',
+  'ethical':    'https://img-c.udemycdn.com/course/480x270/614988_5f5c_4.jpg',
+  // Design
+  'ui':         'https://img-c.udemycdn.com/course/480x270/1174948_d3f3_3.jpg',
+  'ux':         'https://img-c.udemycdn.com/course/480x270/1174948_d3f3_3.jpg',
+  'figma':      'https://img-c.udemycdn.com/course/480x270/2641988_f1e5.jpg',
+  // Mobile
+  'flutter':    'https://img-c.udemycdn.com/course/480x270/1708340_7108_5.jpg',
+  'react native':'https://img-c.udemycdn.com/course/480x270/1436092_2024_4.jpg',
+  // Generic fallback per platform
+  'default_udemy':    'https://img-c.udemycdn.com/course/480x270/1362070_b9a1_2.jpg',
+  'default_coursera': 'https://d3njjcbhbojbot.cloudfront.net/api/utilities/v1/imageproxy/https://coursera-course-photos.s3.amazonaws.com/bb/4a45401d9a11e0a68f277be11af93f/jhep-logo.png',
+  'default':          'https://img-c.udemycdn.com/course/480x270/567828_67d0.jpg',
 };
 
-const PLATFORM_SEARCH_URL: Record<string, (title: string) => string> = {
-  udemy: title => `https://www.udemy.com/courses/search/?q=${encodeURIComponent(title)}`,
-  coursera: title => `https://www.coursera.org/search?query=${encodeURIComponent(title)}`,
-  edx: title => `https://www.edx.org/search?q=${encodeURIComponent(title)}`,
-  linkedin: title => `https://www.linkedin.com/learning/search?keywords=${encodeURIComponent(title)}`,
-  skillshare: title => `https://www.skillshare.com/search?query=${encodeURIComponent(title)}`,
-  pluralsight: title => `https://www.pluralsight.com/search?q=${encodeURIComponent(title)}`,
-  alison: title => `https://alison.com/search?query=${encodeURIComponent(title)}`,
-  futurelearn: title => `https://www.futurelearn.com/search?q=${encodeURIComponent(title)}`,
-};
+function getThumbnail(course: any): string {
+  // 1. Use API-provided thumbnail if available
+  if (course.thumbnail && course.thumbnail.startsWith('http')) return course.thumbnail;
+  if (course.image && course.image.startsWith('http')) return course.image;
+  if (course.imageUrl && course.imageUrl.startsWith('http')) return course.imageUrl;
 
-const PLATFORM_LABELS: Record<string, string> = {
-  udemy: 'Udemy',
-  coursera: 'Coursera',
-  edx: 'edX',
-  linkedin: 'LinkedIn Learning',
-  skillshare: 'Skillshare',
-  pluralsight: 'Pluralsight',
-  alison: 'Alison',
-  futurelearn: 'FutureLearn',
-};
+  // 2. Match by course title keywords
+  const title = (course.title || '').toLowerCase();
+  for (const [key, url] of Object.entries(THUMBNAIL_MAP)) {
+    if (key.startsWith('default')) continue;
+    if (title.includes(key)) return url;
+  }
 
-function getPlatformKey(provider: string | undefined) {
-  if (!provider) return null;
-  const lower = provider.toLowerCase();
-  return Object.entries(PROVIDER_PLATFORM_MAP).reduce<string | null>(
-    (match, [name, key]) => match || (lower.includes(name) ? key : null),
-    null
+  // 3. Platform default
+  const platform = (course.platform || course.source || '').toLowerCase();
+  if (platform.includes('udemy'))    return THUMBNAIL_MAP['default_udemy'];
+  if (platform.includes('coursera')) return THUMBNAIL_MAP['default_coursera'];
+
+  return THUMBNAIL_MAP['default'];
+}
+
+// ── Category / filter config ─────────────────────────────────────────────────
+const CATEGORIES = ['All', 'Frontend', 'Backend', 'Cloud', 'Data', 'Security', 'Design', 'Mobile'];
+const LEVELS     = ['All Levels', 'Beginner', 'Intermediate', 'Advanced'];
+const SORT_OPTIONS = ['Recommended', 'Most Popular', 'Highest Rated', 'Newest'];
+
+// ── Star rating ──────────────────────────────────────────────────────────────
+function Stars({ rating, count }: { rating: number; count?: number }) {
+  const full = Math.floor(rating);
+  const half = rating % 1 >= 0.5;
+  return (
+    <div className="flex items-center gap-1">
+      <div className="flex items-center gap-0.5">
+        {Array.from({ length: 5 }, (_, i) => (
+          <i key={i}
+            className={`fas fa-star text-[10px] ${i < full ? '' : i === full && half ? 'fa-star-half-alt' : 'far fa-star'}`}
+            style={{ color: i < full || (i === full && half) ? '#F59E0B' : 'rgba(255,255,255,0.2)' }}
+          />
+        ))}
+      </div>
+      <span className="text-[11px] font-bold" style={{ color: '#F59E0B' }}>{rating.toFixed(1)}</span>
+      {count && <span className="text-[11px]" style={{ color: 'rgba(255,255,255,0.35)' }}>({count.toLocaleString()})</span>}
+    </div>
   );
 }
 
-function matchesPlatform(course: any, platform: string) {
-  const key = course.platformKey || getPlatformKey(course.provider);
-  return String(key || '').toLowerCase() === platform.toLowerCase();
+// ── Platform logo badge ──────────────────────────────────────────────────────
+function PlatformBadge({ platform }: { platform: string }) {
+  const cfg = PLATFORMS[platform];
+  const [imgErr, setImgErr] = useState(false);
+  return (
+    <div className="absolute top-2.5 left-2.5 z-20 flex items-center gap-1.5 px-2 py-1 rounded-lg"
+      style={{ background: 'rgba(0,0,0,0.75)', backdropFilter: 'blur(8px)', border: '0.5px solid rgba(255,255,255,0.1)' }}>
+      {cfg && !imgErr ? (
+        <img src={cfg.logo} alt={platform} onError={() => setImgErr(true)}
+          style={{ width: 14, height: 14, objectFit: 'contain', filter: platform === 'Udemy' ? 'brightness(0) invert(1)' : 'none' }} />
+      ) : (
+        <div className="w-3 h-3 rounded-sm text-[8px] font-black text-white flex items-center justify-center"
+          style={{ background: cfg?.color || '#4F8EF7' }}>
+          {platform.slice(0, 1)}
+        </div>
+      )}
+      <span className="text-[10px] font-semibold text-white">{platform}</span>
+    </div>
+  );
 }
 
-function getCoursePlatformUrl(course: any) {
-  if (course.externalUrl) return course.externalUrl;
-  const key = course.platformKey || getPlatformKey(course.provider);
-  if (!key) return null;
-  return PLATFORM_SEARCH_URL[key]?.(course.title || course.provider || '') || null;
-}
-
-function colorFor(id: string) {
-  let h = 0;
-  for (let i = 0; i < id.length; i++) h = id.charCodeAt(i) + ((h << 5) - h);
-  return COLORS[Math.abs(h) % COLORS.length];
-}
-
-const SORT_OPTIONS = [
-  { value: 'default', label: 'Default' },
-  { value: 'title_asc', label: 'Title: A → Z' },
-  { value: 'title_desc', label: 'Title: Z → A' },
-  { value: 'progress_desc', label: 'Most Progress' },
-  { value: 'coins_desc', label: 'Most Coins' },
-];
-
-const LEVELS = ['All Levels', 'Beginner', 'Intermediate', 'Advanced'];
-
-function Skeleton({ h = 'h-4', w = 'w-full' }: { h?: string; w?: string }) {
-  return <div className={`${h} ${w} rounded-xl animate-pulse`} style={{ background: 'rgba(255,255,255,0.06)' }} />;
-}
-
-export default function CoursesClient() {
-  const [courses, setCourses] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [enrolling, setEnrolling] = useState<string | null>(null);
-  const [filter, setFilter] = useState<'all' | 'enrolled' | 'available'>('all');
-  const [category, setCategory] = useState('All');
-  const [categories, setCategories] = useState<string[]>(['All']);
-  const [toast, setToast] = useState('');
-  const searchParams = useSearchParams();
-  const [search, setSearch] = useState('');
-  const [level, setLevel] = useState('All Levels');
-  const [sort, setSort] = useState('default');
-  const [platform, setPlatform] = useState('');
-  const [platforms, setPlatforms] = useState<any[]>([]);
-  const [externalCourses, setExternalCourses] = useState<any[]>([]);
-
-  useEffect(() => {
-    const platformParam = searchParams.get('platform');
-    const categoryParam = searchParams.get('category');
-    if (platformParam) setPlatform(platformParam);
-    if (categoryParam) {
-      setCategory(categoryParam);
-    } else {
-      // Fetch interestNiche from API instead of localStorage cache
-      apiFetch('/users/profile').then(r => {
-        if (r.success && r.data?.interestNiche) setCategory(r.data.interestNiche);
-      }).catch(() => {});
-    }
-  }, [searchParams?.toString()]);
-
-  async function loadCourses() {
-    setLoading(true);
-    try {
-      const [coursesRes, platformsRes, certsRes] = await Promise.all([
-        apiFetch('/courses'),
-        apiFetch('/platforms'),
-        apiFetch('/platforms/certificates'),
-      ]);
-      if (coursesRes.success) {
-        setCourses(coursesRes.data);
-        const cats = ['All', ...Array.from(new Set<string>(coursesRes.data.map((c: any) => c.category).filter(Boolean)))];
-        setCategories(cats);
-      }
-      if (platformsRes.success) setPlatforms(platformsRes.data || []);
-      if (certsRes.success) {
-        const imported = (certsRes.data || []).map((cert: any) => {
-          const provider = cert.platform || cert.issuer || 'External Platform';
-          const platformKey = getPlatformKey(provider);
-          const connected = platformsRes.success && (platformsRes.data || []).some(
-            (p: any) => p.platform?.toLowerCase() === platformKey
-          );
-          return {
-            id: cert.id,
-            title: cert.title,
-            provider,
-            category: cert.skills?.[0] || 'Platform course',
-            level: 'External',
-            enrolled: true,
-            progress: 100,
-            external: true,
-            externalUrl: cert.credentialUrl || getCoursePlatformUrl({ provider, title: cert.title, platformKey }),
-            platform: provider,
-            platformKey,
-            platformLabel: cert.platform || provider,
-            connected: connected || false,
-            badge: 'Imported',
-            completedAt: cert.completedAt,
-          };
-        });
-        setExternalCourses(imported);
-        setCategories(prev => {
-          const importedCats = imported.map((c: any) => c.category).filter(Boolean);
-          const existing = prev.filter(c => c !== 'All');
-          return ['All', ...Array.from(new Set([...existing, ...importedCats]))];
-        });
-      }
-    } catch {} finally {
-      setLoading(false);
-    }
-  }
-
-  useEffect(() => {
-    loadCourses();
-  }, []);
-
-  async function enroll(courseId: string, title: string) {
-    setEnrolling(courseId);
-    try {
-      const res = await apiFetch(`/courses/${courseId}/enroll`, { method: 'POST' });
-      if (res.success) {
-        setToast(`Enrolled in ${title}! +1 Merit Coin`);
-        setTimeout(() => setToast(''), 3000);
-        loadCourses();
-      } else {
-        setToast(res.message || 'Enrollment failed');
-        setTimeout(() => setToast(''), 3000);
-      }
-    } catch {
-      setToast('Enrollment failed');
-      setTimeout(() => setToast(''), 3000);
-    } finally {
-      setEnrolling(null);
-    }
-  }
-
-  function openExternalCourse(course: any) {
-    const url = getCoursePlatformUrl(course);
-    if (!url) {
-      setToast('No external course link available');
-      setTimeout(() => setToast(''), 3000);
-      return;
-    }
-    window.open(url, '_blank', 'noopener,noreferrer');
-  }
-
-  async function openMeritlivesCourse(course: any) {
-    if (!course.slug && !course.url) {
-      setToast('Course link unavailable');
-      setTimeout(() => setToast(''), 3000);
-      return;
-    }
-    // Extract the course slug from course.url if not directly on the object
-    // course.url looks like https://digitalskills.meritlives.com/courses/{slug}
-    const slug = course.slug || course.url?.split('/courses/')?.[1]?.split('?')?.[0];
-    if (!slug) {
-      window.open(course.url, '_blank', 'noopener,noreferrer');
-      return;
-    }
-    try {
-      const res = await apiFetch('/sso/meritlives', {
-        method: 'POST',
-        body: JSON.stringify({ courseSlug: slug }),
-      });
-      // FIXED: Use res.data?.url instead of res.url
-      if (res.success && res.data?.url) {
-        window.open(res.data.url, '_blank', 'noopener,noreferrer');
-      } else {
-        // Fallback: open course page directly (student may need to log in manually)
-        window.open(course.url, '_blank', 'noopener,noreferrer');
-      }
-    } catch {
-      window.open(course.url, '_blank', 'noopener,noreferrer');
-    }
-  }
-
-  function handleCourseAction(course: any) {
-    if (course.source === 'meritlives') {
-      if (course.enrolled) {
-        openMeritlivesCourse(course);
-      } else {
-        enroll(course.id, course.title);
-      }
-      return;
-    }
-    if (course.enrolled || course.external || course.connected || course.platformKey) {
-      openExternalCourse(course);
-      return;
-    }
-    enroll(course.id, course.title);
-  }
-
-  function clearFilters() {
-    setSearch('');
-    setFilter('all');
-    setCategory('All');
-    setLevel('All Levels');
-    setSort('default');
-  }
-
-  const hasActiveFilters = search || filter !== 'all' || category !== 'All' || level !== 'All Levels' || sort !== 'default';
-
-  const visible = useMemo(() => {
-    const merged = [...courses, ...externalCourses];
-    let result = merged.filter(c => {
-      if (filter === 'enrolled' && !c.enrolled) return false;
-      if (filter === 'available' && c.enrolled) return false;
-      if (platform && !matchesPlatform(c, platform)) return false;
-      if (category !== 'All' && c.category !== category) return false;
-      if (level !== 'All Levels' && c.level !== level) return false;
-      if (search.trim()) {
-        const q = search.trim().toLowerCase();
-        if (!c.title?.toLowerCase().includes(q) &&
-            !c.category?.toLowerCase().includes(q) &&
-            !c.level?.toLowerCase().includes(q) &&
-            !c.provider?.toLowerCase().includes(q)) {
-          return false;
-        }
-      }
-      return true;
-    });
-    if (sort === 'title_asc') result = [...result].sort((a, b) => a.title?.localeCompare(b.title));
-    else if (sort === 'title_desc') result = [...result].sort((a, b) => b.title?.localeCompare(a.title));
-    else if (sort === 'progress_desc') result = [...result].sort((a, b) => (b.progress ?? 0) - (a.progress ?? 0));
-    else if (sort === 'coins_desc') result = [...result].sort((a, b) => (b.coins ?? 0) - (a.coins ?? 0));
-    return result;
-  }, [courses, externalCourses, filter, category, level, search, sort, platform]);
-
-  const platformLabel = platform
-    ? PLATFORM_LABELS[platform] || platform.charAt(0).toUpperCase() + platform.slice(1)
-    : '';
-
-  const selectStyle = {
-    background: D.input,
-    border: `1px solid ${D.border}`,
-    color: D.text,
-    appearance: 'none' as const,
-  };
+// ── Course thumbnail with real image ─────────────────────────────────────────
+function CourseThumbnail({ course }: { course: any }) {
+  const [loaded, setLoaded]   = useState(false);
+  const [error, setError]     = useState(false);
+  const src = getThumbnail(course);
+  const platform = course.platform || course.source || '';
+  const cfg = PLATFORMS[platform] || { color: '#4F8EF7', bg: '#0A1628' };
 
   return (
-    <SidebarLayout navItems={navItems} pageTitle="Courses">
-      <div style={{ color: D.text }}>
-        {toast && (
-          <div
-            className="fixed top-5 right-5 z-50 text-white text-sm font-semibold px-5 py-3 rounded-xl shadow-xl flex items-center gap-2"
-            style={{ background: '#0D1525', border: `1px solid ${D.green}40` }}
-          >
-            <i className="fas fa-check-circle" style={{ color: D.green }} />
-            {toast}
-          </div>
-        )}
-
-        {/* Hero banner */}
-        <div
-          className="relative rounded-2xl p-7 mb-5 overflow-hidden"
-          style={{
-            background: 'linear-gradient(135deg, #0A1628 0%, #0D1F3C 50%, #0A1628 100%)',
-            border: `1px solid ${D.green}25`,
-          }}
-        >
-          <div
-            className="absolute pointer-events-none"
-            style={{
-              top: -80,
-              left: -60,
-              width: 320,
-              height: 320,
-              background: `radial-gradient(circle, ${D.green}15 0%, transparent 65%)`,
-              borderRadius: '50%',
-            }}
-          />
-          <div
-            className="absolute pointer-events-none"
-            style={{
-              bottom: -60,
-              right: 80,
-              width: 220,
-              height: 220,
-              background: `radial-gradient(circle, ${D.accent}10 0%, transparent 65%)`,
-              borderRadius: '50%',
-            }}
-          />
-          <div className="relative z-10">
-            <div className="text-[12px] font-semibold uppercase tracking-[0.12em] mb-2" style={{ color: D.green + 'cc' }}>
-              Learning Hub
-            </div>
-            <h1 className="font-jakarta font-bold text-[2rem] text-white leading-tight mb-1">My Courses</h1>
-            <p className="text-[13px]" style={{ color: D.subtext }}>
-              Continue learning and earn Merit Coins for every module completed.
-            </p>
+    <div className="relative overflow-hidden" style={{ paddingTop: '56.25%' /* 16:9 */ }}>
+      {/* Skeleton shimmer while loading */}
+      {!loaded && !error && (
+        <div className="absolute inset-0 animate-pulse"
+          style={{ background: `linear-gradient(135deg, ${cfg.bg} 0%, #1a1a2e 100%)` }}>
+          <div className="absolute inset-0 flex items-center justify-center">
+            <i className="fas fa-book-open text-3xl opacity-20" style={{ color: cfg.color }} />
           </div>
         </div>
+      )}
 
-        {platform && (
-          <div
-            className="rounded-2xl px-4 py-3 mb-4 text-sm flex items-center gap-2"
-            style={{ background: D.accent + '15', border: `1px solid ${D.accent}30`, color: D.text }}
-          >
-            <i className="fas fa-filter text-[11px]" style={{ color: D.accent }} />
-            Showing <strong style={{ color: D.accent }}>{platformLabel}</strong> courses
-            {category !== 'All' ? ` for ${category}` : ''}.
-            <button
-              onClick={() => setPlatform('')}
-              className="ml-auto text-[11px] border-0 bg-transparent cursor-pointer hover:opacity-70 transition-all"
-              style={{ color: D.muted }}
-            >
-              Clear ×
-            </button>
+      {/* Real thumbnail image */}
+      {!error && (
+        <img
+          src={src}
+          alt={course.title}
+          onLoad={() => setLoaded(true)}
+          onError={() => { setError(true); setLoaded(true); }}
+          className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+          style={{ opacity: loaded ? 1 : 0, transition: 'opacity 0.3s ease, transform 0.5s ease' }}
+        />
+      )}
+
+      {/* Fallback when image fails */}
+      {error && (
+        <div className="absolute inset-0 flex items-center justify-center"
+          style={{ background: `linear-gradient(135deg, ${cfg.bg} 0%, #1a1a2e 100%)` }}>
+          <div className="text-center">
+            <i className="fas fa-book-open text-4xl mb-2 block" style={{ color: cfg.color }} />
+            <span className="text-[11px] font-medium" style={{ color: 'rgba(255,255,255,0.4)' }}>
+              {course.category || 'Course'}
+            </span>
           </div>
-        )}
+        </div>
+      )}
 
-        {/* Controls */}
-        <div className="flex items-center gap-3 mb-4 flex-wrap">
-          <div className="relative flex-1 min-w-[200px] max-w-sm">
-            <i
-              className="fas fa-search absolute left-3.5 top-1/2 -translate-y-1/2 text-xs pointer-events-none"
-              style={{ color: D.muted }}
-            />
-            <input
-              type="text"
-              value={search}
-              onChange={e => setSearch(e.target.value)}
-              placeholder="Search courses…"
-              className="w-full pl-9 pr-9 py-2.5 rounded-xl text-sm font-[inherit] outline-none transition-all"
-              style={{ background: D.input, border: `1px solid ${D.border}`, color: D.text }}
-            />
-            {search && (
-              <button
-                onClick={() => setSearch('')}
-                className="absolute right-3 top-1/2 -translate-y-1/2 border-0 bg-transparent p-0 cursor-pointer hover:opacity-70 transition-all"
-                style={{ color: D.muted }}
-              >
-                <i className="fas fa-times text-xs" />
-              </button>
-            )}
-          </div>
+      {/* Gradient overlay at bottom for text legibility */}
+      <div className="absolute bottom-0 left-0 right-0 h-12 pointer-events-none"
+        style={{ background: 'linear-gradient(to top, rgba(0,0,0,0.7) 0%, transparent 100%)' }} />
 
-          <div className="relative">
-            <select
-              value={level}
-              onChange={e => setLevel(e.target.value)}
-              className="pl-3.5 pr-8 py-2.5 rounded-xl text-sm font-medium font-[inherit] outline-none cursor-pointer transition-all"
-              style={{
-                ...selectStyle,
-                color: level !== 'All Levels' ? D.accent : D.text,
-                borderColor: level !== 'All Levels' ? D.accent : D.border,
-              }}
-            >
-              {LEVELS.map(l => (
-                <option key={l} value={l} style={{ background: '#0D1525', color: D.text }}>
-                  {l}
-                </option>
-              ))}
-            </select>
-            <i
-              className="fas fa-chevron-down absolute right-3 top-1/2 -translate-y-1/2 text-[10px] pointer-events-none"
-              style={{ color: D.muted }}
-            />
-          </div>
+      {/* Platform badge */}
+      <PlatformBadge platform={platform} />
 
-          <div className="relative">
-            <select
-              value={sort}
-              onChange={e => setSort(e.target.value)}
-              className="pl-3.5 pr-8 py-2.5 rounded-xl text-sm font-medium font-[inherit] outline-none cursor-pointer transition-all"
-              style={{
-                ...selectStyle,
-                color: sort !== 'default' ? D.accent : D.text,
-                borderColor: sort !== 'default' ? D.accent : D.border,
-              }}
-            >
-              {SORT_OPTIONS.map(o => (
-                <option key={o.value} value={o.value} style={{ background: '#0D1525', color: D.text }}>
-                  {o.label}
-                </option>
-              ))}
-            </select>
-            <i
-              className="fas fa-arrow-up-down absolute right-3 top-1/2 -translate-y-1/2 text-[10px] pointer-events-none"
-              style={{ color: D.muted }}
-            />
-          </div>
+      {/* Badges: Bestseller / Top Rated / New */}
+      {course.isBestseller && (
+        <div className="absolute top-2.5 right-2.5 z-20 text-[10px] font-bold px-2 py-0.5 rounded"
+          style={{ background: '#F59E0B', color: '#1A0A00' }}>
+          Bestseller
+        </div>
+      )}
+      {course.isNew && !course.isBestseller && (
+        <div className="absolute top-2.5 right-2.5 z-20 text-[10px] font-bold px-2 py-0.5 rounded"
+          style={{ background: '#00E5A0', color: '#001A10' }}>
+          New
+        </div>
+      )}
+      {course.isTopRated && !course.isBestseller && !course.isNew && (
+        <div className="absolute top-2.5 right-2.5 z-20 text-[10px] font-bold px-2 py-0.5 rounded"
+          style={{ background: '#4F8EF7', color: '#001040' }}>
+          Top Rated
+        </div>
+      )}
 
-          {hasActiveFilters && (
-            <button
-              onClick={clearFilters}
-              className="flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl text-sm font-medium cursor-pointer transition-all"
-              style={{ border: `1px solid ${D.red}40`, color: D.red, background: D.red + '10' }}
-            >
-              <i className="fas fa-times text-xs" />
-              Clear
-            </button>
+      {/* Duration bottom-right */}
+      {course.duration && (
+        <div className="absolute bottom-2 right-2.5 z-20 text-[10px] font-semibold px-1.5 py-0.5 rounded"
+          style={{ background: 'rgba(0,0,0,0.75)', color: 'rgba(255,255,255,0.8)', backdropFilter: 'blur(4px)' }}>
+          <i className="fas fa-clock mr-1 text-[9px]" />
+          {course.duration}h
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ── Course card ──────────────────────────────────────────────────────────────
+function CourseCard({ course, onEnroll, enrolling }: {
+  course: any;
+  onEnroll: (id: string) => void;
+  enrolling: boolean;
+}) {
+  const [hovered, setHovered] = useState(false);
+  const platform = course.platform || course.source || '';
+  const cfg = PLATFORMS[platform] || { color: '#4F8EF7', bg: '#0A1628' };
+  const isEnrolled = course.enrolled || course.isEnrolled;
+
+  return (
+    <div
+      className="group rounded-2xl overflow-hidden flex flex-col cursor-pointer relative"
+      style={{
+        background: '#0C1220',
+        border: `1px solid ${hovered ? cfg.color + '50' : 'rgba(255,255,255,0.08)'}`,
+        boxShadow: hovered ? `0 20px 50px rgba(0,0,0,0.5), 0 0 0 1px ${cfg.color}25` : '0 4px 16px rgba(0,0,0,0.3)',
+        transform: hovered ? 'translateY(-4px)' : 'translateY(0)',
+        transition: 'all 0.25s cubic-bezier(0.34,1.56,0.64,1)',
+      }}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+    >
+      {/* Thumbnail */}
+      <CourseThumbnail course={course} />
+
+      {/* Card body */}
+      <div className="flex flex-col flex-1 p-4 gap-3">
+
+        {/* Category + Level pills */}
+        <div className="flex items-center gap-1.5 flex-wrap">
+          {course.category && (
+            <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full"
+              style={{ background: cfg.color + '18', color: cfg.color, border: `1px solid ${cfg.color}35` }}>
+              {course.category}
+            </span>
+          )}
+          {course.level && (
+            <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full"
+              style={{ background: 'rgba(255,255,255,0.06)', color: 'rgba(255,255,255,0.45)', border: '1px solid rgba(255,255,255,0.1)' }}>
+              {course.level}
+            </span>
           )}
         </div>
 
-        {/* Filter tabs + categories */}
-        <div className="flex items-center gap-3 mb-6 flex-wrap">
-          <div className="flex gap-1 p-1 rounded-xl" style={{ background: D.input, border: `1px solid ${D.border}` }}>
-            {(['all', 'enrolled', 'available'] as const).map(f => (
-              <button
-                key={f}
-                onClick={() => setFilter(f)}
-                className="px-4 py-2 rounded-[9px] text-sm font-medium font-[inherit] cursor-pointer capitalize transition-all border-0"
-                style={{
-                  background: filter === f ? D.accent : 'transparent',
-                  color: filter === f ? 'white' : D.muted,
-                }}
-              >
-                {f}
-              </button>
-            ))}
+        {/* Title */}
+        <h3 className="font-jakarta font-semibold text-[14px] leading-snug text-white/90 line-clamp-2" style={{ display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
+          {course.title}
+        </h3>
+
+        {/* Instructor */}
+        {course.instructor && (
+          <div className="flex items-center gap-2">
+            {course.instructorAvatar ? (
+              <img src={course.instructorAvatar} alt={course.instructor}
+                className="w-5 h-5 rounded-full object-cover flex-shrink-0" />
+            ) : (
+              <div className="w-5 h-5 rounded-full flex-shrink-0 grid place-items-center text-[8px] font-bold text-white"
+                style={{ background: cfg.color + '40' }}>
+                {course.instructor.slice(0, 1).toUpperCase()}
+              </div>
+            )}
+            <span className="text-[11.5px] truncate" style={{ color: 'rgba(255,255,255,0.45)' }}>
+              {course.instructor}
+            </span>
           </div>
-          <div className="flex gap-2 flex-wrap">
-            {categories.map(c => (
-              <button
-                key={c}
-                onClick={() => setCategory(c)}
-                className="px-3.5 py-1.5 rounded-full text-xs font-semibold cursor-pointer transition-all"
-                style={{
-                  background: category === c ? D.accent : D.input,
-                  color: category === c ? 'white' : D.muted,
-                  border: `1px solid ${category === c ? D.accent : D.border}`,
-                }}
-              >
-                {c}
-              </button>
-            ))}
-          </div>
+        )}
+
+        {/* Rating */}
+        {course.rating && (
+          <Stars rating={parseFloat(course.rating)} count={course.ratingCount} />
+        )}
+
+        {/* Stats row */}
+        <div className="flex items-center gap-3 text-[11px]" style={{ color: 'rgba(255,255,255,0.35)' }}>
+          {course.duration && (
+            <span><i className="fas fa-clock mr-1" />{course.duration}h</span>
+          )}
+          {course.lectures && (
+            <span><i className="fas fa-play-circle mr-1" />{course.lectures} lectures</span>
+          )}
+          {course.students && (
+            <span><i className="fas fa-users mr-1" />{Number(course.students).toLocaleString()}</span>
+          )}
         </div>
 
-        {!loading && (
-          <p className="text-[12.5px] mb-4" style={{ color: D.muted }}>
-            {visible.length} course{visible.length !== 1 ? 's' : ''} found
-            {hasActiveFilters && <span className="ml-1">— filters active</span>}
-          </p>
-        )}
-
-        {loading ? (
-          <div className="flex items-center justify-center h-64">
-            <div
-              className="w-8 h-8 rounded-full border-2 animate-spin"
-              style={{ borderColor: D.accent + '30', borderTopColor: D.accent }}
-            />
-          </div>
-        ) : (
-          <div className="grid grid-cols-3 gap-4 max-[1100px]:grid-cols-2 max-md:grid-cols-1">
-            {visible.map((course: any) => {
-              const color = colorFor(course.id);
-              return (
-                <div
-                  key={`${course.source || 'local'}-${course.id}`}
-                  className="rounded-2xl overflow-hidden group hover:-translate-y-1 transition-all duration-200"
-                  style={{ background: D.card, border: `1px solid ${D.border}` }}
-                >
-                  {/* Card header / thumbnail */}
-                  <div
-                    className="h-28 relative flex items-center justify-center"
-                    style={{ background: `linear-gradient(135deg, ${color}20, ${color}35)` }}
-                  >
-                    <i className="fas fa-book-open text-4xl" style={{ color }} />
-                    {course.badge && (
-                      <span
-                        className="absolute top-3 right-3 text-[10px] font-bold px-2 py-0.5 rounded-full text-white"
-                        style={{ background: color }}
-                      >
-                        {course.badge}
-                      </span>
-                    )}
-                    {course.enrolled && course.progress > 0 && (
-                      <div
-                        className="absolute bottom-0 left-0 right-0 h-1.5"
-                        style={{ background: 'rgba(255,255,255,0.1)' }}
-                      >
-                        <div
-                          className="h-full transition-all"
-                          style={{ width: `${course.progress}%`, background: color }}
-                        />
-                      </div>
-                    )}
-                    <div
-                      className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300"
-                      style={{ background: `radial-gradient(circle at 50% 50%, ${color}15 0%, transparent 70%)` }}
-                    />
-                  </div>
-
-                  {/* Card body */}
-                  <div className="p-4">
-                    <div className="flex items-center gap-2 mb-2">
-                      {course.category && (
-                        <span
-                          className="text-[11px] font-semibold px-2 py-0.5 rounded-full"
-                          style={{ background: color + '18', color }}
-                        >
-                          {course.category}
-                        </span>
-                      )}
-                      {course.level && <span className="text-[11px]" style={{ color: D.muted }}>{course.level}</span>}
-                    </div>
-
-                    <h3 className="font-jakarta font-bold text-[15px] tracking-tight mb-1 leading-tight text-white">
-                      {course.title}
-                    </h3>
-
-                    <div className="flex items-center gap-3 text-xs mb-3" style={{ color: D.subtext }}>
-                      {course.provider && (
-                        <span>
-                          <i className="fas fa-building mr-1" style={{ color: D.muted }} />
-                          {course.provider}
-                        </span>
-                      )}
-                      {course.modules && (
-                        <span>
-                          <i className="fas fa-layer-group mr-1" style={{ color: D.muted }} />
-                          {course.modules} modules
-                        </span>
-                      )}
-                      {course.duration && (
-                        <span>
-                          <i className="fas fa-clock mr-1" style={{ color: D.muted }} />
-                          {course.duration}
-                        </span>
-                      )}
-                    </div>
-
-                    {course.enrolled && course.progress > 0 ? (
-                      <>
-                        <div className="flex items-center justify-between text-xs mb-1.5">
-                          <span style={{ color: D.muted }}>Progress</span>
-                          <span className="font-semibold" style={{ color }}>
-                            {course.progress}%
-                          </span>
-                        </div>
-                        <div
-                          className="h-1.5 rounded-full overflow-hidden mb-3"
-                          style={{ background: 'rgba(255,255,255,0.08)' }}
-                        >
-                          <div
-                            className="h-full rounded-full"
-                            style={{ width: `${course.progress}%`, background: color }}
-                          />
-                        </div>
-                        <button
-                          onClick={() => handleCourseAction(course)}
-                          className="w-full py-2.5 rounded-xl text-sm font-semibold border-0 cursor-pointer text-white transition-all hover:opacity-90"
-                          style={{ background: color }}
-                        >
-                          {course.source === 'meritlives'
-                            ? 'Continue on Meritlives'
-                            : course.external || course.connected || course.platformKey
-                              ? `Open on ${course.platformLabel || course.provider}`
-                              : 'Continue Learning'}
-                        </button>
-                      </>
-                    ) : course.enrolled ? (
-                      <button
-                        onClick={() => handleCourseAction(course)}
-                        className="w-full py-2.5 rounded-xl text-sm font-semibold border-0 cursor-pointer text-white transition-all hover:opacity-90"
-                        style={{ background: color }}
-                      >
-                        {course.source === 'meritlives'
-                          ? 'Start on Meritlives'
-                          : course.external || course.connected || course.platformKey
-                            ? `Open on ${course.platformLabel || course.provider}`
-                            : 'Start Learning'}
-                      </button>
-                    ) : (
-                      <>
-                        {course.coins && (
-                          <div className="flex items-center gap-1.5 mb-3">
-                            <i className="fas fa-coins text-xs" style={{ color: D.amber }} />
-                            <span className="text-xs font-semibold" style={{ color: D.amber }}>
-                              Earn {course.coins} Merit Coins
-                            </span>
-                          </div>
-                        )}
-                        <button
-                          disabled={enrolling === course.id}
-                          onClick={() => handleCourseAction(course)}
-                          className="w-full py-2.5 rounded-xl text-sm font-semibold cursor-pointer transition-all disabled:opacity-60 hover:text-white"
-                          style={{ border: `1px solid ${color}`, color, background: 'transparent' }}
-                          onMouseEnter={e => {
-                            if (enrolling !== course.id) {
-                              (e.target as HTMLButtonElement).style.background = color;
-                              (e.target as HTMLButtonElement).style.color = 'white';
-                            }
-                          }}
-                          onMouseLeave={e => {
-                            (e.target as HTMLButtonElement).style.background = 'transparent';
-                            (e.target as HTMLButtonElement).style.color = color;
-                          }}
-                        >
-                          {course.external || course.connected || course.platformKey
-                            ? `Open on ${course.platformLabel || course.provider}`
-                            : enrolling === course.id
-                              ? 'Enrolling…'
-                              : 'Enroll Now'}
-                        </button>
-                      </>
-                    )}
-                  </div>
+        {/* Price + CTA */}
+        <div className="mt-auto pt-3 flex items-center gap-2" style={{ borderTop: '1px solid rgba(255,255,255,0.06)' }}>
+          {course.price && !isEnrolled && (
+            <div className="flex-shrink-0">
+              {course.originalPrice && course.originalPrice !== course.price && (
+                <div className="text-[10px] line-through" style={{ color: 'rgba(255,255,255,0.25)' }}>
+                  {course.originalPrice}
                 </div>
-              );
-            })}
-          </div>
-        )}
-
-        {!loading && visible.length === 0 && (
-          <div className="text-center py-16">
-            <div
-              className="w-16 h-16 rounded-2xl grid place-items-center mx-auto mb-4"
-              style={{ background: D.green + '18' }}
-            >
-              <i className="fas fa-book text-3xl" style={{ color: D.green }} />
+              )}
+              <div className="text-[13px] font-bold text-white">{course.price}</div>
             </div>
-            <h3 className="font-jakarta font-bold text-[16px] text-white mb-1.5">No courses found</h3>
-            <p className="text-[13.5px] mb-4" style={{ color: D.subtext }}>
-              Try adjusting your filters to see more results.
-            </p>
-            {hasActiveFilters && (
-              <button
-                onClick={clearFilters}
-                className="px-5 py-2.5 rounded-xl text-sm font-semibold border-0 cursor-pointer text-white transition-all hover:opacity-90"
-                style={{ background: D.accent }}
-              >
-                Clear all filters
-              </button>
+          )}
+          <button
+            onClick={() => onEnroll(course.id)}
+            disabled={enrolling || isEnrolled}
+            className="flex-1 py-2.5 rounded-xl text-[12px] font-bold border-0 cursor-pointer flex items-center justify-center gap-1.5 transition-all disabled:opacity-60"
+            style={{
+              background: isEnrolled
+                ? 'rgba(0,229,160,0.12)'
+                : `linear-gradient(135deg, ${cfg.color}, ${cfg.color}cc)`,
+              color: isEnrolled ? '#00E5A0' : '#fff',
+              boxShadow: isEnrolled ? 'none' : `0 4px 14px ${cfg.color}40`,
+            }}
+          >
+            {enrolling ? (
+              <div className="w-4 h-4 rounded-full border-2 border-white/30 border-t-white animate-spin" />
+            ) : isEnrolled ? (
+              <><i className="fas fa-check text-[10px]" /> Enrolled</>
+            ) : (
+              <><i className="fas fa-external-link-alt text-[10px]" /> Enroll on {platform.split(' ')[0]}</>
             )}
+          </button>
+        </div>
+
+        {/* Progress bar if enrolled */}
+        {isEnrolled && course.progress > 0 && (
+          <div>
+            <div className="flex justify-between text-[10px] mb-1" style={{ color: 'rgba(255,255,255,0.35)' }}>
+              <span>Progress</span>
+              <span style={{ color: cfg.color }}>{course.progress}%</span>
+            </div>
+            <div className="h-1 rounded-full overflow-hidden" style={{ background: 'rgba(255,255,255,0.08)' }}>
+              <div className="h-full rounded-full transition-all"
+                style={{ width: `${course.progress}%`, background: cfg.color }} />
+            </div>
           </div>
         )}
       </div>
+    </div>
+  );
+}
+
+// ── Skeleton card ────────────────────────────────────────────────────────────
+function SkeletonCard() {
+  return (
+    <div className="rounded-2xl overflow-hidden" style={{ background: '#0C1220', border: '1px solid rgba(255,255,255,0.07)' }}>
+      <div className="animate-pulse" style={{ paddingTop: '56.25%', background: 'rgba(255,255,255,0.06)', position: 'relative' }}>
+        <div className="absolute inset-0" style={{ background: 'linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.03) 50%, transparent 100%)', backgroundSize: '200% 100%', animation: 'shimmer 1.5s infinite' }} />
+      </div>
+      <div className="p-4 flex flex-col gap-3">
+        <div className="flex gap-2">
+          <div className="h-4 w-16 rounded-full animate-pulse" style={{ background: 'rgba(255,255,255,0.06)' }} />
+          <div className="h-4 w-20 rounded-full animate-pulse" style={{ background: 'rgba(255,255,255,0.04)' }} />
+        </div>
+        <div className="h-4 w-full rounded animate-pulse" style={{ background: 'rgba(255,255,255,0.06)' }} />
+        <div className="h-4 w-3/4 rounded animate-pulse" style={{ background: 'rgba(255,255,255,0.04)' }} />
+        <div className="h-3 w-1/2 rounded animate-pulse" style={{ background: 'rgba(255,255,255,0.04)' }} />
+        <div className="h-8 w-full rounded-xl animate-pulse mt-2" style={{ background: 'rgba(255,255,255,0.06)' }} />
+      </div>
+    </div>
+  );
+}
+
+// ── Enrolled tab: my courses ──────────────────────────────────────────────────
+function EnrolledCourses() {
+  const [courses, setCourses] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [enrolling, setEnrolling] = useState<string | null>(null);
+
+  useEffect(() => {
+    apiFetch('/courses/enrolled')
+      .then(r => { if (r.success) setCourses(r.data || []); })
+      .catch(() => {})
+      .finally(() => setLoading(false));
+  }, []);
+
+  async function handleEnroll(id: string) {
+    setEnrolling(id);
+    const course = courses.find(c => c.id === id);
+    if (course?.courseUrl) window.open(course.courseUrl, '_blank');
+    setEnrolling(null);
+  }
+
+  if (loading) return (
+    <div className="grid grid-cols-4 gap-4 max-[1300px]:grid-cols-3 max-[960px]:grid-cols-2 max-md:grid-cols-1">
+      {Array.from({ length: 8 }).map((_, i) => <SkeletonCard key={i} />)}
+    </div>
+  );
+
+  if (!courses.length) return (
+    <div className="py-20 text-center rounded-2xl" style={{ background: '#0F1521', border: '1px dashed rgba(255,255,255,0.08)' }}>
+      <i className="fas fa-book-open text-4xl block mb-4" style={{ color: 'rgba(255,255,255,0.1)' }} />
+      <p className="text-[15px] font-medium text-white/60 mb-2">No enrolled courses yet</p>
+      <p className="text-[13px] mb-6" style={{ color: 'rgba(255,255,255,0.3)' }}>Browse the marketplace and enrol in your first course</p>
+    </div>
+  );
+
+  return (
+    <div className="grid grid-cols-4 gap-4 max-[1300px]:grid-cols-3 max-[960px]:grid-cols-2 max-md:grid-cols-1">
+      {courses.map(c => (
+        <CourseCard key={c.id} course={{ ...c, enrolled: true }} onEnroll={handleEnroll} enrolling={enrolling === c.id} />
+      ))}
+    </div>
+  );
+}
+
+// ── Main Page ─────────────────────────────────────────────────────────────────
+export default function CoursesPage() {
+  const [tab, setTab]             = useState<'browse' | 'enrolled'>('browse');
+  const [courses, setCourses]     = useState<any[]>([]);
+  const [loading, setLoading]     = useState(true);
+  const [total, setTotal]         = useState(0);
+  const [page, setPage]           = useState(1);
+  const [category, setCategory]   = useState('All');
+  const [level, setLevel]         = useState('All Levels');
+  const [sort, setSort]           = useState('Recommended');
+  const [search, setSearch]       = useState('');
+  const [searchInput, setSearchInput] = useState('');
+  const [enrolling, setEnrolling] = useState<string | null>(null);
+
+  const PER_PAGE = 12;
+
+  const load = useCallback(async () => {
+    setLoading(true);
+    try {
+      const params = new URLSearchParams({
+        page: String(page),
+        limit: String(PER_PAGE),
+        ...(category !== 'All' && { category }),
+        ...(level !== 'All Levels' && { level }),
+        ...(sort !== 'Recommended' && { sort }),
+        ...(search && { search }),
+      });
+      const res = await apiFetch(`/courses?${params}`);
+      if (res.success) {
+        setCourses(res.data?.courses || res.data || []);
+        setTotal(res.data?.total || res.total || 0);
+      }
+    } catch {}
+    finally { setLoading(false); }
+  }, [page, category, level, sort, search]);
+
+  useEffect(() => { load(); }, [load]);
+
+  // Reset page on filter change
+  useEffect(() => { setPage(1); }, [category, level, sort, search]);
+
+  async function handleEnroll(id: string) {
+    setEnrolling(id);
+    try {
+      const res = await apiFetch(`/courses/${id}/enroll`, { method: 'POST' });
+      const course = courses.find(c => c.id === id);
+      if (res.success || course?.courseUrl) {
+        setCourses(prev => prev.map(c => c.id === id ? { ...c, enrolled: true } : c));
+        if (course?.courseUrl) window.open(course.courseUrl, '_blank');
+      }
+    } catch {}
+    finally { setEnrolling(null); }
+  }
+
+  const totalPages = Math.ceil(total / PER_PAGE);
+
+  return (
+    <SidebarLayout navItems={navItems} pageTitle="Courses">
+
+      {/* ── Hero ──────────────────────────────────────────────── */}
+      <div className="relative rounded-3xl overflow-hidden mb-6 p-7"
+        style={{ background: 'linear-gradient(135deg, #080C14 0%, #0D1A2E 50%, #080C14 100%)', border: '1px solid rgba(79,142,247,0.15)' }}>
+        <div className="absolute pointer-events-none" style={{ top: -60, left: -30, width: 280, height: 280, background: 'radial-gradient(circle, rgba(79,142,247,0.16) 0%, transparent 65%)' }} />
+        <div className="absolute pointer-events-none" style={{ bottom: -40, right: 80, width: 200, height: 200, background: 'radial-gradient(circle, rgba(0,229,160,0.1) 0%, transparent 65%)' }} />
+        <div className="relative z-10 flex items-center justify-between flex-wrap gap-6">
+          <div>
+            <div className="text-[10px] font-bold uppercase tracking-[0.2em] mb-2" style={{ color: 'rgba(79,142,247,0.7)' }}>
+              Learning Marketplace
+            </div>
+            <h1 className="font-jakarta font-extrabold text-[2rem] text-white tracking-tight leading-tight mb-2">
+              Courses from the World's<br />Best Platforms
+            </h1>
+            <p className="text-[13px]" style={{ color: 'rgba(255,255,255,0.4)' }}>
+              {total > 0 ? `${total.toLocaleString()} courses` : 'Thousands of courses'} from Udemy, Coursera, edX, LinkedIn Learning & more
+            </p>
+          </div>
+          {/* Search */}
+          <div className="relative w-full max-w-[360px]">
+            <i className="fas fa-search absolute left-4 top-1/2 -translate-y-1/2 text-[13px]" style={{ color: 'rgba(255,255,255,0.3)' }} />
+            <input
+              type="text"
+              placeholder="Search courses, skills, topics…"
+              value={searchInput}
+              onChange={e => setSearchInput(e.target.value)}
+              onKeyDown={e => e.key === 'Enter' && setSearch(searchInput)}
+              className="w-full pl-11 pr-4 py-3 rounded-2xl text-[13px] font-[inherit] outline-none transition-all"
+              style={{ background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.12)', color: 'rgba(255,255,255,0.8)' }}
+              onFocus={e => { e.target.style.border = '1px solid rgba(79,142,247,0.5)'; e.target.style.background = 'rgba(79,142,247,0.07)'; }}
+              onBlur={e => { e.target.style.border = '1px solid rgba(255,255,255,0.12)'; e.target.style.background = 'rgba(255,255,255,0.07)'; }}
+            />
+            {searchInput && (
+              <button onClick={() => { setSearchInput(''); setSearch(''); }}
+                className="absolute right-3 top-1/2 -translate-y-1/2 w-6 h-6 rounded-full grid place-items-center border-0 cursor-pointer"
+                style={{ background: 'rgba(255,255,255,0.1)', color: 'rgba(255,255,255,0.5)' }}>
+                <i className="fas fa-times text-[10px]" />
+              </button>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* ── Tabs ──────────────────────────────────────────────── */}
+      <div className="flex items-center gap-1.5 mb-5">
+        {(['browse', 'enrolled'] as const).map(t => (
+          <button key={t} onClick={() => setTab(t)}
+            className="px-4 py-2 rounded-xl text-[13px] font-semibold border-0 cursor-pointer capitalize transition-all"
+            style={{
+              background: tab === t ? '#4F8EF7' : 'rgba(255,255,255,0.06)',
+              color: tab === t ? '#fff' : 'rgba(255,255,255,0.45)',
+              boxShadow: tab === t ? '0 4px 14px rgba(79,142,247,0.35)' : 'none',
+            }}>
+            {t === 'browse' ? 'Browse Courses' : 'My Courses'}
+          </button>
+        ))}
+      </div>
+
+      {tab === 'enrolled' ? <EnrolledCourses /> : (
+        <>
+          {/* ── Filters ───────────────────────────────────────── */}
+          <div className="flex items-center gap-3 mb-5 flex-wrap">
+            {/* Category pills */}
+            <div className="flex gap-1.5 flex-wrap flex-1">
+              {CATEGORIES.map(cat => (
+                <button key={cat} onClick={() => setCategory(cat)}
+                  className="px-3 py-1.5 rounded-xl text-[12px] font-semibold border-0 cursor-pointer transition-all"
+                  style={{
+                    background: category === cat ? '#4F8EF7' : 'rgba(255,255,255,0.06)',
+                    color: category === cat ? '#fff' : 'rgba(255,255,255,0.45)',
+                  }}>
+                  {cat}
+                </button>
+              ))}
+            </div>
+            {/* Level select */}
+            <select value={level} onChange={e => setLevel(e.target.value)}
+              className="px-3 py-2 rounded-xl text-[12px] font-[inherit] border-0 outline-none cursor-pointer"
+              style={{ background: 'rgba(255,255,255,0.06)', color: 'rgba(255,255,255,0.6)', border: '1px solid rgba(255,255,255,0.1)' }}>
+              {LEVELS.map(l => <option key={l} value={l} style={{ background: '#0C1220' }}>{l}</option>)}
+            </select>
+            {/* Sort select */}
+            <select value={sort} onChange={e => setSort(e.target.value)}
+              className="px-3 py-2 rounded-xl text-[12px] font-[inherit] border-0 outline-none cursor-pointer"
+              style={{ background: 'rgba(255,255,255,0.06)', color: 'rgba(255,255,255,0.6)', border: '1px solid rgba(255,255,255,0.1)' }}>
+              {SORT_OPTIONS.map(s => <option key={s} value={s} style={{ background: '#0C1220' }}>{s}</option>)}
+            </select>
+          </div>
+
+          {/* Results count */}
+          {total > 0 && !loading && (
+            <div className="text-[12px] mb-4" style={{ color: 'rgba(255,255,255,0.3)' }}>
+              {total.toLocaleString()} courses found
+              {search && <span> for "<span style={{ color: '#4F8EF7' }}>{search}</span>"</span>}
+              {category !== 'All' && <span> in <span style={{ color: '#4F8EF7' }}>{category}</span></span>}
+            </div>
+          )}
+
+          {/* ── Grid ──────────────────────────────────────────── */}
+          {loading ? (
+            <div className="grid grid-cols-4 gap-4 max-[1300px]:grid-cols-3 max-[960px]:grid-cols-2 max-md:grid-cols-1">
+              {Array.from({ length: PER_PAGE }).map((_, i) => <SkeletonCard key={i} />)}
+            </div>
+          ) : courses.length === 0 ? (
+            <div className="py-20 text-center rounded-2xl" style={{ background: '#0F1521', border: '1px dashed rgba(255,255,255,0.08)' }}>
+              <i className="fas fa-search text-4xl block mb-4" style={{ color: 'rgba(255,255,255,0.1)' }} />
+              <p className="text-[14px] text-white/50 mb-2">No courses found</p>
+              <button onClick={() => { setSearch(''); setSearchInput(''); setCategory('All'); setLevel('All Levels'); }}
+                className="text-[12px] font-semibold border-0 bg-transparent cursor-pointer" style={{ color: '#4F8EF7' }}>
+                Clear filters
+              </button>
+            </div>
+          ) : (
+            <div className="grid grid-cols-4 gap-4 max-[1300px]:grid-cols-3 max-[960px]:grid-cols-2 max-md:grid-cols-1">
+              {courses.map(course => (
+                <CourseCard
+                  key={course.id}
+                  course={course}
+                  onEnroll={handleEnroll}
+                  enrolling={enrolling === course.id}
+                />
+              ))}
+            </div>
+          )}
+
+          {/* ── Pagination ────────────────────────────────────── */}
+          {totalPages > 1 && (
+            <div className="flex items-center justify-center gap-2 mt-8">
+              <button onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1}
+                className="w-9 h-9 rounded-xl grid place-items-center border-0 cursor-pointer disabled:opacity-30 transition-all"
+                style={{ background: 'rgba(255,255,255,0.06)', color: 'rgba(255,255,255,0.6)' }}>
+                <i className="fas fa-chevron-left text-[12px]" />
+              </button>
+              {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                const pg = page <= 3 ? i + 1 : page - 2 + i;
+                if (pg > totalPages) return null;
+                return (
+                  <button key={pg} onClick={() => setPage(pg)}
+                    className="w-9 h-9 rounded-xl grid place-items-center border-0 cursor-pointer text-[13px] font-semibold transition-all"
+                    style={{
+                      background: pg === page ? '#4F8EF7' : 'rgba(255,255,255,0.06)',
+                      color: pg === page ? '#fff' : 'rgba(255,255,255,0.5)',
+                    }}>
+                    {pg}
+                  </button>
+                );
+              })}
+              <button onClick={() => setPage(p => Math.min(totalPages, p + 1))} disabled={page === totalPages}
+                className="w-9 h-9 rounded-xl grid place-items-center border-0 cursor-pointer disabled:opacity-30 transition-all"
+                style={{ background: 'rgba(255,255,255,0.06)', color: 'rgba(255,255,255,0.6)' }}>
+                <i className="fas fa-chevron-right text-[12px]" />
+              </button>
+            </div>
+          )}
+        </>
+      )}
     </SidebarLayout>
   );
 }
