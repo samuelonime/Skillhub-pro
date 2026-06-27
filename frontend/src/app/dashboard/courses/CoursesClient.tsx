@@ -281,7 +281,7 @@ function CourseCard({ course, onEnroll, enrolling }: {
             ) : (
               <div className="w-5 h-5 rounded-full flex-shrink-0 grid place-items-center text-[8px] font-bold text-white"
                 style={{ background: cfg.color + '40' }}>
-                {course.instructor.slice(0, 1).toUpperCase()}
+                {String(course.instructor).slice(0, 1).toUpperCase()}
               </div>
             )}
             <span className="text-[11.5px] truncate" style={{ color: 'rgba(255,255,255,0.45)' }}>
