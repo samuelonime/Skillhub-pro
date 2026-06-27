@@ -454,7 +454,7 @@ export default function CoursesClient() {
       const res = await apiFetch(`/courses?${params}`);
       if (res.success) {
         setCourses(res.data?.courses || res.data || []);
-        setTotal(res.data?.total || res.total || 0);
+        setTotal(res.data?.total || 0);
       }
     } catch {}
     finally { setLoading(false); }
