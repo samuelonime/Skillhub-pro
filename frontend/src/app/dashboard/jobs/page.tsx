@@ -207,6 +207,7 @@ function LockedTierTeaser({ targetTier, coinsNeeded }: { targetTier: TierKey; co
 /* ── Main Page ──────────────────────────────────────────────────────────────── */
 export default function JobsPage() {
   const [featured, setFeatured]       = useState<any>(null);
+  const [scouted, setScouted]         = useState<any[]>([]);
   const [allJobs, setAllJobs]         = useState<any[] | null>(null);
   const [selected, setSelected]       = useState<string | null>(null);
   const [search, setSearch]           = useState('');
@@ -226,6 +227,32 @@ export default function JobsPage() {
     apiFetch('/jobs')
       .then(r => { if (r.success) { setAllJobs(r.data); if (r.data.length > 0) setSelected(r.data[0].id); } else setAllJobs([]); })
       .catch(() => setAllJobs([]));
+    // AI Job Scout — personalised leads scouted from the web
+    apiFetch('/jobscout/my-alerts')
+      .then(r => {
+        if (r.success && Array.isArray(r.data?.alerts)) {
+          const leads = r.data.alerts
+            .filter((a: any) => a.lead)
+            .map((a: any) => ({
+              id:          a.lead.id,
+              kind:        'scouted',
+              alertId:     a.id,
+              title:       a.lead.title,
+              company:     a.lead.company,
+              location:    a.lead.location || 'Remote',
+              type:        a.lead.type || 'full-time',
+              salary:      a.lead.salary,
+              description: a.lead.description,
+              url:         a.lead.url,
+              source:      a.lead.source,
+              skills:      a.lead.skills || [],
+              postedAt:    a.lead.postedAt || a.lead.fetchedAt,
+              opened:      a.opened,
+            }));
+          setScouted(leads);
+        } else setScouted([]);
+      })
+      .catch(() => setScouted([]));
   }, []);
 
   useEffect(() => {
@@ -387,11 +414,55 @@ export default function JobsPage() {
                 </div>
               </div>
             )}
-            {featured !== null && premiumAds.length === 0 && standardJobs.length === 0 && (
+            {featured !== null && premiumAds.length === 0 && standardJobs.length === 0 && scouted.length === 0 && (
               <div className="rounded-2xl p-12 text-center mb-6" style={{ background: D.card, border: `1px solid ${D.border}` }}>
                 <i className="fas fa-briefcase text-4xl block mb-3" style={{ color: D.muted }} />
                 <h3 className="font-jakarta font-bold text-[15px] text-white mb-2">No opportunities yet</h3>
                 <p className="text-sm" style={{ color: D.subtext }}>Check back soon — employers are posting!</p>
+              </div>
+            )}
+            {scouted.length > 0 && (
+              <div className="mb-6">
+                <div className="flex items-center gap-2 mb-3">
+                  <span className="text-[11px] font-semibold uppercase tracking-wide" style={{ color: D.purple }}>
+                    <i className="fas fa-robot mr-1.5" />AI Job Scout
+                  </span>
+                  <span className="text-[10px] px-2 py-0.5 rounded-full font-semibold" style={{ background: `${D.purple}20`, color: D.purple }}>
+                    {scouted.length} found on the web
+                  </span>
+                </div>
+                <div className="flex flex-col gap-3">
+                  {scouted.map((job: any) => (
+                    <div key={job.id} onClick={() => setSelected(job.id)}
+                      className="rounded-2xl p-4 cursor-pointer transition-all"
+                      style={{ background: D.card, border: `1px solid ${selected === job.id ? D.purple : D.border}` }}>
+                      <div className="flex items-start justify-between gap-3 flex-wrap">
+                        <div className="min-w-0">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <h3 className="font-jakarta font-bold text-[14px] text-white">{job.title}</h3>
+                            <span className="text-[9px] px-1.5 py-0.5 rounded font-bold uppercase" style={{ background: `${D.purple}20`, color: D.purple }}>Scouted</span>
+                          </div>
+                          <p className="text-[12px] mt-0.5" style={{ color: D.subtext }}>
+                            {job.company} · {job.location} · <span style={{ color: D.muted }}>via {job.source}</span>
+                          </p>
+                          {job.salary && <p className="text-[12px] mt-1 font-semibold" style={{ color: D.green }}>{job.salary}</p>}
+                          {job.skills?.length > 0 && (
+                            <div className="flex flex-wrap gap-1.5 mt-2">
+                              {job.skills.slice(0, 5).map((s: string) => (
+                                <span key={s} className="text-[10px] px-2 py-0.5 rounded-full font-semibold" style={{ background: `${D.accent}15`, color: D.accent }}>{s}</span>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                        <a href={job.url} target="_blank" rel="noreferrer" onClick={e => e.stopPropagation()}
+                          className="flex items-center gap-2 px-4 py-2 rounded-xl text-[12px] font-semibold no-underline flex-shrink-0 transition-all hover:opacity-80"
+                          style={{ background: `linear-gradient(135deg, ${D.indigo}, ${D.purple})`, color: '#fff' }}>
+                          View & Apply <i className="fas fa-arrow-up-right-from-square text-[10px]" />
+                        </a>
+                      </div>
+                    </div>
+                  ))}
+                </div>
               </div>
             )}
             {lockedTiers.length > 0 && (

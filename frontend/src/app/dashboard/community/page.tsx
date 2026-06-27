@@ -167,26 +167,13 @@ function StatsBar({ stats }: { stats: any }) {
 /* ═══════════════════════════════════════════════════════════════════════════
    NEW: Activity Feed Component
    ═══════════════════════════════════════════════════════════════════════════ */
-const ACTIVITY_FILTERS = [
-  { value: '',                       label: '🌐 All' },
-  { value: 'course_enrolled',        label: '📚 Enrollments' },
-  { value: 'course_completed',       label: '🎓 Completions' },
-  { value: 'digital_skills_enrolled',label: '🌐 Digital Skills' },
-  { value: 'certificate_added',      label: '📜 Certificates' },
-  { value: 'project_added',          label: '🚀 Projects' },
-  { value: 'job_applied',            label: '💼 Jobs' },
-  { value: 'badge_earned',           label: '🏆 Badges' },
-  { value: 'community_post',         label: '💬 Posts' },
-  { value: 'resume_generated',       label: '📄 Resumes' },
-  { value: 'skill_added',            label: '✨ Skills' },
-];
 
 function ActivityFeed() {
   const [items, setItems]     = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [page, setPage]       = useState(1);
   const [hasMore, setHasMore] = useState(true);
-  const [filter, setFilter]   = useState('');
+  const filter = '';
   const loaderRef             = useRef<HTMLDivElement>(null);
 
   const fetchFeed = useCallback(async (p: number, f: string) => {
@@ -215,20 +202,6 @@ function ActivityFeed() {
 
   return (
     <div>
-      {/* Filter chips */}
-      <div className="flex flex-wrap gap-2 mb-5">
-        {ACTIVITY_FILTERS.map(f => (
-          <button key={f.value} onClick={() => setFilter(f.value)}
-            className="text-[12px] font-semibold px-3.5 py-1.5 rounded-full cursor-pointer transition-all border-0"
-            style={{
-              background: filter === f.value ? D.accent : D.input,
-              color:      filter === f.value ? '#fff'   : D.muted,
-            }}>
-            {f.label}
-          </button>
-        ))}
-      </div>
-
       {loading && items.length === 0 && (
         <div className="grid gap-3">
           {[1,2,3,4].map(i => (
@@ -880,7 +853,6 @@ function PortfolioSpotlights({ onMessage }: { onMessage: (u: any) => void }) {
 /* ── Main Page ───────────────────────────────────────────────────────────── */
 export default function CommunityPage() {
   const [user, setUser] = useState<any>(null);
-  const [activeTab, setActiveTab] = useState<'activity' | 'posts'>('activity'); // NEW: tabs
   const [posts,    setPosts]    = useState<any[]>([]);
   const [stats,    setStats]    = useState<any>(null);
   const [loading,  setLoading]  = useState(true);
@@ -928,11 +900,6 @@ export default function CommunityPage() {
     catch { } finally { setDeleting(null); }
   }
 
-  const TABS = [
-    { id: 'activity', icon: 'fa-bolt',     label: 'Activity Feed' },
-    { id: 'posts',    icon: 'fa-comments', label: 'Discussions' },
-  ] as const;
-
   return (
     <SidebarLayout navItems={navItems} pageTitle="Community">
       <div style={{ color: D.text }}>
@@ -957,7 +924,7 @@ export default function CommunityPage() {
                 style={{ background: 'rgba(255,255,255,0.08)', color: 'rgba(255,255,255,0.8)', border: `1px solid ${D.border}` }}>
                 <i className="fas fa-inbox" />Messages
               </Link>
-              <button onClick={() => { setShowNew(true); setActiveTab('posts'); }}
+              <button onClick={() => { setShowNew(true); }}
                 className="flex items-center gap-2 px-5 py-2.5 font-semibold text-[13.5px] rounded-xl border-0 cursor-pointer text-white"
                 style={{ background: `linear-gradient(135deg, ${D.accent}, #38BDF8)` }}>
                 <i className="fas fa-plus" />New Post
@@ -969,128 +936,12 @@ export default function CommunityPage() {
         {/* Stats */}
         <StatsBar stats={stats} />
 
-        {/* NEW: Tab switcher */}
-        <div className="flex gap-1 mb-5 rounded-2xl p-1" style={{ background: D.card, border: `1px solid ${D.border}`, width: 'fit-content' }}>
-          {TABS.map(t => (
-            <button key={t.id} onClick={() => setActiveTab(t.id)}
-              className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-[13px] font-semibold cursor-pointer transition-all border-0"
-              style={{
-                background: activeTab === t.id ? D.accent : 'transparent',
-                color:      activeTab === t.id ? '#fff'   : D.muted,
-              }}>
-              <i className={`fas ${t.icon} text-[12px]`} />{t.label}
-            </button>
-          ))}
-        </div>
+        {/* Portfolio spotlights */}
+        <PortfolioSpotlights onMessage={setChatUser} />
 
-        {/* NEW: Activity Feed Tab */}
-        {activeTab === 'activity' && <ActivityFeed />}
+        {/* Unified Activity Feed — discussions, enrolments, new members & more */}
+        <ActivityFeed />
 
-        {/* Posts Tab */}
-        {activeTab === 'posts' && (
-          <>
-            {/* Portfolio spotlights */}
-            <PortfolioSpotlights onMessage={setChatUser} />
-
-            {/* Controls */}
-            <div className="flex flex-wrap items-center gap-3 mb-4">
-              <div className="flex-1 min-w-[200px] relative">
-                <i className="fas fa-search absolute left-3.5 top-1/2 -translate-y-1/2 text-[12px]" style={{ color: D.muted }} />
-                <input value={search} onChange={e => setSearch(e.target.value)}
-                  onKeyDown={e => e.key === 'Enter' && fetchPosts(1, type, sort, search)}
-                  placeholder="Search posts…"
-                  className="w-full pl-9 pr-3 py-2.5 rounded-xl text-[13px] font-[inherit] outline-none transition-all"
-                  style={{ background: D.input, border: `1px solid ${D.border}`, color: D.text }} />
-              </div>
-              <select value={sort} onChange={e => setSort(e.target.value)}
-                className="px-3 py-2.5 rounded-xl text-[13px] font-[inherit] outline-none cursor-pointer"
-                style={{ background: D.input, border: `1px solid ${D.border}`, color: D.text }}>
-                <option value="latest">Latest</option>
-                <option value="popular">Most Liked</option>
-                <option value="trending">Trending</option>
-              </select>
-            </div>
-
-            {/* Type filter tabs */}
-            <div className="flex flex-wrap gap-2 mb-5">
-              {POST_TYPES.map(t => {
-                const tm = TYPE_META[t.value];
-                const active = type === t.value;
-                return (
-                  <button key={t.value} onClick={() => setType(t.value)}
-                    className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-[12.5px] font-semibold cursor-pointer transition-all"
-                    style={{
-                      background: active ? (tm?.color || D.accent) + '20' : D.input,
-                      color: active ? (tm?.color || D.accent) : D.muted,
-                      border: `1px solid ${active ? (tm?.color || D.accent) + '50' : D.border}`,
-                    }}>
-                    <i className={`fas ${t.icon} text-[11px]`} />{t.label}
-                  </button>
-                );
-              })}
-            </div>
-
-            {/* Posts */}
-            {loading ? (
-              <div className="grid gap-3.5">{[1,2,3].map(i => (
-                <div key={i} className="rounded-2xl p-5" style={{ background: D.card, border: `1px solid ${D.border}` }}>
-                  <div className="flex items-center gap-3 mb-3">
-                    <Skeleton h="h-9" w="w-9" />
-                    <div className="flex-1"><Skeleton h="h-3" w="w-1/3" /><div className="mt-1.5"><Skeleton h="h-2.5" w="w-1/5" /></div></div>
-                  </div>
-                  <Skeleton h="h-4" w="w-3/4" /><div className="mt-2"><Skeleton h="h-3" /></div><div className="mt-1.5"><Skeleton h="h-3" w="w-4/5" /></div>
-                </div>
-              ))}</div>
-            ) : posts.length === 0 ? (
-              <div className="rounded-2xl p-12 text-center" style={{ background: D.card, border: `1px solid ${D.border}` }}>
-                <div className="w-16 h-16 rounded-2xl grid place-items-center mx-auto mb-4" style={{ background: D.accent + '18' }}>
-                  <i className="fas fa-comments text-2xl" style={{ color: D.accent }} />
-                </div>
-                <h3 className="font-jakarta font-bold text-[16px] text-white mb-2">{type || search ? 'No posts found' : 'Be the first to post!'}</h3>
-                <p className="text-[13px] mb-5" style={{ color: D.subtext }}>
-                  {type || search ? 'Try a different filter or search term.' : 'Share your projects, ask questions, or start a discussion.'}
-                </p>
-                {!type && !search && (
-                  <button onClick={() => setShowNew(true)}
-                    className="px-5 py-2.5 rounded-xl text-[13.5px] font-semibold border-0 cursor-pointer text-white"
-                    style={{ background: D.accent }}>
-                    <i className="fas fa-plus mr-2" />Create first post
-                  </button>
-                )}
-              </div>
-            ) : (
-              <div className="grid gap-3.5">
-                {posts.map(post => (
-                  <PostCard key={post.id} post={post} onLike={handleLike}
-                    onMessage={setChatUser} onEdit={setEditPost} onDelete={handleDeletePost} currentUserId={user?.id} />
-                ))}
-              </div>
-            )}
-
-            {/* Pagination */}
-            {pages > 1 && (
-              <div className="flex items-center justify-center gap-2 mt-6">
-                <button onClick={() => fetchPosts(page - 1)} disabled={page === 1}
-                  className="w-9 h-9 rounded-xl border-0 grid place-items-center cursor-pointer disabled:opacity-40"
-                  style={{ background: D.input, color: D.muted }}>
-                  <i className="fas fa-chevron-left" />
-                </button>
-                {Array.from({ length: Math.min(pages, 7) }, (_, i) => i + 1).map(p => (
-                  <button key={p} onClick={() => fetchPosts(p)}
-                    className="w-9 h-9 rounded-xl text-[13px] font-semibold border-0 cursor-pointer transition-all"
-                    style={{ background: p === page ? D.accent : D.input, color: p === page ? 'white' : D.muted }}>
-                    {p}
-                  </button>
-                ))}
-                <button onClick={() => fetchPosts(page + 1)} disabled={page === pages}
-                  className="w-9 h-9 rounded-xl border-0 grid place-items-center cursor-pointer disabled:opacity-40"
-                  style={{ background: D.input, color: D.muted }}>
-                  <i className="fas fa-chevron-right" />
-                </button>
-              </div>
-            )}
-          </>
-        )}
       </div>
     </SidebarLayout>
   );

@@ -70,6 +70,7 @@ const ACTIVITY_META = {
   community_post:           { icon: '💬', color: '#F59E0B', label: 'Shared in Community' },
   resume_generated:         { icon: '📄', color: '#38BDF8', label: 'Generated AI resume' },
   profile_completed:        { icon: '👤', color: '#4F8EF7', label: 'Completed profile' },
+  member_joined:            { icon: '🎉', color: '#00E5A0', label: 'Joined SkillHub' },
   streak_milestone:         { icon: '🔥', color: '#F87171', label: 'Learning streak' },
 };
 

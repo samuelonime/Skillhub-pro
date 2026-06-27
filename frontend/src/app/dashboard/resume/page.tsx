@@ -485,6 +485,34 @@ export default function ResumePage() {
     setTimeout(() => setCopied(false), 2000);
   }
 
+  function previewResume() {
+    if (!aiResume) return;
+    const html = renderMarkdown(aiResume.content);
+    const win = window.open('', '_blank');
+    if (!win) { alert('Please allow pop-ups to preview your resume.'); return; }
+    win.document.write(`<!DOCTYPE html><html><head><title>Resume Preview</title>
+      <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+      <style>
+        body { font-family: Georgia, 'Times New Roman', serif; line-height: 1.7; color: #1a1a1a;
+               max-width: 800px; margin: 40px auto; padding: 0 32px; background: #fff; }
+        h1 { font-size: 26px; margin: 0 0 4px; border-bottom: 2px solid #4F8EF7; padding-bottom: 8px; }
+        h2 { font-size: 16px; color: #4F8EF7; margin: 24px 0 8px; text-transform: uppercase; letter-spacing: 0.5px; }
+        h3 { font-size: 14px; margin: 14px 0 4px; }
+        a { color: #4F8EF7; }
+        ul { margin: 6px 0; padding-left: 20px; }
+        li { margin: 3px 0; }
+        @media print { body { margin: 0; } .no-print { display: none; } }
+        .toolbar { position: fixed; top: 12px; right: 12px; }
+        .toolbar button { font-family: sans-serif; padding: 8px 16px; background: #4F8EF7; color: #fff;
+                          border: none; border-radius: 8px; cursor: pointer; font-weight: 600; }
+      </style></head>
+      <body>
+        <div class="toolbar no-print"><button onclick="window.print()">🖨 Print / Save as PDF</button></div>
+        ${html}
+      </body></html>`);
+    win.document.close();
+  }
+
   function downloadMarkdown() {
     if (!aiResume) return;
     const blob = new Blob([aiResume.content], { type: 'text/markdown' });
@@ -508,6 +536,23 @@ export default function ResumePage() {
     a.click();
     URL.revokeObjectURL(url);
   }
+
+  /* ── Compute real profile strength from completion signals ──────── */
+  const computedStrength = (() => {
+    if (!profile) return 20;
+    const signals = [
+      !!(profile.firstName && profile.email),
+      !!profile.title,
+      !!profile.bio,
+      !!profile.location,
+      (profile.skills?.length || 0) > 0,
+      (profile.projectCount || 0) > 0,
+      (profile.certCount || 0) > 0,
+      !!profile.hasResume,
+    ];
+    const done = signals.filter(Boolean).length;
+    return Math.round((done / signals.length) * 100);
+  })();
 
   /* ── Render ───────────────────────────────────────────────────── */
   return (
@@ -545,12 +590,12 @@ export default function ResumePage() {
 
         {/* ── AI Resume Section ──────────────────────────────────── */}
         <div className="rounded-2xl overflow-hidden" style={{ background: D.card, border: `1px solid ${D.border}` }}>
-          <div className="h-1" style={{ background: `linear-gradient(90deg, #8B5CF6, ${D.accent})` }} />
+          <div className="h-1" style={{ background: `linear-gradient(90deg, ${D.accent}, #6BA0FF)` }} />
           <div className="p-6">
             <div className="flex items-start justify-between gap-4 flex-wrap mb-4">
               <div>
                 <h2 className="font-jakarta font-bold text-[16px] text-white flex items-center gap-2">
-                  <span style={{ color: '#8B5CF6' }}>🤖</span> AI-Powered Resume
+                  <span style={{ color: D.accent }}>🤖</span> AI-Powered Resume
                 </h2>
                 <p className="text-[12px]" style={{ color: D.subtext }}>
                   Generate a professional resume from your SkillHub progress, skills, and certificates.
@@ -561,7 +606,7 @@ export default function ResumePage() {
                   onClick={generateAIResume}
                   disabled={generating}
                   className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-[13px] font-semibold border-0 cursor-pointer transition-all disabled:opacity-50"
-                  style={{ background: 'linear-gradient(135deg, #8B5CF6, #6366F1)', color: '#fff' }}>
+                  style={{ background: D.accent, color: '#fff' }}>
                   {generating ? (
                     <><i className="fas fa-spinner fa-spin" /> Generating…</>
                   ) : (
@@ -574,6 +619,11 @@ export default function ResumePage() {
                       className="flex items-center gap-2 px-3.5 py-2.5 rounded-xl text-[12px] font-semibold border-0 cursor-pointer transition-all hover:opacity-80"
                       style={{ background: 'rgba(255,255,255,0.06)', color: D.text, border: `1px solid ${D.border}` }}>
                       <i className={`fas ${copied ? 'fa-check' : 'fa-copy'}`} /> {copied ? 'Copied' : 'Copy'}
+                    </button>
+                    <button onClick={previewResume}
+                      className="flex items-center gap-2 px-3.5 py-2.5 rounded-xl text-[12px] font-semibold border-0 cursor-pointer transition-all hover:opacity-80"
+                      style={{ background: `${D.accent}15`, color: D.accent, border: `1px solid ${D.accent}30` }}>
+                      <i className="fas fa-eye" /> Preview
                     </button>
                     <button onClick={downloadMarkdown}
                       className="flex items-center gap-2 px-3.5 py-2.5 rounded-xl text-[12px] font-semibold border-0 cursor-pointer transition-all hover:opacity-80"
@@ -600,7 +650,7 @@ export default function ResumePage() {
             {generating ? (
               <div className="py-16 text-center">
                 <div className="text-5xl mb-4 animate-pulse">🤖</div>
-                <p className="font-semibold text-[15px]" style={{ color: '#8B5CF6' }}>AI is building your resume…</p>
+                <p className="font-semibold text-[15px]" style={{ color: D.accent }}>AI is building your resume…</p>
                 <p className="text-[13px] mt-1" style={{ color: D.subtext }}>Reading your courses, skills, projects and certificates…</p>
               </div>
             ) : aiResume ? (
@@ -669,15 +719,15 @@ export default function ResumePage() {
             ) : profile && (
               <div className="rounded-2xl p-6 flex items-center gap-6"
                 style={{ background: D.card, border: `1px solid ${D.border}` }}>
-                <StrengthRing value={profile.profileStrength ?? 20} />
+                <StrengthRing value={computedStrength} />
                 <div className="flex-1">
                   <h3 className="font-jakarta font-bold text-[14px] mb-1" style={{ color: D.text }}>
                     Profile Strength
                   </h3>
                   <p className="text-[12.5px] leading-relaxed mb-3" style={{ color: D.subtext }}>
-                    {profile.profileStrength >= 80
+                    {computedStrength >= 80
                       ? 'Excellent! Your profile is strong and ready for employers.'
-                      : profile.profileStrength >= 50
+                      : computedStrength >= 50
                         ? 'Good progress. Keep completing your profile to stand out.'
                         : 'Your profile needs more details to attract employers.'}
                   </p>

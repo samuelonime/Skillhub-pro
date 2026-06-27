@@ -743,6 +743,7 @@ enum ActivityType {
   community_post
   resume_generated
   profile_completed
+  member_joined
   streak_milestone       // 7-day / 30-day learning streak
 }
 

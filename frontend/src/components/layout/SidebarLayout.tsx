@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { apiFetch, logout } from '@/lib/api';
 
@@ -28,8 +28,22 @@ const NOTIF_ICON: Record<string, { icon: string; color: string }> = {
   briefcase:          { icon: 'fa-briefcase',     color: '#A78BFA' },
   'paper-plane':      { icon: 'fa-paper-plane',   color: '#A78BFA' },
   application_update: { icon: 'fa-briefcase',     color: '#A78BFA' },
+  message:            { icon: 'fa-comment-dots',  color: '#4F8EF7' },
+  comments:           { icon: 'fa-comment-dots',  color: '#4F8EF7' },
   info:               { icon: 'fa-info-circle',   color: '#4F8EF7' },
 };
+
+// Where each notification routes when clicked
+function routeForNotif(n: any): string | null {
+  const t = n.type || '';
+  const icon = n.icon || '';
+  if (t === 'message' || icon === 'comments' || icon === 'comment-dots') return '/dashboard/community/messages';
+  if (icon === 'briefcase' || t === 'application_update') return '/dashboard/jobs';
+  if (icon === 'book') return '/dashboard/courses';
+  if (icon === 'certificate') return '/dashboard/certificates';
+  if (icon === 'coins') return '/dashboard/rewards';
+  return null;
+}
 
 function iconFor(n: any) {
   return NOTIF_ICON[n.icon] || NOTIF_ICON[n.type] || { icon: 'fa-bell', color: '#6B7280' };
@@ -59,6 +73,7 @@ function TimeAgo({ date }: { date: string }) {
 function NotificationPanel({ onClose }: { onClose: () => void }) {
   const [notifs, setNotifs] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const router = useRouter();
 
   useEffect(() => {
     apiFetch('/dashboard/notifications')
@@ -75,6 +90,12 @@ function NotificationPanel({ onClose }: { onClose: () => void }) {
   async function markOne(id: string) {
     await apiFetch(`/dashboard/notifications/${id}/read`, { method: 'PUT' }).catch(() => {});
     setNotifs(prev => prev.map(n => n.id === id ? { ...n, read: true } : n));
+  }
+
+  function handleClick(n: any) {
+    if (!n.read) markOne(n.id);
+    const dest = routeForNotif(n);
+    if (dest) { onClose(); router.push(dest); }
   }
 
   const unread = notifs.filter(n => !n.read).length;
@@ -128,7 +149,7 @@ function NotificationPanel({ onClose }: { onClose: () => void }) {
           notifs.map(n => {
             const { icon, color } = iconFor(n);
             return (
-              <div key={n.id} onClick={() => !n.read && markOne(n.id)}
+              <div key={n.id} onClick={() => handleClick(n)}
                 className="flex items-start gap-3 px-4 py-3.5 transition-colors cursor-pointer"
                 style={{
                   borderBottom: '1px solid rgba(255,255,255,0.05)',
@@ -146,7 +167,9 @@ function NotificationPanel({ onClose }: { onClose: () => void }) {
                     {n.createdAt ? <TimeAgo date={n.createdAt} /> : ''}
                   </p>
                 </div>
-                {!n.read && <div className="w-1.5 h-1.5 rounded-full flex-shrink-0 mt-2" style={{ background: '#4F8EF7' }} />}
+                {routeForNotif(n)
+                  ? <i className="fas fa-chevron-right text-[10px] flex-shrink-0 mt-1.5" style={{ color: 'rgba(255,255,255,0.3)' }} />
+                  : !n.read && <div className="w-1.5 h-1.5 rounded-full flex-shrink-0 mt-2" style={{ background: '#4F8EF7' }} />}
               </div>
             );
           })
@@ -237,6 +260,7 @@ export function SidebarLayout({ children, navItems, pageTitle }: SidebarLayoutPr
   const [showNotifs, setShowNotifs] = useState(false);
   const [showProfile, setShowProfile] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
+  const [unreadMsgs, setUnreadMsgs] = useState(0);
   const [user, setUser] = useState<any>(null);
   const notifRef = useRef<HTMLDivElement>(null);
   const profileRef = useRef<HTMLDivElement>(null);
@@ -287,7 +311,14 @@ export function SidebarLayout({ children, navItems, pageTitle }: SidebarLayoutPr
 
   const fetchUnread = useCallback(() => {
     apiFetch('/dashboard/notifications')
-      .then(r => { if (r.success) setUnreadCount((r.data || []).filter((n: any) => !n.read).length); })
+      .then(r => {
+        if (r.success) {
+          const all = r.data || [];
+          const isMsg = (n: any) => n.type === 'message' || n.icon === 'comments' || n.icon === 'comment-dots';
+          setUnreadMsgs(all.filter((n: any) => !n.read && isMsg(n)).length);
+          setUnreadCount(all.filter((n: any) => !n.read && !isMsg(n)).length);
+        }
+      })
       .catch(() => {});
   }, []);
 
@@ -512,6 +543,20 @@ export function SidebarLayout({ children, navItems, pageTitle }: SidebarLayoutPr
           </div>
 
           <div className="flex items-center gap-2 flex-shrink-0">
+            {/* Messages — separate from notifications */}
+            {!isEmployer && (
+              <Link href="/dashboard/community/messages"
+                className="w-8 h-8 border-0 rounded-lg grid place-items-center cursor-pointer text-[14px] transition-all relative no-underline"
+                style={{ background: 'rgba(255,255,255,0.05)', color: 'rgba(255,255,255,0.4)' }}
+                title="Messages">
+                <i className="fas fa-comment-dots" />
+                {unreadMsgs > 0 && (
+                  <span className="absolute -top-0.5 -right-0.5 w-3.5 h-3.5 rounded-full text-white text-[8px] font-bold grid place-items-center" style={{ background: '#4F8EF7', border: '2px solid #080C14' }}>
+                    {unreadMsgs > 9 ? '9+' : unreadMsgs}
+                  </span>
+                )}
+              </Link>
+            )}
             {/* Bell */}
             <div ref={notifRef} className="relative">
               <button
