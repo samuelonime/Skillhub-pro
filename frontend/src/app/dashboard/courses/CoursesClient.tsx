@@ -96,7 +96,7 @@ const CATEGORIES = ['All', 'Frontend', 'Backend', 'Cloud', 'Data', 'Security', '
 const LEVELS     = ['All Levels', 'Beginner', 'Intermediate', 'Advanced'];
 const SORT_OPTIONS = ['Recommended', 'Most Popular', 'Highest Rated', 'Newest'];
 
-// ── Star rating ──────────────────────────────────────────────────────────────
+// ── Star rating ───────────────────────────────────────────────────────────
 function Stars({ rating, count }: { rating: number; count?: number }) {
   const full = Math.floor(rating);
   const half = rating % 1 >= 0.5;
@@ -221,7 +221,7 @@ function CourseThumbnail({ course }: { course: any }) {
   );
 }
 
-// ── Course card ──────────────────────────────────────────────────────────────
+// ── Course card ──────────────────────────────────────────────────────────
 function CourseCard({ course, onEnroll, enrolling }: {
   course: any;
   onEnroll: (id: string) => void;
@@ -360,7 +360,7 @@ function CourseCard({ course, onEnroll, enrolling }: {
   );
 }
 
-// ── Skeleton card ────────────────────────────────────────────────────────────
+// ── Skeleton card ──────────────────────────────────────────────────────────
 function SkeletonCard() {
   return (
     <div className="rounded-2xl overflow-hidden" style={{ background: '#0C1220', border: '1px solid rgba(255,255,255,0.07)' }}>
@@ -424,8 +424,8 @@ function EnrolledCourses() {
   );
 }
 
-// ── Main Page ─────────────────────────────────────────────────────────────────
-export default function CoursesPage() {
+// ── Main Page ────────────────────────────────────────────────────────────
+export default function CoursesClient() {
   const [tab, setTab]             = useState<'browse' | 'enrolled'>('browse');
   const [courses, setCourses]     = useState<any[]>([]);
   const [loading, setLoading]     = useState(true);
