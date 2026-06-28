@@ -228,7 +228,7 @@ export default function JobsPage() {
       .then(r => { if (r.success) { setAllJobs(r.data); if (r.data.length > 0) setSelected(r.data[0].id); } else setAllJobs([]); })
       .catch(() => setAllJobs([]));
     // AI Job Scout — personalised leads scouted from the web
-    apiFetch('/jobscout/my-alerts')
+    apiFetch('/job-scout/my-alerts')
       .then(r => {
         if (r.success && Array.isArray(r.data?.alerts)) {
           const leads = r.data.alerts
