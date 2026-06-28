@@ -10,7 +10,7 @@ const navItems = [
   { href: '/dashboard/courses',     icon: 'fa-book-open',     label: 'Courses' },
   {
     icon: 'fa-sparkles',
-    label: 'Next Generation',
+    label: 'Next Gen',
     children: [
       { href: '/dashboard/career-oracle',   icon: 'fa-brain',               label: 'Career Oracle' },
       { href: '/dashboard/skill-coach',     icon: 'fa-heart-pulse',         label: 'Skill Coach' },
