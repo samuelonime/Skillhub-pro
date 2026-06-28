@@ -321,7 +321,7 @@ function PostCard({ post, onLike, onMessage, onEdit, onDelete, currentUserId }: 
         </div>
         <div className="flex items-center gap-2 flex-shrink-0">
           <span className="text-[10.5px] font-semibold px-2.5 py-1 rounded-full" style={{ background: tm.color + '18', color: tm.color, border: `1px solid ${tm.color}30` }}>
-            <i className={`fas ${tm.icon} mr-1`} />{post.type.charAt(0).toUpperCase() + post.type.slice(1)}
+            <i className={`fas ${tm.icon} mr-1`} />{post.type ? post.type.charAt(0).toUpperCase() + post.type.slice(1) : 'Post'}
           </span>
           {post.isPinned && <span className="text-base">📌</span>}
           {isOwner && (
