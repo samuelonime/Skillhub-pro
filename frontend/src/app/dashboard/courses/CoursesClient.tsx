@@ -297,7 +297,7 @@ function CourseCard({ course, onEnroll, enrolling }: {
               </div>
             )}
             <span className="text-[11.5px] truncate" style={{ color: 'rgba(255,255,255,0.45)' }}>
-              {course.instructor}
+              {typeof course.instructor === 'object' ? course.instructor.name : course.instructor}
             </span>
           </div>
         )}
