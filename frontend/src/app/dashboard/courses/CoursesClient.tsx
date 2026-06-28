@@ -129,7 +129,7 @@ function PlatformBadge({ platform }: { platform: string }) {
       ) : (
         <div className="w-3 h-3 rounded-sm text-[8px] font-black text-white flex items-center justify-center"
           style={{ background: cfg?.color || '#4F8EF7' }}>
-          {platform.slice(0, 1)}
+          {String(platform || '?').slice(0, 1)}
         </div>
       )}
       <span className="text-[10px] font-semibold text-white">{platform}</span>
