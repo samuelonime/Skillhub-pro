@@ -1,705 +1,485 @@
-'use client';
-
-import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import {
+  ArrowRight,
+  BadgeCheck,
+  BookOpen,
+  BriefcaseBusiness,
+  Building2,
+  ChevronRight,
+  Globe2,
+  GraduationCap,
+  Radar,
+  ShieldCheck,
+  Sparkles,
+  TrendingUp,
+  Users2,
+  Workflow,
+} from 'lucide-react';
 
-const CSS = `
-  @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=DM+Mono:wght@400;500&display=swap');
+const platformSignals = [
+  {
+    title: 'Verified learning records',
+    description: 'Turn course completion, imported certificates, and portfolio proof into a profile employers can trust.',
+    icon: BadgeCheck,
+    accent: 'var(--brand)',
+  },
+  {
+    title: 'Workforce intelligence',
+    description: 'Map skills to market demand, spot readiness gaps, and get guided toward the next role worth pursuing.',
+    icon: Radar,
+    accent: 'var(--brand-2)',
+  },
+  {
+    title: 'Hiring-ready profiles',
+    description: 'Present projects, credentials, application history, and talent signals in one executive-grade candidate view.',
+    icon: BriefcaseBusiness,
+    accent: 'var(--amber)',
+  },
+];
 
-  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+const capabilityCards = [
+  {
+    eyebrow: 'Learning layer',
+    title: 'Structured upskilling with clear momentum',
+    description: 'Courses, progress tracking, platform imports, and reward loops keep learning measurable instead of aspirational.',
+    icon: BookOpen,
+  },
+  {
+    eyebrow: 'Credential layer',
+    title: 'Proof that survives beyond a CV',
+    description: 'SkillHub turns certificates, project evidence, and portfolio assets into professional signal, not just storage.',
+    icon: ShieldCheck,
+  },
+  {
+    eyebrow: 'Opportunity layer',
+    title: 'Live matching between talent and demand',
+    description: 'Students discover relevant openings, employers discover fit faster, and both sides work from the same evidence base.',
+    icon: Workflow,
+  },
+];
 
-  :root {
-    --bg:      #0c0c0c;
-    --surface: #141414;
-    --border:  #222222;
-    --mid:     #333333;
-    --muted:   #666666;
-    --sub:     #999999;
-    --text:    #f0f0f0;
-    --accent:  #2563eb;
-    --accent2: #3b82f6;
-    --white:   #ffffff;
-    --r: 10px;
-    --px: 64px;
-  }
+const productFlow = [
+  {
+    step: '01',
+    title: 'Build a credible profile',
+    description: 'Skills, certificates, portfolio artifacts, and work intent are combined into a professional identity that reads clearly to recruiters.',
+  },
+  {
+    step: '02',
+    title: 'Receive intelligence, not noise',
+    description: 'The platform surfaces skill gaps, learning priorities, job matches, and real-time opportunities aligned to your profile.',
+  },
+  {
+    step: '03',
+    title: 'Convert readiness into outcomes',
+    description: 'Apply with stronger signal, track application movement, and keep improving from one operating system instead of scattered tools.',
+  },
+];
 
-  @media (max-width: 768px) {
-    :root { --px: 20px; }
-  }
+const audiences = [
+  {
+    title: 'For emerging professionals',
+    description: 'Move from learning mode to hiring mode with a cleaner profile, better job relevance, and verified proof of work.',
+    icon: GraduationCap,
+  },
+  {
+    title: 'For employers',
+    description: 'Source candidates through capability signal instead of keyword guesswork, and manage openings from a focused talent workspace.',
+    icon: Building2,
+  },
+  {
+    title: 'For the African digital economy',
+    description: 'SkillHub connects talent development, credibility, and opportunity flow into one sharper infrastructure layer.',
+    icon: Globe2,
+  },
+];
 
-  html { scroll-behavior: smooth; }
-
-  body {
-    background: var(--bg);
-    color: var(--text);
-    font-family: 'Space Grotesk', system-ui, sans-serif;
-    -webkit-font-smoothing: antialiased;
-    overflow-x: hidden;
-  }
-
-  body::before {
-    content: '';
-    position: fixed;
-    top: 0; left: 0; right: 0;
-    height: 2px;
-    background: linear-gradient(90deg, transparent 0%, var(--accent) 40%, #60a5fa 60%, transparent 100%);
-    z-index: 1000;
-  }
-
-  a { text-decoration: none; color: inherit; }
-
-  /* ── Navbar ── */
-  .nav {
-    position: fixed; top: 0; left: 0; right: 0; z-index: 200;
-    display: flex; align-items: center; justify-content: space-between;
-    padding: 16px var(--px);
-    border-bottom: 1px solid transparent;
-    transition: all .3s;
-  }
-  .nav.scrolled {
-    background: rgba(12,12,12,0.94);
-    backdrop-filter: blur(24px);
-    border-color: var(--border);
-  }
-  .nav-logo {
-    display: flex; align-items: center; gap: 10px;
-    font-family: 'DM Mono', monospace; font-size: 15px; font-weight: 500;
-    color: var(--white); flex-shrink: 0;
-  }
-  .nav-logo-mark {
-    width: 28px; height: 28px;
-    border: 2px solid var(--accent); border-radius: 6px;
-    display: grid; place-items: center;
-    font-size: 12px; font-weight: 700; color: var(--accent);
-  }
-  .nav-links {
-    display: flex; gap: 32px;
-  }
-  .nav-links a {
-    font-size: 13px; font-weight: 500; color: var(--sub);
-    transition: color .2s;
-  }
-  .nav-links a:hover { color: var(--white); }
-  .nav-actions { display: flex; gap: 10px; align-items: center; }
-
-  /* hide links on mobile, keep actions */
-  @media (max-width: 768px) {
-    .nav-links { display: none; }
-    .nav-actions .btn-ghost { display: none; }
-  }
-
-  .btn-ghost {
-    padding: 8px 16px; font-size: 13px; font-weight: 500;
-    color: var(--sub); border: 1px solid var(--border);
-    border-radius: var(--r); cursor: pointer; transition: all .2s;
-    background: transparent; font-family: inherit;
-  }
-  .btn-ghost:hover { color: var(--white); border-color: var(--mid); }
-  .btn-primary {
-    padding: 8px 16px; font-size: 13px; font-weight: 600;
-    background: var(--accent); color: var(--white);
-    border: none; border-radius: var(--r); cursor: pointer;
-    transition: all .2s; font-family: inherit;
-  }
-  .btn-primary:hover { background: var(--accent2); }
-
-  /* ── Hero ── */
-  .hero {
-    min-height: 100svh;
-    display: flex; flex-direction: column;
-    align-items: center; justify-content: center;
-    text-align: center;
-    padding: 140px var(--px) 80px;
-    position: relative;
-  }
-  .hero::before {
-    content: '';
-    position: absolute; inset: 0;
-    background-image:
-      linear-gradient(var(--border) 1px, transparent 1px),
-      linear-gradient(90deg, var(--border) 1px, transparent 1px);
-    background-size: 56px 56px;
-    opacity: 0.3;
-    mask-image: radial-gradient(ellipse 80% 60% at 50% 40%, black, transparent);
-  }
-  .hero::after {
-    content: '';
-    position: absolute;
-    top: 20%; left: 50%; transform: translateX(-50%);
-    width: 500px; height: 260px;
-    background: radial-gradient(ellipse, rgba(37,99,235,0.13) 0%, transparent 70%);
-    pointer-events: none;
-  }
-
-  .hero-eyebrow {
-    display: inline-flex; align-items: center; gap: 8px;
-    font-family: 'DM Mono', monospace;
-    font-size: 11px; font-weight: 500; letter-spacing: 1.5px;
-    text-transform: uppercase; color: var(--accent);
-    margin-bottom: 24px; position: relative; z-index: 2;
-    opacity: 0; animation: fadeUp .6s ease .1s forwards;
-  }
-  .hero-eyebrow::before, .hero-eyebrow::after {
-    content: ''; display: block; height: 1px;
-    width: 28px; background: var(--accent); opacity: .5;
-  }
-  @media (max-width: 480px) {
-    .hero-eyebrow::before, .hero-eyebrow::after { width: 16px; }
-  }
-
-  .hero h1 {
-    position: relative; z-index: 2;
-    font-size: clamp(40px, 8vw, 88px);
-    font-weight: 700; letter-spacing: -2px; line-height: 1.04;
-    margin-bottom: 20px; color: var(--white);
-    opacity: 0; animation: fadeUp .7s ease .2s forwards;
-  }
-  @media (max-width: 480px) {
-    .hero h1 { letter-spacing: -1.5px; }
-  }
-  .hero h1 em { font-style: normal; color: transparent; -webkit-text-stroke: 1px rgba(240,240,240,0.35); }
-  .hero h1 .hl { color: var(--accent); }
-
-  .hero-sub {
-    position: relative; z-index: 2;
-    font-size: clamp(14px, 2vw, 17px); line-height: 1.75;
-    color: var(--sub); max-width: 460px; margin: 0 auto 36px;
-    opacity: 0; animation: fadeUp .7s ease .3s forwards;
-  }
-
-  .hero-actions {
-    position: relative; z-index: 2;
-    display: flex; gap: 10px; justify-content: center; flex-wrap: wrap;
-    margin-bottom: 48px;
-    opacity: 0; animation: fadeUp .7s ease .4s forwards;
-  }
-  .hero-cta {
-    display: inline-flex; align-items: center; gap: 8px;
-    padding: 13px 24px; font-size: 14px; font-weight: 600;
-    background: var(--accent); color: var(--white);
-    border-radius: var(--r); cursor: pointer; transition: all .25s;
-    font-family: inherit; border: 1px solid var(--accent);
-  }
-  .hero-cta:hover { background: var(--accent2); transform: translateY(-2px); box-shadow: 0 12px 28px rgba(37,99,235,0.28); }
-  .hero-outline {
-    display: inline-flex; align-items: center; gap: 8px;
-    padding: 13px 24px; font-size: 14px; font-weight: 500;
-    background: transparent; color: var(--sub);
-    border-radius: var(--r); cursor: pointer; transition: all .25s;
-    font-family: inherit; border: 1px solid var(--border);
-  }
-  .hero-outline:hover { color: var(--white); border-color: var(--mid); }
-
-  .hero-proof {
-    position: relative; z-index: 2;
-    display: flex; align-items: center; gap: 14px;
-    justify-content: center; flex-wrap: wrap;
-    opacity: 0; animation: fadeUp .7s ease .5s forwards;
-  }
-  .avatar-stack { display: flex; }
-  .avatar-stack .av {
-    width: 28px; height: 28px; border-radius: 50%;
-    border: 2px solid var(--bg); margin-left: -7px;
-    display: grid; place-items: center;
-    font-family: 'DM Mono', monospace; font-size: 9px; font-weight: 700; color: #fff;
-    flex-shrink: 0;
-  }
-  .avatar-stack .av:first-child { margin-left: 0; }
-  .proof-text { font-size: 13px; color: var(--sub); }
-  .proof-text strong { color: var(--text); }
-  .proof-divider { width: 1px; height: 18px; background: var(--border); }
-
-  /* ── Mockup ── */
-  .mockup-wrap {
-    position: relative; z-index: 2; width: 100%; max-width: 840px;
-    margin: 60px auto 0; padding: 0;
-    opacity: 0; animation: fadeUp .9s ease .55s forwards;
-  }
-  .browser-frame {
-    background: var(--surface); border: 1px solid var(--border);
-    border-radius: 12px; overflow: hidden;
-    box-shadow: 0 28px 70px rgba(0,0,0,0.55), 0 0 0 1px var(--border);
-  }
-  .browser-bar {
-    display: flex; align-items: center; gap: 6px;
-    padding: 9px 12px; border-bottom: 1px solid var(--border); background: var(--bg);
-  }
-  .dot { width: 8px; height: 8px; border-radius: 50%; background: #2e2e2e; }
-  .url-bar {
-    flex: 1; height: 20px; background: var(--surface);
-    border-radius: 5px; margin: 0 8px; border: 1px solid var(--border);
-  }
-  .dash-layout {
-    display: grid; grid-template-columns: 170px 1fr;
-    aspect-ratio: 16 / 6.5;
-  }
-  @media (max-width: 600px) {
-    .dash-layout { grid-template-columns: 110px 1fr; aspect-ratio: 16 / 8; }
-  }
-  .dash-sidebar {
-    background: var(--bg); border-right: 1px solid var(--border);
-    padding: 16px 10px; display: flex; flex-direction: column; gap: 2px;
-  }
-  .dash-logo {
-    display: flex; align-items: center; gap: 6px; margin-bottom: 14px;
-    font-family: 'DM Mono', monospace; font-size: 11px; color: var(--text);
-  }
-  @media (max-width: 600px) { .dash-logo span { display: none; } }
-  .dash-logo-mark {
-    width: 20px; height: 20px; border: 1.5px solid var(--accent);
-    border-radius: 4px; display: grid; place-items: center;
-    font-size: 8px; color: var(--accent); font-weight: 700; flex-shrink: 0;
-  }
-  .dash-nav-item {
-    display: flex; align-items: center; gap: 6px;
-    padding: 6px 8px; border-radius: 6px;
-    font-size: 10px; color: var(--muted);
-  }
-  @media (max-width: 600px) { .dash-nav-item { font-size: 8px; padding: 5px 6px; } }
-  .dash-nav-item.active { background: rgba(37,99,235,0.1); color: var(--accent); }
-  .dash-nav-dot { width: 5px; height: 5px; border-radius: 50%; background: currentColor; flex-shrink: 0; }
-  .dash-main { padding: 14px; display: flex; flex-direction: column; gap: 10px; }
-  .dash-stats { display: grid; grid-template-columns: repeat(4,1fr); gap: 6px; }
-  @media (max-width: 600px) { .dash-stats { grid-template-columns: repeat(2,1fr); } }
-  .dash-stat {
-    background: var(--bg); border: 1px solid var(--border);
-    border-radius: 7px; padding: 10px;
-  }
-  .dash-stat-val {
-    font-family: 'DM Mono', monospace; font-size: 15px; font-weight: 500;
-    color: var(--white); margin-bottom: 2px;
-  }
-  @media (max-width: 600px) { .dash-stat-val { font-size: 12px; } }
-  .dash-stat-label { font-size: 8px; color: var(--muted); text-transform: uppercase; letter-spacing: .3px; }
-  .dash-cards { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; flex: 1; }
-  .dash-card { background: var(--bg); border: 1px solid var(--border); border-radius: 7px; padding: 10px; }
-  .dash-card-title { font-size: 8px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: .5px; margin-bottom: 8px; }
-  .dash-bar-row { display: flex; align-items: center; gap: 6px; margin-bottom: 6px; }
-  .dash-bar-thumb { width: 16px; height: 16px; border-radius: 4px; flex-shrink: 0; background: rgba(37,99,235,0.12); }
-  .dash-bar-track { flex: 1; height: 3px; background: var(--surface); border-radius: 2px; overflow: hidden; }
-  .dash-bar-fill { height: 100%; border-radius: 2px; background: var(--accent); }
-  .dash-badge {
-    font-family: 'DM Mono', monospace; font-size: 8px; font-weight: 500;
-    padding: 2px 5px; border-radius: 3px;
-    background: rgba(37,99,235,0.12); color: var(--accent); flex-shrink: 0;
-  }
-
-  /* ── Sections ── */
-  .section { max-width: 1160px; margin: 0 auto; padding: 80px var(--px); }
-  @media (max-width: 768px) { .section { padding: 60px var(--px); } }
-
-  .section-tag {
-    display: inline-flex; align-items: center; gap: 8px;
-    font-family: 'DM Mono', monospace;
-    font-size: 11px; font-weight: 500; letter-spacing: 1.2px;
-    text-transform: uppercase; color: var(--accent); margin-bottom: 18px;
-  }
-  .section-tag::before { content: ''; display: block; width: 18px; height: 1px; background: var(--accent); }
-  .section-title {
-    font-size: clamp(26px, 4vw, 48px); font-weight: 700;
-    letter-spacing: -1.5px; line-height: 1.06; color: var(--white); margin-bottom: 14px;
-  }
-  .section-title em { font-style: normal; color: var(--accent); }
-  .section-sub { font-size: 15px; line-height: 1.7; color: var(--sub); max-width: 440px; }
-
-  /* ── Features ── */
-  .feature-grid {
-    display: grid; grid-template-columns: 1fr 1fr;
-    gap: 1px; margin-top: 52px;
-    border: 1px solid var(--border); border-radius: 12px; overflow: hidden;
-  }
-  @media (max-width: 768px) {
-    .feature-grid { grid-template-columns: 1fr; }
-  }
-  .feature-card { padding: 32px; background: var(--surface); transition: background .2s; }
-  .feature-card:hover { background: #191919; }
-  .feature-card.wide {
-    grid-column: 1 / -1;
-    display: grid; grid-template-columns: 1fr 1fr; gap: 40px; align-items: center;
-  }
-  @media (max-width: 768px) {
-    .feature-card.wide { grid-template-columns: 1fr; gap: 24px; }
-  }
-  .feature-card + .feature-card { border-top: 1px solid var(--border); }
-  .feature-card:nth-child(3) { border-left: 1px solid var(--border); }
-  @media (max-width: 768px) {
-    .feature-card:nth-child(3) { border-left: none; }
-  }
-  .feature-icon {
-    width: 38px; height: 38px; border-radius: 8px;
-    border: 1px solid var(--border); display: grid; place-items: center;
-    font-size: 15px; color: var(--accent); margin-bottom: 18px;
-    background: rgba(37,99,235,0.06);
-  }
-  .feature-h { font-size: 17px; font-weight: 600; color: var(--white); letter-spacing: -.4px; margin-bottom: 9px; }
-  .feature-p { font-size: 13px; line-height: 1.7; color: var(--sub); }
-  .feature-demo { background: var(--bg); border: 1px solid var(--border); border-radius: 9px; padding: 18px; }
-  .skill-chip {
-    display: inline-flex; padding: 4px 10px; margin: 2px;
-    border: 1px solid var(--border); border-radius: 5px;
-    font-family: 'DM Mono', monospace; font-size: 10px; color: var(--sub);
-  }
-  .match-row {
-    border: 1px solid rgba(37,99,235,0.2); border-radius: 7px; padding: 12px;
-    background: rgba(37,99,235,0.04); margin-top: 10px;
-  }
-  .match-title { font-size: 12px; font-weight: 600; color: var(--white); margin-bottom: 4px; }
-  .match-meta { font-size: 10px; color: var(--sub); display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
-  .match-badge {
-    font-family: 'DM Mono', monospace; font-size: 10px; font-weight: 500;
-    color: var(--accent); background: rgba(37,99,235,0.1);
-    padding: 2px 7px; border-radius: 4px; margin-left: auto;
-  }
-
-  /* ── How it works ── */
-  .steps {
-    display: grid; grid-template-columns: repeat(3,1fr);
-    gap: 40px; margin-top: 52px; position: relative;
-  }
-  @media (max-width: 640px) {
-    .steps { grid-template-columns: 1fr; gap: 32px; }
-    .steps::before { display: none; }
-  }
-  .steps::before {
-    content: '';
-    position: absolute; top: 19px;
-    left: calc(16.6% + 18px); right: calc(16.6% + 18px); height: 1px;
-    background: var(--border);
-  }
-  .step-num {
-    width: 38px; height: 38px; border: 1px solid var(--border);
-    border-radius: 50%; display: grid; place-items: center;
-    font-family: 'DM Mono', monospace; font-size: 12px; font-weight: 500;
-    color: var(--accent); background: var(--bg); margin-bottom: 18px;
-    position: relative; z-index: 2;
-  }
-  .step-h { font-size: 15px; font-weight: 600; color: var(--white); margin-bottom: 8px; }
-  .step-p { font-size: 13px; line-height: 1.7; color: var(--sub); }
-
-  /* ── Testimonials ── */
-  .testi-grid {
-    display: grid; grid-template-columns: repeat(3,1fr);
-    gap: 1px; border: 1px solid var(--border); border-radius: 12px; overflow: hidden;
-  }
-  @media (max-width: 768px) {
-    .testi-grid { grid-template-columns: 1fr; }
-    .testi-card + .testi-card { border-top: 1px solid var(--border); }
-  }
-  .testi-card { padding: 32px; background: var(--surface); }
-  .testi-stars { font-family: 'DM Mono', monospace; font-size: 10px; color: var(--accent); letter-spacing: 3px; margin-bottom: 14px; }
-  .testi-quote { font-size: 13px; line-height: 1.75; color: rgba(240,240,240,0.62); margin-bottom: 20px; }
-  .testi-author { display: flex; align-items: center; gap: 10px; }
-  .testi-avatar {
-    width: 34px; height: 34px; border-radius: 50%; flex-shrink: 0;
-    display: grid; place-items: center;
-    font-family: 'DM Mono', monospace; font-size: 11px; color: var(--white);
-  }
-  .testi-name { font-size: 13px; font-weight: 600; color: var(--white); }
-  .testi-role { font-size: 11px; color: var(--muted); margin-top: 1px; }
-
-  /* ── CTA ── */
-  .cta-section {
-    border: 1px solid var(--border); border-radius: 12px;
-    padding: 64px var(--px); text-align: center; position: relative; overflow: hidden;
-    background: var(--surface); margin: 0 var(--px) 64px;
-  }
-  @media (max-width: 768px) { .cta-section { padding: 48px var(--px); margin: 0 var(--px) 48px; } }
-  .cta-section::before {
-    content: '';
-    position: absolute; top: -60px; left: 50%; transform: translateX(-50%);
-    width: 360px; height: 180px;
-    background: radial-gradient(ellipse, rgba(37,99,235,0.12) 0%, transparent 70%);
-    pointer-events: none;
-  }
-  .cta-h { font-size: clamp(24px,3.5vw,42px); font-weight: 700; letter-spacing: -1.5px; color: var(--white); margin-bottom: 14px; }
-  .cta-sub { font-size: 15px; color: var(--sub); max-width: 400px; margin: 0 auto 32px; line-height: 1.7; }
-  .cta-actions { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }
-
-  /* ── Footer ── */
-  .footer {
-    border-top: 1px solid var(--border);
-    display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap;
-    gap: 14px; padding: 24px var(--px);
-  }
-  @media (max-width: 640px) {
-    .footer { flex-direction: column; align-items: flex-start; gap: 12px; }
-  }
-  .footer-logo { display: flex; align-items: center; gap: 8px; font-family: 'DM Mono', monospace; font-size: 13px; color: var(--sub); }
-  .footer-links { display: flex; gap: 24px; flex-wrap: wrap; }
-  .footer-links a { font-size: 12px; color: var(--muted); transition: color .2s; }
-  .footer-links a:hover { color: var(--sub); }
-
-  @keyframes fadeUp {
-    from { opacity: 0; transform: translateY(16px); }
-    to   { opacity: 1; transform: translateY(0); }
-  }
-`;
-
-function Navbar() {
-  const [scrolled, setScrolled] = useState(false);
-  useEffect(() => {
-    const h = () => setScrolled(window.scrollY > 50);
-    window.addEventListener('scroll', h);
-    return () => window.removeEventListener('scroll', h);
-  }, []);
+function SectionHeading({
+  eyebrow,
+  title,
+  description,
+}: {
+  eyebrow: string;
+  title: string;
+  description: string;
+}) {
   return (
-    <nav className={`nav${scrolled ? ' scrolled' : ''}`}>
-      <Link href="/" className="nav-logo">
-        <img src="/meritlives.svg" alt="SkillHub" style={{width:28,height:28}} />
-        SkillHub
-      </Link>
-      <div className="nav-links">
-        {[['Features','#features'],['How it works','#how'],['About','/about'],['Privacy','/privacy']].map(([l,h]) => (
-          h.startsWith('/') ? (
-            <Link key={l} href={h}>{l}</Link>
-          ) : (
-            <a key={l} href={h}>{l}</a>
-          )
-        ))}
+    <div className="max-w-3xl">
+      <div
+        className="mb-4 inline-flex items-center gap-2 rounded-full px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.22em]"
+        style={{
+          background: 'rgba(255,255,255,0.04)',
+          color: 'rgba(255,255,255,0.72)',
+          border: '1px solid rgba(255,255,255,0.08)',
+        }}
+      >
+        <Sparkles className="h-3.5 w-3.5" />
+        {eyebrow}
       </div>
-      <div className="nav-actions">
-        <Link href="/login" className="btn-ghost">Sign in</Link>
-        <Link href="/login?tab=register" className="btn-primary">Get started</Link>
-      </div>
-    </nav>
-  );
-}
-
-function Hero() {
-  const avatars = [
-    { init: 'TO', color: '2563eb' },
-    { init: 'AN', color: '059669' },
-    { init: 'FK', color: 'd97706' },
-    { init: 'CB', color: 'dc2626' },
-    { init: 'OA', color: '7c3aed' },
-  ];
-  return (
-    <section className="hero">
-      <div className="hero-eyebrow">Now live across Africa</div>
-      <h1>
-        Build skills.<br />
-        Get <em>verified.</em><br />
-        <span className="hl">Get hired.</span>
-      </h1>
-      <p className="hero-sub">
-        SkillHub connects African tech talent with world-class courses, verified certificates, and real employers — all in one platform.
-      </p>
-      <div className="hero-actions">
-        <Link href="/login?tab=register" className="hero-cta">Start for free →</Link>
-        <a href="#how" className="hero-outline">See how it works</a>
-      </div>
-      <div className="hero-proof">
-        <div className="avatar-stack">
-          {avatars.map((a) => (
-            <div key={a.init} className="av" style={{background:`#${a.color}`}}>{a.init}</div>
-          ))}
-        </div>
-        <div className="proof-divider" />
-        <p className="proof-text">Trusted by <strong>12,000+</strong> tech professionals</p>
-      </div>
-
-      <div className="mockup-wrap">
-        <div className="browser-frame">
-          <div className="browser-bar">
-            <div className="dot"/><div className="dot"/><div className="dot"/>
-            <div className="url-bar"/>
-          </div>
-          <div className="dash-layout">
-            <div className="dash-sidebar">
-              <div className="dash-logo">
-                <img src="/meritlives.svg" alt="SkillHub" style={{width:20,height:20}} />
-                <span>SkillHub</span>
-              </div>
-              {[['Dashboard',true],['Courses',false],['Portfolio',false],['Jobs',false],['Rewards',false]].map(([l,a]) => (
-                <div key={String(l)} className={`dash-nav-item${a?' active':''}`}>
-                  <div className="dash-nav-dot"/>{l}
-                </div>
-              ))}
-            </div>
-            <div className="dash-main">
-              <div className="dash-stats">
-                {[['6','Courses'],['3','Certs'],['92%','Match'],['1,250','Coins']].map(([v,l]) => (
-                  <div key={l} className="dash-stat">
-                    <div className="dash-stat-val">{v}</div>
-                    <div className="dash-stat-label">{l}</div>
-                  </div>
-                ))}
-              </div>
-              <div className="dash-cards">
-                <div className="dash-card">
-                  <div className="dash-card-title">Active Courses</div>
-                  {[[70,'React'],[45,'Data Analysis']].map(([w,n]) => (
-                    <div key={String(n)} className="dash-bar-row">
-                      <div className="dash-bar-thumb"/>
-                      <div style={{flex:1}}>
-                        <div style={{fontSize:8,color:'var(--muted)',marginBottom:3}}>{n}</div>
-                        <div className="dash-bar-track"><div className="dash-bar-fill" style={{width:`${w}%`}}/></div>
-                      </div>
-                      <div className="dash-badge">{w}%</div>
-                    </div>
-                  ))}
-                </div>
-                <div className="dash-card">
-                  <div className="dash-card-title">Job Matches</div>
-                  {[['Frontend Dev','92%'],['Data Analyst','78%']].map(([j,p]) => (
-                    <div key={j} className="dash-bar-row">
-                      <div className="dash-bar-thumb"/>
-                      <div style={{flex:1,fontSize:8,color:'var(--muted)'}}>{j}</div>
-                      <div className="dash-badge">{p}</div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </section>
-  );
-}
-
-function Features() {
-  return (
-    <section id="features" className="section">
-      <div className="section-tag">Features</div>
-      <h2 className="section-title">Everything you need<br />to <em>grow</em></h2>
-      <p className="section-sub">From learning to landing — every tool in one place, built for African tech careers.</p>
-
-      <div className="feature-grid">
-        <div className="feature-card wide">
-          <div>
-            <div className="feature-icon"><i className="fas fa-brain"/></div>
-            <h3 className="feature-h">Smart Skill Matching</h3>
-            <p className="feature-p">Our algorithm matches your skills with jobs that need exactly what you have — and recommends courses to close the gap. Get 90%+ match rates before you apply.</p>
-          </div>
-          <div className="feature-demo">
-            <div style={{fontSize:10,fontFamily:'DM Mono',color:'var(--muted)',marginBottom:8,textTransform:'uppercase',letterSpacing:'.5px'}}>Your profile</div>
-            <div style={{marginBottom:10}}>
-              {['JavaScript','React','Node.js','Python','CSS'].map(t => <span key={t} className="skill-chip">{t}</span>)}
-            </div>
-            <div className="match-row">
-              <div className="match-title">Frontend Developer — Paystack</div>
-              <div className="match-meta">
-                Remote · ₦400,000–₦650,000/mo
-                <span className="match-badge">92% match</span>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {[
-          { icon:'fa-certificate', h:'Verified Certificates',  p:'Every certificate is blockchain-verified and shareable. Employers trust SkillHub credentials because we verify them ourselves.' },
-          { icon:'fa-coins',       h:'Merit Coins Rewards',    p:'Earn coins for every course completed, certificate added, and project uploaded. Redeem for premium courses and career boosts.' },
-          { icon:'fa-layer-group', h:'Portfolio Builder',      p:'Showcase projects with AI-scored portfolios. Employers see your work, skills, and certificates in one professional profile.' },
-          { icon:'fa-building',    h:'Employer Dashboard',     p:'Post jobs, search verified candidates, and track applications — from a dedicated portal built for African hiring teams.' },
-        ].map(c => (
-          <div key={c.h} className="feature-card">
-            <div className="feature-icon"><i className={`fas ${c.icon}`}/></div>
-            <h3 className="feature-h">{c.h}</h3>
-            <p className="feature-p">{c.p}</p>
-          </div>
-        ))}
-      </div>
-    </section>
-  );
-}
-
-function HowItWorks() {
-  return (
-    <section id="how" className="section" style={{borderTop:'1px solid var(--border)'}}>
-      <div className="section-tag">How it works</div>
-      <h2 className="section-title">Three steps to your<br /><em>next opportunity</em></h2>
-      <p className="section-sub">No complicated setup. Start learning and earning in minutes.</p>
-      <div className="steps">
-        {[
-          { n:'01', h:'Create your profile',   p:'Sign up free, add your skills and experience. Your profile strength score guides you to stand out to employers.' },
-          { n:'02', h:'Learn & earn coins',     p:'Enroll in free and premium courses. Complete modules, earn Merit Coins, and get certificates employers verify.' },
-          { n:'03', h:'Get hired',              p:'Apply to matched jobs with one click. Your verified profile does the talking — no more CVs into the void.' },
-        ].map(s => (
-          <div key={s.n} className="step">
-            <div className="step-num">{s.n}</div>
-            <h3 className="step-h">{s.h}</h3>
-            <p className="step-p">{s.p}</p>
-          </div>
-        ))}
-      </div>
-    </section>
-  );
-}
-
-function Testimonials() {
-  return (
-    <section className="section" style={{borderTop:'1px solid var(--border)'}}>
-      <div className="section-tag">Stories</div>
-      <h2 className="section-title">Real people.<br /><em>Real results.</em></h2>
-      <div style={{height:40}}/>
-      <div className="testi-grid">
-        {[
-          { init:'TO', bg:'2563eb', q:'I went from bootcamp grad to landing a React developer role at a Lagos fintech in 4 months. The skill matching is scary accurate — 92% on my first application.', name:'Tobi Okonkwo', role:'Frontend Developer, Lagos' },
-          { init:'AN', bg:'059669', q:'As an employer, finding verified talent used to take weeks. With SkillHub I posted a role and had three shortlisted candidates within 48 hours.', name:'Amaka Nwosu', role:'Head of People, TechVision Africa' },
-          { init:'FK', bg:'d97706', q:'The Merit Coins system kept me motivated. I redeemed coins for a mock interview session, nailed my Andela application, and never looked back.', name:'Femi Kassim', role:'Data Analyst, Andela' },
-        ].map(t => (
-          <div key={t.name} className="testi-card">
-            <div className="testi-stars">★★★★★</div>
-            <p className="testi-quote">"{t.q}"</p>
-            <div className="testi-author">
-              <div className="testi-avatar" style={{background:`#${t.bg}`}}>{t.init}</div>
-              <div>
-                <div className="testi-name">{t.name}</div>
-                <div className="testi-role">{t.role}</div>
-              </div>
-            </div>
-          </div>
-        ))}
-      </div>
-    </section>
-  );
-}
-
-function CTA() {
-  return (
-    <div className="cta-section">
-      <h2 className="cta-h">Ready to build your future?</h2>
-      <p className="cta-sub">Join 12,000+ tech professionals already using SkillHub to learn, grow, and get hired.</p>
-      <div className="cta-actions">
-        <Link href="/login?tab=register" className="hero-cta">Create free account →</Link>
-        <Link href="/login" className="hero-outline">Sign in</Link>
-      </div>
+      <h2 className="font-jakarta text-3xl font-extrabold tracking-[-0.04em] text-white md:text-5xl">{title}</h2>
+      <p className="mt-4 max-w-2xl text-[15px] leading-8 text-white/58 md:text-[16px]">{description}</p>
     </div>
-  );
-}
-
-function Footer() {
-  return (
-    <footer className="footer">
-      <div className="footer-logo">
-        <img src="/meritlives.svg" alt="SkillHub" style={{width:28,height:28}} />
-        SkillHub Pro
-      </div>
-      <span style={{fontSize:12,color:'var(--muted)'}}>© {new Date().getFullYear()} SkillHub Pro · Built for Africa's tech talent</span>
-      <div className="footer-links">
-        <Link href="/privacy">Privacy</Link>
-        <Link href="/about">About</Link>
-        <Link href="/contact">Support</Link>
-        <Link href="/login">Sign in</Link>
-      </div>
-    </footer>
   );
 }
 
 export default function LandingPage() {
   return (
-    <>
-      <style>{CSS}</style>
-      <div style={{background:'var(--bg)',color:'var(--text)',minHeight:'100vh',overflowX:'hidden'}}>
-        <Navbar/>
-        <Hero/>
-        <Features/>
-        <HowItWorks/>
-        <Testimonials/>
-        <CTA/>
-        <Footer/>
+    <main className="relative overflow-hidden text-white">
+      <div className="pointer-events-none absolute inset-0">
+        <div
+          className="absolute left-1/2 top-0 h-135 w-225 -translate-x-1/2 blur-3xl"
+          style={{
+            background:
+              'radial-gradient(circle at center, rgba(47,111,237,0.22) 0%, rgba(23,181,194,0.10) 34%, rgba(7,17,31,0) 72%)',
+          }}
+        />
+        <div
+          className="absolute -right-35 top-105 h-90 w-90 rounded-full blur-3xl"
+          style={{ background: 'rgba(245,158,11,0.10)' }}
+        />
       </div>
-    </>
+
+      <header
+        className="sticky top-0 z-40 border-b backdrop-blur-xl"
+        style={{ background: 'rgba(7,17,31,0.76)', borderColor: 'rgba(255,255,255,0.08)' }}
+      >
+        <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4 md:px-10">
+          <Link href="/" className="flex items-center gap-3">
+            <img src="/meritlives.svg" alt="SkillHub Pro" style={{ width: 30, height: 30 }} />
+            <div>
+              <div className="font-jakarta text-[15px] font-extrabold tracking-[-0.03em] text-white">SkillHub Pro</div>
+              <div className="text-[10px] font-medium uppercase tracking-[0.22em] text-white/38">by Meritlives</div>
+            </div>
+          </Link>
+
+          <nav className="hidden items-center gap-8 text-[14px] font-medium text-white/62 md:flex">
+            <a href="#platform" className="transition-colors hover:text-white">Platform</a>
+            <a href="#workflow" className="transition-colors hover:text-white">Workflow</a>
+            <a href="#audiences" className="transition-colors hover:text-white">Who it serves</a>
+            <Link href="/about" className="transition-colors hover:text-white">About</Link>
+          </nav>
+
+          <div className="flex items-center gap-3">
+            <Link href="/login" className="hidden text-[14px] font-semibold text-white/70 transition-colors hover:text-white md:inline-flex">
+              Sign in
+            </Link>
+            <Link
+              href="/login?tab=register"
+              className="inline-flex items-center gap-2 rounded-full px-5 py-2.5 text-[14px] font-semibold text-white transition-transform hover:-translate-y-0.5"
+              style={{ background: 'linear-gradient(135deg, var(--brand), var(--brand-2))' }}
+            >
+              Get started
+              <ArrowRight className="h-4 w-4" />
+            </Link>
+          </div>
+        </div>
+      </header>
+
+      <section className="relative mx-auto grid max-w-7xl gap-14 px-6 pb-18 pt-14 md:px-10 md:pb-24 md:pt-20 lg:grid-cols-[1.15fr_0.85fr] lg:items-center">
+        <div>
+          <div
+            className="mb-6 inline-flex items-center gap-2 rounded-full px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.22em]"
+            style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', color: 'rgba(255,255,255,0.7)' }}
+          >
+            <TrendingUp className="h-3.5 w-3.5" />
+            Workforce acceleration for Africa's digital economy
+          </div>
+
+          <h1 className="font-jakarta text-5xl font-extrabold leading-[0.94] tracking-[-0.06em] text-white md:text-7xl lg:text-[88px]">
+            Serious career infrastructure for modern African talent.
+          </h1>
+
+          <p className="mt-7 max-w-2xl text-[17px] leading-8 text-white/60 md:text-[18px]">
+            SkillHub Pro combines learning, verified credentials, portfolio proof, hiring intelligence, and employer access into one refined platform.
+            The result is a stronger professional signal for candidates and a clearer sourcing workflow for hiring teams.
+          </p>
+
+          <div className="mt-9 flex flex-col gap-4 sm:flex-row">
+            <Link
+              href="/login?tab=register"
+              className="inline-flex items-center justify-center gap-2 rounded-full px-6 py-3.5 text-[15px] font-semibold text-white transition-transform hover:-translate-y-0.5"
+              style={{ background: 'linear-gradient(135deg, var(--brand), var(--brand-2))' }}
+            >
+              Create your workspace
+              <ArrowRight className="h-4 w-4" />
+            </Link>
+            <a
+              href="#platform"
+              className="inline-flex items-center justify-center gap-2 rounded-full border px-6 py-3.5 text-[15px] font-semibold text-white/80 transition-colors hover:text-white"
+              style={{ borderColor: 'rgba(255,255,255,0.1)', background: 'rgba(255,255,255,0.03)' }}
+            >
+              Explore the platform
+              <ChevronRight className="h-4 w-4" />
+            </a>
+          </div>
+
+          <div className="mt-10 grid gap-4 sm:grid-cols-3">
+            {[
+              ['Unified signal', 'Learning, portfolio, jobs, and certificates aligned in one profile'],
+              ['Built for employers too', 'Dedicated hiring workflows, not just learner dashboards'],
+              ['Brand-grade presentation', 'Sharper surfaces that feel enterprise-ready from first touch'],
+            ].map(([title, desc]) => (
+              <div
+                key={title}
+                className="rounded-3xl p-5"
+                style={{ background: 'rgba(255,255,255,0.035)', border: '1px solid rgba(255,255,255,0.08)' }}
+              >
+                <div className="mb-2 text-[12px] font-bold uppercase tracking-[0.18em] text-white/82">{title}</div>
+                <p className="text-[13px] leading-6 text-white/50">{desc}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div className="relative">
+          <div
+            className="absolute -left-6 top-10 hidden h-20 w-20 rounded-full blur-2xl md:block"
+            style={{ background: 'rgba(23,181,194,0.25)' }}
+          />
+          <div
+            className="relative overflow-hidden rounded-4xl p-5 md:p-6"
+            style={{
+              background: 'linear-gradient(180deg, rgba(14,23,39,0.96), rgba(9,16,30,0.96))',
+              border: '1px solid rgba(255,255,255,0.08)',
+              boxShadow: '0 30px 80px rgba(0,0,0,0.45)',
+            }}
+          >
+            <div className="flex items-center justify-between rounded-2xl border px-4 py-3" style={{ borderColor: 'rgba(255,255,255,0.07)', background: 'rgba(255,255,255,0.03)' }}>
+              <div>
+                <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-white/45">Talent Command Center</div>
+                <div className="mt-1 font-jakarta text-[18px] font-bold text-white">Candidate readiness, market visibility, opportunity flow</div>
+              </div>
+              <div className="rounded-full px-3 py-1 text-[11px] font-semibold text-white" style={{ background: 'rgba(23,181,194,0.16)', border: '1px solid rgba(23,181,194,0.25)' }}>
+                Live profile signal
+              </div>
+            </div>
+
+            <div className="mt-5 grid gap-4 md:grid-cols-[1.1fr_0.9fr]">
+              <div className="space-y-4 rounded-[28px] border p-5" style={{ borderColor: 'rgba(255,255,255,0.07)', background: 'rgba(255,255,255,0.025)' }}>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <div className="text-[11px] font-semibold uppercase tracking-[0.16em] text-white/45">Profile overview</div>
+                    <div className="mt-1 text-[18px] font-bold text-white">Product-minded frontend talent</div>
+                  </div>
+                  <div className="rounded-2xl px-3 py-2 text-right" style={{ background: 'rgba(47,111,237,0.14)' }}>
+                    <div className="text-[10px] uppercase tracking-[0.16em] text-white/50">Readiness</div>
+                    <div className="font-jakarta text-xl font-extrabold text-white">92</div>
+                  </div>
+                </div>
+
+                <div className="grid gap-3 sm:grid-cols-2">
+                  {platformSignals.map(signal => {
+                    const Icon = signal.icon;
+                    return (
+                      <div
+                        key={signal.title}
+                        className="rounded-2xl p-4"
+                        style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)' }}
+                      >
+                        <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-2xl" style={{ background: `${signal.accent}20`, color: signal.accent }}>
+                          <Icon className="h-5 w-5" />
+                        </div>
+                        <div className="text-[14px] font-semibold text-white">{signal.title}</div>
+                        <p className="mt-2 text-[12.5px] leading-6 text-white/48">{signal.description}</p>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
+              <div className="space-y-4">
+                <div className="rounded-[28px] border p-5" style={{ borderColor: 'rgba(255,255,255,0.07)', background: 'rgba(255,255,255,0.025)' }}>
+                  <div className="text-[11px] font-semibold uppercase tracking-[0.16em] text-white/45">Opportunity radar</div>
+                  <div className="mt-4 space-y-3">
+                    {[
+                      ['Frontend Engineer', 'Remote-first product team', 'High fit'],
+                      ['Product Designer', 'Growth-stage fintech', 'Portfolio-led'],
+                      ['Community Lead', 'Creator learning platform', 'Strong signal'],
+                    ].map(([role, meta, tag]) => (
+                      <div key={role} className="rounded-2xl border p-4" style={{ borderColor: 'rgba(255,255,255,0.07)', background: 'rgba(7,17,31,0.55)' }}>
+                        <div className="flex items-start justify-between gap-3">
+                          <div>
+                            <div className="text-[14px] font-semibold text-white">{role}</div>
+                            <div className="mt-1 text-[12px] text-white/45">{meta}</div>
+                          </div>
+                          <span className="rounded-full px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-white" style={{ background: 'rgba(245,158,11,0.16)' }}>
+                            {tag}
+                          </span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="rounded-[28px] border p-5" style={{ borderColor: 'rgba(255,255,255,0.07)', background: 'linear-gradient(135deg, rgba(47,111,237,0.16), rgba(23,181,194,0.12))' }}>
+                  <div className="text-[11px] font-semibold uppercase tracking-[0.16em] text-white/55">Brand promise</div>
+                  <div className="mt-3 font-jakarta text-2xl font-extrabold leading-tight text-white">
+                    Professional signal in. Professional outcomes out.
+                  </div>
+                  <p className="mt-3 text-[13px] leading-6 text-white/68">
+                    SkillHub is not just a course directory or a jobs board. It is a branded career operating layer built to make talent legible, credible, and discoverable.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section className="mx-auto max-w-7xl px-6 pb-10 md:px-10">
+        <div className="grid gap-4 rounded-4xl border p-6 md:grid-cols-3" style={{ borderColor: 'rgba(255,255,255,0.07)', background: 'rgba(255,255,255,0.025)' }}>
+          {[
+            ['Sharper hiring signal', 'Profiles communicate capability with far more context than a résumé upload.'],
+            ['Cleaner learner experience', 'Progress, credentials, community, and opportunities stay connected instead of fragmented.'],
+            ['Professional brand posture', 'The product now reads like a platform for serious career growth, not a generic course template.'],
+          ].map(([title, copy]) => (
+            <div key={title} className="rounded-3xl p-4">
+              <div className="text-[12px] font-bold uppercase tracking-[0.18em] text-white/82">{title}</div>
+              <p className="mt-2 text-[14px] leading-7 text-white/50">{copy}</p>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      <section id="platform" className="mx-auto max-w-7xl px-6 py-14 md:px-10 md:py-20">
+        <SectionHeading
+          eyebrow="Platform"
+          title="One product system across learning, proof, and hiring"
+          description="The frontend now leads with a clearer point of view: SkillHub Pro is an integrated workforce platform, not a collection of generic feature tiles."
+        />
+
+        <div className="mt-10 grid gap-5 lg:grid-cols-3">
+          {capabilityCards.map(card => {
+            const Icon = card.icon;
+            return (
+              <article
+                key={card.title}
+                className="rounded-[30px] p-7"
+                style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)' }}
+              >
+                <div className="mb-5 flex h-12 w-12 items-center justify-center rounded-2xl" style={{ background: 'rgba(255,255,255,0.05)' }}>
+                  <Icon className="h-5 w-5 text-white" />
+                </div>
+                <div className="text-[11px] font-semibold uppercase tracking-[0.2em] text-white/42">{card.eyebrow}</div>
+                <h3 className="mt-3 font-jakarta text-2xl font-bold tracking-[-0.04em] text-white">{card.title}</h3>
+                <p className="mt-4 text-[14px] leading-7 text-white/52">{card.description}</p>
+              </article>
+            );
+          })}
+        </div>
+      </section>
+
+      <section id="workflow" className="mx-auto max-w-7xl px-6 py-14 md:px-10 md:py-20">
+        <SectionHeading
+          eyebrow="Workflow"
+          title="A cleaner journey from readiness to opportunity"
+          description="Every section of the product should reinforce one idea: users are building professional momentum, not clicking through disconnected screens."
+        />
+
+        <div className="mt-10 grid gap-5 lg:grid-cols-3">
+          {productFlow.map(item => (
+            <div
+              key={item.step}
+              className="rounded-[30px] p-7"
+              style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)' }}
+            >
+              <div className="mb-5 inline-flex h-11 w-11 items-center justify-center rounded-full border text-[12px] font-bold text-white/88" style={{ borderColor: 'rgba(255,255,255,0.1)' }}>
+                {item.step}
+              </div>
+              <h3 className="font-jakarta text-[22px] font-bold tracking-[-0.04em] text-white">{item.title}</h3>
+              <p className="mt-4 text-[14px] leading-7 text-white/52">{item.description}</p>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      <section id="audiences" className="mx-auto max-w-7xl px-6 py-14 md:px-10 md:py-20">
+        <SectionHeading
+          eyebrow="Who it serves"
+          title="Positioned for candidates, employers, and the ecosystem around them"
+          description="Professional branding matters because the product speaks to multiple audiences at once. The UI should reflect confidence, clarity, and platform maturity on every surface."
+        />
+
+        <div className="mt-10 grid gap-5 lg:grid-cols-3">
+          {audiences.map(item => {
+            const Icon = item.icon;
+            return (
+              <article
+                key={item.title}
+                className="rounded-[30px] p-7"
+                style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)' }}
+              >
+                <div className="mb-5 flex h-12 w-12 items-center justify-center rounded-2xl" style={{ background: 'rgba(255,255,255,0.05)' }}>
+                  <Icon className="h-5 w-5 text-white" />
+                </div>
+                <h3 className="font-jakarta text-2xl font-bold tracking-[-0.04em] text-white">{item.title}</h3>
+                <p className="mt-4 text-[14px] leading-7 text-white/52">{item.description}</p>
+              </article>
+            );
+          })}
+        </div>
+      </section>
+
+      <section className="mx-auto max-w-7xl px-6 pb-16 pt-6 md:px-10 md:pb-24">
+        <div
+          className="overflow-hidden rounded-[36px] border p-8 md:p-12"
+          style={{
+            borderColor: 'rgba(255,255,255,0.08)',
+            background: 'linear-gradient(135deg, rgba(13,24,42,0.95), rgba(8,16,28,0.95))',
+          }}
+        >
+          <div className="grid gap-10 lg:grid-cols-[1fr_auto] lg:items-end">
+            <div>
+              <div className="inline-flex items-center gap-2 rounded-full px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.22em] text-white/68" style={{ background: 'rgba(255,255,255,0.05)' }}>
+                <Users2 className="h-3.5 w-3.5" />
+                Ready for sharper rollout
+              </div>
+              <h2 className="mt-5 font-jakarta text-3xl font-extrabold tracking-tighter text-white md:text-5xl">
+                Launch a frontend that looks like the platform it claims to be.
+              </h2>
+              <p className="mt-4 max-w-2xl text-[15px] leading-8 text-white/58 md:text-[16px]">
+                The new direction emphasizes credibility, product maturity, and a distinct SkillHub identity grounded in workforce readiness, verified capability, and employer relevance.
+              </p>
+            </div>
+
+            <div className="flex flex-col gap-3 sm:flex-row lg:flex-col">
+              <Link
+                href="/login?tab=register"
+                className="inline-flex items-center justify-center gap-2 rounded-full px-6 py-3.5 text-[15px] font-semibold text-white transition-transform hover:-translate-y-0.5"
+                style={{ background: 'linear-gradient(135deg, var(--brand), var(--brand-2))' }}
+              >
+                Start building
+                <ArrowRight className="h-4 w-4" />
+              </Link>
+              <Link
+                href="/about"
+                className="inline-flex items-center justify-center gap-2 rounded-full border px-6 py-3.5 text-[15px] font-semibold text-white/80 transition-colors hover:text-white"
+                style={{ borderColor: 'rgba(255,255,255,0.12)', background: 'rgba(255,255,255,0.03)' }}
+              >
+                Learn about Meritlives
+              </Link>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <footer className="border-t" style={{ borderColor: 'rgba(255,255,255,0.08)' }}>
+        <div className="mx-auto flex max-w-7xl flex-col gap-6 px-6 py-8 md:flex-row md:items-center md:justify-between md:px-10">
+          <div className="flex items-center gap-3">
+            <img src="/meritlives.svg" alt="SkillHub Pro" style={{ width: 24, height: 24 }} />
+            <div>
+              <div className="font-jakarta text-[14px] font-bold text-white">SkillHub Pro</div>
+              <div className="text-[11px] text-white/42">A Meritlives product for modern African talent</div>
+            </div>
+          </div>
+          <div className="flex flex-wrap gap-5 text-[13px] text-white/48">
+            <Link href="/about" className="transition-colors hover:text-white">About</Link>
+            <Link href="/privacy" className="transition-colors hover:text-white">Privacy</Link>
+            <Link href="/contact" className="transition-colors hover:text-white">Contact</Link>
+            <Link href="/login" className="transition-colors hover:text-white">Sign in</Link>
+          </div>
+        </div>
+      </footer>
+    </main>
   );
 }

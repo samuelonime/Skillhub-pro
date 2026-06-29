@@ -2,27 +2,36 @@
 @import "tailwindcss";
 
 :root {
-  --brand: #5b4cf5;
-  --brand-2: #7c6ff7;
-  --brand-3: #a78bfa;
-  --green: #10b981;
+  --brand: #2f6fed;
+  --brand-2: #17b5c2;
+  --brand-3: #8de1d8;
+  --green: #17c17d;
   --amber: #f59e0b;
-  --ink: #08080f;
-  --ink-2: #13131f;
-  --ink-3: #1e1e2e;
-  --muted: #6b6b8a;
-  --muted-2: #9898b8;
-  --glow: rgba(91,76,245,0.35);
+  --ink: #07111f;
+  --ink-2: #0d1728;
+  --ink-3: #16243a;
+  --muted: #6d7a93;
+  --muted-2: #9aa7bf;
+  --glow: rgba(47,111,237,0.28);
 }
 
 html { scroll-behavior: smooth; background: #080C14; }
 
 body {
-  background: #080C14;
+  background:
+    radial-gradient(circle at top, rgba(47,111,237,0.14), transparent 32%),
+    radial-gradient(circle at right 18% top 26%, rgba(23,181,194,0.10), transparent 20%),
+    linear-gradient(180deg, #07111f 0%, #091321 100%);
   font-family: 'Inter', sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   font-feature-settings: 'cv02','cv03','cv04','cv11';
+  color: rgba(255,255,255,0.92);
+}
+
+::selection {
+  background: rgba(47,111,237,0.35);
+  color: #ffffff;
 }
 
 /* Heading font — replaces Syne throughout the app */
@@ -78,25 +87,25 @@ body {
 }
 
 .grad-text {
-  background: linear-gradient(135deg, #fff 30%, #a78bfa 70%, #7c6ff7 100%);
+  background: linear-gradient(135deg, #ffffff 22%, #8de1d8 60%, #2f6fed 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
 }
 .accent-text {
-  background: linear-gradient(90deg, #10b981, #34d399);
+  background: linear-gradient(90deg, #17c17d, #4ade80);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
 }
 .brand-grad-text {
-  background: linear-gradient(90deg, #7c6ff7, #a78bfa);
+  background: linear-gradient(90deg, #2f6fed, #17b5c2);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
 }
 .stat-num-grad {
-  background: linear-gradient(135deg, #fff, #a78bfa);
+  background: linear-gradient(135deg, #ffffff, #8de1d8);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
