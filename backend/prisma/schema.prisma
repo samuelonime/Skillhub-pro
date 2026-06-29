@@ -70,6 +70,8 @@ model User {
   activityFeed         ActivityFeed[]
   aiResume             AiResume?
   jobScoutAlerts       JobScoutAlert[]
+  sentMessages         DirectMessage[]        @relation("SentMessages")
+  receivedMessages     DirectMessage[]        @relation("ReceivedMessages")
 
   @@map("users")
 }
@@ -817,4 +819,24 @@ model JobScoutAlert {
   @@unique([leadId, userId])
   @@index([userId])
   @@map("job_scout_alerts")
+}
+// ── Direct Messages ──────────────────────────────────────────────────────────
+// Private 1:1 messages between users. Messages are ephemeral by design — a
+// cleanup job removes any message older than 24 hours. The most recent message
+// per conversation is what surfaces in the contacts list before expiry.
+model DirectMessage {
+  id          String   @id @default(uuid())
+  senderId    String
+  recipientId String
+  body        String   @db.Text
+  read        Boolean  @default(false)
+  createdAt   DateTime @default(now())
+
+  sender    User @relation("SentMessages",     fields: [senderId],    references: [id], onDelete: Cascade)
+  recipient User @relation("ReceivedMessages", fields: [recipientId], references: [id], onDelete: Cascade)
+
+  @@index([recipientId, senderId])
+  @@index([senderId, recipientId])
+  @@index([createdAt])
+  @@map("direct_messages")
 }

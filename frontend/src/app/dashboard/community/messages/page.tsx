@@ -110,6 +110,27 @@ export default function MessagesPage() {
 
   useEffect(() => { bottomRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [activeContact, messages]);
 
+  // Load persisted conversation history (last 24h) when a contact is opened
+  useEffect(() => {
+    if (!activeContact) return;
+    let cancelled = false;
+    apiFetch(`/community/messages/${activeContact.id}`)
+      .then(res => {
+        if (cancelled || !res.success || !Array.isArray(res.data)) return;
+        const history = res.data.map((m: any) => ({
+          id: m.id,
+          from: m.mine ? 'me' : 'them',
+          text: m.body,
+          time: m.createdAt,
+        }));
+        setMessages(prev => ({ ...prev, [activeContact.id]: history }));
+        // Clear unread badge for this contact locally
+        setContacts(prev => prev.map(c => c.id === activeContact.id ? { ...c, unread: 0 } : c));
+      })
+      .catch(() => {});
+    return () => { cancelled = true; };
+  }, [activeContact]);
+
   const filtered = contacts.filter(c =>
     `${c.firstName} ${c.lastName}`.toLowerCase().includes(search.toLowerCase())
   );
@@ -126,11 +147,16 @@ export default function MessagesPage() {
       const res = await apiFetch('/community/messages', { method: 'POST', body: JSON.stringify({ recipientId: activeContact.id, message: trimmed }) });
       if (!res.success) throw new Error(res.message || 'Send failed');
 
+      // Reflect the saved last message in the contact list (most recent first)
+      setContacts(prev => {
+        const updated = prev.map(c => c.id === activeContact.id
+          ? { ...c, lastMessage: trimmed, lastTime: new Date().toISOString() }
+          : c);
+        return [...updated].sort((a, b) =>
+          a.lastTime && b.lastTime ? new Date(b.lastTime).getTime() - new Date(a.lastTime).getTime() : 0);
+      });
+
       if (!res.data?.online) {
-        setMessages(prev => ({
-          ...prev,
-          [activeContact.id]: [...(prev[activeContact.id] || []), { id: `sys-${Date.now()}`, from: 'system', text: 'Recipient is offline. Your message was delivered as a notification.', time: new Date().toISOString() }],
-        }));
         setStatus('Delivered as notification');
       } else {
         setStatus('Delivered');

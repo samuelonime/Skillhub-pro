@@ -210,12 +210,13 @@ router.post('/', authenticate, async (req, res) => {
   }
 });
 
-// ── POST /messages — send a private community message as a notification ───
+// ── POST /messages — send a private message (persisted, expires after 24h) ───
 router.post('/messages', authenticate, async (req, res) => {
   try {
     const { recipientId, message } = req.body;
     if (!recipientId) return badRequest(res, 'Recipient is required');
     if (!message?.trim()) return badRequest(res, 'Message is required');
+    if (recipientId === req.user.id) return badRequest(res, 'You cannot message yourself');
 
     const recipient = await prisma.user.findUnique({
       where: { id: recipientId },
@@ -223,8 +224,18 @@ router.post('/messages', authenticate, async (req, res) => {
     });
     if (!recipient) return notFound(res, 'Recipient not found');
 
+    // Persist the message
+    const saved = await prisma.directMessage.create({
+      data: {
+        senderId: req.user.id,
+        recipientId,
+        body: message.trim().slice(0, 2000),
+      },
+    });
+
+    // Also drop a notification so the recipient is alerted
     const senderName = `${req.user.firstName} ${req.user.lastName}`.trim();
-    const notification = await prisma.notification.create({
+    await prisma.notification.create({
       data: {
         userId: recipient.id,
         type: 'message',
@@ -232,67 +243,144 @@ router.post('/messages', authenticate, async (req, res) => {
         title: `${senderName} sent you a message`,
         message: `${senderName}: ${message.trim().slice(0, 200)}`,
       },
-    });
+    }).catch(() => {});
 
     const latestSession = await prisma.userSession.findFirst({
-      where: {
-        userId: recipient.id,
-        isActive: true,
-        expiresAt: { gt: new Date() },
-      },
+      where: { userId: recipient.id, isActive: true, expiresAt: { gt: new Date() } },
       orderBy: { lastSeenAt: 'desc' },
     });
     const online = !!latestSession && new Date(latestSession.lastSeenAt).getTime() > Date.now() - 5 * 60 * 1000;
 
-    return success(res, { notificationId: notification.id, online }, online
-      ? 'Message sent and recipient is likely online.'
-      : 'Message sent. Recipient will see it as a notification while offline.');
+    return success(res, {
+      message: {
+        id: saved.id,
+        body: saved.body,
+        senderId: saved.senderId,
+        recipientId: saved.recipientId,
+        createdAt: saved.createdAt,
+        mine: true,
+      },
+      online,
+    }, 'Message sent');
   } catch (e) {
     console.error(e);
     return error(res, 'Failed to send message');
   }
 });
 
-// ── GET /contacts — list recent community contacts for messaging ────────────
+// ── GET /messages/:userId — conversation history with one user (last 24h) ────
+router.get('/messages/:userId', authenticate, async (req, res) => {
+  try {
+    const otherId = req.params.userId;
+    const cutoff = new Date(Date.now() - 24 * 60 * 60 * 1000);
+
+    const msgs = await prisma.directMessage.findMany({
+      where: {
+        createdAt: { gt: cutoff },
+        OR: [
+          { senderId: req.user.id, recipientId: otherId },
+          { senderId: otherId, recipientId: req.user.id },
+        ],
+      },
+      orderBy: { createdAt: 'asc' },
+      take: 200,
+    });
+
+    // Mark messages from the other person as read
+    await prisma.directMessage.updateMany({
+      where: { senderId: otherId, recipientId: req.user.id, read: false },
+      data: { read: true },
+    }).catch(() => {});
+
+    const shaped = msgs.map(m => ({
+      id: m.id,
+      body: m.body,
+      senderId: m.senderId,
+      recipientId: m.recipientId,
+      createdAt: m.createdAt,
+      mine: m.senderId === req.user.id,
+    }));
+
+    return success(res, shaped);
+  } catch (e) {
+    console.error(e);
+    return error(res, 'Failed to load conversation');
+  }
+});
+
+// ── GET /contacts — recent conversations + community members for messaging ───
 router.get('/contacts', authenticate, async (req, res) => {
   try {
+    const cutoff = new Date(Date.now() - 24 * 60 * 60 * 1000);
+
+    // 1. People the user has recently exchanged messages with (within 24h)
+    const recentMsgs = await prisma.directMessage.findMany({
+      where: {
+        createdAt: { gt: cutoff },
+        OR: [{ senderId: req.user.id }, { recipientId: req.user.id }],
+      },
+      orderBy: { createdAt: 'desc' },
+      take: 200,
+    });
+
+    // Build a map of last message + unread count per other-user
+    const convoMap = new Map();
+    for (const m of recentMsgs) {
+      const otherId = m.senderId === req.user.id ? m.recipientId : m.senderId;
+      if (!convoMap.has(otherId)) {
+        convoMap.set(otherId, { lastMessage: m.body, lastTime: m.createdAt, unread: 0 });
+      }
+      if (m.recipientId === req.user.id && !m.read) {
+        convoMap.get(otherId).unread += 1;
+      }
+    }
+
+    // 2. Also surface recent community authors as potential new contacts
     const recentAuthors = await prisma.communityPost.findMany({
       where: { authorId: { not: req.user.id } },
       distinct: ['authorId'],
       orderBy: { createdAt: 'desc' },
       take: 20,
-      select: {
-        author: {
-          select: { id: true, firstName: true, lastName: true, avatar: true, title: true },
-        },
-      },
+      select: { author: { select: { id: true, firstName: true, lastName: true, avatar: true, title: true } } },
     });
 
-    const authorIds = recentAuthors.map(r => r.author.id);
+    const allIds = new Set([...convoMap.keys(), ...recentAuthors.map(r => r.author.id)]);
+    const users = await prisma.user.findMany({
+      where: { id: { in: [...allIds] } },
+      select: { id: true, firstName: true, lastName: true, avatar: true, title: true },
+    });
+    const userMap = new Map(users.map(u => [u.id, u]));
+
+    // Online status
     const sessions = await prisma.userSession.findMany({
-      where: {
-        userId: { in: authorIds },
-        isActive: true,
-        expiresAt: { gt: new Date() },
-      },
+      where: { userId: { in: [...allIds] }, isActive: true, expiresAt: { gt: new Date() } },
       orderBy: { lastSeenAt: 'desc' },
     });
-
     const now = Date.now();
     const onlineMap = new Map();
-    sessions.forEach(session => {
-      if (new Date(session.lastSeenAt).getTime() > now - 5 * 60 * 1000) {
-        onlineMap.set(session.userId, true);
-      }
+    sessions.forEach(s => {
+      if (new Date(s.lastSeenAt).getTime() > now - 5 * 60 * 1000) onlineMap.set(s.userId, true);
     });
 
-    const contacts = recentAuthors.map(({ author }) => ({
-      ...author,
-      online: onlineMap.get(author.id) || false,
-      lastMessage: 'Tap to start a new message',
-      lastTime: new Date().toISOString(),
-      unread: 0,
-    }));
+    const contacts = [...allIds].map(id => {
+      const u = userMap.get(id);
+      if (!u) return null;
+      const convo = convoMap.get(id);
+      return {
+        ...u,
+        online: onlineMap.get(id) || false,
+        lastMessage: convo?.lastMessage || 'Tap to start a new message',
+        lastTime: convo?.lastTime || null,
+        unread: convo?.unread || 0,
+      };
+    }).filter(Boolean)
+      // Conversations with real messages first, most recent on top
+      .sort((a, b) => {
+        if (a.lastTime && b.lastTime) return new Date(b.lastTime) - new Date(a.lastTime);
+        if (a.lastTime) return -1;
+        if (b.lastTime) return 1;
+        return 0;
+      });
 
     return success(res, contacts);
   } catch (e) {

@@ -11,6 +11,7 @@ const path        = require('path');
 const prisma      = require('./config/database');
 const { trackSession } = require('./middleware/sessionTracker');
 const { startJobScoutCron } = require('./cron/jobScoutCron');
+const { startMessageCleanupCron } = require('./cron/messageCleanupCron');
 
 // ENV validation
 const REQUIRED_ENV = ['JWT_SECRET', 'JWT_REFRESH_SECRET', 'DATABASE_URL'];
@@ -175,6 +176,7 @@ async function start() {
   });
 
   startJobScoutCron();
+  startMessageCleanupCron();
 
   const shutdown = (sig) => {
     console.log(`\n${sig} — shutting down…`);
