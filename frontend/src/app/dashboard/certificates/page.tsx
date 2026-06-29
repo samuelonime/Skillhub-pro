@@ -63,6 +63,10 @@ function Card({ children, className = '' }: { children: React.ReactNode; classNa
   );
 }
 
+function isVerified(cert: { status?: string }) {
+  return cert.status === 'verified' || (cert as { verified?: boolean }).verified === true;
+}
+
 export default function CertificatesPage() {
   const [certs, setCerts]       = useState<any[]>([]);
   const [upcoming, setUpcoming] = useState<any[]>([]);
@@ -195,7 +199,7 @@ export default function CertificatesPage() {
         <div className="grid grid-cols-3 gap-4 mb-5 max-md:grid-cols-1">
           {[
             { icon: 'fa-certificate', color: D.purple, label: 'Earned Certificates', val: certs.length },
-            { icon: 'fa-shield-alt',  color: D.green,  label: 'Verified',            val: certs.filter(c => c.verified !== false).length },
+            { icon: 'fa-shield-alt',  color: D.green,  label: 'Verified',            val: certs.filter(c => isVerified(c)).length },
             { icon: 'fa-clock',       color: D.amber,  label: 'In Progress',         val: upcoming.length },
           ].map(s => (
             <div key={s.label}
@@ -258,7 +262,7 @@ export default function CertificatesPage() {
                           <div className="w-14 h-14 rounded-2xl grid place-items-center text-2xl flex-shrink-0 relative"
                             style={{ background: color + '18', color }}>
                             <i className="fas fa-certificate" />
-                            {cert.verified !== false && (
+                            {isVerified(cert) && (
                               <div className="absolute -bottom-1 -right-1 w-5 h-5 rounded-full grid place-items-center text-[9px]"
                                 style={{ background: D.green, color: 'white' }}>
                                 <i className="fas fa-check" />
@@ -270,7 +274,7 @@ export default function CertificatesPage() {
                           <div className="flex-1 min-w-0">
                             <div className="flex items-center gap-2 mb-0.5 flex-wrap">
                               <h3 className="font-jakarta font-bold text-[15px] tracking-tight text-white">{cert.title || cert.name}</h3>
-                              {cert.verified !== false && (
+                              {isVerified(cert) && (
                                 <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full flex-shrink-0"
                                   style={{ background: D.green + '20', color: D.green }}>
                                   <i className="fas fa-check-circle" /> Verified
@@ -392,7 +396,7 @@ export default function CertificatesPage() {
                       </div>
                       <div className="font-jakarta font-bold text-[14px] text-white text-center mb-0.5">{cert.title || cert.name}</div>
                       <div className="text-[11px]" style={{ color: D.muted }}>{cert.provider || cert.issuer}</div>
-                      {cert.verified !== false && (
+                      {isVerified(cert) && (
                         <span className="mt-2.5 inline-flex items-center gap-1 text-[10px] font-bold px-2.5 py-1 rounded-full"
                           style={{ background: D.green + '20', color: D.green }}>
                           <i className="fas fa-check-circle" /> Blockchain Verified

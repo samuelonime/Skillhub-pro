@@ -13,7 +13,6 @@ import type { NextRequest } from 'next/server';
  * If the token is expired, apiFetch() will silently refresh via sh_refresh,
  * or redirect to /login if refresh also fails.
  */
-
 /**
  * Validates a redirect destination is safe (same-origin, relative path only).
  * Rejects protocol-relative URLs like //evil.com which pass a naive startsWith('/') check.
@@ -36,7 +35,6 @@ export function middleware(request: NextRequest) {
   // If sh_access is expired but sh_refresh exists, apiFetch() will silently
   // renew on the first API call — the user should NOT be kicked to login.
   const isAuthenticated = Boolean(accessToken || refreshToken);
-
   // Protect dashboard, employer, and admin routes
   const isProtected =
     pathname.startsWith('/dashboard') ||
