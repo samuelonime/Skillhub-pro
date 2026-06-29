@@ -9,6 +9,7 @@ const { generateAccessToken, generateRefreshToken, verifyRefreshToken, sanitizeU
 const { success, created, badRequest, unauthorized, error } = require('../utils/response');
 const { authenticate } = require('../middleware/auth');
 const { logActivity } = require('../utils/activityLogger');
+const { triggerScoutForNiche } = require('./jobScout');
 
 // Apple JWKS — cached by jose automatically (rotates when kid changes)
 const APPLE_JWKS = createRemoteJWKSet(new URL('https://appleid.apple.com/auth/keys'));
@@ -124,6 +125,7 @@ router.post('/google', async (req, res) => {
         : 'Welcome to SkillHub! Start exploring courses and opportunities.';
       await prisma.notification.create({ data: { userId: user.id, type: 'success', icon: 'star', message: welcomeMsg } });
       await logActivity({ userId: user.id, type: 'member_joined', title: `${user.firstName} joined SkillHub`, metadata: { niche: user.interestNiche || null, role: user.role } });
+      if (user.role === 'student' && user.interestNiche) triggerScoutForNiche(user.interestNiche);
     }
 
     await issueTokens(res, user);
@@ -177,6 +179,7 @@ router.post('/register', [
       : 'Welcome to SkillHub! Start exploring courses and opportunities.';
     await prisma.notification.create({ data: { userId: user.id, type: 'success', icon: 'star', message: welcomeMsg } });
     await logActivity({ userId: user.id, type: 'member_joined', title: `${user.firstName} joined SkillHub`, metadata: { niche: user.interestNiche || null, role: user.role } });
+    if (user.role === 'student' && user.interestNiche) triggerScoutForNiche(user.interestNiche);
     await issueTokens(res, user);
     return created(res, { user: sanitizeUser(user) }, 'Account created successfully');
   } catch (err) {
@@ -386,6 +389,7 @@ router.post('/apple', async (req, res) => {
         },
       });
       await logActivity({ userId: user.id, type: 'member_joined', title: `${user.firstName} joined SkillHub`, metadata: { role: user.role } });
+      if (user.role === 'student' && user.interestNiche) triggerScoutForNiche(user.interestNiche);
     }
 
     await issueTokens(res, user);

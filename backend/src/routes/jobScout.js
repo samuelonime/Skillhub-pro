@@ -522,4 +522,34 @@ const delay = ms => new Promise(r => setTimeout(r, ms));
 
 module.exports = router;
 module.exports.runJobScout = runJobScout;
+module.exports.scoutForNiche = scoutForNiche;
 module.exports.isAIConfigured = isAIConfigured;
+
+// ── On-demand trigger (e.g. when a user sets their niche/skills) ──────────────
+// Guarded so we don't re-scout a niche that already has fresh leads, which would
+// waste Tavily/AI quota. Runs in the background; never blocks the caller.
+const recentlyScouted = new Map(); // niche -> timestamp (in-process throttle)
+async function triggerScoutForNiche(niche) {
+  if (!niche || !isAIConfigured()) return;
+
+  // In-process throttle: skip if we kicked off this niche in the last 6 hours
+  const last = recentlyScouted.get(niche);
+  if (last && Date.now() - last < 6 * 60 * 60 * 1000) return;
+
+  // DB guard: skip if there are already fresh (<48h) leads for this niche
+  try {
+    const fresh = await prisma.jobScoutLead.count({
+      where: { niche, fetchedAt: { gt: new Date(Date.now() - 48 * 60 * 60 * 1000) } },
+    });
+    if (fresh > 0) {
+      // Still fan out existing fresh leads to this niche's students (handled by
+      // scoutForNiche's upsert path on next cron); for now just skip re-scouting.
+      return;
+    }
+  } catch { /* ignore and proceed */ }
+
+  recentlyScouted.set(niche, Date.now());
+  // Fire and forget — don't block the user's request
+  scoutForNiche(niche).catch(e => console.error(`[JobScout] on-demand scout failed for "${niche}":`, e.message));
+}
+module.exports.triggerScoutForNiche = triggerScoutForNiche;

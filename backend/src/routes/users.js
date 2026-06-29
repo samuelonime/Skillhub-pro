@@ -4,6 +4,7 @@ const multer  = require('multer');
 const { body, validationResult } = require('express-validator');
 const prisma  = require('../config/database');
 const { authenticate } = require('../middleware/auth');
+const { triggerScoutForNiche } = require('./jobScout');
 const { uploadImage, deleteImage } = require('../utils/cloudinary');
 const { success, badRequest, error, notFound } = require('../utils/response');
 
@@ -75,13 +76,14 @@ router.put('/profile', authenticate, [
   body('companySize').optional().isIn(['1-10', '11-50', '51-200', '201-500', '500+']),
   body('industry').optional().trim().isLength({ max: 50 }),
   body('phone').optional().trim().matches(/^[+]?[\d\s-]{8,20}$/),
+  body('interestNiche').optional().trim().isLength({ max: 60 }),
 ], async (req, res) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) return badRequest(res, 'Validation failed', errors.array());
 
   // Explicitly define which fields can be updated (prevents mass assignment attacks)
   const ALLOWED = ['firstName', 'lastName', 'title', 'bio', 'location',
-                   'company', 'companyWebsite', 'companySize', 'industry', 'phone'];
+                   'company', 'companyWebsite', 'companySize', 'industry', 'phone', 'interestNiche'];
   const data = {};
   ALLOWED.forEach(k => { 
     if (req.body[k] !== undefined) data[k] = req.body[k]; 
@@ -92,6 +94,10 @@ router.put('/profile', authenticate, [
       where: { id: req.user.id }, 
       data 
     });
+    // If the user set/changed their niche, kick off a scout for it
+    if (data.interestNiche && user.role === 'student') {
+      triggerScoutForNiche(data.interestNiche);
+    }
     const { password: _, ...safeUser } = user;
     return success(res, safeUser, 'Profile updated');
   } catch (err) { 
