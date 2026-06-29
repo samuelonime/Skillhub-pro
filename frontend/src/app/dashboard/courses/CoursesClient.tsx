@@ -5,27 +5,15 @@ import { SidebarLayout } from '@/components/layout/SidebarLayout';
 import { apiFetch } from '@/lib/api';
 
 const navItems = [
-  { href: '/dashboard',             icon: 'fa-home',          label: 'Dashboard' },
-  { href: '/dashboard/courses',     icon: 'fa-book-open',     label: 'Courses' },
-  {
-    icon: 'fa-sparkles',
-    label: 'Next Gen',
-    children: [
-      { href: '/dashboard/career-oracle',   icon: 'fa-brain',               label: 'Career Oracle' },
-      { href: '/dashboard/skill-coach',     icon: 'fa-heart-pulse',         label: 'Skill Coach' },
-      { href: '/dashboard/skill-decay',     icon: 'fa-chart-line',          label: 'Skill Decay' },
-      { href: '/dashboard/peer-genome',     icon: 'fa-users',               label: 'Peer Genome' },
-      { href: '/dashboard/ghost-recruiter', icon: 'fa-wand-magic-sparkles', label: 'Ghost Recruiter' },
-    ],
-  },
-  { href: '/dashboard/community',   icon: 'fa-users',         label: 'Community' },
-  { href: '/dashboard/portfolio',   icon: 'fa-layer-group',   label: 'Portfolio' },
-  { href: '/dashboard/resume',      icon: 'fa-file-lines',    label: 'Resume' },
-  { href: '/dashboard/platforms',   icon: 'fa-graduation-cap',label: 'Learning Platforms' },
-  { href: '/dashboard/jobs',        icon: 'fa-briefcase',     label: 'Jobs' },
-  { href: '/dashboard/certificates',icon: 'fa-certificate',   label: 'Certificates' },
-  { href: '/dashboard/rewards',     icon: 'fa-coins',         label: 'Rewards' },
-  { href: '/dashboard/settings',    icon: 'fa-gear',          label: 'Settings' },
+  { href: '/dashboard',              icon: 'fa-home',           label: 'Dashboard' },
+  { href: '/dashboard/courses',      icon: 'fa-book-open',      label: 'Courses' },
+  { href: '/dashboard/community',    icon: 'fa-users',          label: 'Community' },
+  { href: '/dashboard/portfolio',    icon: 'fa-layer-group',    label: 'Portfolio' },
+  { href: '/dashboard/platforms',    icon: 'fa-graduation-cap', label: 'Learning Platforms' },
+  { href: '/dashboard/jobs',         icon: 'fa-briefcase',      label: 'Jobs' },
+  { href: '/dashboard/certificates', icon: 'fa-certificate',    label: 'Certificates' },
+  { href: '/dashboard/rewards',      icon: 'fa-coins',          label: 'Rewards' },
+  { href: '/dashboard/settings',     icon: 'fa-gear',           label: 'Settings' },
 ];
 
 // ── Platform config ──────────────────────────────────────────────────────────
@@ -285,22 +273,29 @@ function CourseCard({ course, onEnroll, enrolling }: {
         </h3>
 
         {/* Instructor */}
-        {course.instructor && (
-          <div className="flex items-center gap-2">
-            {course.instructorAvatar ? (
-              <img src={course.instructorAvatar} alt={course.instructor}
-                className="w-5 h-5 rounded-full object-cover flex-shrink-0" />
-            ) : (
-              <div className="w-5 h-5 rounded-full flex-shrink-0 grid place-items-center text-[8px] font-bold text-white"
-                style={{ background: cfg.color + '40' }}>
-                {String(course.instructor).slice(0, 1).toUpperCase()}
-              </div>
-            )}
-            <span className="text-[11.5px] truncate" style={{ color: 'rgba(255,255,255,0.45)' }}>
-              {course.instructor}
-            </span>
-          </div>
-        )}
+        {course.instructor && (() => {
+          const instructorName =
+            typeof course.instructor === 'string'
+              ? course.instructor
+              : (course.instructor?.name || course.instructor?.fullName || '');
+          if (!instructorName) return null;
+          return (
+            <div className="flex items-center gap-2">
+              {course.instructorAvatar ? (
+                <img src={course.instructorAvatar} alt={instructorName}
+                  className="w-5 h-5 rounded-full object-cover flex-shrink-0" />
+              ) : (
+                <div className="w-5 h-5 rounded-full flex-shrink-0 grid place-items-center text-[8px] font-bold text-white"
+                  style={{ background: cfg.color + '40' }}>
+                  {instructorName.slice(0, 1).toUpperCase()}
+                </div>
+              )}
+              <span className="text-[11.5px] truncate" style={{ color: 'rgba(255,255,255,0.45)' }}>
+                {instructorName}
+              </span>
+            </div>
+          );
+        })()}
 
         {/* Rating */}
         {course.rating && (
