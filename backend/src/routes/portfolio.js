@@ -229,13 +229,28 @@ router.put('/projects/:id/community', authenticate, async (req, res) => {
       });
 
       if (!existingPost) {
+        // Build a rich body that surfaces the project's full details
+        const stack = [...new Set([...(project.techStack || []), ...(project.technologies || [])])];
+        const links = [];
+        if (project.liveUrl)   links.push(`🔗 Live demo: ${project.liveUrl}`);
+        if (project.githubUrl) links.push(`💻 Source code: ${project.githubUrl}`);
+
+        const bodyParts = [
+          project.description || `Check out my latest community project: ${project.title}`,
+        ];
+        if (stack.length) bodyParts.push(`\n\n🛠 Built with: ${stack.join(', ')}`);
+        if (links.length) bodyParts.push(`\n\n${links.join('\n')}`);
+
+        // Tags = the project's tech stack (so it's filterable/searchable), capped at 5
+        const tags = [...new Set(['project', ...stack.map(s => s.toLowerCase())])].slice(0, 5);
+
         await prisma.communityPost.create({
           data: {
             authorId:  req.user.id,
             title:     `Shared project: ${project.title}`,
-            body:      project.description || `Check out my latest community project: ${project.title}`,
+            body:      bodyParts.join(''),
             type:      'project',
-            tags:      ['project', 'community'],
+            tags,
             imageUrl:  project.thumbnail,
             projectUrl: project.liveUrl || project.githubUrl || null,
           },

@@ -10,7 +10,7 @@ const navItems = [
   { href: '/dashboard/courses',     icon: 'fa-book-open',     label: 'Courses' },
   {
     icon: 'fa-sparkles',
-    label: 'Next Gen',
+    label: 'Next Generation',
     children: [
       { href: '/dashboard/career-oracle',   icon: 'fa-brain',               label: 'Career Oracle' },
       { href: '/dashboard/skill-coach',     icon: 'fa-heart-pulse',         label: 'Skill Coach' },
@@ -168,13 +168,39 @@ function StatsBar({ stats }: { stats: any }) {
    NEW: Activity Feed Component
    ═══════════════════════════════════════════════════════════════════════════ */
 
-function ActivityFeed() {
+function ActivityFeed({ currentUserId, onMessage, onEdit, refreshKey }: {
+  currentUserId?: string;
+  onMessage: (user: any) => void;
+  onEdit: (post: any) => void;
+  refreshKey?: number;
+}) {
   const [items, setItems]     = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [page, setPage]       = useState(1);
   const [hasMore, setHasMore] = useState(true);
   const filter = '';
   const loaderRef             = useRef<HTMLDivElement>(null);
+
+  // Like a post directly from the feed
+  function feedLike(postId: string) {
+    apiFetch(`/community/${postId}/like`, { method: 'POST' })
+      .then(r => {
+        if (r.success) setItems(prev => prev.map(it =>
+          it.post?.id === postId
+            ? { ...it, post: { ...it.post, likedByMe: r.data.liked, likes: it.post.likes + (r.data.liked ? 1 : -1) } }
+            : it));
+      })
+      .catch(() => {});
+  }
+
+  // Delete a post from the feed
+  async function feedDelete(postId: string) {
+    if (!confirm('Delete this post? This cannot be undone.')) return;
+    try {
+      const res = await apiFetch(`/community/${postId}`, { method: 'DELETE' });
+      if (res.success) setItems(prev => prev.filter(it => it.post?.id !== postId));
+    } catch { /* ignore */ }
+  }
 
   const fetchFeed = useCallback(async (p: number, f: string) => {
     try {
@@ -188,7 +214,7 @@ function ActivityFeed() {
     finally { setLoading(false); }
   }, []);
 
-  useEffect(() => { setPage(1); setItems([]); setLoading(true); fetchFeed(1, filter); }, [filter, fetchFeed]);
+  useEffect(() => { setPage(1); setItems([]); setLoading(true); fetchFeed(1, filter); }, [filter, fetchFeed, refreshKey]);
   useEffect(() => { if (page > 1) fetchFeed(page, filter); }, [page, fetchFeed, filter]);
 
   // Infinite scroll
@@ -228,6 +254,14 @@ function ActivityFeed() {
       <div className="grid gap-3">
         {items.map(item => {
           const meta = ACTIVITY_META[item.type] || { icon: '📌', color: D.muted, label: item.type };
+          // Posts (discussions, projects, showcases) render as full cards with details
+          if (item.type === 'community_post' && item.post) {
+            return (
+              <PostCard key={item.id} post={item.post} onLike={feedLike}
+                onMessage={onMessage} onEdit={onEdit} onDelete={feedDelete}
+                currentUserId={currentUserId} />
+            );
+          }
           return (
             <div key={item.id} className="rounded-2xl p-4 hover:-translate-y-0.5 transition-all duration-200"
               style={{ background: D.card, border: `1px solid ${D.border}` }}>
@@ -865,6 +899,7 @@ export default function CommunityPage() {
   const [chatUser, setChatUser] = useState<any>(null);
   const [editPost, setEditPost] = useState<any>(null);
   const [deleting, setDeleting] = useState<string | null>(null);
+  const [feedRefresh, setFeedRefresh] = useState(0);
 
   useEffect(() => {
     apiFetch('/auth/me').then(r => { if (r.success && r.data) setUser(r.data); }).catch(() => {});
@@ -903,8 +938,8 @@ export default function CommunityPage() {
   return (
     <SidebarLayout navItems={navItems} pageTitle="Community">
       <div style={{ color: D.text }}>
-        {showNew && <NewPostModal onClose={() => setShowNew(false)} onCreated={post => { setPosts(prev => [post, ...prev]); }} />}
-        {editPost && <EditPostModal post={editPost} onClose={() => setEditPost(null)} onUpdated={updated => setPosts(prev => prev.map(p => p.id === updated.id ? { ...p, ...updated } : p))} />}
+        {showNew && <NewPostModal onClose={() => setShowNew(false)} onCreated={post => { setPosts(prev => [post, ...prev]); setFeedRefresh(k => k + 1); }} />}
+        {editPost && <EditPostModal post={editPost} onClose={() => setEditPost(null)} onUpdated={updated => { setPosts(prev => prev.map(p => p.id === updated.id ? { ...p, ...updated } : p)); setFeedRefresh(k => k + 1); }} />}
         {chatUser && <ChatPanel user={chatUser} onClose={() => setChatUser(null)} />}
 
         {/* Hero banner */}
@@ -940,7 +975,7 @@ export default function CommunityPage() {
         <PortfolioSpotlights onMessage={setChatUser} />
 
         {/* Unified Activity Feed — discussions, enrolments, new members & more */}
-        <ActivityFeed />
+        <ActivityFeed currentUserId={user?.id} onMessage={setChatUser} onEdit={setEditPost} refreshKey={feedRefresh} />
 
       </div>
     </SidebarLayout>

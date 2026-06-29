@@ -116,6 +116,26 @@ router.get('/activity-feed', authenticate, async (req, res) => {
       ...(ACTIVITY_META[item.type] || { icon: '📌', color: '#64748b', label: item.type }),
     }));
 
+    // For community_post activities (discussions, shared projects, showcases),
+    // attach the full post so the feed can render a rich card with all details.
+    const postIds = enriched.filter(i => i.type === 'community_post' && i.postId).map(i => i.postId);
+    if (postIds.length > 0) {
+      const [posts, myLikes] = await Promise.all([
+        prisma.communityPost.findMany({ where: { id: { in: postIds } }, select: postSelect }),
+        prisma.communityLike.findMany({
+          where: { userId: req.user.id, postId: { in: postIds }, commentId: null },
+          select: { postId: true },
+        }),
+      ]);
+      const likedSet = new Set(myLikes.map(l => l.postId));
+      const postMap = new Map(posts.map(p => [p.id, { ...p, likedByMe: likedSet.has(p.id) }]));
+      enriched.forEach(item => {
+        if (item.type === 'community_post' && item.postId && postMap.has(item.postId)) {
+          item.post = postMap.get(item.postId);
+        }
+      });
+    }
+
     return success(res, {
       activities: enriched,
       total,
