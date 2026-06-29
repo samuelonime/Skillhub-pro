@@ -10,7 +10,7 @@ const navItems = [
   { href: '/dashboard/courses',     icon: 'fa-book-open',     label: 'Courses' },
   {
     icon: 'fa-sparkles',
-    label: 'Next Gen',
+    label: 'Next Generation',
     children: [
       { href: '/dashboard/career-oracle',   icon: 'fa-brain',               label: 'Career Oracle' },
       { href: '/dashboard/skill-coach',     icon: 'fa-heart-pulse',         label: 'Skill Coach' },
@@ -49,7 +49,10 @@ const D = {
 };
 
 function timeAgo(d: string) {
-  const s = Math.floor((Date.now() - new Date(d).getTime()) / 1000);
+  if (!d) return '';
+  const t = new Date(d).getTime();
+  if (isNaN(t)) return '';
+  const s = Math.floor((Date.now() - t) / 1000);
   if (s < 60)    return 'Now';
   if (s < 3600)  return `${Math.floor(s / 60)}m`;
   if (s < 86400) return `${Math.floor(s / 3600)}h`;
@@ -110,25 +113,58 @@ export default function MessagesPage() {
 
   useEffect(() => { bottomRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [activeContact, messages]);
 
-  // Load persisted conversation history (last 24h) when a contact is opened
+  // Load persisted conversation history (last 24h) when a contact is opened,
+  // then keep it live by polling every 5 seconds.
   useEffect(() => {
     if (!activeContact) return;
     let cancelled = false;
-    apiFetch(`/community/messages/${activeContact.id}`)
-      .then(res => {
-        if (cancelled || !res.success || !Array.isArray(res.data)) return;
-        const history = res.data.map((m: any) => ({
-          id: m.id,
-          from: m.mine ? 'me' : 'them',
-          text: m.body,
-          time: m.createdAt,
-        }));
-        setMessages(prev => ({ ...prev, [activeContact.id]: history }));
-        // Clear unread badge for this contact locally
-        setContacts(prev => prev.map(c => c.id === activeContact.id ? { ...c, unread: 0 } : c));
-      })
-      .catch(() => {});
-    return () => { cancelled = true; };
+
+    const loadConversation = () => {
+      apiFetch(`/community/messages/${activeContact.id}`)
+        .then(res => {
+          if (cancelled || !res.success || !Array.isArray(res.data)) return;
+          const history = res.data.map((m: any) => ({
+            id: m.id,
+            from: m.mine ? 'me' : 'them',
+            text: m.body,
+            time: m.createdAt,
+          }));
+          setMessages(prev => {
+            const existing = prev[activeContact.id] || [];
+            // Only update if the server has something new (avoids needless re-renders)
+            if (existing.length === history.length &&
+                existing[existing.length - 1]?.id === history[history.length - 1]?.id) {
+              return prev;
+            }
+            return { ...prev, [activeContact.id]: history };
+          });
+          setContacts(prev => prev.map(c => c.id === activeContact.id ? { ...c, unread: 0 } : c));
+        })
+        .catch(() => {});
+    };
+
+    loadConversation();
+    const interval = setInterval(loadConversation, 5000);
+    return () => { cancelled = true; clearInterval(interval); };
+  }, [activeContact]);
+
+  // Keep the contacts list (last message + unread counts) live, every 8s
+  useEffect(() => {
+    const refreshContacts = () => {
+      apiFetch('/community/contacts')
+        .then(res => {
+          if (res.success && Array.isArray(res.data)) {
+            setContacts(prev => {
+              // Preserve the locally-cleared unread for the open contact
+              return res.data.map((c: any) =>
+                activeContact && c.id === activeContact.id ? { ...c, unread: 0 } : c);
+            });
+          }
+        })
+        .catch(() => {});
+    };
+    const interval = setInterval(refreshContacts, 8000);
+    return () => clearInterval(interval);
   }, [activeContact]);
 
   const filtered = contacts.filter(c =>
@@ -256,7 +292,7 @@ export default function MessagesPage() {
                         <span style={{ fontSize: 13, fontWeight: 700, color: isActive ? D.accent : D.text, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                           {contact.firstName} {contact.lastName}
                         </span>
-                        <span style={{ fontSize: 10.5, color: D.muted, flexShrink: 0, marginLeft: 6 }}>{timeAgo(contact.lastTime)}</span>
+                        {contact.lastTime && <span style={{ fontSize: 10.5, color: D.muted, flexShrink: 0, marginLeft: 6 }}>{timeAgo(contact.lastTime)}</span>}
                       </div>
                       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 6 }}>
                         <span style={{ fontSize: 11.5, color: D.muted, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{contact.lastMessage}</span>

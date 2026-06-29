@@ -82,7 +82,10 @@ const ACTIVITY_META: Record<string, { icon: string; color: string; label: string
 };
 
 function timeAgo(d: string) {
-  const s = Math.floor((Date.now() - new Date(d).getTime()) / 1000);
+  if (!d) return '';
+  const t = new Date(d).getTime();
+  if (isNaN(t)) return '';
+  const s = Math.floor((Date.now() - t) / 1000);
   if (s < 60)    return 'Just now';
   if (s < 3600)  return `${Math.floor(s / 60)}m ago`;
   if (s < 86400) return `${Math.floor(s / 3600)}h ago`;
@@ -216,6 +219,27 @@ function ActivityFeed({ currentUserId, onMessage, onEdit, refreshKey }: {
 
   useEffect(() => { setPage(1); setItems([]); setLoading(true); fetchFeed(1, filter); }, [filter, fetchFeed, refreshKey]);
   useEffect(() => { if (page > 1) fetchFeed(page, filter); }, [page, fetchFeed, filter]);
+
+  // Live updates: every 15s, check page 1 and prepend any brand-new activities.
+  // This keeps the feed fresh without disturbing scroll position or pagination.
+  useEffect(() => {
+    const poll = setInterval(async () => {
+      try {
+        const params = new URLSearchParams({ page: '1' });
+        if (filter) params.set('type', filter);
+        const res = await apiFetch(`/community/activity-feed?${params}`);
+        if (!res.success) return;
+        const fresh: any[] = res.data.activities || [];
+        setItems(prev => {
+          if (prev.length === 0) return fresh;
+          const existingIds = new Set(prev.map((i: any) => i.id));
+          const newOnes = fresh.filter((i: any) => !existingIds.has(i.id));
+          return newOnes.length ? [...newOnes, ...prev] : prev;
+        });
+      } catch { /* ignore */ }
+    }, 15000);
+    return () => clearInterval(poll);
+  }, [filter]);
 
   // Infinite scroll
   useEffect(() => {
