@@ -353,7 +353,7 @@ export function SidebarLayout({ children, navItems, pageTitle }: SidebarLayoutPr
       {mobileOpen && <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-99 md:hidden transition-opacity duration-300" onClick={() => setMobileOpen(false)} />}
 
       <aside
-        className={`fixed top-0 left-0 z-100 w-70 h-full transition-transform duration-300 ease-in-out md:translate-x-0 md:relative ${mobileOpen ? 'translate-x-0' : '-translate-x-full'}`}
+        className={`fixed top-0 left-0 z-100 w-70 h-full transition-transform duration-300 ease-in-out md:translate-x-0 ${mobileOpen ? 'translate-x-0' : '-translate-x-full'}`}
         style={{ background: '#080C14', borderRight: '1px solid rgba(255,255,255,0.06)', display: 'flex', flexDirection: 'column' }}
       >
         <div className="flex items-center justify-between px-5 py-5 shrink-0" style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
@@ -461,7 +461,7 @@ export function SidebarLayout({ children, navItems, pageTitle }: SidebarLayoutPr
         </div>
       </aside>
 
-      <div className="flex-1 flex flex-col min-h-screen w-full overflow-x-hidden">
+      <div className="flex-1 flex flex-col min-h-screen w-full overflow-x-hidden md:pl-70">
         <header className="h-14 flex items-center justify-between px-4 md:px-6 sticky top-0 z-50 gap-4" style={{ background: 'rgba(8,12,20,0.95)', borderBottom: '1px solid rgba(255,255,255,0.06)', backdropFilter: 'blur(16px)', WebkitBackdropFilter: 'blur(16px)' }}>
           <button onClick={() => setMobileOpen(true)} className="md:hidden w-8 h-8 rounded-lg grid place-items-center cursor-pointer border-0 transition-all shrink-0" style={{ background: 'rgba(255,255,255,0.06)', color: 'rgba(255,255,255,0.6)' }}>
             <i className="fas fa-bars text-[13px]" />
