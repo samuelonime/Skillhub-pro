@@ -256,6 +256,8 @@ function UserAvatar({ user, size = 8 }: { user: any; size?: number }) {
 /* ── Sidebar (FIXED with working mobile menu AND SCROLLBAR) ─────────────────────────────────────────────── */
 export function SidebarLayout({ children, navItems, pageTitle }: SidebarLayoutProps) {
   const pathname = usePathname();
+  const router = useRouter();
+  const [searchQuery, setSearchQuery] = useState('');
   const [mobileOpen, setMobileOpen] = useState(false);
   const [showNotifs, setShowNotifs] = useState(false);
   const [showProfile, setShowProfile] = useState(false);
@@ -535,6 +537,13 @@ export function SidebarLayout({ children, navItems, pageTitle }: SidebarLayoutPr
               id="search-courses-jobs-skills"
               name="search_courses_jobs_skills"
               placeholder="Search courses, jobs, skills…"
+              value={searchQuery}
+              onChange={e => setSearchQuery(e.target.value)}
+              onKeyDown={e => {
+                if (e.key === 'Enter' && searchQuery.trim()) {
+                  router.push(`/dashboard/courses?search=${encodeURIComponent(searchQuery.trim())}`);
+                }
+              }}
               className="w-full pl-8 pr-3 py-2 rounded-xl text-[13px] font-[inherit] outline-none transition-all"
               style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)', color: 'rgba(255,255,255,0.7)' }}
               onFocus={e => { e.target.style.border = '1px solid rgba(79,142,247,0.4)'; e.target.style.background = 'rgba(79,142,247,0.06)'; }}

@@ -5,7 +5,7 @@ import { SidebarLayout } from '@/components/layout/SidebarLayout';
 import { apiFetch } from '@/lib/api';
 
 const navItems = [
- { href: '/dashboard',             icon: 'fa-home',          label: 'Dashboard' },
+  { href: '/dashboard',             icon: 'fa-home',          label: 'Dashboard' },
   { href: '/dashboard/courses',     icon: 'fa-book-open',     label: 'Courses' },
   {
     icon: 'fa-sparkles',
@@ -20,7 +20,7 @@ const navItems = [
   },
   { href: '/dashboard/community',   icon: 'fa-users',         label: 'Community' },
   { href: '/dashboard/portfolio',   icon: 'fa-layer-group',   label: 'Portfolio' },
-  { href: '/dashboard/resume',        icon: 'fa-file-lines',           label: 'Resume' },
+  { href: '/dashboard/resume',      icon: 'fa-file-lines',    label: 'Resume' },
   { href: '/dashboard/platforms',   icon: 'fa-graduation-cap',label: 'Learning Platforms' },
   { href: '/dashboard/jobs',        icon: 'fa-briefcase',     label: 'Jobs' },
   { href: '/dashboard/certificates',icon: 'fa-certificate',   label: 'Certificates' },
@@ -297,7 +297,7 @@ function CourseCard({ course, onEnroll, enrolling }: {
               </div>
             )}
             <span className="text-[11.5px] truncate" style={{ color: 'rgba(255,255,255,0.45)' }}>
-              {typeof course.instructor === 'object' ? course.instructor.name : course.instructor}
+              {course.instructor}
             </span>
           </div>
         )}
@@ -451,6 +451,13 @@ export default function CoursesClient() {
   const [enrolling, setEnrolling] = useState<string | null>(null);
 
   const PER_PAGE = 12;
+
+  // Pick up a search term passed from the global top-bar search (?search=…)
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const q = new URLSearchParams(window.location.search).get('search');
+    if (q) { setSearch(q); setSearchInput(q); }
+  }, []);
 
   const load = useCallback(async () => {
     setLoading(true);
