@@ -3,15 +3,16 @@ const { body, validationResult } = require('express-validator');
 const prisma  = require('../config/database');
 const { authenticate, requireRole, requireEmployerAccess } = require('../middleware/auth');
 const { success, created, notFound, badRequest, error } = require('../utils/response');
+const { scoreJobForUser } = require('../utils/jobMatching');
 
-// userSkills is now UserSkill[] from the relation — extract names for comparison
-function matchScore(userSkills, jobSkills) {
-  if (!userSkills?.length || !jobSkills?.length) return 40;
-  const userSkillNames = userSkills.map(s => (typeof s === 'string' ? s : s.name).toLowerCase());
-  const matched = userSkillNames.filter(s =>
-    jobSkills.some(js => js.toLowerCase().includes(s))
-  ).length;
-  return Math.min(100, 40 + matched * 20);
+function matchScore(user, job) {
+  return scoreJobForUser(user, {
+    title: job.title,
+    description: job.description,
+    location: job.location,
+    skills: job.skills || [],
+    salary: job.salary,
+  }, { includeNiche: false }).score;
 }
 
 function tierOf(coins) {
@@ -31,8 +32,6 @@ function meetsMinTier(userTier, jobMinTier) {
 router.get('/featured', authenticate, async (req, res) => {
   const coins  = req.user.meritCoins || 0;
   const tier   = tierOf(coins);
-  const skills = req.user.skills || [];
-
   try {
     const jobs = await prisma.job.findMany({
       where: { status: 'active', employerId: { not: null } },
@@ -62,7 +61,7 @@ router.get('/featured', authenticate, async (req, res) => {
         createdAt:   j.createdAt,
         applied:     j.applications.length > 0,
         saved:       j.savedBy.length > 0,
-        match:       matchScore(skills, j.skills || []),
+        match:       matchScore(req.user, j),
         adTier:      j.isPremium ? (j.minTier || 'gold') : 'standard',
       }))
       .sort((a, b) => {
@@ -81,8 +80,6 @@ router.get('/featured', authenticate, async (req, res) => {
 router.get('/matches', authenticate, async (req, res) => {
   const coins  = req.user.meritCoins || 0;
   const tier   = tierOf(coins);
-  const skills = req.user.skills || [];
-
   try {
     const jobs = await prisma.job.findMany({
       where: { status: 'active', employerId: { not: null } },
@@ -98,7 +95,7 @@ router.get('/matches', authenticate, async (req, res) => {
         ...j,
         applied: j.applications.length > 0,
         saved:   j.savedBy.length > 0,
-        match:   matchScore(skills, j.skills || []),
+        match:   matchScore(req.user, j),
         applications: undefined, savedBy: undefined,
       }))
       .filter(j => j.match >= 40)
@@ -136,7 +133,6 @@ router.get('/', authenticate, async (req, res) => {
   const { type, location, search } = req.query;
   const coins  = req.user.meritCoins || 0;
   const tier   = tierOf(coins);
-  const skills = req.user.skills || [];
   const niche  = req.user.interestNiche || null;
 
   try {
@@ -164,7 +160,7 @@ router.get('/', authenticate, async (req, res) => {
         applied:          j.applications.length > 0,
         saved:            j.savedBy.length > 0,
         applicationCount: j._count.applications,
-        match:            matchScore(skills, j.skills || []),
+        match:            matchScore(req.user, j),
         applications: undefined, savedBy: undefined, _count: undefined,
       }));
 
@@ -201,13 +197,14 @@ router.get('/', authenticate, async (req, res) => {
         applied:          false,
         saved:            false,
         applicationCount: 0,
-        match:            matchScore(skills, lead.skills || []),
+        match:            scoreJobForUser(req.user, lead).score,
       }));
     }
 
     const result = [...employerResult, ...scoutedResult]
       .sort((a, b) => {
         if (b.isPremium !== a.isPremium) return b.isPremium ? 1 : -1;
+        if (b.match !== a.match) return b.match - a.match;
         return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
       });
 

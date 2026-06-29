@@ -2,6 +2,10 @@ const router = require('express').Router();
 const prisma = require('../config/database');
 const { authenticate, requireRole } = require('../middleware/auth');
 const { success, error, badRequest } = require('../utils/response');
+const { scoreJobForUser } = require('../utils/jobMatching');
+
+const DEFAULT_SETTINGS = { jobAlerts: true, pushNotifs: true };
+const MIN_MATCH_SCORE = 45;
 
 // ── AI client (multi-provider with automatic fallback) ───────────────────────
 const { generateText, isAIConfigured } = require('../utils/aiClient');
@@ -35,12 +39,17 @@ router.get('/my-alerts', authenticate, async (req, res) => {
       prisma.jobScoutAlert.count({ where: { userId: req.user.id } }),
     ]);
 
+    const alertsWithMatch = alerts.map(alert => ({
+      ...alert,
+      match: scoreJobForUser(req.user, alert.lead),
+    }));
+
     const unread = await prisma.jobScoutAlert.count({
       where: { userId: req.user.id, opened: false },
     });
 
     return success(res, {
-      alerts,
+      alerts: alertsWithMatch,
       total,
       unread,
       page: parseInt(page),
@@ -216,27 +225,28 @@ async function persistAndFanOut(niche, jobs) {
   for (const job of jobs) {
     if (!job.url || !job.title || !job.company) continue;
     try {
+      const payload = {
+        title: job.title,
+        company: job.company,
+        location: job.location || null,
+        type: job.type || null,
+        salary: job.salary || null,
+        description: job.description || null,
+        url: job.url,
+        source: job.source || 'web',
+        niche,
+        skills: Array.isArray(job.skills) ? job.skills : [],
+        postedAt: job.postedAt ? new Date(job.postedAt) : null,
+      };
       const lead = await prisma.jobScoutLead.upsert({
         where: { url_niche: { url: job.url, niche } },
-        create: {
-          title: job.title,
-          company: job.company,
-          location: job.location || null,
-          type: job.type || null,
-          salary: job.salary || null,
-          description: job.description || null,
-          url: job.url,
-          source: job.source || 'web',
-          niche,
-          skills: Array.isArray(job.skills) ? job.skills : [],
-          postedAt: job.postedAt ? new Date(job.postedAt) : null,
-          status: 'pending',
-        },
+        create: { ...payload, status: 'pending' },
         update: {
+          ...payload,
           status: 'pending',
         },
       });
-      leads.push(lead);
+      leads.push({ ...lead, wasFresh: lead.fetchedAt.getTime() >= Date.now() - 60 * 1000 });
     } catch (e) {
       console.warn(`[JobScout] Failed to upsert lead "${job.title}":`, e.message);
     }
@@ -247,44 +257,7 @@ async function persistAndFanOut(niche, jobs) {
     return;
   }
 
-  // ── Step 4: Fan out alerts to matching students ──────────────────
-  const students = await prisma.user.findMany({
-    where: { interestNiche: niche, role: 'student', isActive: true },
-    select: { id: true },
-  });
-
-  // Batched fan-out: build all rows in memory, then two bulk inserts.
-  // skipDuplicates lets the DB ignore alerts that already exist (the
-  // @@unique([leadId, userId]) constraint), so re-runs are idempotent.
-  const alertRows = [];
-  const notifRows = [];
-  for (const lead of leads) {
-    for (const student of students) {
-      alertRows.push({ leadId: lead.id, userId: student.id });
-      notifRows.push({
-        userId: student.id,
-        type: 'info',
-        icon: 'briefcase',
-        title: `New ${niche} Job Alert 🔍`,
-        message: `${lead.title} at ${lead.company}${lead.location ? ' · ' + lead.location : ''} — check your Job Scout feed!`,
-      });
-    }
-  }
-
-  if (alertRows.length) {
-    const CHUNK = 1000;
-    for (let i = 0; i < alertRows.length; i += CHUNK) {
-      await prisma.jobScoutAlert.createMany({
-        data: alertRows.slice(i, i + CHUNK),
-        skipDuplicates: true,
-      });
-    }
-    for (let i = 0; i < notifRows.length; i += CHUNK) {
-      await prisma.notification.createMany({
-        data: notifRows.slice(i, i + CHUNK),
-      }).catch(() => {});
-    }
-  }
+  const deliveredAlerts = await deliverLeadsToStudents(niche, leads, { publishCommunity: true });
 
   // ── Step 5: Mark all leads as sent ──────────────────────────────
   await prisma.jobScoutLead.updateMany({
@@ -292,7 +265,142 @@ async function persistAndFanOut(niche, jobs) {
     data: { status: 'sent' },
   });
 
-  console.log(`[JobScout] "${niche}": ${leads.length} leads → ${students.length} students`);
+  console.log(`[JobScout] "${niche}": ${leads.length} leads → ${deliveredAlerts} matched alerts across niche delivery`);
+}
+
+async function deliverLeadsToStudents(niche, leads, options = {}) {
+  const { publishCommunity = false } = options;
+
+  // ── Step 4: Fan out alerts to matching students ──────────────────
+  const students = await prisma.user.findMany({
+    where: { interestNiche: niche, role: 'student', isActive: true },
+    select: {
+      id: true,
+      firstName: true,
+      interestNiche: true,
+      title: true,
+      bio: true,
+      location: true,
+      skills: { select: { name: true } },
+      settings: { select: { jobAlerts: true, pushNotifs: true } },
+    },
+  });
+
+  let deliveredAlerts = 0;
+  for (const lead of leads) {
+    const matchedStudents = students
+      .map(student => ({
+        student,
+        match: scoreJobForUser(student, lead),
+      }))
+      .filter(({ student, match }) => {
+        const settings = student.settings || DEFAULT_SETTINGS;
+        return settings.jobAlerts !== false && match.score >= MIN_MATCH_SCORE;
+      })
+      .sort((left, right) => right.match.score - left.match.score);
+
+    if (publishCommunity && lead.wasFresh) {
+      await publishLeadToCommunity(lead, matchedStudents.length).catch(err => {
+        console.warn(`[JobScout] Community publish failed for "${lead.title}":`, err.message);
+      });
+    }
+
+    for (const { student, match } of matchedStudents) {
+      let alertCreated = false;
+      try {
+        await prisma.jobScoutAlert.create({
+          data: { leadId: lead.id, userId: student.id },
+        });
+        alertCreated = true;
+      } catch (err) {
+        if (err?.code !== 'P2002') {
+          console.warn(`[JobScout] Alert fan-out failed for user ${student.id}:`, err.message);
+        }
+      }
+
+      if (!alertCreated) {
+        continue;
+      }
+
+      deliveredAlerts += 1;
+
+      const reasonText = match.reasons.length ? ` Match: ${match.reasons.join(' · ')}.` : '';
+      await prisma.notification.create({
+        data: {
+          userId: student.id,
+          type: 'info',
+          icon: 'briefcase',
+          title: `${match.score}% match: ${lead.title}`,
+          message: `${lead.company}${lead.location ? ' · ' + lead.location : ''} from ${formatLeadSource(lead.source)}.${reasonText} Open Jobs to apply.`,
+        },
+      }).catch(() => {});
+    }
+  }
+
+  return deliveredAlerts;
+}
+
+let broadcasterUserIdPromise = null;
+
+async function getCommunityBroadcasterUserId() {
+  if (!broadcasterUserIdPromise) {
+    broadcasterUserIdPromise = prisma.user.findFirst({
+      where: { role: 'admin', isActive: true },
+      select: { id: true },
+    }).then(user => user?.id || null).catch(() => null);
+  }
+  return broadcasterUserIdPromise;
+}
+
+function formatLeadSource(source) {
+  return String(source || 'web')
+    .replace(/_/g, ' ')
+    .replace(/\b\w/g, char => char.toUpperCase());
+}
+
+async function publishLeadToCommunity(lead, audienceSize) {
+  const authorId = await getCommunityBroadcasterUserId();
+  if (!authorId) return;
+
+  const existing = await prisma.communityPost.findFirst({
+    where: { authorId, projectUrl: lead.url },
+    select: { id: true },
+  });
+  if (existing) return;
+
+  const post = await prisma.communityPost.create({
+    data: {
+      authorId,
+      title: `${lead.title} at ${lead.company}`,
+      body: [
+        `${lead.description || 'Fresh role discovered by Job Scout.'}`,
+        `Source: ${formatLeadSource(lead.source)}`,
+        lead.location ? `Location: ${lead.location}` : null,
+        lead.salary ? `Salary: ${lead.salary}` : null,
+        audienceSize > 0 ? `Matched to ${audienceSize} learner${audienceSize === 1 ? '' : 's'} based on profile fit.` : null,
+      ].filter(Boolean).join('\n\n'),
+      type: 'resource',
+      tags: [lead.niche, ...(lead.skills || []).slice(0, 4)].filter(Boolean),
+      projectUrl: lead.url,
+    },
+    select: { id: true },
+  });
+
+  await prisma.activityFeed.create({
+    data: {
+      userId: authorId,
+      type: 'community_post',
+      title: `Job Scout shared ${lead.title}`,
+      body: `New ${lead.niche} opportunity from ${lead.company}`,
+      postId: post.id,
+      metadata: {
+        source: lead.source,
+        niche: lead.niche,
+        matchedAudience: audienceSize,
+      },
+      isPublic: true,
+    },
+  }).catch(() => {});
 }
 
 // ── AI-generated job leads (fallback when web search is unavailable) ──────────
@@ -538,12 +646,17 @@ async function triggerScoutForNiche(niche) {
 
   // DB guard: skip if there are already fresh (<48h) leads for this niche
   try {
-    const fresh = await prisma.jobScoutLead.count({
+    const fresh = await prisma.jobScoutLead.findMany({
       where: { niche, fetchedAt: { gt: new Date(Date.now() - 48 * 60 * 60 * 1000) } },
+      orderBy: { fetchedAt: 'desc' },
+      take: 50,
     });
-    if (fresh > 0) {
-      // Still fan out existing fresh leads to this niche's students (handled by
-      // scoutForNiche's upsert path on next cron); for now just skip re-scouting.
+    if (fresh.length > 0) {
+      await deliverLeadsToStudents(
+        niche,
+        fresh.map(lead => ({ ...lead, wasFresh: false })),
+        { publishCommunity: false }
+      );
       return;
     }
   } catch { /* ignore and proceed */ }

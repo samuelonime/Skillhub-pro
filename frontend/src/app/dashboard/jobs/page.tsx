@@ -121,11 +121,11 @@ function OpportunityAd({ job, userTier, onApply, onSave, applying, saving }: any
       style={{ background: D.card, border: `1px solid ${job.isPremium ? D.purple + '50' : D.border}` }}>
       <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none rounded-2xl"
         style={{ background: `radial-gradient(circle at 10% 10%, ${lc}08 0%, transparent 60%)` }} />
-      {job.isPremium && <div className="h-[2px] w-full" style={{ background: t.gradient }} />}
+      {job.isPremium && <div className="h-0.5 w-full" style={{ background: t.gradient }} />}
       <div className="p-5 relative">
         <div className="flex items-start justify-between gap-3 mb-3">
           <div className="flex items-center gap-3 flex-1 min-w-0">
-            <div className="w-11 h-11 rounded-xl grid place-items-center font-jakarta font-bold text-base text-white flex-shrink-0" style={{ background: lc }}>
+            <div className="w-11 h-11 rounded-xl grid place-items-center font-jakarta font-bold text-base text-white shrink-0" style={{ background: lc }}>
               {(job.company || '?')[0].toUpperCase()}
             </div>
             <div className="min-w-0">
@@ -133,7 +133,7 @@ function OpportunityAd({ job, userTier, onApply, onSave, applying, saving }: any
               <p className="text-xs truncate" style={{ color: D.subtext }}>{job.company ? `${job.company} · ${job.location}` : job.location}</p>
             </div>
           </div>
-          <div className="flex flex-col items-end gap-1.5 flex-shrink-0">
+          <div className="flex flex-col items-end gap-1.5 shrink-0">
             {job.isPremium && (
               <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full"
                 style={{ background: t.color + '20', color: t.color, border: `1px solid ${t.color}30` }}>
@@ -166,7 +166,7 @@ function OpportunityAd({ job, userTier, onApply, onSave, applying, saving }: any
             {applying === job.id ? 'Applying…' : job.applied ? '✓ Applied' : 'Apply Now'}
           </button>
           <button disabled={saving === job.id} onClick={() => onSave(job.id, job.saved)}
-            className="w-10 h-10 rounded-xl border-0 cursor-pointer grid place-items-center flex-shrink-0 transition-all hover:opacity-80"
+            className="w-10 h-10 rounded-xl border-0 cursor-pointer grid place-items-center shrink-0 transition-all hover:opacity-80"
             style={{ background: job.saved ? D.accent + '18' : D.input, color: job.saved ? D.accent : D.muted }}>
             <i className="fas fa-bookmark text-sm" />
           </button>
@@ -187,7 +187,7 @@ function LockedTierTeaser({ targetTier, coinsNeeded }: { targetTier: TierKey; co
   return (
     <div className="relative rounded-2xl overflow-hidden" style={{ border: `1px dashed ${t.color}40`, background: t.color + '08' }}>
       <div className="p-5 flex items-center gap-4">
-        <div className="w-14 h-14 rounded-2xl grid place-items-center text-3xl flex-shrink-0" style={{ background: t.color + '18' }}>🔒</div>
+        <div className="w-14 h-14 rounded-2xl grid place-items-center text-3xl shrink-0" style={{ background: t.color + '18' }}>🔒</div>
         <div className="flex-1">
           <h3 className="font-jakarta font-bold text-[14px] mb-1" style={{ color: t.color }}>{t.icon} {t.label} Opportunities Locked</h3>
           <p className="text-xs mb-2" style={{ color: D.subtext }}>
@@ -209,6 +209,7 @@ export default function JobsPage() {
   const [featured, setFeatured]       = useState<any>(null);
   const [scouted, setScouted]         = useState<any[]>([]);
   const [allJobs, setAllJobs]         = useState<any[] | null>(null);
+  const [scoutUnread, setScoutUnread] = useState(0);
   const [selected, setSelected]       = useState<string | null>(null);
   const [search, setSearch]           = useState('');
   const [activeTab, setActiveTab]     = useState<'opportunities' | 'all' | 'saved' | 'applications'>('opportunities');
@@ -219,6 +220,15 @@ export default function JobsPage() {
   const [toast, setToast]             = useState('');
 
   function showToast(msg: string) { setToast(msg); setTimeout(() => setToast(''), 3000); }
+
+  async function markScoutOpened(alertId?: string) {
+    if (!alertId) return;
+    setScouted(prev => prev.map(job => job.alertId === alertId ? { ...job, opened: true } : job));
+    setScoutUnread(prev => Math.max(0, prev - 1));
+    try {
+      await apiFetch(`/job-scout/alerts/${alertId}/open`, { method: 'POST' });
+    } catch {}
+  }
 
   useEffect(() => {
     apiFetch('/jobs/featured')
@@ -231,6 +241,7 @@ export default function JobsPage() {
     apiFetch('/job-scout/my-alerts')
       .then(r => {
         if (r.success && Array.isArray(r.data?.alerts)) {
+          setScoutUnread(r.data?.unread || 0);
           const leads = r.data.alerts
             .filter((a: any) => a.lead)
             .map((a: any) => ({
@@ -244,15 +255,24 @@ export default function JobsPage() {
               salary:      a.lead.salary,
               description: a.lead.description,
               url:         a.lead.url,
+              applyUrl:    a.lead.url,
               source:      a.lead.source,
               skills:      a.lead.skills || [],
               postedAt:    a.lead.postedAt || a.lead.fetchedAt,
               opened:      a.opened,
+              match:       a.match?.score,
+              reasons:     a.match?.reasons || [],
             }));
           setScouted(leads);
-        } else setScouted([]);
+        } else {
+          setScouted([]);
+          setScoutUnread(0);
+        }
       })
-      .catch(() => setScouted([]));
+      .catch(() => {
+        setScouted([]);
+        setScoutUnread(0);
+      });
   }, []);
 
   useEffect(() => {
@@ -261,9 +281,13 @@ export default function JobsPage() {
   }, [activeTab]);
 
   async function applyJob(jobId: string) {
-    const job = (allJobs || []).find(j => j.id === jobId);
+    const job = [...(allJobs || []), ...scouted].find(j => j.id === jobId);
     if (job?.kind === 'scouted') {
-      window.open(job.applyUrl, '_blank', 'noreferrer');
+      await markScoutOpened(job.alertId);
+      try {
+        await apiFetch(`/job-scout/alerts/${job.alertId}/applied`, { method: 'POST' });
+      } catch {}
+      window.open(job.applyUrl || job.url, '_blank', 'noreferrer');
       return;
     }
     setApplying(jobId);
@@ -314,7 +338,7 @@ export default function JobsPage() {
 
   // ── Define tabs with proper typing ──────────────────────────────────────
   const tabs: Array<{ key: 'opportunities' | 'all' | 'saved' | 'applications'; label: string; badge?: number }> = [
-    { key: 'opportunities', label: '⭐ Opportunities' },
+    { key: 'opportunities', label: '⭐ Opportunities', badge: scoutUnread },
     { key: 'all',           label: 'All Jobs' },
     { key: 'saved',         label: 'Saved' },
     { key: 'applications',  label: 'My Applications' },
@@ -433,19 +457,24 @@ export default function JobsPage() {
                 </div>
                 <div className="flex flex-col gap-3">
                   {scouted.map((job: any) => (
-                    <div key={job.id} onClick={() => setSelected(job.id)}
+                    <div key={job.id} onClick={() => { setSelected(job.id); markScoutOpened(job.alertId); }}
                       className="rounded-2xl p-4 cursor-pointer transition-all"
-                      style={{ background: D.card, border: `1px solid ${selected === job.id ? D.purple : D.border}` }}>
+                      style={{ background: D.card, border: `1px solid ${selected === job.id ? D.purple : !job.opened ? D.amber : D.border}` }}>
                       <div className="flex items-start justify-between gap-3 flex-wrap">
                         <div className="min-w-0">
                           <div className="flex items-center gap-2 flex-wrap">
                             <h3 className="font-jakarta font-bold text-[14px] text-white">{job.title}</h3>
                             <span className="text-[9px] px-1.5 py-0.5 rounded font-bold uppercase" style={{ background: `${D.purple}20`, color: D.purple }}>Scouted</span>
+                            {!job.opened && <span className="text-[9px] px-1.5 py-0.5 rounded font-bold uppercase" style={{ background: `${D.amber}20`, color: D.amber }}>New</span>}
+                            {job.match != null && <span className="text-[10px] px-1.5 py-0.5 rounded font-bold" style={{ background: `${D.green}18`, color: D.green }}>{job.match}% match</span>}
                           </div>
                           <p className="text-[12px] mt-0.5" style={{ color: D.subtext }}>
                             {job.company} · {job.location} · <span style={{ color: D.muted }}>via {job.source}</span>
                           </p>
                           {job.salary && <p className="text-[12px] mt-1 font-semibold" style={{ color: D.green }}>{job.salary}</p>}
+                          {job.reasons?.length > 0 && (
+                            <p className="text-[11px] mt-1.5" style={{ color: D.muted }}>{job.reasons.join(' • ')}</p>
+                          )}
                           {job.skills?.length > 0 && (
                             <div className="flex flex-wrap gap-1.5 mt-2">
                               {job.skills.slice(0, 5).map((s: string) => (
@@ -455,7 +484,7 @@ export default function JobsPage() {
                           )}
                         </div>
                         <a href={job.url} target="_blank" rel="noreferrer" onClick={e => e.stopPropagation()}
-                          className="flex items-center gap-2 px-4 py-2 rounded-xl text-[12px] font-semibold no-underline flex-shrink-0 transition-all hover:opacity-80"
+                          className="flex items-center gap-2 px-4 py-2 rounded-xl text-[12px] font-semibold no-underline shrink-0 transition-all hover:opacity-80"
                           style={{ background: `linear-gradient(135deg, ${D.indigo}, ${D.purple})`, color: '#fff' }}>
                           View & Apply <i className="fas fa-arrow-up-right-from-square text-[10px]" />
                         </a>
@@ -509,7 +538,7 @@ export default function JobsPage() {
                         style={{ background: D.card, border: `2px solid ${isActive ? D.accent : D.border}` }}>
                         {job.isPremium && <div className="h-0.5 w-full rounded-full mb-3" style={{ background: 'linear-gradient(90deg,#5b4cf5,#7c3aed)' }} />}
                         <div className="flex items-start gap-3">
-                          <div className="w-10 h-10 rounded-xl grid place-items-center font-jakarta font-bold text-sm text-white flex-shrink-0" style={{ background: lc }}>
+                          <div className="w-10 h-10 rounded-xl grid place-items-center font-jakarta font-bold text-sm text-white shrink-0" style={{ background: lc }}>
                             {(job.company || '?')[0].toUpperCase()}
                           </div>
                           <div className="flex-1 min-w-0">
@@ -519,7 +548,7 @@ export default function JobsPage() {
                                 <p className="text-xs" style={{ color: D.subtext }}>{job.company ? `${job.company} · ${job.location}` : job.location}</p>
                               </div>
                               {job.match != null && (
-                                <span className="text-[11px] font-bold px-2 py-0.5 rounded-full flex-shrink-0" style={{ background: mbg, color: mc }}>{job.match}%</span>
+                                <span className="text-[11px] font-bold px-2 py-0.5 rounded-full shrink-0" style={{ background: mbg, color: mc }}>{job.match}%</span>
                               )}
                             </div>
                             <div className="flex items-center gap-2 mt-2 flex-wrap">
@@ -541,9 +570,9 @@ export default function JobsPage() {
                   })}
                 </div>
                 {detail && (
-                  <div className="w-[340px] flex-shrink-0 max-[1100px]:hidden">
+                  <div className="w-85 shrink-0 max-[1100px]:hidden">
                     <div className="rounded-2xl p-5 sticky top-20" style={{ background: D.card, border: `1px solid ${D.border}` }}>
-                      {detail.isPremium && <div className="h-[2px] w-full rounded-full mb-4" style={{ background: 'linear-gradient(90deg,#5b4cf5,#7c3aed)' }} />}
+                      {detail.isPremium && <div className="h-0.5 w-full rounded-full mb-4" style={{ background: 'linear-gradient(90deg,#5b4cf5,#7c3aed)' }} />}
                       {detail.kind === 'scouted' && (
                         <div className="mb-3 inline-flex items-center gap-1.5 text-[11px] font-bold px-2.5 py-1 rounded-full" style={{ background: D.indigo + '20', color: D.indigo }}>
                           {(SCOUT_SOURCE[detail.source] || SCOUT_SOURCE.other).icon} AI-Scouted from {detail.source?.replace('_', ' ')}
@@ -593,6 +622,9 @@ export default function JobsPage() {
                           <div className="h-1.5 rounded-full overflow-hidden" style={{ background: 'rgba(255,255,255,0.1)' }}>
                             <div className="h-full rounded-full" style={{ width: `${detail.match}%`, background: matchColor(detail.match)[1] }} />
                           </div>
+                          {detail.kind === 'scouted' && detail.reasons?.length > 0 && (
+                            <p className="text-[11px] mt-2" style={{ color: matchColor(detail.match)[1] }}>{detail.reasons.join(' • ')}</p>
+                          )}
                         </div>
                       )}
                       <div className="flex flex-col gap-2">
