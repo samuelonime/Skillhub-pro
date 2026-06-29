@@ -3,6 +3,30 @@
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useState, useEffect, useRef, useCallback } from 'react';
+import {
+  BarChart3,
+  BookOpen,
+  Brain,
+  BriefcaseBusiness,
+  Building2,
+  ChevronDown,
+  Circle,
+  Coins,
+  Crown,
+  FileText,
+  GraduationCap,
+  HeartPulse,
+  Home,
+  Layers3,
+  LayoutDashboard,
+  Search,
+  Settings,
+  Sparkles,
+  TrendingUp,
+  Users,
+  WandSparkles,
+  type LucideIcon,
+} from 'lucide-react';
 import { apiFetch, logout } from '@/lib/api';
 
 interface NavItem {
@@ -46,6 +70,34 @@ function routeForNotif(n: any): string | null {
 
 function iconFor(n: any) {
   return NOTIF_ICON[n.icon] || NOTIF_ICON[n.type] || { icon: 'fa-bell', color: '#6B7280' };
+}
+
+const SIDEBAR_ICON_MAP: Record<string, LucideIcon> = {
+  'fa-home': Home,
+  'fa-book-open': BookOpen,
+  'fa-sparkles': Sparkles,
+  'fa-brain': Brain,
+  'fa-heart-pulse': HeartPulse,
+  'fa-chart-line': TrendingUp,
+  'fa-users': Users,
+  'fa-wand-magic-sparkles': WandSparkles,
+  'fa-layer-group': Layers3,
+  'fa-file-lines': FileText,
+  'fa-graduation-cap': GraduationCap,
+  'fa-briefcase': BriefcaseBusiness,
+  'fa-certificate': Sparkles,
+  'fa-coins': Coins,
+  'fa-gear': Settings,
+  'fa-tachometer-alt': LayoutDashboard,
+  'fa-search': Search,
+  'fa-chart-bar': BarChart3,
+  'fa-building': Building2,
+  'fa-crown': Crown,
+};
+
+function SidebarMenuIcon({ icon, className = 'w-4 h-4' }: { icon: string; className?: string }) {
+  const Icon = SIDEBAR_ICON_MAP[icon] || Circle;
+  return <Icon className={className} strokeWidth={2} aria-hidden="true" />;
 }
 
 function TimeAgo({ date }: { date: string }) {
@@ -378,17 +430,17 @@ export function SidebarLayout({ children, navItems, pageTitle }: SidebarLayoutPr
                     <button
                       type="button"
                       onClick={() => setOpenGroups(prev => ({ ...prev, [item.label]: !prev[item.label] }))}
-                      className="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-[10px] text-[13px] font-medium no-underline transition-all relative"
+                      className="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-[10px] text-sm font-medium no-underline transition-all relative"
                       style={{
                         background: groupActive ? 'rgba(79,142,247,0.12)' : 'transparent',
-                        color: groupActive ? '#4F8EF7' : 'rgba(255,255,255,0.4)',
+                        color: '#FFFFFF',
                         border: groupActive ? '1px solid rgba(79,142,247,0.2)' : '1px solid transparent',
                       }}
                     >
                       {groupActive && <div className="absolute left-0 top-1/2 -translate-y-1/2 w-0.5 h-4 rounded-full" style={{ background: '#4F8EF7' }} />}
-                      <i className={`fas ${item.icon} w-4 text-center text-[12px]`} />
+                      <SidebarMenuIcon icon={item.icon} className="h-4.5 w-4.5 shrink-0" />
                       <span className="flex-1 text-left">{item.label}</span>
-                      <i className={`fas fa-chevron-down text-[10px] transition-transform ${isOpen ? 'rotate-180' : ''}`} />
+                      <ChevronDown className={`h-4 w-4 shrink-0 transition-transform ${isOpen ? 'rotate-180' : ''}`} strokeWidth={2} aria-hidden="true" />
                     </button>
                     {isOpen && (
                       <div className="mt-0.5 ml-3 pl-2 flex flex-col gap-0.5" style={{ borderLeft: '1px solid rgba(255,255,255,0.08)' }}>
@@ -399,15 +451,15 @@ export function SidebarLayout({ children, navItems, pageTitle }: SidebarLayoutPr
                               key={child.href}
                               href={child.href!}
                               onClick={() => setMobileOpen(false)}
-                              className="flex items-center gap-2.5 px-3 py-2 rounded-[10px] text-[12.5px] font-medium no-underline transition-all relative"
+                              className="flex items-center gap-2.5 px-3 py-2 rounded-[10px] text-[13px] font-medium no-underline transition-all relative"
                               style={{
                                 background: active ? 'rgba(79,142,247,0.12)' : 'transparent',
-                                color: active ? '#4F8EF7' : 'rgba(255,255,255,0.4)',
+                                color: '#FFFFFF',
                                 border: active ? '1px solid rgba(79,142,247,0.2)' : '1px solid transparent',
                               }}
                             >
                               {active && <div className="absolute left-0 top-1/2 -translate-y-1/2 w-0.5 h-4 rounded-full" style={{ background: '#4F8EF7' }} />}
-                              <i className={`fas ${child.icon} w-4 text-center text-[11px]`} />
+                              <SidebarMenuIcon icon={child.icon} className="h-4 w-4 shrink-0" />
                               <span className="flex-1 text-left">{child.label}</span>
                             </Link>
                           );
@@ -424,15 +476,15 @@ export function SidebarLayout({ children, navItems, pageTitle }: SidebarLayoutPr
                   key={item.href}
                   href={item.href!}
                   onClick={() => setMobileOpen(false)}
-                  className="flex items-center gap-2.5 px-3 py-2.5 rounded-[10px] text-[13px] font-medium mb-0.5 no-underline transition-all relative"
+                  className="flex items-center gap-2.5 px-3 py-2.5 rounded-[10px] text-sm font-medium mb-0.5 no-underline transition-all relative"
                   style={{
                     background: active ? 'rgba(79,142,247,0.12)' : 'transparent',
-                    color: active ? '#4F8EF7' : 'rgba(255,255,255,0.4)',
+                    color: '#FFFFFF',
                     border: active ? '1px solid rgba(79,142,247,0.2)' : '1px solid transparent',
                   }}
                 >
                   {active && <div className="absolute left-0 top-1/2 -translate-y-1/2 w-0.5 h-4 rounded-full" style={{ background: '#4F8EF7' }} />}
-                  <i className={`fas ${item.icon} w-4 text-center text-[12px]`} />
+                  <SidebarMenuIcon icon={item.icon} className="h-4.5 w-4.5 shrink-0" />
                   <span className="flex-1 text-left">{item.label}</span>
                   {item.badge ? <span className="text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full min-w-5 text-center" style={{ background: '#EF4444' }}>{item.badge}</span> : null}
                 </Link>
