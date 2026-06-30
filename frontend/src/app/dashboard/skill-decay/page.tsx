@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { SidebarLayout } from '@/components/layout/SidebarLayout';
 import { apiFetch } from '@/lib/api';
+import { BrandIcon } from '@/components/ui/BrandIcon';
 
 const navItems = [
   { href: '/dashboard',             icon: 'fa-home',          label: 'Dashboard' },
@@ -125,7 +126,7 @@ export default function SkillDecayPage() {
             {alerts.map((a: any) => (
               <div key={a.skill} className="flex items-start gap-3 px-4 py-3.5 rounded-xl"
                 style={{ background: 'rgba(248,113,113,0.08)', border: '1px solid rgba(248,113,113,0.2)' }}>
-                <i className="fas fa-triangle-exclamation mt-0.5" style={{ color: '#F87171' }} />
+                <BrandIcon name="fa-triangle-exclamation" className="mt-0.5" style={{ color: '#F87171' }} />
                 <p className="flex-1 text-[13px]" style={{ color: 'rgba(255,255,255,0.65)' }}>{a.message}</p>
                 <button onClick={() => refreshSkill(a.skill)} disabled={refreshing === a.skill}
                   className="text-[11px] font-semibold px-3 py-1.5 rounded-lg transition-all disabled:opacity-40 whitespace-nowrap"

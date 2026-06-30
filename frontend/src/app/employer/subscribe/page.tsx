@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { SidebarLayout } from '@/components/layout/SidebarLayout';
 import { apiFetch } from '@/lib/api';
 import { employerNavItems } from '@/lib/employerNav';
+import { BrandIcon } from '@/components/ui/BrandIcon';
 
 interface Plan {
   label:          string;
@@ -130,23 +131,23 @@ export default function SubscribePage() {
     <SidebarLayout navItems={employerNavItems} pageTitle="Employer Subscription">
       {/* Toast */}
       {toast && (
-        <div className={`fixed top-5 right-5 z-[999] px-5 py-3.5 rounded-2xl text-white text-sm font-semibold shadow-xl flex items-center gap-2 ${toastType === 'success' ? 'bg-[#0F1521] border border-[#00E5A0]/30' : 'bg-[#0F1521] border border-[#EF4444]/30'}`}
-          style={toastType === 'success' ? { color: '#00E5A0' } : { color: '#EF4444' }}>
-          <i className={`fas ${toastType === 'success' ? 'fa-check-circle' : 'fa-exclamation-circle'}`} />
+        <div className={`fixed top-5 right-5 z-999 px-5 py-3.5 rounded-2xl text-white text-sm font-semibold shadow-xl flex items-center gap-2 ${toastType === 'success' ? 'bg-[#0F1521] border border-[#00E5A0]/30' : 'bg-[#0F1521] border border-[#EF4444]/30'}`}
+          style={toastType === 'success' ? { color: '#2563eb' } : { color: '#EF4444' }}>
+          <BrandIcon name={toastType === 'success' ? 'fa-check-circle' : 'fa-exclamation-circle'} className="text-sm" />
           {toast}
         </div>
       )}
 
-      <div className="max-w-[860px] mx-auto">
+      <div className="max-w-215 mx-auto">
         {/* Header */}
         <div className="text-center mb-10">
           <div className="inline-flex items-center gap-2 px-4 py-1.5 text-xs font-bold rounded-full mb-4" style={{ background: 'rgba(79,142,247,0.12)', color: '#4F8EF7', border: '1px solid rgba(79,142,247,0.2)' }}>
-            <i className="fas fa-crown" /> Employer Plans
+            <BrandIcon name="fa-crown" className="text-xs" /> Employer Plans
           </div>
           <h1 className="font-jakarta font-extrabold text-[32px] mb-3" style={{ color: '#FFFFFF' }}>
             Choose your plan
           </h1>
-          <p className="text-[15px] max-w-[480px] mx-auto" style={{ color: 'rgba(255,255,255,0.45)' }}>
+          <p className="text-[15px] max-w-120 mx-auto" style={{ color: 'rgba(255,255,255,0.45)' }}>
             Get full access to all employer features. Post jobs, find talent, and grow your team.
           </p>
 
@@ -157,7 +158,7 @@ export default function SubscribePage() {
                 color: accessStatus.hasAccess ? '#00E5A0' : '#EF4444',
                 border: `1px solid ${accessStatus.hasAccess ? 'rgba(0,229,160,0.2)' : 'rgba(239,68,68,0.2)'}`,
               }}>
-              <i className={`fas ${accessStatus.hasAccess ? 'fa-check-circle' : 'fa-exclamation-circle'}`} />
+              <BrandIcon name={accessStatus.hasAccess ? 'fa-check-circle' : 'fa-exclamation-circle'} className="text-sm" />
               {accessStatus.trialActive
                 ? `Free trial active — ${accessStatus.trialDaysLeft} day${accessStatus.trialDaysLeft !== 1 ? 's' : ''} remaining`
                 : accessStatus.subscription
@@ -220,7 +221,7 @@ export default function SubscribePage() {
                 )}
                 {active && (
                   <div className="absolute top-4 right-4 w-6 h-6 rounded-full grid place-items-center" style={{ background: '#4F8EF7' }}>
-                    <i className="fas fa-check text-white text-[10px]" />
+                    <BrandIcon name="fa-check" className="text-white text-[10px]" />
                   </div>
                 )}
 
@@ -273,7 +274,7 @@ export default function SubscribePage() {
                 <ul className="flex flex-col gap-2">
                   {FEATURES.map(f => (
                     <li key={f} className="flex items-center gap-2 text-[13px]" style={{ color: 'rgba(255,255,255,0.7)' }}>
-                      <i className="fas fa-check-circle text-[12px] flex-shrink-0" style={{ color: '#4F8EF7' }} />
+                      <BrandIcon name="fa-check-circle" className="text-[12px] shrink-0" style={{ color: '#4F8EF7' }} />
                       {f}
                     </li>
                   ))}
@@ -305,7 +306,7 @@ export default function SubscribePage() {
                     border: active ? '2px solid #4F8EF7' : '1px solid rgba(255,255,255,0.08)',
                   }}
                 >
-                  <i className={`fab ${icon} text-[22px]`} style={{ color: active ? '#4F8EF7' : 'rgba(255,255,255,0.4)' }} />
+                  <BrandIcon name={icon === 'fa-paypal' ? 'fab fa-paypal' : icon} className="text-[22px]" style={{ color: active ? '#4F8EF7' : 'rgba(255,255,255,0.4)' }} />
                   <span className="text-[13px] font-bold" style={{ color: active ? '#fff' : 'rgba(255,255,255,0.6)' }}>{label}</span>
                   <span className="text-[10px]" style={{ color: 'rgba(255,255,255,0.3)' }}>{sub}</span>
                 </button>
@@ -317,7 +318,7 @@ export default function SubscribePage() {
         {/* Exchange rate note */}
         {exchangeRate && (
           <div className="flex items-center gap-2 rounded-xl px-4 py-3 mb-6 text-[12px]" style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.06)', color: 'rgba(255,255,255,0.45)' }}>
-            <i className="fas fa-info-circle" style={{ color: '#4F8EF7' }} />
+            <BrandIcon name="fa-info-circle" className="text-sm" style={{ color: '#4F8EF7' }} />
             <span>
               {isUsd
                 ? `USD prices are fixed. PayPal handles conversion. ${rateNote}`
@@ -339,12 +340,12 @@ export default function SubscribePage() {
           >
             {processing ? (
               <>
-                <i className="fas fa-spinner fa-spin mr-2" />
+                <BrandIcon name="fa-spinner" className="mr-2 animate-spin" />
                 {isUsd ? 'Redirecting to PayPal…' : 'Redirecting to Paystack…'}
               </>
             ) : (
               <>
-                <i className={`${isUsd ? 'fab fa-paypal' : 'fas fa-lock'} mr-2 text-sm`} />
+                <BrandIcon name={isUsd ? 'fab fa-paypal' : 'fa-lock'} className="mr-2 text-sm" />
                 Subscribe — {ctaPrice}
               </>
             )}

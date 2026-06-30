@@ -2,9 +2,9 @@
 @import "tailwindcss";
 
 :root {
-  --brand: #2f6fed;
-  --brand-2: #17b5c2;
-  --brand-3: #8de1d8;
+  --brand: #2563eb;
+  --brand-2: #dc2626;
+  --brand-3: #fca5a5;
   --green: #17c17d;
   --amber: #f59e0b;
   --ink: #07111f;
@@ -12,15 +12,15 @@
   --ink-3: #16243a;
   --muted: #6d7a93;
   --muted-2: #9aa7bf;
-  --glow: rgba(47,111,237,0.28);
+  --glow: rgba(37,99,235,0.28);
 }
 
 html { scroll-behavior: smooth; background: #080C14; }
 
 body {
   background:
-    radial-gradient(circle at top, rgba(47,111,237,0.14), transparent 32%),
-    radial-gradient(circle at right 18% top 26%, rgba(23,181,194,0.10), transparent 20%),
+    radial-gradient(circle at top, rgba(37,99,235,0.16), transparent 34%),
+    radial-gradient(circle at right 18% top 26%, rgba(220,38,38,0.10), transparent 22%),
     linear-gradient(180deg, #07111f 0%, #091321 100%);
   font-family: 'Inter', sans-serif;
   -webkit-font-smoothing: antialiased;
@@ -30,7 +30,7 @@ body {
 }
 
 ::selection {
-  background: rgba(47,111,237,0.35);
+  background: rgba(37,99,235,0.35);
   color: #ffffff;
 }
 
@@ -87,7 +87,7 @@ body {
 }
 
 .grad-text {
-  background: linear-gradient(135deg, #ffffff 22%, #8de1d8 60%, #2f6fed 100%);
+  background: linear-gradient(135deg, #ffffff 22%, #fca5a5 58%, #2563eb 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -99,7 +99,7 @@ body {
   background-clip: text;
 }
 .brand-grad-text {
-  background: linear-gradient(90deg, #2f6fed, #17b5c2);
+  background: linear-gradient(90deg, #2563eb, #dc2626);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -137,7 +137,7 @@ body {
 
 /* Progress bar */
 .progress-bar { height: 6px; background: #e8e8f0; border-radius: 100px; overflow: hidden; }
-.progress-fill { height: 100%; background: #5b4cf5; border-radius: 100px; transition: width 0.5s ease; }
+.progress-fill { height: 100%; background: #2563eb; border-radius: 100px; transition: width 0.5s ease; }
 
 ::-webkit-scrollbar { width: 5px; height: 5px; }
 ::-webkit-scrollbar-track { background: transparent; }

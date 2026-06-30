@@ -4,6 +4,7 @@ import { SidebarLayout } from '@/components/layout/SidebarLayout';
 import { apiFetch } from '@/lib/api';
 import { employerNavItems } from '@/lib/employerNav';
 import { EmployerAccessGuard } from '@/app/employer/EmployerAccessGuard';
+import { BrandIcon } from '@/components/ui/BrandIcon';
 
 function Sk({h='h-4',w='w-full',r='rounded'}:any){return <div className={`${h} ${w} ${r} animate-pulse`} style={{background:'rgba(255,255,255,0.06)'}}/>;}
 
@@ -57,7 +58,7 @@ export default function AnalyticsPage(){
         ].map(s=>(
           <div key={s.label} className="rounded-2xl p-5 flex items-center gap-3" style={{background:'#0F1521', border:'1px solid rgba(255,255,255,0.07)'}}>
             <div className="w-11 h-11 rounded-xl grid place-items-center text-[17px] flex-shrink-0" style={{background:s.color + '18', color:s.color}}>
-              <i className={`fas ${s.icon}`}/>
+              <BrandIcon name={s.icon} className="text-[17px]"/>
             </div>
             <div>
               {s.value===null?<Sk h="h-7" w="w-10" r="rounded"/>:<div className="font-jakarta font-bold text-[22px]" style={{color:'rgba(255,255,255,0.85)'}}>{s.value}</div>}

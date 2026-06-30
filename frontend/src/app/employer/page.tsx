@@ -5,6 +5,7 @@ import { SidebarLayout } from '@/components/layout/SidebarLayout';
 import { apiFetch } from '@/lib/api';
 import { employerNavItems } from '@/lib/employerNav';
 import { EmployerAccessGuard } from '@/app/employer/EmployerAccessGuard';
+import { BrandIcon } from '@/components/ui/BrandIcon';
 
 const TIERS: Record<string, { label: string; icon: string; color: string; bg: string }> = {
   platinum: { label: 'Platinum', icon: '💎', color: '#A78BFA', bg: 'rgba(167,139,250,0.12)' },
@@ -29,8 +30,8 @@ function Avatar({ name, avatar, size = 8 }: { name: string; avatar?: string; siz
   const initials = (name || 'U').split(' ').map((n: string) => n[0]).join('').slice(0, 2).toUpperCase();
   const colors = ['#4F8EF7', '#00E5A0', '#F59E0B', '#A78BFA', '#EF4444', '#38BDF8'];
   const color = colors[initials.charCodeAt(0) % colors.length];
-  if (avatar) return <img src={avatar} alt={name} className={`w-${size} h-${size} rounded-full object-cover flex-shrink-0 border border-[rgba(255,255,255,0.1)]`} />;
-  return <div className={`w-${size} h-${size} rounded-full flex-shrink-0 grid place-items-center font-jakarta font-bold text-white text-xs`} style={{ background: color }}>{initials}</div>;
+  if (avatar) return <img src={avatar} alt={name} className={`w-${size} h-${size} rounded-full object-cover shrink-0 border border-[rgba(255,255,255,0.1)]`} />;
+  return <div className={`w-${size} h-${size} rounded-full shrink-0 grid place-items-center font-jakarta font-bold text-white text-xs`} style={{ background: color }}>{initials}</div>;
 }
 
 function PostJobModal({ onClose, onPosted }: { onClose: () => void; onPosted: () => void }) {
@@ -51,7 +52,7 @@ function PostJobModal({ onClose, onPosted }: { onClose: () => void; onPosted: ()
       <div className="rounded-2xl p-6 w-full max-w-xl shadow-2xl max-h-[90vh] overflow-y-auto" style={{ background: '#0F1521', border: '1px solid rgba(255,255,255,0.09)' }} onClick={e => e.stopPropagation()}>
         <div className="flex items-center justify-between mb-5">
           <h3 className="font-jakarta font-bold text-[17px]" style={{ color: 'rgba(255,255,255,0.85)' }}>Post a New Job</h3>
-          <button onClick={onClose} className="w-8 h-8 rounded-xl border-0 cursor-pointer grid place-items-center transition-all" style={{ background: 'rgba(255,255,255,0.06)', color: 'rgba(255,255,255,0.6)' }}><i className="fas fa-times text-xs" /></button>
+          <button onClick={onClose} className="w-8 h-8 rounded-xl border-0 cursor-pointer grid place-items-center transition-all" style={{ background: 'rgba(255,255,255,0.06)', color: 'rgba(255,255,255,0.6)' }}><BrandIcon name="fa-times" className="text-xs" /></button>
         </div>
         {err && <div className="mb-4 p-3 rounded-xl text-sm" style={{ background: 'rgba(239,68,68,0.1)', color: '#EF4444', border: '1px solid rgba(239,68,68,0.2)' }}>{err}</div>}
         <div className="flex flex-col gap-3">
@@ -148,7 +149,7 @@ export default function EmployerDashboardPage() {
       <SidebarLayout navItems={employerNavItems} pageTitle="Dashboard">
         {toast && (
           <div className="fixed top-5 right-5 z-50 text-white text-sm font-semibold px-5 py-3 rounded-xl shadow-xl flex items-center gap-2" style={{ background: '#0F1521', border: '1px solid rgba(79,142,247,0.3)' }}>
-            <i className="fas fa-check-circle" style={{ color: '#00E5A0' }} />{toast}
+            <BrandIcon name="fa-check-circle" className="text-sm" style={{ color: '#2563eb' }} />{toast}
           </div>
         )}
         {showPostJob && <PostJobModal onClose={() => setShowPostJob(false)} onPosted={() => { showToast('Job posted successfully!'); loadOverview(); }} />}
@@ -158,7 +159,7 @@ export default function EmployerDashboardPage() {
           style={{ background: 'linear-gradient(135deg, #0A1628 0%, #0D1F3C 50%, #0A1628 100%)', border: '1px solid rgba(79,142,247,0.15)' }}>
           <div className="absolute rounded-full pointer-events-none" style={{ top: -50, right: -50, width: 200, height: 200, background: 'rgba(79,142,247,0.15)' }} />
           <div className="absolute rounded-full pointer-events-none" style={{ bottom: -40, right: 100, width: 130, height: 130, background: 'rgba(0,229,160,0.08)' }} />
-          <div className="relative z-[1]">
+          <div className="relative z-1">
             {employer ? (
               <>
                 <p className="text-sm mb-1" style={{ color: 'rgba(79,142,247,0.8)' }}>{greeting} 👋</p>
@@ -170,9 +171,9 @@ export default function EmployerDashboardPage() {
             )}
           </div>
           <button onClick={() => setShowPostJob(true)}
-            className="relative z-[1] inline-flex items-center gap-2 px-5 py-3 text-white text-sm font-semibold rounded-xl border-0 cursor-pointer transition-all hover:-translate-y-px"
+            className="relative z-1 inline-flex items-center gap-2 px-5 py-3 text-white text-sm font-semibold rounded-xl border-0 cursor-pointer transition-all hover:-translate-y-px"
             style={{ background: '#4F8EF7', boxShadow: '0 4px 14px rgba(79,142,247,0.3)' }}>
-            <i className="fas fa-plus" /> Post a Job
+            <BrandIcon name="fa-plus" className="text-sm" /> Post a Job
           </button>
         </div>
 
@@ -187,7 +188,7 @@ export default function EmployerDashboardPage() {
             <div key={s.label} className="rounded-2xl p-5 transition-all hover:-translate-y-0.5" style={{ background: '#0F1521', border: '1px solid rgba(255,255,255,0.07)' }}>
               <div className="flex items-center gap-3">
                 <div className="w-11 h-11 rounded-xl grid place-items-center text-[17px] flex-shrink-0" style={{ background: s.color + '18', color: s.color }}>
-                  <i className={`fas ${s.icon}`} />
+                  <BrandIcon name={s.icon} className="text-[17px]" />
                 </div>
                 <div>
                   {s.value === undefined ? <Sk h="h-7" w="w-10" r="rounded" /> : <div className="font-jakarta font-bold text-[22px]" style={{ color: 'rgba(255,255,255,0.85)' }}>{s.value ?? 0}</div>}
@@ -241,11 +242,11 @@ export default function EmployerDashboardPage() {
           ].map(a => (
             a.action
               ? <button key={a.label} onClick={a.action} className="flex flex-col items-center gap-2 py-4 rounded-2xl cursor-pointer transition-all hover:scale-105" style={{ background: '#0F1521', border: '1px solid rgba(255,255,255,0.07)' }}>
-                <i className={`fas ${a.icon} text-xl`} style={{ color: a.color }} />
+                <BrandIcon name={a.icon} className="text-xl" style={{ color: a.color }} />
                 <span className="text-xs font-semibold" style={{ color: a.color }}>{a.label}</span>
               </button>
               : <a key={a.label} href={a.href} className="flex flex-col items-center gap-2 py-4 rounded-2xl no-underline transition-all hover:scale-105" style={{ background: '#0F1521', border: '1px solid rgba(255,255,255,0.07)' }}>
-                <i className={`fas ${a.icon} text-xl`} style={{ color: a.color }} />
+                <BrandIcon name={a.icon} className="text-xl" style={{ color: a.color }} />
                 <span className="text-xs font-semibold" style={{ color: a.color }}>{a.label}</span>
               </a>
           ))}
@@ -260,9 +261,9 @@ export default function EmployerDashboardPage() {
           {!overview ? <div className="flex flex-col gap-3">{[1, 2, 3, 4, 5].map(i => <Sk key={i} h="h-14" r="rounded-xl" />)}</div>
             : recent.length === 0 ? (
               <div className="py-10 text-center">
-                <i className="fas fa-users text-4xl mb-3 block" style={{ color: 'rgba(255,255,255,0.1)' }} />
+                <BrandIcon name="fa-users" className="text-4xl mb-3 block mx-auto" style={{ color: 'rgba(255,255,255,0.1)' }} />
                 <p className="text-sm mb-3" style={{ color: 'rgba(255,255,255,0.45)' }}>No applicants yet.</p>
-                <button onClick={() => setShowPostJob(true)} className="inline-flex items-center gap-2 px-4 py-2 text-white rounded-xl text-sm font-semibold border-0 cursor-pointer transition-all" style={{ background: '#4F8EF7' }}>Post your first job</button>
+                <button onClick={() => setShowPostJob(true)} className="inline-flex items-center gap-2 px-4 py-2 text-white rounded-xl text-sm font-semibold border-0 cursor-pointer transition-all" style={{ background: '#4F8EF7' }}><BrandIcon name="fa-plus" className="text-sm" />Post your first job</button>
               </div>
             ) : (
               <div className="overflow-x-auto">

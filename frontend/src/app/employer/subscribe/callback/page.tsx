@@ -3,6 +3,7 @@
 import { useEffect, useState, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { apiFetch } from '@/lib/api';
+import { BrandIcon } from '@/components/ui/BrandIcon';
 
 /**
  * Handles both payment provider callbacks:
@@ -95,7 +96,7 @@ function CallbackContent() {
     failed:    'fa-times-circle',
   };
   const colors: Record<string, string> = {
-    verifying: '#5b4cf5',
+    verifying: '#2563eb',
     success:   '#10b981',
     failed:    '#ef4444',
   };
@@ -105,14 +106,14 @@ function CallbackContent() {
       <div className="bg-white rounded-2xl p-10 max-w-md w-full text-center shadow-lg">
         <div className="w-20 h-20 rounded-full grid place-items-center mx-auto mb-6"
           style={{ background: `${colors[status]}18` }}>
-          <i className={`fas ${icons[status]} text-[36px]`} style={{ color: colors[status] }} />
+          <BrandIcon name={icons[status]} className="text-[36px]" style={{ color: colors[status] }} />
         </div>
 
         {/* Provider badge */}
         {provider && status === 'verifying' && (
           <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-semibold mb-4"
             style={{ background: '#f5f5fb', color: '#6b6b8a' }}>
-            <i className={`${provider === 'paypal' ? 'fab fa-paypal text-[#003087]' : 'fas fa-credit-card text-[#5b4cf5]'} text-sm`} />
+            <BrandIcon name={provider === 'paypal' ? 'fab fa-paypal' : 'fa-credit-card'} className="text-sm" style={{ color: provider === 'paypal' ? '#003087' : '#2563eb' }} />
             {provider === 'paypal' ? 'Confirming PayPal payment…' : 'Confirming Paystack payment…'}
           </div>
         )}
@@ -127,7 +128,7 @@ function CallbackContent() {
 
         {plan && status === 'success' && (
           <div className="bg-[#f0fdf4] border border-[#86efac] rounded-xl px-4 py-3 text-[#15803d] text-sm font-medium mb-6 capitalize">
-            <i className="fas fa-crown mr-2" />{plan} plan activated
+            <BrandIcon name="fa-crown" className="mr-2" />{plan} plan activated
           </div>
         )}
 
@@ -139,7 +140,7 @@ function CallbackContent() {
           <div className="flex flex-col gap-2">
             <button
               onClick={() => router.push('/employer/subscribe')}
-              className="w-full py-3 bg-[#5b4cf5] text-white font-bold rounded-xl border-0 cursor-pointer hover:bg-[#4c3ed4] transition-all"
+              className="w-full py-3 bg-[#2563eb] text-white font-bold rounded-xl border-0 cursor-pointer hover:bg-[#1d4ed8] transition-all"
             >
               Try Again
             </button>
@@ -161,7 +162,7 @@ export default function SubscribeCallbackPage() {
   return (
     <Suspense fallback={
       <div className="min-h-screen bg-[#f5f5fb] flex items-center justify-center">
-        <div className="w-10 h-10 border-[3px] border-[#e8e8f0] border-t-[#5b4cf5] rounded-full animate-spin" />
+        <div className="w-10 h-10 border-[3px] border-[#e8e8f0] border-t-[#2563eb] rounded-full animate-spin" />
       </div>
     }>
       <CallbackContent />

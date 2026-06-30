@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { SidebarLayout } from '@/components/layout/SidebarLayout';
 import { apiFetch } from '@/lib/api';
+import { BrandIcon } from '@/components/ui/BrandIcon';
 
 const navItems = [
   { href: '/dashboard',             icon: 'fa-home',          label: 'Dashboard' },
@@ -129,7 +130,7 @@ export default function SkillCoachPage() {
       <SidebarLayout navItems={navItems} pageTitle="Skill Coach">
         <div className="text-center py-12">
           <div className="mb-4">
-            <i className="fas fa-exclamation-triangle text-4xl mb-3" style={{ color: '#F87171' }} />
+            <BrandIcon name="fa-triangle-exclamation" className="text-4xl mb-3" style={{ color: '#F87171' }} />
             <p style={{ color: 'rgba(255,255,255,0.7)' }}>{error}</p>
           </div>
           <button 
@@ -225,7 +226,7 @@ export default function SkillCoachPage() {
           <Card className="mb-4">
             <div className="flex items-center gap-2 mb-4">
               <div className="w-8 h-8 rounded-xl grid place-items-center" style={{ background: 'rgba(245,158,11,0.15)' }}>
-                <i className="fas fa-comment-dots" style={{ color: '#F59E0B' }} />
+                <BrandIcon name="fa-comment-dots" style={{ color: '#F59E0B' }} />
               </div>
               <span className="font-jakarta font-semibold text-[14px] text-white/90">Coach Recommendation</span>
             </div>
@@ -236,7 +237,7 @@ export default function SkillCoachPage() {
               <div className="space-y-2 mb-4">
                 {intervention.actions.map((action: string, i: number) => (
                   <div key={i} className="flex items-start gap-3 p-3 rounded-xl" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)' }}>
-                    <i className="fas fa-circle-check mt-0.5 text-[11px]" style={{ color: '#00E5A0' }} />
+                    <BrandIcon name="fa-circle-check" className="mt-0.5 text-[11px]" style={{ color: '#00E5A0' }} />
                     <span className="text-[13px]" style={{ color: 'rgba(255,255,255,0.7)' }}>{action}</span>
                   </div>
                 ))}
@@ -244,7 +245,7 @@ export default function SkillCoachPage() {
             )}
             {intervention.sessionMinutes && (
               <div className="flex items-center gap-2 pt-3" style={{ borderTop: '1px solid rgba(255,255,255,0.06)' }}>
-                <i className="fas fa-clock text-[12px]" style={{ color: 'rgba(255,255,255,0.3)' }} />
+                <BrandIcon name="fa-clock" className="text-[12px]" style={{ color: 'rgba(255,255,255,0.3)' }} />
                 <span className="text-[12px]" style={{ color: 'rgba(255,255,255,0.4)' }}>
                   Recommended today:{' '}
                   <strong className="text-white/70">{intervention.sessionMinutes} minutes</strong>
@@ -258,7 +259,7 @@ export default function SkillCoachPage() {
         <Card>
           <div className="flex items-center gap-2 mb-1">
             <div className="w-8 h-8 rounded-xl grid place-items-center" style={{ background: 'rgba(79,142,247,0.15)' }}>
-              <i className="fas fa-signal" style={{ color: '#4F8EF7' }} />
+              <BrandIcon name="fa-signal" style={{ color: '#4F8EF7' }} />
             </div>
             <span className="font-jakarta font-semibold text-[14px] text-white/90">Record a Learning Signal</span>
           </div>
@@ -276,7 +277,7 @@ export default function SkillCoachPage() {
           </div>
           {signalSent && (
             <div className="mt-3 flex items-center gap-2 text-[12px]" style={{ color: '#00E5A0' }}>
-              <i className="fas fa-check-circle" /> Signal recorded.
+              <BrandIcon name="fa-check-circle" /> Signal recorded.
             </div>
           )}
         </Card>

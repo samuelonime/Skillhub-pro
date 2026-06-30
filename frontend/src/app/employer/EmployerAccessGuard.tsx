@@ -18,6 +18,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { apiFetch } from '@/lib/api';
+import { BrandIcon } from '@/components/ui/BrandIcon';
 
 // Keep in sync with PLANS.employer_monthly.amount in backend/src/routes/payment.js
 const EMPLOYER_MONTHLY_DISPLAY = '₦10,000';
@@ -39,7 +40,7 @@ interface Props {
 function Spinner() {
   return (
     <div className="flex items-center justify-center min-h-[60vh]">
-      <div className="w-10 h-10 border-[3px] border-[#e8e8f0] border-t-[#5b4cf5] rounded-full animate-spin" />
+      <div className="w-10 h-10 border-[3px] border-[#e8e8f0] border-t-[#2563eb] rounded-full animate-spin" />
     </div>
   );
 }
@@ -56,7 +57,7 @@ function TrialBanner({ daysLeft, onSubscribe }: { daysLeft: number; onSubscribe:
       }}
     >
       <div className="flex items-center gap-2.5">
-        <i className={`fas ${urgent ? 'fa-exclamation-circle' : 'fa-clock'} text-base`} />
+        <BrandIcon name={urgent ? 'fa-exclamation-circle' : 'fa-clock'} className="text-base" />
         <span>
           {daysLeft === 0
             ? 'Your free trial expires today.'
@@ -69,7 +70,7 @@ function TrialBanner({ daysLeft, onSubscribe }: { daysLeft: number; onSubscribe:
       <button
         onClick={onSubscribe}
         className="flex-shrink-0 px-4 py-1.5 rounded-lg text-white text-xs font-bold border-0 cursor-pointer transition-all"
-        style={{ background: urgent ? '#ef4444' : '#f59e0b' }}
+        style={{ background: '#2563eb' }}
       >
         Subscribe Now
       </button>
@@ -83,8 +84,8 @@ function Paywall({ trialExpired }: { trialExpired: boolean }) {
   return (
     <div className="flex flex-col items-center justify-center min-h-[70vh] text-center px-6">
       {/* Icon */}
-      <div className="w-20 h-20 rounded-full bg-[#f4f2ff] grid place-items-center mb-6">
-        <i className="fas fa-lock text-[32px] text-[#5b4cf5]" />
+      <div className="w-20 h-20 rounded-full bg-[#eff6ff] grid place-items-center mb-6">
+        <BrandIcon name="fa-lock" className="text-[32px] text-[#2563eb]" />
       </div>
 
       {/* Heading */}
@@ -108,7 +109,7 @@ function Paywall({ trialExpired }: { trialExpired: boolean }) {
           { icon: 'fa-star',       label: 'Shortlist candidates' },
         ].map(f => (
           <div key={f.label} className="flex items-center gap-2.5 bg-[#f5f5fb] rounded-xl px-4 py-3 text-sm text-[#2d2d42] font-medium">
-            <i className={`fas ${f.icon} text-[#5b4cf5] text-[13px] w-4 text-center`} />
+            <BrandIcon name={f.icon} className="text-[#2563eb] text-[13px] w-4 text-center" />
             {f.label}
           </div>
         ))}
@@ -116,7 +117,7 @@ function Paywall({ trialExpired }: { trialExpired: boolean }) {
 
       <button
         onClick={() => router.push('/employer/subscribe')}
-        className="px-8 py-4 bg-[#5b4cf5] text-white font-bold text-[15px] rounded-2xl border-0 cursor-pointer hover:bg-[#4c3ed4] transition-all shadow-lg shadow-[#5b4cf5]/25"
+        className="px-8 py-4 bg-[#2563eb] text-white font-bold text-[15px] rounded-2xl border-0 cursor-pointer hover:bg-[#1d4ed8] transition-all shadow-lg shadow-[#2563eb]/25"
       >
         View Plans & Subscribe
       </button>

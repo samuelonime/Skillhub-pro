@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { SidebarLayout } from '@/components/layout/SidebarLayout';
 import { apiFetch } from '@/lib/api';
+import { BrandIcon } from '@/components/ui/BrandIcon';
 
 const navItems = [
   { href: '/dashboard',             icon: 'fa-home',          label: 'Dashboard' },
@@ -256,7 +257,7 @@ export default function SettingsPage() {
                 }`}
                 style={tab !== t.key ? { color: 'rgba(255,255,255,0.6)' } : {}}
               >
-                <i className={`fas ${t.icon} w-4 text-center text-[13px]`} /> {t.label}
+                <BrandIcon name={t.icon} className="w-4 text-center text-[13px]" /> {t.label}
               </button>
             ))}
           </div>
@@ -286,7 +287,7 @@ export default function SettingsPage() {
                     <div className="absolute inset-0 rounded-full bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
                       {avatarUploading
                         ? <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                        : <i className="fas fa-camera text-white text-sm" />}
+                        : <BrandIcon name="fa-camera" className="text-white text-sm" />}
                     </div>
                   </div>
 

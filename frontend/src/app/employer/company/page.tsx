@@ -4,6 +4,7 @@ import { SidebarLayout } from '@/components/layout/SidebarLayout';
 import { apiFetch } from '@/lib/api';
 import { employerNavItems } from '@/lib/employerNav';
 import { EmployerAccessGuard } from '@/app/employer/EmployerAccessGuard';
+import { BrandIcon } from '@/components/ui/BrandIcon';
 
 function Sk({h='h-4',w='w-full',r='rounded'}:any){return <div className={`${h} ${w} ${r} animate-pulse`} style={{background:'rgba(255,255,255,0.06)'}}/>;}
 
@@ -45,11 +46,11 @@ export default function CompanyPage(){
   return (
     <EmployerAccessGuard>
     <SidebarLayout navItems={employerNavItems} pageTitle="Company Profile">
-      {toast&&<div className="fixed top-5 right-5 z-50 text-white text-sm font-semibold px-5 py-3 rounded-xl shadow-xl flex items-center gap-2" style={{background:'#0F1521', border:'1px solid rgba(79,142,247,0.3)'}}><i className="fas fa-check-circle" style={{color:'#00E5A0'}}/>{toast}</div>}
+      {toast&&<div className="fixed top-5 right-5 z-50 text-white text-sm font-semibold px-5 py-3 rounded-xl shadow-xl flex items-center gap-2" style={{background:'#0F1521', border:'1px solid rgba(79,142,247,0.3)'}}><BrandIcon name="fa-check-circle" className="text-sm" style={{color:'#2563eb'}}/>{toast}</div>}
 
       <div className="flex items-center justify-between mb-5">
         <div><h1 className="font-jakarta font-bold text-[21px] tracking-tight" style={{color:'#FFFFFF'}}>Company Profile</h1><p className="text-[13px]" style={{color:'rgba(255,255,255,0.45)'}}>This information is shown to students viewing your job posts.</p></div>
-        {!editing&&<button onClick={()=>setEditing(true)} className="inline-flex items-center gap-2 px-4 py-2.5 text-white rounded-xl text-sm font-semibold border-0 cursor-pointer transition-all" style={{background:'#4F8EF7'}} onMouseEnter={e=>{(e.currentTarget as HTMLElement).style.background='#6BA0FF'}} onMouseLeave={e=>{(e.currentTarget as HTMLElement).style.background='#4F8EF7'}}><i className="fas fa-pen"/>Edit Profile</button>}
+        {!editing&&<button onClick={()=>setEditing(true)} className="inline-flex items-center gap-2 px-4 py-2.5 text-white rounded-xl text-sm font-semibold border-0 cursor-pointer transition-all" style={{background:'#4F8EF7'}} onMouseEnter={e=>{(e.currentTarget as HTMLElement).style.background='#6BA0FF'}} onMouseLeave={e=>{(e.currentTarget as HTMLElement).style.background='#4F8EF7'}}><BrandIcon name="fa-pen" className="text-sm"/>Edit Profile</button>}
       </div>
 
       <div className="grid grid-cols-[1fr_320px] gap-4 max-[1100px]:grid-cols-1">
@@ -102,7 +103,7 @@ export default function CompanyPage(){
                     {label:'Website',      value:profile.companyWebsite,icon:'fa-globe'},
                   ].map(f=>(
                     <div key={f.label} className="flex items-start gap-2.5 p-3 rounded-xl" style={{background:'rgba(255,255,255,0.04)', border:'1px solid rgba(255,255,255,0.06)'}}>
-                      <i className={`fas ${f.icon} text-sm mt-0.5 flex-shrink-0`} style={{color:'#4F8EF7'}}/>
+                      <BrandIcon name={f.icon} className="text-sm mt-0.5 shrink-0" style={{color:'#4F8EF7'}}/>
                       <div><div className="text-[10px] uppercase tracking-wide font-semibold" style={{color:'rgba(255,255,255,0.45)'}}>{f.label}</div><div className="text-[13px] font-semibold mt-0.5" style={{color:'rgba(255,255,255,0.85)'}}>{f.value||<span style={{color:'rgba(255,255,255,0.35)'}}>Not set</span>}</div></div>
                     </div>
                   ))}
@@ -124,7 +125,7 @@ export default function CompanyPage(){
                 {icon:'fa-phone',     label:'Phone', value:profile.phone},
               ].map(f=>(
                 <div key={f.label} className="flex items-center gap-3 p-3 rounded-xl" style={{background:'rgba(255,255,255,0.04)', border:'1px solid rgba(255,255,255,0.06)'}}>
-                  <div className="w-8 h-8 rounded-lg grid place-items-center flex-shrink-0" style={{background:'rgba(79,142,247,0.12)'}}><i className={`fas ${f.icon} text-xs`} style={{color:'#4F8EF7'}}/></div>
+                  <div className="w-8 h-8 rounded-lg grid place-items-center shrink-0" style={{background:'rgba(79,142,247,0.12)'}}><BrandIcon name={f.icon} className="text-xs" style={{color:'#4F8EF7'}}/></div>
                   <div><div className="text-[10px] font-semibold" style={{color:'rgba(255,255,255,0.45)'}}>{f.label}</div><div className="text-[13px] font-semibold" style={{color:'rgba(255,255,255,0.85)'}}>{f.value||<span style={{color:'rgba(255,255,255,0.35)'}}>Not set</span>}</div></div>
                 </div>
               ))}

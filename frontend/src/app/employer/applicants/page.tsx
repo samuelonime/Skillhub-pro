@@ -4,6 +4,7 @@ import { SidebarLayout } from '@/components/layout/SidebarLayout';
 import { apiFetch } from '@/lib/api';
 import { employerNavItems } from '@/lib/employerNav';
 import { EmployerAccessGuard } from '@/app/employer/EmployerAccessGuard';
+import { BrandIcon } from '@/components/ui/BrandIcon';
 
 const TIERS: Record<string,{label:string;icon:string;color:string;bg:string}> = {
   platinum:{label:'Platinum',icon:'💎',color:'#A78BFA',bg:'rgba(167,139,250,0.12)'},
@@ -29,8 +30,8 @@ function Avatar({name,avatar,size=8}:{name:string;avatar?:string;size?:number}) 
   const initials=(name||'U').split(' ').map((n:string)=>n[0]).join('').slice(0,2).toUpperCase();
   const colors=['#4F8EF7','#00E5A0','#F59E0B','#A78BFA','#EF4444','#38BDF8'];
   const color=colors[initials.charCodeAt(0)%colors.length];
-  if(avatar) return <img src={avatar} alt={name} className={`w-${size} h-${size} rounded-full object-cover flex-shrink-0 border border-[rgba(255,255,255,0.1)]`}/>;
-  return <div className={`w-${size} h-${size} rounded-full flex-shrink-0 grid place-items-center font-jakarta font-bold text-white text-xs`} style={{background:color}}>{initials}</div>;
+  if(avatar) return <img src={avatar} alt={name} className={`w-${size} h-${size} rounded-full object-cover shrink-0 border border-[rgba(255,255,255,0.1)]`}/>;
+  return <div className={`w-${size} h-${size} rounded-full shrink-0 grid place-items-center font-jakarta font-bold text-white text-xs`} style={{background:color}}>{initials}</div>;
 }
 function StatusSelect({appId,current,onChange}:any) {
   const [loading,setLoading]=useState(false);
@@ -125,7 +126,7 @@ export default function ApplicantsPage() {
           <div className="rounded-2xl p-5 h-fit sticky top-20" style={{background:'#0F1521', border:'1px solid rgba(255,255,255,0.07)'}}>
             <div className="flex items-center justify-between mb-4">
               <span className="font-jakarta font-bold text-[14px]" style={{color:'rgba(255,255,255,0.85)'}}>Candidate Detail</span>
-              <button onClick={()=>setSelected(null)} className="w-7 h-7 rounded-lg border-0 cursor-pointer grid place-items-center text-xs transition-all" style={{background:'rgba(255,255,255,0.06)', color:'rgba(255,255,255,0.6)'}}><i className="fas fa-times"/></button>
+              <button onClick={()=>setSelected(null)} className="w-7 h-7 rounded-lg border-0 cursor-pointer grid place-items-center text-xs transition-all" style={{background:'rgba(255,255,255,0.06)', color:'rgba(255,255,255,0.6)'}}><BrandIcon name="fa-times"/></button>
             </div>
             <div className="flex items-center gap-3 mb-4"><Avatar name={selected.name} avatar={selected.avatar} size={12}/><div><div className="font-jakarta font-bold text-[15px]" style={{color:'rgba(255,255,255,0.85)'}}>{selected.name}</div><div className="text-sm" style={{color:'rgba(255,255,255,0.45)'}}>{selected.title}</div><div className="mt-1"><MeritBadge coins={selected.meritCoins}/></div></div></div>
             <div className="grid grid-cols-3 gap-2 mb-4">
@@ -134,7 +135,7 @@ export default function ApplicantsPage() {
               ))}
             </div>
             {selected.skills?.length>0&&<div className="mb-3"><div className="text-[11px] font-semibold uppercase tracking-wide mb-2" style={{color:'rgba(255,255,255,0.45)'}}>Skills</div><div className="flex flex-wrap gap-1.5">{selected.skills.map((s:any)=><span key={s.name} className="text-xs font-semibold px-2.5 py-1 rounded-lg" style={{background:'rgba(79,142,247,0.12)',color:'#4F8EF7', border:'1px solid rgba(79,142,247,0.2)'}}>{s.name}</span>)}</div></div>}
-            {selected.platforms?.length>0&&<div className="mb-3"><div className="text-[11px] font-semibold uppercase tracking-wide mb-2" style={{color:'rgba(255,255,255,0.45)'}}>Platforms</div><div className="flex flex-wrap gap-1.5">{selected.platforms.map((p:string)=><span key={p} className="text-[11px] font-semibold px-2.5 py-1 rounded-full" style={{background:'rgba(0,229,160,0.12)',color:'#00E5A0', border:'1px solid rgba(0,229,160,0.2)'}}><i className="fas fa-check-circle mr-1"/>{p}</span>)}</div></div>}
+            {selected.platforms?.length>0&&<div className="mb-3"><div className="text-[11px] font-semibold uppercase tracking-wide mb-2" style={{color:'rgba(255,255,255,0.45)'}}>Platforms</div><div className="flex flex-wrap gap-1.5">{selected.platforms.map((p:string)=><span key={p} className="text-[11px] font-semibold px-2.5 py-1 rounded-full inline-flex items-center" style={{background:'rgba(0,229,160,0.12)',color:'#00E5A0', border:'1px solid rgba(0,229,160,0.2)'}}><BrandIcon name="fa-check-circle" className="mr-1 text-[11px]"/>{p}</span>)}</div></div>}
             {selected.projects?.length>0&&(
               <div className="mb-3">
                 <div className="text-[11px] font-semibold uppercase tracking-wide mb-2" style={{color:'rgba(255,255,255,0.45)'}}>Projects ({selected.projects.length})</div>
@@ -146,8 +147,8 @@ export default function ApplicantsPage() {
                         <div className="font-semibold text-[12px] mb-1" style={{color:'rgba(255,255,255,0.85)'}}>{p.title}</div>
                         {(p.techStack||[]).length>0&&<div className="flex flex-wrap gap-1 mb-1.5">{(p.techStack||[]).slice(0,4).map((t:string)=><span key={t} className="text-[9px] font-bold px-1.5 py-0.5 rounded" style={{background:'rgba(79,142,247,0.12)',color:'#4F8EF7'}}>{t}</span>)}</div>}
                         <div className="flex gap-2">
-                          {p.liveUrl&&<a href={p.liveUrl} target="_blank" rel="noreferrer" className="text-[10px] font-semibold no-underline hover:underline" style={{color:'#4F8EF7'}}><i className="fas fa-external-link-alt mr-1"/>Live</a>}
-                          {p.githubUrl&&<a href={p.githubUrl} target="_blank" rel="noreferrer" className="text-[10px] font-semibold no-underline hover:underline" style={{color:'rgba(255,255,255,0.6)'}}><i className="fab fa-github mr-1"/>Code</a>}
+                          {p.liveUrl&&<a href={p.liveUrl} target="_blank" rel="noreferrer" className="text-[10px] font-semibold no-underline hover:underline inline-flex items-center" style={{color:'#4F8EF7'}}><BrandIcon name="fa-external-link-alt" className="mr-1"/>Live</a>}
+                          {p.githubUrl&&<a href={p.githubUrl} target="_blank" rel="noreferrer" className="text-[10px] font-semibold no-underline hover:underline inline-flex items-center" style={{color:'rgba(255,255,255,0.6)'}}><BrandIcon name="fab fa-github" className="mr-1"/>Code</a>}
                         </div>
                       </div>
                     </div>
@@ -173,7 +174,7 @@ export default function ApplicantsPage() {
           </div>
         ) : (
           <div className="rounded-2xl p-10 text-center h-fit" style={{background:'#0F1521', border:'1px solid rgba(255,255,255,0.07)'}}>
-            <i className="fas fa-mouse-pointer text-3xl mb-3 block" style={{color:'rgba(255,255,255,0.1)'}}/>
+            <BrandIcon name="fa-mouse-pointer" className="text-3xl mb-3 block mx-auto" style={{color:'rgba(255,255,255,0.1)'}}/>
             <p className="text-sm" style={{color:'rgba(255,255,255,0.35)'}}>Click a row to see candidate details</p>
           </div>
         )}

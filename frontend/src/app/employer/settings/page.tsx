@@ -4,6 +4,7 @@ import { SidebarLayout } from '@/components/layout/SidebarLayout';
 import { apiFetch } from '@/lib/api';
 import { employerNavItems } from '@/lib/employerNav';
 import { EmployerAccessGuard } from '@/app/employer/EmployerAccessGuard';
+import { BrandIcon } from '@/components/ui/BrandIcon';
 
 function Sk({h='h-4',w='w-full',r='rounded'}:any){return <div className={`${h} ${w} ${r} animate-pulse`} style={{background:'rgba(255,255,255,0.06)'}}/>;}
 
@@ -90,7 +91,7 @@ export default function SettingsPage(){
       {toast&&(
         <div className={`fixed top-5 right-5 z-50 text-white text-sm font-semibold px-5 py-3 rounded-xl shadow-xl flex items-center gap-2 ${toastType==='success'?'border':'bg-[#0F1521]'}`}
           style={toastType==='success'?{background:'#0F1521', border:'1px solid rgba(0,229,160,0.3)', color:'#00E5A0'}:{background:'#0F1521', border:'1px solid rgba(239,68,68,0.3)', color:'#EF4444'}}>
-          <i className={`fas ${toastType==='success'?'fa-check-circle':'fa-exclamation-circle'}`}/>{toast}
+          <BrandIcon name={toastType==='success'?'fa-check-circle':'fa-exclamation-circle'} className="text-sm" style={{ color: toastType === 'success' ? '#2563eb' : '#EF4444' }}/>{toast}
         </div>
       )}
 
@@ -124,7 +125,7 @@ export default function SettingsPage(){
                 ? {background:'rgba(79,142,247,0.12)', color:'#4F8EF7', border:'1px solid rgba(79,142,247,0.2)'}
                 : {color:'rgba(255,255,255,0.45)'}
               }>
-              <i className={`fas ${s.icon} text-[13px] w-4 text-center`}/>
+              <BrandIcon name={s.icon} className="text-[13px] w-4 text-center"/>
               {s.label}
             </button>
           ))}
@@ -230,7 +231,7 @@ export default function SettingsPage(){
                   placeholder="Repeat new password"
                 />
                 {pwForm.newPassword&&pwForm.confirmPassword&&pwForm.newPassword!==pwForm.confirmPassword&&(
-                  <p className="text-xs flex items-center gap-1.5" style={{color:'#EF4444'}}><i className="fas fa-exclamation-circle"/>Passwords do not match</p>
+                  <p className="text-xs flex items-center gap-1.5" style={{color:'#EF4444'}}><BrandIcon name="fa-exclamation-circle"/>Passwords do not match</p>
                 )}
                 <div className="pt-3" style={{borderTop:'1px solid rgba(255,255,255,0.06)'}}>
                   <button onClick={savePassword} disabled={savingPw||!pwForm.currentPassword||!pwForm.newPassword||!pwForm.confirmPassword}

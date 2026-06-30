@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { SidebarLayout } from '@/components/layout/SidebarLayout';
 import { apiFetch } from '@/lib/api';
+import { BrandIcon } from '@/components/ui/BrandIcon';
 
 const navItems = [
  { href: '/dashboard',             icon: 'fa-home',          label: 'Dashboard' },
@@ -28,10 +29,10 @@ const navItems = [
   { href: '/dashboard/settings',    icon: 'fa-gear',          label: 'Settings' },
 ];
 
-const COURSE_COLORS = ['#4F8EF7', '#00E5A0', '#F59E0B', '#A78BFA', '#F472B6', '#38BDF8'];
+const COURSE_COLORS = ['#4F8EF7', '#00E5A0', '#F59E0B', '#DC2626', '#F87171', '#38BDF8'];
 
 const MERIT_TIERS = [
-  { min: 5000, label: 'Platinum', icon: '💎', color: '#A78BFA' },
+  { min: 5000, label: 'Platinum', icon: '💎', color: '#DC2626' },
   { min: 2000, label: 'Gold',     icon: '🥇', color: '#F59E0B' },
   { min: 500,  label: 'Silver',   icon: '🥈', color: '#94A3B8' },
   { min: 0,    label: 'Bronze',   icon: '🥉', color: '#CD7C54' },
@@ -54,8 +55,8 @@ const ACTIVITY_ICONS: Record<string, { icon: string; color: string }> = {
   certificate:   { icon: 'fa-certificate',  color: '#00E5A0' },
   coins:         { icon: 'fa-coins',        color: '#F59E0B' },
   star:          { icon: 'fa-star',         color: '#F59E0B' },
-  'paper-plane': { icon: 'fa-paper-plane',  color: '#A78BFA' },
-  gift:          { icon: 'fa-gift',         color: '#A78BFA' },
+  'paper-plane': { icon: 'fa-paper-plane',  color: '#DC2626' },
+  gift:          { icon: 'fa-gift',         color: '#DC2626' },
   success:       { icon: 'fa-check-circle', color: '#00E5A0' },
   info:          { icon: 'fa-info-circle',  color: '#4F8EF7' },
 };
@@ -214,7 +215,7 @@ export default function DashboardPage() {
           <MetricCard value={stats?.activeCourses ?? <span className="opacity-30 text-2xl">—</span>}        label="Active Courses"    sub="In progress"         accent="#4F8EF7" />
           <MetricCard value={portfolio?.stats?.projectCount ?? 0}                                            label="Portfolio"         sub="Projects published"  accent="#00E5A0" />
           <MetricCard value={stats?.jobApplications ?? 0}                                                    label="Applications"      sub="Jobs applied"        accent="#F59E0B" />
-          <MetricCard value={portfolio?.stats?.certCount ?? 0}                                               label="Certificates"      sub="Verified"            accent="#A78BFA" />
+          <MetricCard value={portfolio?.stats?.certCount ?? 0}                                               label="Certificates"      sub="Verified"            accent="#DC2626" />
         </div>
 
         {/* ── Main 2-col grid ──────────────────────────────────────────── */}
@@ -228,14 +229,14 @@ export default function DashboardPage() {
             ) : courses.length === 0 ? (
               <div className="py-8 text-center">
                 <div className="w-10 h-10 rounded-full mx-auto mb-3 grid place-items-center" style={{ background: 'rgba(79,142,247,0.1)' }}>
-                  <i className="fas fa-book-open" style={{ color: '#4F8EF7' }} />
+                  <BrandIcon name="fa-book-open" style={{ color: '#4F8EF7' }} />
                 </div>
                 <p className="text-[13px] mb-2" style={{ color: 'rgba(255,255,255,0.35)' }}>No active courses yet.</p>
                 <a href="/dashboard/courses" className="text-[12px] font-semibold no-underline" style={{ color: '#4F8EF7' }}>Browse courses →</a>
               </div>
             ) : courses.map((c: any, i: number) => (
               <div key={c.id} className="flex items-center gap-3.5 py-3" style={{ borderBottom: i < courses.length - 1 ? '1px solid rgba(255,255,255,0.05)' : 'none' }}>
-                <div className="w-9 h-9 rounded-xl flex-shrink-0 grid place-items-center text-[13px] font-bold text-white/70"
+                <div className="w-9 h-9 rounded-xl shrink-0 grid place-items-center text-[13px] font-bold text-white/70"
                   style={{ background: COURSE_COLORS[i % COURSE_COLORS.length] + '22', border: `1px solid ${COURSE_COLORS[i % COURSE_COLORS.length]}30` }}>
                   {c.title?.charAt(0) ?? '?'}
                 </div>
@@ -245,7 +246,7 @@ export default function DashboardPage() {
                     <div className="flex-1 h-1 rounded-full overflow-hidden" style={{ background: 'rgba(255,255,255,0.08)' }}>
                       <div className="h-full rounded-full transition-all" style={{ width: `${c.progress}%`, background: COURSE_COLORS[i % COURSE_COLORS.length] }} />
                     </div>
-                    <span className="text-[11px] font-semibold flex-shrink-0" style={{ color: COURSE_COLORS[i % COURSE_COLORS.length] }}>{c.progress}%</span>
+                    <span className="text-[11px] font-semibold shrink-0" style={{ color: COURSE_COLORS[i % COURSE_COLORS.length] }}>{c.progress}%</span>
                   </div>
                 </div>
               </div>
@@ -269,7 +270,7 @@ export default function DashboardPage() {
             ) : jobs.length === 0 ? (
               <div className="py-8 text-center">
                 <div className="w-10 h-10 rounded-full mx-auto mb-3 grid place-items-center" style={{ background: 'rgba(245,158,11,0.1)' }}>
-                  <i className="fas fa-briefcase" style={{ color: '#F59E0B' }} />
+                  <BrandIcon name="fa-briefcase" style={{ color: '#F59E0B' }} />
                 </div>
                 <p className="text-[13px] mb-2" style={{ color: 'rgba(255,255,255,0.35)' }}>No job matches yet.</p>
                 <a href="/dashboard/jobs" className="text-[12px] font-semibold no-underline" style={{ color: '#4F8EF7' }}>Browse jobs →</a>
@@ -278,15 +279,15 @@ export default function DashboardPage() {
               const matchColor = job.match >= 85 ? '#00E5A0' : job.match >= 70 ? '#F59E0B' : '#F87171';
               return (
                 <div key={job.id} className="flex items-center gap-3 py-3" style={{ borderBottom: i < jobs.length - 1 ? '1px solid rgba(255,255,255,0.05)' : 'none' }}>
-                  <div className="w-9 h-9 rounded-xl grid place-items-center text-[12px] flex-shrink-0"
+                  <div className="w-9 h-9 rounded-xl grid place-items-center text-[12px] shrink-0"
                     style={{ background: 'rgba(255,255,255,0.06)', color: 'rgba(255,255,255,0.4)', border: '1px solid rgba(255,255,255,0.08)' }}>
-                    <i className="fas fa-building" />
+                    <BrandIcon name="fa-building" />
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="text-[13px] font-medium text-white/85 truncate">{job.title}</div>
                     <div className="text-[11px] mt-0.5" style={{ color: 'rgba(255,255,255,0.35)' }}>{job.company} · {job.location}</div>
                   </div>
-                  <div className="flex flex-col items-center flex-shrink-0">
+                  <div className="flex flex-col items-center shrink-0">
                     <span className="text-[12px] font-bold" style={{ color: matchColor }}>{job.match}%</span>
                     <span className="text-[9px] uppercase tracking-wide" style={{ color: 'rgba(255,255,255,0.25)' }}>match</span>
                   </div>
@@ -307,7 +308,7 @@ export default function DashboardPage() {
                 { icon: 'fa-plus',          label: 'Enroll Course',    accent: '#4F8EF7', href: '/dashboard/courses' },
                 { icon: 'fa-layer-group',   label: 'Add Project',      accent: '#00E5A0', href: '/dashboard/portfolio' },
                 { icon: 'fa-graduation-cap',label: 'Connect Platform', accent: '#F59E0B', href: '/dashboard/platforms' },
-                { icon: 'fa-paper-plane',   label: 'Browse Jobs',      accent: '#A78BFA', href: '/dashboard/jobs' },
+                { icon: 'fa-paper-plane',   label: 'Browse Jobs',      accent: '#2563EB', href: '/dashboard/jobs' },
                 { icon: 'fa-certificate',   label: 'Certificates',     accent: '#38BDF8', href: '/dashboard/certificates' },
                 { icon: 'fa-coins',         label: 'Buy Coins',        accent: '#F59E0B', href: '/dashboard/rewards' },
               ].map(a => (
@@ -316,7 +317,7 @@ export default function DashboardPage() {
                   style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.06)' }}>
                   <div className="w-7 h-7 rounded-lg grid place-items-center text-[12px]"
                     style={{ background: a.accent + '18', color: a.accent }}>
-                    <i className={`fas ${a.icon}`} />
+                    <BrandIcon name={a.icon} />
                   </div>
                   <span className="text-[11px] font-medium leading-tight" style={{ color: 'rgba(255,255,255,0.6)' }}>{a.label}</span>
                 </a>
@@ -335,7 +336,7 @@ export default function DashboardPage() {
                   { label: 'Projects',    value: portfolio?.stats?.projectCount ?? 0, accent: '#4F8EF7' },
                   { label: 'Avg Score',   value: portfolio?.stats?.avgScore || '—',   accent: '#F59E0B' },
                   { label: 'Total Views', value: portfolio?.stats?.totalViews ?? 0,   accent: '#00E5A0' },
-                  { label: 'Certs',       value: portfolio?.stats?.certCount ?? 0,    accent: '#A78BFA' },
+                  { label: 'Certs',       value: portfolio?.stats?.certCount ?? 0,    accent: '#DC2626' },
                 ].map(s => (
                   <div key={s.label} className="flex items-center justify-between py-2.5 px-3 rounded-xl"
                     style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.05)' }}>
@@ -363,7 +364,7 @@ export default function DashboardPage() {
                     ) : (
                       <a href="/dashboard/platforms" className="flex items-center gap-2 p-2 rounded-lg no-underline transition-all hover:opacity-80"
                         style={{ background: 'rgba(79,142,247,0.08)', border: '1px dashed rgba(79,142,247,0.25)' }}>
-                        <i className="fas fa-plus text-[11px]" style={{ color: '#4F8EF7' }} />
+                        <BrandIcon name="fa-plus" className="text-[11px]" style={{ color: '#4F8EF7' }} />
                         <span className="text-[11px] font-medium" style={{ color: '#4F8EF7' }}>Connect Udemy, Coursera & more</span>
                       </a>
                     )
@@ -385,15 +386,15 @@ export default function DashboardPage() {
             ) : (
               <div className="relative">
                 {/* Vertical timeline line */}
-                <div className="absolute left-[13px] top-2 bottom-2 w-px" style={{ background: 'rgba(255,255,255,0.07)' }} />
+                <div className="absolute left-3.25 top-2 bottom-2 w-px" style={{ background: 'rgba(255,255,255,0.07)' }} />
                 <div className="flex flex-col gap-0">
                   {activity.slice(0, 6).map((n: any, i: number) => {
                     const style = ACTIVITY_ICONS[n.icon] || ACTIVITY_ICONS[n.type] || { icon: 'fa-bell', color: '#6B7280' };
                     return (
                       <div key={n.id} className="flex items-start gap-3 py-3 pl-1 relative">
-                        <div className="w-6 h-6 rounded-full grid place-items-center text-[10px] flex-shrink-0 z-10 relative"
+                        <div className="w-6 h-6 rounded-full grid place-items-center text-[10px] shrink-0 z-10 relative"
                           style={{ background: '#0F1521', border: `1px solid ${style.color}40`, color: style.color }}>
-                          <i className={`fas ${style.icon}`} />
+                          <BrandIcon name={style.icon} />
                         </div>
                         <div className="flex-1 min-w-0 pt-0.5">
                           <div className="text-[12px] leading-snug" style={{ color: 'rgba(255,255,255,0.65)' }}>{n.message}</div>

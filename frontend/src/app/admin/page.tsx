@@ -56,7 +56,7 @@ function fmtDate(d: string) { return new Date(d).toLocaleDateString('en-NG', { d
 function initials(u: { firstName: string; lastName: string }) {
   return ((u.firstName?.[0] || '') + (u.lastName?.[0] || '')).toUpperCase();
 }
-const AVATAR_COLORS = ['#5b4cf5','#10b981','#f59e0b','#3b82f6','#ef4444','#8b5cf6','#ec4899','#06b6d4'];
+const AVATAR_COLORS = ['#2563eb','#10b981','#f59e0b','#3b82f6','#ef4444','#60a5fa','#ec4899','#06b6d4'];
 function avatarColor(s: string) { return AVATAR_COLORS[s.charCodeAt(0) % AVATAR_COLORS.length]; }
 
 /* ─── Skeleton ──────────────────────────────────────────────────────────── */
@@ -121,7 +121,7 @@ function Toggle({ on, onChange, loading }: { on: boolean; onChange: (v: boolean)
     <button
       onClick={() => !loading && onChange(!on)}
       disabled={loading}
-      className={`relative w-14 h-7 rounded-full border-0 cursor-pointer transition-all shrink-0 ${on ? 'bg-[#5b4cf5]' : 'bg-[#1e1e2e]'} ${loading ? 'opacity-50 cursor-not-allowed' : ''}`}
+      className={`relative w-14 h-7 rounded-full border-0 cursor-pointer transition-all shrink-0 ${on ? 'bg-[#2563eb]' : 'bg-[#1e1e2e]'} ${loading ? 'opacity-50 cursor-not-allowed' : ''}`}
       style={{ padding: 0 }}>
       <div className={`absolute top-1 w-5 h-5 bg-white rounded-full shadow-lg transition-all duration-300 ${on ? 'left-8.5' : 'left-1'}`} />
     </button>
@@ -323,7 +323,7 @@ export default function AdminPage() {
       <aside className="w-55 shrink-0 border-r border-[#13131f] flex flex-col pt-0 sticky top-0 h-screen">
         <div className="px-6 py-6 border-b border-[#13131f]">
           <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-xl bg-[#5b4cf5] grid place-items-center">
+            <div className="w-8 h-8 rounded-xl bg-[#2563eb] grid place-items-center">
               <BrandIcon name="fa-shield-halved" className="text-sm text-white" />
             </div>
             <div>
@@ -336,8 +336,8 @@ export default function AdminPage() {
         <nav className="flex-1 py-4 px-3">
           {NAV.map(n => (
             <button key={n.id} onClick={() => setTab(n.id)}
-              className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-[13px] font-medium mb-0.5 border-0 cursor-pointer transition-all text-left ${tab === n.id ? 'bg-[#5b4cf5]/15 text-[#7c6ff7] font-semibold' : 'bg-transparent text-[#4a4a65] hover:text-white hover:bg-[#13131f]'}`}>
-              <BrandIcon name={n.icon} className="w-4 text-center" style={{ color: tab === n.id ? '#5b4cf5' : undefined }} />
+              className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-[13px] font-medium mb-0.5 border-0 cursor-pointer transition-all text-left ${tab === n.id ? 'bg-[#2563eb]/15 text-[#60a5fa] font-semibold' : 'bg-transparent text-[#4a4a65] hover:text-white hover:bg-[#13131f]'}`}>
+              <BrandIcon name={n.icon} className="w-4 text-center" style={{ color: tab === n.id ? '#2563eb' : undefined }} />
               {n.label}
             </button>
           ))}
@@ -357,7 +357,7 @@ export default function AdminPage() {
         {toast && (
           <div className={`fixed top-5 right-5 z-50 flex items-center gap-2.5 px-5 py-3 rounded-2xl shadow-2xl text-sm font-semibold border backdrop-blur-sm animate-[fadeUp_0.2s_ease] ${
             toast.type === 'error'   ? 'bg-[#1a0a0a] border-[#3d1010] text-[#f87171]' :
-            toast.type === 'info'   ? 'bg-[#0d0d1a] border-[#2a2a50] text-[#a78bfa]' :
+            toast.type === 'info'   ? 'bg-[#0d1320] border-[#1d4ed8] text-[#60a5fa]' :
                                       'bg-[#0a1a12] border-[#103d20] text-[#4ade80]'}`}>
             <BrandIcon name={toast.type === 'error' ? 'fa-xmark-circle' : toast.type === 'info' ? 'fa-info-circle' : 'fa-check-circle'} />
             {toast.msg}
@@ -402,8 +402,8 @@ export default function AdminPage() {
             <div>
               {/* Quick billing banner on overview */}
               {billingEnabled !== null && (
-                <div className={`mb-6 rounded-2xl border p-4 flex items-center gap-4 ${billingEnabled ? 'bg-[#5b4cf5]/08 border-[#5b4cf5]/25' : 'bg-[#0d0d18] border-[#1e1e2e]'}`}>
-                  <div className={`w-9 h-9 rounded-xl grid place-items-center shrink-0 ${billingEnabled ? 'bg-[#5b4cf5] shadow-[0_0_20px_rgba(91,76,245,0.4)]' : 'bg-[#1e1e2e]'}`}>
+                <div className={`mb-6 rounded-2xl border p-4 flex items-center gap-4 ${billingEnabled ? 'bg-[#2563eb]/8 border-[#2563eb]/25' : 'bg-[#0d0d18] border-[#1e1e2e]'}`}>
+                  <div className={`w-9 h-9 rounded-xl grid place-items-center shrink-0 ${billingEnabled ? 'bg-[#2563eb] shadow-[0_0_20px_rgba(37,99,235,0.4)]' : 'bg-[#1e1e2e]'}`}>
                     <BrandIcon name={`fa-toggle-${billingEnabled ? 'on' : 'off'}`} className={`text-sm ${billingEnabled ? 'text-white' : 'text-[#4a4a65]'}`} />
                   </div>
                   <div className="flex-1">
@@ -423,14 +423,14 @@ export default function AdminPage() {
               ) : stats && (
                 <>
                   <div className="grid grid-cols-4 gap-4 mb-8">
-                    <StatCard icon="fa-users"            label="Total Users"   value={fmt(stats.users.total)}              sub={`${fmt(stats.users.students)} students`} accent="#5b4cf5" />
+                    <StatCard icon="fa-users"            label="Total Users"   value={fmt(stats.users.total)}              sub={`${fmt(stats.users.students)} students`} accent="#2563eb" />
                     <StatCard icon="fa-user-tie"         label="Employers"     value={fmt(stats.users.employers)}          sub="registered"                              accent="#f59e0b" />
                     <StatCard icon="fa-briefcase"        label="Active Jobs"   value={fmt(stats.jobs.active)}              sub={`${fmt(stats.jobs.total)} total`}         accent="#10b981" />
                     <StatCard icon="fa-paper-plane"      label="Applications"  value={fmt(stats.jobs.totalApplications)}   sub="all time"                                accent="#3b82f6" />
                     <StatCard icon="fa-book-open"        label="Courses"       value={fmt(stats.courses.total)}            sub="available"                               accent="#ec4899" />
                     <StatCard icon="fa-certificate"      label="Certificates"  value={fmt(stats.certificates.total)}       sub={`${fmt(stats.certificates.pending)} pending`} accent="#f59e0b" />
                     <StatCard icon="fa-coins"            label="Revenue"       value={`₦${fmt(stats.revenue.totalRevenue)}`} sub={`${fmt(stats.revenue.totalPayments)} payments`} accent="#10b981" />
-                    <StatCard icon="fa-chalkboard-user"  label="Instructors"   value={fmt(stats.users.instructors)}        sub="registered"                              accent="#a78bfa" />
+                    <StatCard icon="fa-chalkboard-user"  label="Instructors"   value={fmt(stats.users.instructors)}        sub="registered"                              accent="#60a5fa" />
                   </div>
 
                   {/* User breakdown bar */}
@@ -438,7 +438,7 @@ export default function AdminPage() {
                     <div className="text-[13px] font-semibold text-white mb-4">User Breakdown</div>
                     <div className="flex gap-3 mb-4">
                       {[
-                        { label: 'Students',    count: stats.users.students,    color: '#5b4cf5' },
+                        { label: 'Students',    count: stats.users.students,    color: '#2563eb' },
                         { label: 'Employers',   count: stats.users.employers,   color: '#f59e0b' },
                         { label: 'Instructors', count: stats.users.instructors, color: '#10b981' },
                       ].map(s => (
@@ -450,7 +450,7 @@ export default function AdminPage() {
                     </div>
                     <div className="flex rounded-full overflow-hidden h-2.5 gap-0.5">
                       {stats.users.total > 0 && [
-                        { c: stats.users.students,    color: '#5b4cf5' },
+                        { c: stats.users.students,    color: '#2563eb' },
                         { c: stats.users.employers,   color: '#f59e0b' },
                         { c: stats.users.instructors, color: '#10b981' },
                       ].map((s, i) => (
@@ -468,7 +468,7 @@ export default function AdminPage() {
                         {[
                           { label: 'Verified', value: stats.certificates.verified, color: '#10b981' },
                           { label: 'Pending',  value: stats.certificates.pending,  color: '#f59e0b' },
-                          { label: 'Total',    value: stats.certificates.total,    color: '#5b4cf5' },
+                          { label: 'Total',    value: stats.certificates.total,    color: '#2563eb' },
                         ].map(s => (
                           <div key={s.label} className="flex items-center justify-between">
                             <div className="flex items-center gap-2.5">
@@ -485,7 +485,7 @@ export default function AdminPage() {
                       <div className="space-y-3">
                         {[
                           { label: 'Active',       value: stats.jobs.active,            color: '#10b981' },
-                          { label: 'Total Posted', value: stats.jobs.total,             color: '#5b4cf5' },
+                          { label: 'Total Posted', value: stats.jobs.total,             color: '#2563eb' },
                           { label: 'Applications', value: stats.jobs.totalApplications, color: '#f59e0b' },
                         ].map(s => (
                           <div key={s.label} className="flex items-center justify-between">
@@ -513,12 +513,12 @@ export default function AdminPage() {
                   <BrandIcon name="fa-search" className="absolute left-3.5 top-1/2 -translate-y-1/2 text-sm text-[#3a3a55]" />
                   <input value={userSearch} onChange={e => setUserSearch(e.target.value)}
                     placeholder="Search users…"
-                    className="w-full pl-10 pr-4 py-2.5 bg-[#0d0d18] border border-[#1e1e2e] rounded-xl text-sm text-white placeholder-[#3a3a55] outline-none focus:border-[#5b4cf5] transition-all font-[inherit]" />
+                    className="w-full pl-10 pr-4 py-2.5 bg-[#0d0d18] border border-[#1e1e2e] rounded-xl text-sm text-white placeholder-[#3a3a55] outline-none focus:border-[#2563eb] transition-all font-[inherit]" />
                 </div>
                 <div className="flex gap-1.5">
                   {['', 'student', 'employer', 'instructor', 'admin'].map(r => (
                     <button key={r} onClick={() => setUserRole(r)}
-                      className={`px-3.5 py-2 rounded-xl text-xs font-semibold border-0 cursor-pointer capitalize transition-all ${userRole === r ? 'bg-[#5b4cf5] text-white' : 'bg-[#0d0d18] border border-[#1e1e2e] text-[#4a4a65] hover:text-white hover:border-[#2a2a40]'}`}>
+                      className={`px-3.5 py-2 rounded-xl text-xs font-semibold border-0 cursor-pointer capitalize transition-all ${userRole === r ? 'bg-[#2563eb] text-white' : 'bg-[#0d0d18] border border-[#1e1e2e] text-[#4a4a65] hover:text-white hover:border-[#2a2a40]'}`}>
                       {r || 'All'}
                     </button>
                   ))}
@@ -623,7 +623,7 @@ export default function AdminPage() {
                         <td className="px-5 py-3.5 text-[12px] text-[#6b6b8a]">{j.company}</td>
                         <td className="px-5 py-3.5 text-[12px] text-[#4a4a65]">{j.type}</td>
                         <td className="px-5 py-3.5">
-                          <span className="text-[12px] font-semibold text-[#5b4cf5]">
+                          <span className="text-[12px] font-semibold text-[#2563eb]">
                             <BrandIcon name="fa-paper-plane" className="mr-1 text-[10px]" />{j._count.applications}
                           </span>
                         </td>
@@ -683,7 +683,7 @@ export default function AdminPage() {
                         <td className="px-5 py-3.5">
                           {c.status === 'pending' ? (
                             <button onClick={() => verifyCert(c.id)} disabled={verifyingCert === c.id}
-                              className="px-3.5 py-1.5 rounded-lg text-[11px] font-semibold bg-[#5b4cf5] text-white border-0 cursor-pointer hover:bg-[#7c6ff7] transition-all disabled:opacity-50">
+                              className="px-3.5 py-1.5 rounded-lg text-[11px] font-semibold bg-[#2563eb] text-white border-0 cursor-pointer hover:bg-[#60a5fa] transition-all disabled:opacity-50">
                               {verifyingCert === c.id ? <><BrandIcon name="fa-spinner" className="mr-1 animate-spin" />Verifying…</> : <><BrandIcon name="fa-check" className="mr-1" />Verify</>}
                             </button>
                           ) : (
@@ -741,7 +741,7 @@ export default function AdminPage() {
                         ? `$${(p.amount / 100).toFixed(2)}`
                         : `₦${fmt(p.amount / 100)}`;
                       const providerLabel = p.provider === 'paypal' ? 'PayPal' : 'Paystack';
-                      const providerColor = p.provider === 'paypal' ? '#003087' : '#5b4cf5';
+                      const providerColor = p.provider === 'paypal' ? '#003087' : '#2563eb';
                       return (
                         <tr key={p.id} className="border-b border-[#13131f] hover:bg-[#0a0a14] transition-colors">
                           <td className="px-5 py-3.5">
@@ -793,7 +793,7 @@ export default function AdminPage() {
                   {/* Overview cards */}
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
                     {[
-                      { label: 'Total Clicks',   value: affiliate.overview.totalClicks.toLocaleString(),       sub: 'referral link clicks',   icon: 'fa-mouse-pointer', accent: '#5b4cf5' },
+                      { label: 'Total Clicks',   value: affiliate.overview.totalClicks.toLocaleString(),       sub: 'referral link clicks',   icon: 'fa-mouse-pointer', accent: '#2563eb' },
                       { label: 'Conversions',    value: affiliate.overview.totalConverted.toLocaleString(),     sub: `${affiliate.overview.conversionRate}% rate`, icon: 'fa-check-circle', accent: '#10b981' },
                       { label: 'Total Earned',   value: `$${affiliate.overview.totalCommission.toFixed(2)}`,    sub: 'all time',               icon: 'fa-coins',         accent: '#f59e0b' },
                       { label: 'Pending Payout', value: `$${affiliate.overview.pendingCommission.toFixed(2)}`,  sub: 'confirmed + locked',     icon: 'fa-clock',         accent: '#3b82f6' },
@@ -823,7 +823,7 @@ export default function AdminPage() {
                         </div>
                       ) : affiliate.platformSummary.map(p => (
                         <div key={p.platform} className="px-6 py-4 flex items-center gap-4">
-                          <div className="w-9 h-9 rounded-xl flex items-center justify-center text-white text-[11px] font-black shrink-0 bg-[#5b4cf5]">
+                          <div className="w-9 h-9 rounded-xl flex items-center justify-center text-white text-[11px] font-black shrink-0 bg-[#2563eb]">
                             {p.label.slice(0, 2).toUpperCase()}
                           </div>
                           <div className="flex-1 min-w-0">
@@ -852,8 +852,8 @@ export default function AdminPage() {
                     </div>
                     {affiliate.earnings.length === 0 ? (
                       <div className="px-6 py-10 text-center">
-                        <div className="w-12 h-12 rounded-2xl bg-[#5b4cf5]/10 grid place-items-center mx-auto mb-3">
-                          <BrandIcon name="fa-handshake" className="text-lg text-[#5b4cf5]" />
+                        <div className="w-12 h-12 rounded-2xl bg-[#2563eb]/10 grid place-items-center mx-auto mb-3">
+                          <BrandIcon name="fa-handshake" className="text-lg text-[#2563eb]" />
                         </div>
                         <div className="text-[13px] text-white font-semibold mb-1">No conversions yet</div>
                         <div className="text-[11px] text-[#3a3a55]">
@@ -904,8 +904,8 @@ export default function AdminPage() {
                   {/* Webhook setup guide */}
                   <div className="bg-[#0d0d18] border border-[#1e1e2e] rounded-2xl p-6">
                     <div className="flex items-center gap-3 mb-4">
-                      <div className="w-8 h-8 rounded-xl bg-[#5b4cf5]/10 grid place-items-center">
-                        <BrandIcon name="fa-plug" className="text-sm text-[#5b4cf5]" />
+                      <div className="w-8 h-8 rounded-xl bg-[#2563eb]/10 grid place-items-center">
+                        <BrandIcon name="fa-plug" className="text-sm text-[#2563eb]" />
                       </div>
                       <div>
                         <div className="text-[14px] font-semibold text-white">Webhook URLs</div>
@@ -952,7 +952,7 @@ export default function AdminPage() {
                   </div>
                 </div>
                 <div className="p-6">
-                  <div className={`rounded-xl p-5 border transition-all duration-500 ${billingEnabled ? 'bg-[#5b4cf5]/06 border-[#5b4cf5]/25' : 'bg-[#13131f] border-[#1e1e2e]'}`}>
+                  <div className={`rounded-xl p-5 border transition-all duration-500 ${billingEnabled ? 'bg-[#2563eb]/6 border-[#2563eb]/25' : 'bg-[#13131f] border-[#1e1e2e]'}`}>
                     <div className="flex items-center justify-between mb-4">
                       <div>
                         <div className="text-[14px] font-semibold text-white mb-1">Employer Subscription Required</div>
@@ -973,8 +973,8 @@ export default function AdminPage() {
 
                     {/* Status pill */}
                     {billingEnabled !== null && (
-                      <div className={`inline-flex items-center gap-2 px-3.5 py-2 rounded-xl text-[11.5px] font-semibold ${billingEnabled ? 'bg-[#5b4cf5]/15 text-[#7c6ff7]' : 'bg-[#10b981]/10 text-[#10b981]'}`}>
-                        <div className={`w-1.5 h-1.5 rounded-full ${billingEnabled ? 'bg-[#5b4cf5] animate-pulse' : 'bg-[#10b981]'}`} />
+                      <div className={`inline-flex items-center gap-2 px-3.5 py-2 rounded-xl text-[11.5px] font-semibold ${billingEnabled ? 'bg-[#2563eb]/15 text-[#60a5fa]' : 'bg-[#10b981]/10 text-[#10b981]'}`}>
+                        <div className={`w-1.5 h-1.5 rounded-full ${billingEnabled ? 'bg-[#2563eb] animate-pulse' : 'bg-[#10b981]'}`} />
                         {billingEnabled
                           ? 'Billing Active — employers must subscribe'
                           : 'Free Access — subscription not required'}
@@ -992,8 +992,8 @@ export default function AdminPage() {
                       ].map(plan => (
                         <div key={plan.key} className="bg-[#0a0a14] border border-[#1e1e2e] rounded-xl p-4">
                           <div className="flex items-center gap-2.5 mb-2">
-                            <div className="w-7 h-7 rounded-lg bg-[#5b4cf5]/10 grid place-items-center">
-                              <BrandIcon name={plan.icon} className="text-[11px] text-[#5b4cf5]" />
+                            <div className="w-7 h-7 rounded-lg bg-[#2563eb]/10 grid place-items-center">
+                              <BrandIcon name={plan.icon} className="text-[11px] text-[#2563eb]" />
                             </div>
                             <div className="text-[12px] font-semibold text-white">{plan.label}</div>
                           </div>
@@ -1015,8 +1015,8 @@ export default function AdminPage() {
               {/* Certificate reward card */}
               <div className="bg-[#0d0d18] border border-[#1e1e2e] rounded-2xl overflow-hidden mt-4">
                 <div className="px-6 py-4 border-b border-[#1e1e2e] flex items-center gap-3">
-                  <div className="w-8 h-8 rounded-xl bg-[#5b4cf5]/10 grid place-items-center">
-                    <BrandIcon name="fa-certificate" className="text-sm text-[#5b4cf5]" />
+                  <div className="w-8 h-8 rounded-xl bg-[#2563eb]/10 grid place-items-center">
+                    <BrandIcon name="fa-certificate" className="text-sm text-[#2563eb]" />
                   </div>
                   <div>
                     <div className="text-[14px] font-semibold text-white">Certificate Rewards</div>
