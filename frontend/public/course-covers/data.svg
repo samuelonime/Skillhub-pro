@@ -1,0 +1,24 @@
+<svg width="1200" height="675" viewBox="0 0 1200 675" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="1200" height="675" rx="40" fill="#091320"/>
+  <circle cx="170" cy="114" r="190" fill="#17B5C2" fill-opacity="0.15"/>
+  <circle cx="988" cy="546" r="220" fill="#2F6FED" fill-opacity="0.20"/>
+  <rect x="76" y="76" width="1048" height="523" rx="34" fill="url(#paint0_linear)" stroke="rgba(255,255,255,0.10)"/>
+  <text x="128" y="126" fill="#8DE1D8" font-family="Inter, Arial, sans-serif" font-size="28" font-weight="700" letter-spacing="4">DATA</text>
+  <text x="128" y="216" fill="#FFFFFF" font-family="Plus Jakarta Sans, Arial, sans-serif" font-size="62" font-weight="800">Turn numbers into</text>
+  <text x="128" y="288" fill="#FFFFFF" font-family="Plus Jakarta Sans, Arial, sans-serif" font-size="62" font-weight="800">clear decisions.</text>
+  <rect x="128" y="344" width="280" height="18" rx="9" fill="#DDE8F8" fill-opacity="0.48"/>
+  <rect x="128" y="378" width="214" height="18" rx="9" fill="#DDE8F8" fill-opacity="0.34"/>
+  <g opacity="0.95">
+    <rect x="706" y="188" width="74" height="212" rx="18" fill="#17B5C2"/>
+    <rect x="804" y="140" width="74" height="260" rx="18" fill="#2F6FED"/>
+    <rect x="902" y="234" width="74" height="166" rx="18" fill="#8DE1D8"/>
+    <path d="M708 448H1010" stroke="rgba(255,255,255,0.12)" stroke-width="8" stroke-linecap="round"/>
+  </g>
+  <rect x="128" y="430" width="182" height="46" rx="23" fill="#2F6FED"/>
+  <defs>
+    <linearGradient id="paint0_linear" x1="126" y1="86" x2="1040" y2="592" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#13243A"/>
+      <stop offset="1" stop-color="#0B1627"/>
+    </linearGradient>
+  </defs>
+</svg>

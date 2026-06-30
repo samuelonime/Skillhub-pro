@@ -1,0 +1,29 @@
+<svg width="1200" height="675" viewBox="0 0 1200 675" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="1200" height="675" rx="40" fill="#0B1422"/>
+  <circle cx="980" cy="110" r="220" fill="#2F6FED" fill-opacity="0.22"/>
+  <circle cx="170" cy="590" r="240" fill="#17B5C2" fill-opacity="0.18"/>
+  <rect x="72" y="72" width="1056" height="531" rx="32" fill="url(#paint0_linear)" stroke="rgba(255,255,255,0.12)"/>
+  <rect x="126" y="138" width="286" height="24" rx="12" fill="#17B5C2" fill-opacity="0.22"/>
+  <rect x="126" y="186" width="428" height="86" rx="20" fill="#EFF6FF" fill-opacity="0.96"/>
+  <rect x="126" y="302" width="314" height="18" rx="9" fill="#D8E6FF" fill-opacity="0.72"/>
+  <rect x="126" y="338" width="250" height="18" rx="9" fill="#D8E6FF" fill-opacity="0.52"/>
+  <rect x="126" y="412" width="156" height="46" rx="23" fill="#2F6FED"/>
+  <rect x="304" y="412" width="172" height="46" rx="23" fill="#EFF6FF" fill-opacity="0.08" stroke="rgba(255,255,255,0.12)"/>
+  <rect x="670" y="150" width="340" height="216" rx="28" fill="#0D1728" stroke="rgba(255,255,255,0.12)"/>
+  <rect x="706" y="188" width="268" height="20" rx="10" fill="#8DE1D8" fill-opacity="0.18"/>
+  <rect x="706" y="232" width="198" height="112" rx="20" fill="#142238"/>
+  <path d="M760 322L808 276L846 308L912 238L948 270" stroke="#17B5C2" stroke-width="14" stroke-linecap="round" stroke-linejoin="round"/>
+  <rect x="670" y="392" width="158" height="116" rx="24" fill="#101C2E" stroke="rgba(255,255,255,0.10)"/>
+  <rect x="852" y="392" width="158" height="116" rx="24" fill="#101C2E" stroke="rgba(255,255,255,0.10)"/>
+  <text x="126" y="120" fill="#8DE1D8" font-family="Inter, Arial, sans-serif" font-size="28" font-weight="700" letter-spacing="4">FRONTEND</text>
+  <text x="126" y="236" fill="#07111F" font-family="Plus Jakarta Sans, Arial, sans-serif" font-size="60" font-weight="800">Build polished</text>
+  <text x="126" y="304" fill="#07111F" font-family="Plus Jakarta Sans, Arial, sans-serif" font-size="60" font-weight="800">interfaces that ship.</text>
+  <text x="706" y="490" fill="#FFFFFF" font-family="Inter, Arial, sans-serif" font-size="26" font-weight="700">React</text>
+  <text x="888" y="490" fill="#FFFFFF" font-family="Inter, Arial, sans-serif" font-size="26" font-weight="700">TypeScript</text>
+  <defs>
+    <linearGradient id="paint0_linear" x1="123" y1="92" x2="1036" y2="563" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#13233A"/>
+      <stop offset="1" stop-color="#0A1424"/>
+    </linearGradient>
+  </defs>
+</svg>

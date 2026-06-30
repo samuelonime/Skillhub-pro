@@ -1,0 +1,24 @@
+<svg width="1200" height="675" viewBox="0 0 1200 675" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="1200" height="675" rx="40" fill="#09131F"/>
+  <circle cx="1028" cy="94" r="222" fill="#2F6FED" fill-opacity="0.20"/>
+  <circle cx="138" cy="566" r="220" fill="#17B5C2" fill-opacity="0.16"/>
+  <rect x="76" y="76" width="1048" height="523" rx="34" fill="url(#paint0_linear)" stroke="rgba(255,255,255,0.10)"/>
+  <text x="128" y="126" fill="#8DE1D8" font-family="Inter, Arial, sans-serif" font-size="28" font-weight="700" letter-spacing="4">MOBILE</text>
+  <text x="128" y="216" fill="#FFFFFF" font-family="Plus Jakarta Sans, Arial, sans-serif" font-size="62" font-weight="800">Create products</text>
+  <text x="128" y="288" fill="#FFFFFF" font-family="Plus Jakarta Sans, Arial, sans-serif" font-size="62" font-weight="800">that live on every screen.</text>
+  <rect x="128" y="344" width="326" height="18" rx="9" fill="#DDE8F8" fill-opacity="0.48"/>
+  <rect x="128" y="378" width="252" height="18" rx="9" fill="#DDE8F8" fill-opacity="0.34"/>
+  <rect x="764" y="144" width="192" height="382" rx="34" fill="#0D1A2A" stroke="rgba(255,255,255,0.12)" stroke-width="8"/>
+  <rect x="792" y="194" width="136" height="248" rx="22" fill="#13233A"/>
+  <rect x="818" y="228" width="84" height="84" rx="22" fill="#2F6FED"/>
+  <rect x="818" y="334" width="84" height="22" rx="11" fill="#17B5C2"/>
+  <rect x="818" y="374" width="64" height="22" rx="11" fill="#F59E0B"/>
+  <circle cx="860" cy="476" r="16" fill="#EFF6FF" fill-opacity="0.84"/>
+  <rect x="128" y="430" width="182" height="46" rx="23" fill="#2F6FED"/>
+  <defs>
+    <linearGradient id="paint0_linear" x1="126" y1="86" x2="1040" y2="592" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#132239"/>
+      <stop offset="1" stop-color="#0A1422"/>
+    </linearGradient>
+  </defs>
+</svg>

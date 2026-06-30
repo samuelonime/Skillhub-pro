@@ -1,5 +1,6 @@
 'use client';
 
+import Image from 'next/image';
 import { useState, useEffect, useCallback, useRef } from 'react';
 import Link from 'next/link';
 import { SidebarLayout } from '@/components/layout/SidebarLayout';
@@ -93,13 +94,30 @@ function timeAgo(d: string) {
 }
 
 function Avatar({ user, size = 9 }: { user: any; size?: number }) {
+  const [failed, setFailed] = useState(false);
   const name     = user ? `${user.firstName || ''} ${user.lastName || ''}`.trim() : '';
   const initials = name.split(' ').filter(Boolean).map((n: string) => n[0]).join('').slice(0, 2).toUpperCase() || '?';
   const colors   = [D.accent, D.green, D.amber, '#38BDF8', D.red, D.purple];
   const color    = colors[(initials.charCodeAt(0) || 0) % colors.length];
-  if (user?.avatar) return <img src={user.avatar} alt={name} className={`w-${size} h-${size} rounded-full object-cover flex-shrink-0`} style={{ border: `2px solid ${D.border}` }} />;
+  const avatarUrl = typeof user?.avatar === 'string' && isAllowedCommunityImage(user.avatar) && !failed ? user.avatar : '';
+
+  if (avatarUrl) {
+    return (
+      <div className={`relative w-${size} h-${size} shrink-0 overflow-hidden rounded-full`} style={{ border: `2px solid ${D.border}` }}>
+        <Image
+          src={avatarUrl}
+          alt={name || 'Community member'}
+          fill
+          sizes="64px"
+          className="object-cover"
+          onError={() => setFailed(true)}
+        />
+      </div>
+    );
+  }
+
   return (
-    <div className={`w-${size} h-${size} rounded-full flex-shrink-0 grid place-items-center font-bold text-white text-xs`} style={{ background: color }}>
+    <div className={`w-${size} h-${size} rounded-full shrink-0 grid place-items-center font-bold text-white text-xs`} style={{ background: color }}>
       {initials}
     </div>
   );
@@ -131,12 +149,84 @@ function normalizeExternalLink(url: string) {
   if (/^https?:\/\//i.test(t) || t.startsWith('/')) return t;
   return `https://${t}`;
 }
+
+const ALLOWED_COMMUNITY_IMAGE_HOSTS = new Set([
+  'res.cloudinary.com',
+  'ui-avatars.com',
+  'randomuser.me',
+  'placehold.co',
+  'images.unsplash.com',
+  'upload.wikimedia.org',
+  'meritlives.com',
+  'skillhub.meritlives.com',
+]);
+
+function isAllowedCommunityImage(url: string) {
+  if (!url) return false;
+  if (url.startsWith('/')) return true;
+  try {
+    return ALLOWED_COMMUNITY_IMAGE_HOSTS.has(new URL(url).hostname);
+  } catch {
+    return false;
+  }
+}
+
+function communityCoverFor(type?: string) {
+  if (type === 'project') return '/community-covers/project.svg';
+  if (type === 'showcase') return '/community-covers/showcase.svg';
+  if (type === 'discussion' || type === 'question' || type === 'resource') return '/community-covers/discussion.svg';
+  return '/community-covers/default.svg';
+}
+
+function SafeImageMedia({ src, alt, className, fallbackType, sizes, maxHeightClass }: {
+  src?: string;
+  alt: string;
+  className?: string;
+  fallbackType?: string;
+  sizes?: string;
+  maxHeightClass?: string;
+}) {
+  const [failed, setFailed] = useState(false);
+  const allowed = src ? isAllowedCommunityImage(src) : false;
+  const showFallback = !src || failed || !allowed;
+
+  return (
+    <div className={`relative w-full overflow-hidden ${maxHeightClass || ''}`}>
+      {showFallback ? (
+        <Image
+          src={communityCoverFor(fallbackType)}
+          alt=""
+          fill
+          sizes={sizes || '(max-width: 768px) 100vw, 50vw'}
+          className="object-cover"
+          unoptimized
+        />
+      ) : (
+        <Image
+          src={src!}
+          alt={alt}
+          fill
+          sizes={sizes || '(max-width: 768px) 100vw, 50vw'}
+          className={className || 'object-cover'}
+          onError={() => setFailed(true)}
+        />
+      )}
+    </div>
+  );
+}
+
 function MediaPreview({ url, type }: { url: string; type: string }) {
   if (!url) return null;
   const cls = 'mt-3 rounded-xl overflow-hidden';
   const borderStyle = { border: `1px solid ${D.border}` };
   if (type === 'video') return <div className={cls} style={borderStyle}><video src={url} controls className="w-full max-h-72" /></div>;
-  return <div className={cls} style={borderStyle}><img src={url} alt="" className="w-full max-h-72 object-cover" /></div>;
+  return (
+    <div className={cls} style={borderStyle}>
+      <div className="relative max-h-72 min-h-54 w-full">
+        <SafeImageMedia src={url} alt="Post media" fallbackType={type} maxHeightClass="max-h-72 min-h-54" />
+      </div>
+    </div>
+  );
 }
 
 /* ── Stats bar ───────────────────────────────────────────────────────────── */
@@ -154,7 +244,7 @@ function StatsBar({ stats }: { stats: any }) {
           style={{ background: D.card, border: `1px solid ${D.border}` }}>
           <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none rounded-2xl"
             style={{ background: `radial-gradient(circle at 20% 20%, ${it.color}12 0%, transparent 60%)` }} />
-          <div className="w-10 h-10 rounded-xl grid place-items-center text-[15px] flex-shrink-0" style={{ background: it.color + '18', color: it.color }}>
+          <div className="w-10 h-10 rounded-xl grid place-items-center text-[15px] shrink-0" style={{ background: it.color + '18', color: it.color }}>
             <i className={`fas ${it.icon}`} />
           </div>
           <div>
@@ -291,7 +381,7 @@ function ActivityFeed({ currentUserId, onMessage, onEdit, refreshKey }: {
               style={{ background: D.card, border: `1px solid ${D.border}` }}>
               <div className="flex gap-3 items-start">
                 {/* Activity icon bubble */}
-                <div className="w-10 h-10 rounded-xl flex-shrink-0 grid place-items-center text-lg"
+                <div className="w-10 h-10 rounded-xl shrink-0 grid place-items-center text-lg"
                   style={{ background: meta.color + '18', border: `1px solid ${meta.color}30` }}>
                   {meta.icon}
                 </div>
@@ -377,7 +467,7 @@ function PostCard({ post, onLike, onMessage, onEdit, onDelete, currentUserId }: 
             {post.author.title && <div className="text-[11px]" style={{ color: D.muted }}>{post.author.title}</div>}
           </div>
         </div>
-        <div className="flex items-center gap-2 flex-shrink-0">
+        <div className="flex items-center gap-2 shrink-0">
           <span className="text-[10.5px] font-semibold px-2.5 py-1 rounded-full" style={{ background: tm.color + '18', color: tm.color, border: `1px solid ${tm.color}30` }}>
             <i className={`fas ${tm.icon} mr-1`} />{post.type ? post.type.charAt(0).toUpperCase() + post.type.slice(1) : 'Post'}
           </span>
@@ -391,8 +481,8 @@ function PostCard({ post, onLike, onMessage, onEdit, onDelete, currentUserId }: 
               </button>
               {showActions && (
                 <>
-                  <div className="fixed inset-0 z-[100]" onClick={() => setShowActions(false)} />
-                  <div className="absolute right-0 top-full mt-1.5 z-[101] rounded-2xl overflow-hidden w-[150px] shadow-2xl"
+                  <div className="fixed inset-0 z-100" onClick={() => setShowActions(false)} />
+                  <div className="absolute right-0 top-full mt-1.5 z-101 rounded-2xl overflow-hidden w-37.5 shadow-2xl"
                     style={{ background: '#0D1525', border: `1px solid ${D.border}` }}>
                     <button onClick={() => { setShowActions(false); onEdit(post); }}
                       className="w-full flex items-center gap-2.5 px-3.5 py-2.5 text-[13px] font-medium border-0 bg-transparent cursor-pointer text-left transition-all hover:opacity-80"
@@ -480,8 +570,8 @@ function PostCard({ post, onLike, onMessage, onEdit, onDelete, currentUserId }: 
             </button>
             {showShareMenu && (
               <>
-                <div className="fixed inset-0 z-[100]" onClick={() => setShowShareMenu(false)} />
-                <div className="absolute right-0 bottom-full mb-2 z-[101] rounded-2xl overflow-hidden w-[180px] shadow-2xl"
+                <div className="fixed inset-0 z-100" onClick={() => setShowShareMenu(false)} />
+                <div className="absolute right-0 bottom-full mb-2 z-101 rounded-2xl overflow-hidden w-45 shadow-2xl"
                   style={{ background: '#0D1525', border: `1px solid ${D.border}` }}>
                   <div className="px-3.5 py-2.5" style={{ borderBottom: `1px solid ${D.border}` }}>
                     <p className="text-[11px] font-semibold uppercase tracking-wide" style={{ color: D.muted }}>Share via</p>
@@ -525,7 +615,7 @@ function EditPostModal({ post, onClose, onUpdated }: { post: any; onClose: () =>
   }
 
   return (
-    <div className="fixed inset-0 backdrop-blur-sm z-[300] flex items-center justify-center p-4"
+    <div className="fixed inset-0 z-300 flex items-center justify-center p-4 backdrop-blur-sm"
       style={{ background: 'rgba(0,0,0,0.7)' }} onClick={onClose}>
       <div className="rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto p-6"
         style={{ background: '#0D1525', border: `1px solid ${D.border}` }} onClick={e => e.stopPropagation()}>
@@ -619,7 +709,7 @@ function NewPostModal({ onClose, onCreated }: { onClose: () => void; onCreated: 
   const fieldStyle = { background: D.input, border: `1px solid ${D.border}`, color: D.text };
 
   return (
-    <div className="fixed inset-0 backdrop-blur-sm z-[300] flex items-center justify-center p-4"
+    <div className="fixed inset-0 z-300 flex items-center justify-center p-4 backdrop-blur-sm"
       style={{ background: 'rgba(0,0,0,0.7)' }} onClick={onClose}>
       <div className="rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto p-6"
         style={{ background: '#0D1525', border: `1px solid ${D.border}` }} onClick={e => e.stopPropagation()}>
@@ -767,9 +857,9 @@ function ChatPanel({ user, onClose }: { user: any; onClose: () => void }) {
 
   const name = `${user.firstName} ${user.lastName}`;
   return (
-    <div className={`fixed bottom-6 right-6 z-[400] w-[340px] rounded-2xl overflow-hidden flex flex-col shadow-2xl transition-all ${minimized ? 'h-[56px]' : 'h-[460px]'}`}
+    <div className={`fixed bottom-6 right-6 z-400 w-85 rounded-2xl overflow-hidden flex flex-col shadow-2xl transition-all ${minimized ? 'h-14' : 'h-115'}`}
       style={{ background: '#0D1525', border: `1px solid ${D.border}` }}>
-      <div className="flex items-center gap-2.5 px-4 py-3 flex-shrink-0" style={{ background: `linear-gradient(135deg, ${D.accent}, #38BDF8)` }}>
+      <div className="flex items-center gap-2.5 px-4 py-3 shrink-0" style={{ background: `linear-gradient(135deg, ${D.accent}, #38BDF8)` }}>
         <Avatar user={user} size={8} />
         <div className="flex-1 min-w-0">
           <div className="font-semibold text-white text-[13px] truncate">{name}</div>
@@ -801,13 +891,13 @@ function ChatPanel({ user, onClose }: { user: any; onClose: () => void }) {
             ))}
             <div ref={bottomRef} />
           </div>
-          <div className="flex items-center gap-2 p-3 flex-shrink-0" style={{ borderTop: `1px solid ${D.border}`, background: D.card }}>
+          <div className="flex items-center gap-2 p-3 shrink-0" style={{ borderTop: `1px solid ${D.border}`, background: D.card }}>
             <input value={text} onChange={e => setText(e.target.value)} onKeyDown={e => e.key === 'Enter' && sendMessage()}
               placeholder={`Message ${user.firstName}…`}
               className="flex-1 px-3.5 py-2.5 rounded-xl text-[12.5px] font-[inherit] outline-none transition-all"
               style={{ background: D.input, border: `1px solid ${D.border}`, color: D.text }} />
             <button onClick={sendMessage} disabled={!text.trim() || isSending}
-              className="w-9 h-9 rounded-xl border-0 cursor-pointer grid place-items-center disabled:opacity-50 flex-shrink-0"
+              className="grid h-9 w-9 shrink-0 place-items-center rounded-xl border-0 cursor-pointer disabled:opacity-50"
               style={{ background: D.accent }}><i className="fas fa-paper-plane text-[12px] text-white" /></button>
           </div>
           {status && <div className="px-4 pb-3 text-[12px]" style={{ color: D.accent }}>{status}</div>}
@@ -867,9 +957,13 @@ function PortfolioSpotlights({ onMessage }: { onMessage: (u: any) => void }) {
             <div key={u.id} className="rounded-xl overflow-hidden group transition-all hover:-translate-y-0.5"
               style={{ border: `1px solid ${D.border}` }}>
               <div className="relative h-24 overflow-hidden" style={{ background: `linear-gradient(135deg, ${D.accent}20, ${D.purple}20)` }}>
-                {u.projects[0]?.thumbnail
-                  ? <img src={u.projects[0].thumbnail} alt="" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
-                  : <div className="w-full h-full grid place-items-center text-3xl" style={{ color: D.accent + '40' }}><i className="fas fa-code" /></div>}
+                <SafeImageMedia
+                  src={u.projects[0]?.thumbnail}
+                  alt={u.projects[0]?.title || 'Project cover'}
+                  fallbackType="project"
+                  className="object-cover group-hover:scale-105 transition-transform duration-500"
+                  maxHeightClass="h-full"
+                />
                 <div className="absolute inset-0" style={{ background: 'linear-gradient(to top, rgba(15,21,33,0.7), transparent)' }} />
                 <div className="absolute bottom-2 left-2.5 right-2.5">
                   <div className="text-white font-semibold text-[11px] truncate">{u.projects[0]?.title || 'Project'}</div>
@@ -977,7 +1071,7 @@ export default function CommunityPage() {
               <h1 className="font-jakarta font-bold text-[2rem] text-white leading-tight mb-1">Connect & Grow</h1>
               <p className="text-[13px]" style={{ color: D.subtext }}>Share ideas, projects & grow together with fellow learners</p>
             </div>
-            <div className="flex items-center gap-2 flex-shrink-0">
+            <div className="flex items-center gap-2 shrink-0">
               <Link href="/dashboard/community/messages"
                 className="flex items-center gap-2 px-4 py-2.5 font-semibold text-[13px] rounded-xl no-underline"
                 style={{ background: 'rgba(255,255,255,0.08)', color: 'rgba(255,255,255,0.8)', border: `1px solid ${D.border}` }}>

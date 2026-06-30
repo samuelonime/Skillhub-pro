@@ -1,0 +1,17 @@
+<svg width="1200" height="675" viewBox="0 0 1200 675" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="1200" height="675" rx="40" fill="#091320"/>
+  <circle cx="1008" cy="92" r="230" fill="#2F6FED" fill-opacity="0.18"/>
+  <circle cx="178" cy="590" r="240" fill="#17B5C2" fill-opacity="0.12"/>
+  <rect x="76" y="76" width="1048" height="523" rx="34" fill="url(#paint0_linear)" stroke="rgba(255,255,255,0.10)"/>
+  <text x="126" y="126" fill="#8DE1D8" font-family="Inter, Arial, sans-serif" font-size="28" font-weight="700" letter-spacing="4">COMMUNITY</text>
+  <text x="126" y="214" fill="#FFFFFF" font-family="Plus Jakarta Sans, Arial, sans-serif" font-size="60" font-weight="800">Share progress,</text>
+  <text x="126" y="284" fill="#FFFFFF" font-family="Plus Jakarta Sans, Arial, sans-serif" font-size="60" font-weight="800">projects, and ideas.</text>
+  <rect x="126" y="338" width="304" height="18" rx="9" fill="#DDE8F8" fill-opacity="0.42"/>
+  <rect x="126" y="372" width="236" height="18" rx="9" fill="#DDE8F8" fill-opacity="0.26"/>
+  <defs>
+    <linearGradient id="paint0_linear" x1="126" y1="86" x2="1040" y2="592" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#13243A"/>
+      <stop offset="1" stop-color="#0A1525"/>
+    </linearGradient>
+  </defs>
+</svg>

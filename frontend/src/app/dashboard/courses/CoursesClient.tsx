@@ -1,5 +1,6 @@
 'use client';
 
+import Image from 'next/image';
 import { useState, useEffect, useCallback } from 'react';
 import { SidebarLayout } from '@/components/layout/SidebarLayout';
 import { apiFetch } from '@/lib/api';
@@ -40,67 +41,122 @@ const PLATFORMS: Record<string, { color: string; logo: string; bg: string }> = {
   AWS:              { color: '#ff9900', bg: '#1A1200', logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/9/93/Amazon_Web_Services_Logo.svg/800px-Amazon_Web_Services_Logo.svg.png' },
 };
 
-// ── Real thumbnail sources mapped to known course types ──────────────────────
-// These use publicly available, real course thumbnail images from Udemy/Coursera
-// affiliate APIs. In production these come from the API response directly.
-// Here we provide a curated fallback map for demo + real API-sourced thumbnails.
-const THUMBNAIL_MAP: Record<string, string> = {
-  // AWS / Cloud
-  'aws':        'https://img-c.udemycdn.com/course/480x270/362328_91f3_10.jpg',
-  'cloud':      'https://img-c.udemycdn.com/course/480x270/3087012_f595_3.jpg',
-  'devops':     'https://img-c.udemycdn.com/course/480x270/1667960_f3e4_3.jpg',
-  // Frontend
-  'react':      'https://img-c.udemycdn.com/course/480x270/1362070_b9a1_2.jpg',
-  'typescript': 'https://img-c.udemycdn.com/course/480x270/947098_02ec_3.jpg',
-  'javascript': 'https://img-c.udemycdn.com/course/480x270/851712_fc61_6.jpg',
-  'nextjs':     'https://img-c.udemycdn.com/course/480x270/3450000_1d64_4.jpg',
-  'css':        'https://img-c.udemycdn.com/course/480x270/1430746_2f43_10.jpg',
-  'html':       'https://img-c.udemycdn.com/course/480x270/1565838_e54e_16.jpg',
-  // Backend
-  'node':       'https://img-c.udemycdn.com/course/480x270/1672986_c11e_8.jpg',
-  'python':     'https://img-c.udemycdn.com/course/480x270/567828_67d0.jpg',
-  'django':     'https://img-c.udemycdn.com/course/480x270/1113822_b37c_6.jpg',
-  'api':        'https://img-c.udemycdn.com/course/480x270/3828440_7498.jpg',
-  // Data
-  'data':       'https://img-c.udemycdn.com/course/480x270/903744_8eb2.jpg',
-  'sql':        'https://img-c.udemycdn.com/course/480x270/703122_3b2d_4.jpg',
-  'machine learning': 'https://img-c.udemycdn.com/course/480x270/950390_270f_3.jpg',
-  'ai':         'https://img-c.udemycdn.com/course/480x270/4382638_4198.jpg',
-  // Security
-  'security':   'https://img-c.udemycdn.com/course/480x270/1042110_2c5a_5.jpg',
-  'ethical':    'https://img-c.udemycdn.com/course/480x270/614988_5f5c_4.jpg',
-  // Design
-  'ui':         'https://img-c.udemycdn.com/course/480x270/1174948_d3f3_3.jpg',
-  'ux':         'https://img-c.udemycdn.com/course/480x270/1174948_d3f3_3.jpg',
-  'figma':      'https://img-c.udemycdn.com/course/480x270/2641988_f1e5.jpg',
-  // Mobile
-  'flutter':    'https://img-c.udemycdn.com/course/480x270/1708340_7108_5.jpg',
-  'react native':'https://img-c.udemycdn.com/course/480x270/1436092_2024_4.jpg',
-  // Generic fallback per platform
-  'default_udemy':    'https://img-c.udemycdn.com/course/480x270/1362070_b9a1_2.jpg',
-  'default_coursera': 'https://d3njjcbhbojbot.cloudfront.net/api/utilities/v1/imageproxy/https://coursera-course-photos.s3.amazonaws.com/bb/4a45401d9a11e0a68f277be11af93f/jhep-logo.png',
-  'default':          'https://img-c.udemycdn.com/course/480x270/567828_67d0.jpg',
+// ── Real thumbnail sources mapped to course themes ───────────────────────────
+// Prefer upstream API thumbnails first. When a course is missing one, fall back
+// to a curated set of stable editorial images before ever showing the generic card.
+const KEYWORD_THUMBNAILS: Record<string, string> = {
+  aws: '/course-covers/cloud.svg',
+  cloud: '/course-covers/cloud.svg',
+  devops: '/course-covers/cloud.svg',
+  react: '/course-covers/frontend.svg',
+  javascript: '/course-covers/frontend.svg',
+  typescript: '/course-covers/frontend.svg',
+  nextjs: '/course-covers/frontend.svg',
+  html: '/course-covers/frontend.svg',
+  css: '/course-covers/frontend.svg',
+  node: '/course-covers/backend.svg',
+  python: '/course-covers/backend.svg',
+  django: '/course-covers/backend.svg',
+  api: '/course-covers/backend.svg',
+  data: '/course-covers/data.svg',
+  sql: '/course-covers/data.svg',
+  'machine learning': '/course-covers/data.svg',
+  ai: '/course-covers/data.svg',
+  security: '/course-covers/security.svg',
+  ethical: '/course-covers/security.svg',
+  ui: '/course-covers/design.svg',
+  ux: '/course-covers/design.svg',
+  figma: '/course-covers/design.svg',
+  flutter: '/course-covers/mobile.svg',
+  'react native': '/course-covers/mobile.svg',
 };
 
-function getThumbnail(course: any): string {
-  // 1. Use API-provided thumbnail if available
-  if (course.thumbnail && course.thumbnail.startsWith('http')) return course.thumbnail;
-  if (course.image && course.image.startsWith('http')) return course.image;
-  if (course.imageUrl && course.imageUrl.startsWith('http')) return course.imageUrl;
+const CATEGORY_THUMBNAILS: Record<string, string> = {
+  frontend: '/course-covers/frontend.svg',
+  backend: '/course-covers/backend.svg',
+  cloud: '/course-covers/cloud.svg',
+  data: '/course-covers/data.svg',
+  security: '/course-covers/security.svg',
+  design: '/course-covers/design.svg',
+  mobile: '/course-covers/mobile.svg',
+  default: '/course-covers/default.svg',
+};
 
-  // 2. Match by course title keywords
-  const title = (course.title || '').toLowerCase();
-  for (const [key, url] of Object.entries(THUMBNAIL_MAP)) {
-    if (key.startsWith('default')) continue;
-    if (title.includes(key)) return url;
+const PLATFORM_THUMBNAILS: Record<string, string> = {
+  udemy: '/course-covers/default.svg',
+  coursera: '/course-covers/default.svg',
+  edx: '/course-covers/default.svg',
+  'linkedin learning': '/course-covers/default.svg',
+  pluralsight: '/course-covers/default.svg',
+  skillshare: '/course-covers/default.svg',
+  'frontend masters': '/course-covers/frontend.svg',
+  aws: '/course-covers/cloud.svg',
+  meritlives: '/course-covers/default.svg',
+};
+
+const ALLOWED_COURSE_IMAGE_HOSTS = new Set([
+  'img-c.udemycdn.com',
+  'www.udemy.com',
+  'd3njjcbhbojbot.cloudfront.net',
+  'coursera-course-photos.s3.amazonaws.com',
+  'images.unsplash.com',
+  'res.cloudinary.com',
+  'upload.wikimedia.org',
+  'frontendmasters.com',
+  'www.vectorlogo.zone',
+  'vectorlogo.zone',
+  'meritlives.com',
+  'skillhub.meritlives.com',
+]);
+
+function isUsableImageUrl(value: unknown): value is string {
+  return typeof value === 'string' && /^https?:\/\//i.test(value);
+}
+
+function isAllowedCourseImageUrl(value: string) {
+  if (value.startsWith('/')) return true;
+
+  try {
+    const { hostname } = new URL(value);
+    return ALLOWED_COURSE_IMAGE_HOSTS.has(hostname);
+  } catch {
+    return false;
   }
+}
 
-  // 3. Platform default
-  const platform = (course.platform || course.source || '').toLowerCase();
-  if (platform.includes('udemy'))    return THUMBNAIL_MAP['default_udemy'];
-  if (platform.includes('coursera')) return THUMBNAIL_MAP['default_coursera'];
+function uniqueUrls(values: string[]) {
+  return [...new Set(values.filter(Boolean))];
+}
 
-  return THUMBNAIL_MAP['default'];
+function getThumbnailCandidates(course: any): string[] {
+  const directCandidates = [
+    course.thumbnail,
+    course.image,
+    course.imageUrl,
+    course.thumbnailUrl,
+    course.coverImage,
+    course.bannerImage,
+  ].filter(isUsableImageUrl).filter(isAllowedCourseImageUrl);
+
+  const haystack = [course.title, course.category, course.description, course.platform, course.source]
+    .filter(Boolean)
+    .join(' ')
+    .toLowerCase();
+
+  const keywordMatches = Object.entries(KEYWORD_THUMBNAILS)
+    .filter(([keyword]) => haystack.includes(keyword))
+    .map(([, url]) => url);
+
+  const categoryKey = String(course.category || '').toLowerCase();
+  const platformKey = String(course.platform || course.source || '').toLowerCase();
+
+  return uniqueUrls([
+    ...directCandidates,
+    ...keywordMatches,
+    CATEGORY_THUMBNAILS[categoryKey],
+    PLATFORM_THUMBNAILS[platformKey],
+    CATEGORY_THUMBNAILS.default,
+  ]);
 }
 
 // ── Category / filter config ─────────────────────────────────────────────────
@@ -153,9 +209,17 @@ function PlatformBadge({ platform }: { platform: string }) {
 function CourseThumbnail({ course }: { course: any }) {
   const [loaded, setLoaded]   = useState(false);
   const [error, setError]     = useState(false);
-  const src = getThumbnail(course);
+  const [sourceIndex, setSourceIndex] = useState(0);
+  const sources = getThumbnailCandidates(course);
+  const src = sources[sourceIndex];
   const platform = course.platform || course.source || '';
   const cfg = PLATFORMS[platform] || { color: '#4F8EF7', bg: '#0A1628' };
+
+  useEffect(() => {
+    setLoaded(false);
+    setError(false);
+    setSourceIndex(0);
+  }, [course.id, course.title, course.thumbnail, course.image, course.imageUrl]);
 
   return (
     <div className="relative overflow-hidden" style={{ paddingTop: '56.25%' /* 16:9 */ }}>
@@ -170,14 +234,26 @@ function CourseThumbnail({ course }: { course: any }) {
       )}
 
       {/* Real thumbnail image */}
-      {!error && (
-        <img
+      {!error && src && (
+        <Image
           src={src}
           alt={course.title}
+          fill
+          sizes="(max-width: 768px) 100vw, (max-width: 1280px) 50vw, 33vw"
           onLoad={() => setLoaded(true)}
-          onError={() => { setError(true); setLoaded(true); }}
+          onError={() => {
+            if (sourceIndex < sources.length - 1) {
+              setLoaded(false);
+              setSourceIndex(prev => prev + 1);
+              return;
+            }
+
+            setError(true);
+            setLoaded(true);
+          }}
           className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
           style={{ opacity: loaded ? 1 : 0, transition: 'opacity 0.3s ease, transform 0.5s ease' }}
+          unoptimized={src.startsWith('/')} 
         />
       )}
 
@@ -295,9 +371,9 @@ function CourseCard({ course, onEnroll, enrolling }: {
             <div className="flex items-center gap-2">
               {course.instructorAvatar ? (
                 <img src={course.instructorAvatar} alt={instructorName}
-                  className="w-5 h-5 rounded-full object-cover flex-shrink-0" />
+                  className="w-5 h-5 rounded-full object-cover shrink-0" />
               ) : (
-                <div className="w-5 h-5 rounded-full flex-shrink-0 grid place-items-center text-[8px] font-bold text-white"
+                <div className="w-5 h-5 rounded-full shrink-0 grid place-items-center text-[8px] font-bold text-white"
                   style={{ background: cfg.color + '40' }}>
                   {instructorName.slice(0, 1).toUpperCase()}
                 </div>
@@ -330,7 +406,7 @@ function CourseCard({ course, onEnroll, enrolling }: {
         {/* Price + CTA */}
         <div className="mt-auto pt-3 flex items-center gap-2" style={{ borderTop: '1px solid rgba(255,255,255,0.06)' }}>
           {course.price && !isEnrolled && (
-            <div className="flex-shrink-0">
+            <div className="shrink-0">
               {course.originalPrice && course.originalPrice !== course.price && (
                 <div className="text-[10px] line-through" style={{ color: 'rgba(255,255,255,0.25)' }}>
                   {course.originalPrice}
@@ -527,7 +603,7 @@ export default function CoursesClient() {
             </p>
           </div>
           {/* Search */}
-          <div className="relative w-full max-w-[360px]">
+          <div className="relative w-full max-w-90">
             <i className="fas fa-search absolute left-4 top-1/2 -translate-y-1/2 text-[13px]" style={{ color: 'rgba(255,255,255,0.3)' }} />
             <input
               type="text"

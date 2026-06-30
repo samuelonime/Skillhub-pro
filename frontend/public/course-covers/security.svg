@@ -1,0 +1,21 @@
+<svg width="1200" height="675" viewBox="0 0 1200 675" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="1200" height="675" rx="40" fill="#09121E"/>
+  <circle cx="1060" cy="112" r="240" fill="#F59E0B" fill-opacity="0.18"/>
+  <circle cx="154" cy="552" r="220" fill="#17B5C2" fill-opacity="0.14"/>
+  <rect x="76" y="76" width="1048" height="523" rx="34" fill="url(#paint0_linear)" stroke="rgba(255,255,255,0.10)"/>
+  <text x="128" y="126" fill="#FBBF24" font-family="Inter, Arial, sans-serif" font-size="28" font-weight="700" letter-spacing="4">SECURITY</text>
+  <text x="128" y="216" fill="#FFFFFF" font-family="Plus Jakarta Sans, Arial, sans-serif" font-size="62" font-weight="800">Protect systems</text>
+  <text x="128" y="288" fill="#FFFFFF" font-family="Plus Jakarta Sans, Arial, sans-serif" font-size="62" font-weight="800">with confidence.</text>
+  <rect x="128" y="344" width="298" height="18" rx="9" fill="#DDE8F8" fill-opacity="0.48"/>
+  <rect x="128" y="378" width="228" height="18" rx="9" fill="#DDE8F8" fill-opacity="0.34"/>
+  <path d="M840 170L984 226V336C984 412.486 923.96 482.453 848 505C772.04 482.453 712 412.486 712 336V226L840 170Z" fill="#0D1A2A" stroke="rgba(255,255,255,0.14)" stroke-width="8"/>
+  <path d="M840 250C867.614 250 890 272.386 890 300V328H910C919.941 328 928 336.059 928 346V408C928 417.941 919.941 426 910 426H770C760.059 426 752 417.941 752 408V346C752 336.059 760.059 328 770 328H790V300C790 272.386 812.386 250 840 250Z" fill="#F59E0B" fill-opacity="0.24"/>
+  <rect x="818" y="320" width="44" height="64" rx="22" fill="#FBBF24"/>
+  <rect x="128" y="430" width="180" height="46" rx="23" fill="#F59E0B"/>
+  <defs>
+    <linearGradient id="paint0_linear" x1="126" y1="86" x2="1042" y2="592" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#112033"/>
+      <stop offset="1" stop-color="#0A1421"/>
+    </linearGradient>
+  </defs>
+</svg>

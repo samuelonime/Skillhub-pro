@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
+import { BrandIcon } from '@/components/ui/BrandIcon';
 
 const LAST_UPDATED = 'June 12, 2026';
 const EFFECTIVE_DATE = 'June 12, 2026';
@@ -32,7 +33,7 @@ function SectionAnchor({ id }: { id: string }) {
 
 function Tag({ label, color }: { label: string; color: string }) {
   return (
-    <span className="inline-flex items-center text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full flex-shrink-0"
+    <span className="inline-flex items-center text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full shrink-0"
       style={{ background: color + '18', color, border: `1px solid ${color}30` }}>
       {label}
     </span>
@@ -44,16 +45,16 @@ function InfoBlock({ icon, title, items, accent }: { icon: string; title: string
     <div className="rounded-2xl p-5 mb-4"
       style={{ background: accent + '08', border: `1px solid ${accent}20` }}>
       <div className="flex items-center gap-2.5 mb-3">
-        <div className="w-8 h-8 rounded-xl grid place-items-center text-[13px] flex-shrink-0"
+        <div className="w-8 h-8 rounded-xl grid place-items-center text-[13px] shrink-0"
           style={{ background: accent + '18', color: accent }}>
-          <i className={`fas ${icon}`} />
+          <BrandIcon name={icon} />
         </div>
         <span className="font-jakarta font-semibold text-[14px]" style={{ color: 'rgba(255,255,255,0.85)' }}>{title}</span>
       </div>
       <ul className="flex flex-col gap-2">
         {items.map((item, i) => (
           <li key={i} className="flex items-start gap-2.5 text-[13px]" style={{ color: 'rgba(255,255,255,0.55)' }}>
-            <div className="w-1.5 h-1.5 rounded-full flex-shrink-0 mt-[5px]" style={{ background: accent }} />
+            <div className="w-1.5 h-1.5 rounded-full shrink-0 mt-1.25" style={{ background: accent }} />
             <span className="leading-relaxed">{item}</span>
           </li>
         ))}
@@ -66,9 +67,9 @@ function RightsCard({ icon, title, desc, accent }: { icon: string; title: string
   return (
     <div className="rounded-2xl p-4 flex items-start gap-3 transition-all hover:-translate-y-0.5"
       style={{ background: '#0C1220', border: '1px solid rgba(255,255,255,0.07)' }}>
-      <div className="w-9 h-9 rounded-xl grid place-items-center text-[13px] flex-shrink-0"
+      <div className="w-9 h-9 rounded-xl grid place-items-center text-[13px] shrink-0"
         style={{ background: accent + '18', color: accent }}>
-        <i className={`fas ${icon}`} />
+        <BrandIcon name={icon} />
       </div>
       <div>
         <div className="font-jakarta font-semibold text-[13px] mb-1" style={{ color: 'rgba(255,255,255,0.85)' }}>{title}</div>
@@ -96,10 +97,10 @@ export default function PrivacyPolicyPage() {
           <span className="text-[12px] font-medium hidden md:block" style={{ color: 'rgba(255,255,255,0.3)' }}>
             Last updated {LAST_UPDATED}
           </span>
-          <Link href="/login"
+          <Link href="/"
             className="px-4 py-2 rounded-xl text-[12.5px] font-semibold no-underline transition-all hover:opacity-80"
             style={{ background: 'rgba(79,142,247,0.12)', color: '#4F8EF7', border: '1px solid rgba(79,142,247,0.25)' }}>
-            Back to Dashboard
+            Back to home
           </Link>
         </div>
       </header>
@@ -112,7 +113,7 @@ export default function PrivacyPolicyPage() {
         <div className="relative z-10 max-w-2xl mx-auto">
           <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full mb-5"
             style={{ background: 'rgba(79,142,247,0.12)', border: '1px solid rgba(79,142,247,0.25)' }}>
-            <i className="fas fa-shield-halved text-[11px]" style={{ color: '#4F8EF7' }} />
+            <BrandIcon name="fa-shield-halved" className="text-[11px]" style={{ color: '#4F8EF7' }} />
             <span className="text-[11px] font-bold uppercase tracking-wider" style={{ color: '#4F8EF7' }}>Privacy Policy</span>
           </div>
           <h1 className="font-jakarta font-extrabold text-[2.6rem] text-white tracking-tight leading-tight mb-4">
@@ -132,7 +133,7 @@ export default function PrivacyPolicyPage() {
             ].map(b => (
               <div key={b.label} className="flex items-center gap-1.5 text-[12px] font-medium"
                 style={{ color: 'rgba(255,255,255,0.4)' }}>
-                <i className={`fas ${b.icon} text-[10px]`} style={{ color: '#4F8EF7' }} />
+                <BrandIcon name={b.icon} className="text-[10px]" style={{ color: '#4F8EF7' }} />
                 {b.label}
               </div>
             ))}
@@ -140,10 +141,10 @@ export default function PrivacyPolicyPage() {
         </div>
       </div>
 
-      <div className="max-w-[1200px] mx-auto px-6 py-12 flex gap-10 items-start">
+      <div className="max-w-300 mx-auto px-6 py-12 flex gap-10 items-start">
 
         {/* ── Sidebar TOC (desktop) ───────────────────────────────── */}
-        <aside className="w-64 flex-shrink-0 sticky top-24 hidden lg:block">
+        <aside className="w-64 shrink-0 sticky top-24 hidden lg:block">
           <div className="rounded-2xl p-4" style={{ background: '#0F1521', border: '1px solid rgba(255,255,255,0.07)' }}>
             <div className="text-[10px] font-bold uppercase tracking-[0.15em] mb-3 px-1" style={{ color: 'rgba(255,255,255,0.25)' }}>
               Contents
@@ -173,9 +174,9 @@ export default function PrivacyPolicyPage() {
             <button onClick={() => setTocOpen(v => !v)}
               className="flex items-center gap-2 w-full px-4 py-3 rounded-xl border-0 cursor-pointer text-[13px] font-semibold"
               style={{ background: '#0F1521', border: '1px solid rgba(255,255,255,0.08)', color: 'rgba(255,255,255,0.6)' }}>
-              <i className="fas fa-list text-[11px]" style={{ color: '#4F8EF7' }} />
+              <BrandIcon name="fa-list" className="text-[11px]" style={{ color: '#4F8EF7' }} />
               Table of Contents
-              <i className={`fas fa-chevron-${tocOpen ? 'up' : 'down'} ml-auto text-[10px]`} style={{ color: 'rgba(255,255,255,0.3)' }} />
+              <BrandIcon name={`fa-chevron-${tocOpen ? 'up' : 'down'}`} className="ml-auto text-[10px]" style={{ color: 'rgba(255,255,255,0.3)' }} />
             </button>
             {tocOpen && (
               <div className="mt-1 rounded-xl p-3" style={{ background: '#0F1521', border: '1px solid rgba(255,255,255,0.07)' }}>
@@ -194,7 +195,7 @@ export default function PrivacyPolicyPage() {
             <div className="flex items-center gap-3 mb-5">
               <div className="w-9 h-9 rounded-xl grid place-items-center text-[14px]"
                 style={{ background: 'rgba(79,142,247,0.12)', color: '#4F8EF7' }}>
-                <i className="fas fa-handshake" />
+                <BrandIcon name="fa-handshake" />
               </div>
               <h2 className="font-jakarta font-bold text-[1.4rem] text-white">1. Introduction</h2>
             </div>
@@ -219,7 +220,7 @@ export default function PrivacyPolicyPage() {
             <div className="flex items-center gap-3 mb-5">
               <div className="w-9 h-9 rounded-xl grid place-items-center text-[14px]"
                 style={{ background: 'rgba(0,229,160,0.12)', color: '#00E5A0' }}>
-                <i className="fas fa-database" />
+                <BrandIcon name="fa-database" />
               </div>
               <h2 className="font-jakarta font-bold text-[1.4rem] text-white">2. Information We Collect</h2>
             </div>
@@ -293,7 +294,7 @@ export default function PrivacyPolicyPage() {
             <div className="flex items-center gap-3 mb-5">
               <div className="w-9 h-9 rounded-xl grid place-items-center text-[14px]"
                 style={{ background: 'rgba(245,158,11,0.12)', color: '#F59E0B' }}>
-                <i className="fas fa-cogs" />
+                <BrandIcon name="fa-cogs" />
               </div>
               <h2 className="font-jakarta font-bold text-[1.4rem] text-white">3. How We Use Your Information</h2>
             </div>
@@ -311,9 +312,9 @@ export default function PrivacyPolicyPage() {
               ].map(item => (
                 <div key={item.title} className="flex items-start gap-4 p-4 rounded-2xl"
                   style={{ background: '#0C1220', border: '1px solid rgba(255,255,255,0.07)' }}>
-                  <div className="w-9 h-9 rounded-xl grid place-items-center text-[13px] flex-shrink-0"
+                  <div className="w-9 h-9 rounded-xl grid place-items-center text-[13px] shrink-0"
                     style={{ background: item.accent + '18', color: item.accent }}>
-                    <i className={`fas ${item.icon}`} />
+                    <BrandIcon name={item.icon} />
                   </div>
                   <div>
                     <div className="font-jakarta font-semibold text-[13px] mb-1" style={{ color: 'rgba(255,255,255,0.85)' }}>{item.title}</div>
@@ -332,7 +333,7 @@ export default function PrivacyPolicyPage() {
             <div className="flex items-center gap-3 mb-2">
               <div className="w-9 h-9 rounded-xl grid place-items-center text-[14px]"
                 style={{ background: 'rgba(167,139,250,0.12)', color: '#A78BFA' }}>
-                <i className="fas fa-brain" />
+                <BrandIcon name="fa-brain" />
               </div>
               <h2 className="font-jakarta font-bold text-[1.4rem] text-white">4. AI Features & Career Data</h2>
               <Tag label="New" color="#A78BFA" />
@@ -357,7 +358,7 @@ export default function PrivacyPolicyPage() {
                   'Your stated career goals and preferences',
                 ].map((item, i) => (
                   <div key={i} className="flex items-center gap-2 text-[12px]" style={{ color: 'rgba(255,255,255,0.5)' }}>
-                    <i className="fas fa-check text-[10px]" style={{ color: '#A78BFA' }} />
+                    <BrandIcon name="fa-check" className="text-[10px]" style={{ color: '#A78BFA' }} />
                     {item}
                   </div>
                 ))}
@@ -385,7 +386,7 @@ export default function PrivacyPolicyPage() {
             <div className="flex items-center gap-3 mb-5">
               <div className="w-9 h-9 rounded-xl grid place-items-center text-[14px]"
                 style={{ background: 'rgba(248,113,113,0.12)', color: '#F87171' }}>
-                <i className="fas fa-share-nodes" />
+                <BrandIcon name="fa-share-nodes" />
               </div>
               <h2 className="font-jakarta font-bold text-[1.4rem] text-white">5. Data Sharing & Disclosure</h2>
             </div>
@@ -393,7 +394,7 @@ export default function PrivacyPolicyPage() {
             <div className="rounded-2xl p-5 mb-5"
               style={{ background: 'rgba(0,229,160,0.07)', border: '1px solid rgba(0,229,160,0.2)' }}>
               <div className="flex items-center gap-2 mb-2">
-                <i className="fas fa-ban text-[13px]" style={{ color: '#00E5A0' }} />
+                <BrandIcon name="fa-ban" className="text-[13px]" style={{ color: '#00E5A0' }} />
                 <span className="font-jakarta font-bold text-[14px]" style={{ color: '#00E5A0' }}>We do not sell your data. Ever.</span>
               </div>
               <p className="text-[13px]" style={{ color: 'rgba(255,255,255,0.5)' }}>
@@ -445,7 +446,7 @@ export default function PrivacyPolicyPage() {
             <div className="flex items-center gap-3 mb-5">
               <div className="w-9 h-9 rounded-xl grid place-items-center text-[14px]"
                 style={{ background: 'rgba(56,189,248,0.12)', color: '#38BDF8' }}>
-                <i className="fas fa-plug" />
+                <BrandIcon name="fa-plug" />
               </div>
               <h2 className="font-jakarta font-bold text-[1.4rem] text-white">6. Third-Party Learning Platforms</h2>
             </div>
@@ -475,7 +476,7 @@ export default function PrivacyPolicyPage() {
             <div className="flex items-center gap-3 mb-5">
               <div className="w-9 h-9 rounded-xl grid place-items-center text-[14px]"
                 style={{ background: 'rgba(245,158,11,0.12)', color: '#F59E0B' }}>
-                <i className="fas fa-cookie-bite" />
+                <BrandIcon name="fa-cookie-bite" />
               </div>
               <h2 className="font-jakarta font-bold text-[1.4rem] text-white">7. Cookies & Tracking Technologies</h2>
             </div>
@@ -509,7 +510,7 @@ export default function PrivacyPolicyPage() {
             <div className="flex items-center gap-3 mb-5">
               <div className="w-9 h-9 rounded-xl grid place-items-center text-[14px]"
                 style={{ background: 'rgba(0,229,160,0.12)', color: '#00E5A0' }}>
-                <i className="fas fa-shield-halved" />
+                <BrandIcon name="fa-shield-halved" />
               </div>
               <h2 className="font-jakarta font-bold text-[1.4rem] text-white">8. Security Measures</h2>
             </div>
@@ -529,7 +530,7 @@ export default function PrivacyPolicyPage() {
                   style={{ background: '#0C1220', border: '1px solid rgba(255,255,255,0.07)' }}>
                   <div className="w-8 h-8 rounded-xl grid place-items-center text-[12px] flex-shrink-0"
                     style={{ background: s.color + '18', color: s.color }}>
-                    <i className={`fas ${s.icon}`} />
+                    <BrandIcon name={s.icon} />
                   </div>
                   <div>
                     <div className="font-jakarta font-semibold text-[12.5px] mb-0.5" style={{ color: 'rgba(255,255,255,0.8)' }}>{s.title}</div>
@@ -551,7 +552,7 @@ export default function PrivacyPolicyPage() {
             <div className="flex items-center gap-3 mb-5">
               <div className="w-9 h-9 rounded-xl grid place-items-center text-[14px]"
                 style={{ background: 'rgba(56,189,248,0.12)', color: '#38BDF8' }}>
-                <i className="fas fa-clock-rotate-left" />
+                <BrandIcon name="fa-clock-rotate-left" />
               </div>
               <h2 className="font-jakarta font-bold text-[1.4rem] text-white">9. Data Retention</h2>
             </div>
@@ -582,7 +583,7 @@ export default function PrivacyPolicyPage() {
             <div className="flex items-center gap-3 mb-5">
               <div className="w-9 h-9 rounded-xl grid place-items-center text-[14px]"
                 style={{ background: 'rgba(79,142,247,0.12)', color: '#4F8EF7' }}>
-                <i className="fas fa-user-shield" />
+                <BrandIcon name="fa-user-shield" />
               </div>
               <h2 className="font-jakarta font-bold text-[1.4rem] text-white">10. Your Rights & Choices</h2>
             </div>
@@ -613,7 +614,7 @@ export default function PrivacyPolicyPage() {
             <div className="flex items-center gap-3 mb-5">
               <div className="w-9 h-9 rounded-xl grid place-items-center text-[14px]"
                 style={{ background: 'rgba(248,113,113,0.12)', color: '#F87171' }}>
-                <i className="fas fa-child" />
+                <BrandIcon name="fa-child" />
               </div>
               <h2 className="font-jakarta font-bold text-[1.4rem] text-white">11. Children's Privacy</h2>
             </div>
@@ -633,7 +634,7 @@ export default function PrivacyPolicyPage() {
             <div className="flex items-center gap-3 mb-5">
               <div className="w-9 h-9 rounded-xl grid place-items-center text-[14px]"
                 style={{ background: 'rgba(56,189,248,0.12)', color: '#38BDF8' }}>
-                <i className="fas fa-globe" />
+                <BrandIcon name="fa-globe" />
               </div>
               <h2 className="font-jakarta font-bold text-[1.4rem] text-white">12. International Data Transfers</h2>
             </div>
@@ -653,7 +654,7 @@ export default function PrivacyPolicyPage() {
             <div className="flex items-center gap-3 mb-5">
               <div className="w-9 h-9 rounded-xl grid place-items-center text-[14px]"
                 style={{ background: 'rgba(245,158,11,0.12)', color: '#F59E0B' }}>
-                <i className="fas fa-rotate" />
+                <BrandIcon name="fa-rotate" />
               </div>
               <h2 className="font-jakarta font-bold text-[1.4rem] text-white">13. Changes to This Policy</h2>
             </div>
@@ -673,7 +674,7 @@ export default function PrivacyPolicyPage() {
             <div className="flex items-center gap-3 mb-5">
               <div className="w-9 h-9 rounded-xl grid place-items-center text-[14px]"
                 style={{ background: 'rgba(0,229,160,0.12)', color: '#00E5A0' }}>
-                <i className="fas fa-envelope" />
+                <BrandIcon name="fa-envelope" />
               </div>
               <h2 className="font-jakarta font-bold text-[1.4rem] text-white">14. Contact Us</h2>
             </div>
@@ -690,7 +691,7 @@ export default function PrivacyPolicyPage() {
                   style={{ background: '#0C1220', border: `1px solid ${c.accent}25` }}>
                   <div className="w-10 h-10 rounded-xl grid place-items-center text-[14px] mx-auto mb-3"
                     style={{ background: c.accent + '18', color: c.accent }}>
-                    <i className={`fas ${c.icon}`} />
+                    <BrandIcon name={c.icon} />
                   </div>
                   <div className="text-[10px] font-bold uppercase tracking-wider mb-1" style={{ color: 'rgba(255,255,255,0.25)' }}>{c.label}</div>
                   <div className="text-[13px] font-semibold" style={{ color: c.accent }}>{c.value}</div>

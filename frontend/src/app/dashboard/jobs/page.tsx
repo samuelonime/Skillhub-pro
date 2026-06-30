@@ -1,5 +1,6 @@
 'use client';
 
+import Image from 'next/image';
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { SidebarLayout } from '@/components/layout/SidebarLayout';
 import { apiFetch } from '@/lib/api';
@@ -98,6 +99,33 @@ function timeAgo(d: string) {
   return `${Math.floor(days / 7)}w ago`;
 }
 
+function getJobCover(job: any) {
+  if (job?.kind === 'scouted') return '/job-covers/scouted.svg';
+  if (job?.isPremium) return '/job-covers/premium.svg';
+  return '/job-covers/default.svg';
+}
+
+function JobMediaHeader({ job, accent }: { job: any; accent: string }) {
+  return (
+    <div className="relative h-34 overflow-hidden" style={{ background: '#0C1422' }}>
+      <Image
+        src={getJobCover(job)}
+        alt=""
+        fill
+        sizes="(max-width: 768px) 100vw, 50vw"
+        className="object-cover transition-transform duration-500 group-hover:scale-105"
+        unoptimized
+      />
+      <div className="absolute inset-0" style={{ background: 'linear-gradient(to top, rgba(12,18,32,0.92) 0%, rgba(12,18,32,0.16) 58%, rgba(12,18,32,0.02) 100%)' }} />
+      <div className="absolute left-4 top-4 inline-flex items-center gap-2 rounded-full px-3 py-1 text-[10px] font-bold uppercase tracking-[0.18em] text-white"
+        style={{ background: 'rgba(7,17,31,0.72)', border: `1px solid ${accent}50` }}>
+        <span className="block h-2 w-2 rounded-full" style={{ background: accent }} />
+        {job?.kind === 'scouted' ? 'AI Scouted' : job?.isPremium ? 'Featured Role' : 'Open Role'}
+      </div>
+    </div>
+  );
+}
+
 function Sk({ h = 'h-4', w = 'w-full', r = 'rounded-xl' }: { h?: string; w?: string; r?: string }) {
   return <div className={`${h} ${w} ${r} animate-pulse`} style={{ background: 'rgba(255,255,255,0.06)' }} />;
 }
@@ -122,6 +150,7 @@ function OpportunityAd({ job, userTier, onApply, onSave, applying, saving }: any
       <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none rounded-2xl"
         style={{ background: `radial-gradient(circle at 10% 10%, ${lc}08 0%, transparent 60%)` }} />
       {job.isPremium && <div className="h-0.5 w-full" style={{ background: t.gradient }} />}
+      <JobMediaHeader job={job} accent={job.isPremium ? t.color : lc} />
       <div className="p-5 relative">
         <div className="flex items-start justify-between gap-3 mb-3">
           <div className="flex items-center gap-3 flex-1 min-w-0">
@@ -458,8 +487,10 @@ export default function JobsPage() {
                 <div className="flex flex-col gap-3">
                   {scouted.map((job: any) => (
                     <div key={job.id} onClick={() => { setSelected(job.id); markScoutOpened(job.alertId); }}
-                      className="rounded-2xl p-4 cursor-pointer transition-all"
+                      className="rounded-2xl overflow-hidden cursor-pointer transition-all"
                       style={{ background: D.card, border: `1px solid ${selected === job.id ? D.purple : !job.opened ? D.amber : D.border}` }}>
+                      <JobMediaHeader job={job} accent={!job.opened ? D.amber : D.purple} />
+                      <div className="p-4">
                       <div className="flex items-start justify-between gap-3 flex-wrap">
                         <div className="min-w-0">
                           <div className="flex items-center gap-2 flex-wrap">
@@ -488,6 +519,7 @@ export default function JobsPage() {
                           style={{ background: `linear-gradient(135deg, ${D.indigo}, ${D.purple})`, color: '#fff' }}>
                           View & Apply <i className="fas fa-arrow-up-right-from-square text-[10px]" />
                         </a>
+                      </div>
                       </div>
                     </div>
                   ))}
@@ -573,6 +605,9 @@ export default function JobsPage() {
                   <div className="w-85 shrink-0 max-[1100px]:hidden">
                     <div className="rounded-2xl p-5 sticky top-20" style={{ background: D.card, border: `1px solid ${D.border}` }}>
                       {detail.isPremium && <div className="h-0.5 w-full rounded-full mb-4" style={{ background: 'linear-gradient(90deg,#5b4cf5,#7c3aed)' }} />}
+                      <div className="relative -mx-5 -mt-5 mb-4 overflow-hidden border-b" style={{ borderColor: D.border }}>
+                        <JobMediaHeader job={detail} accent={detail.kind === 'scouted' ? D.indigo : detail.isPremium ? D.purple : D.accent} />
+                      </div>
                       {detail.kind === 'scouted' && (
                         <div className="mb-3 inline-flex items-center gap-1.5 text-[11px] font-bold px-2.5 py-1 rounded-full" style={{ background: D.indigo + '20', color: D.indigo }}>
                           {(SCOUT_SOURCE[detail.source] || SCOUT_SOURCE.other).icon} AI-Scouted from {detail.source?.replace('_', ' ')}

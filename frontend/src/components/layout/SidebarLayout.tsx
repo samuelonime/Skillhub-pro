@@ -28,6 +28,7 @@ import {
   type LucideIcon,
 } from 'lucide-react';
 import { apiFetch, logout } from '@/lib/api';
+import { BrandIcon } from '@/components/ui/BrandIcon';
 
 interface NavItem {
   href?: string;
@@ -179,7 +180,7 @@ function NotificationPanel({ onClose }: { onClose: () => void }) {
             className="w-7 h-7 rounded-lg grid place-items-center cursor-pointer border-0 transition-all hover:opacity-70"
             style={{ background: 'rgba(255,255,255,0.06)', color: 'rgba(255,255,255,0.4)' }}
           >
-            <i className="fas fa-times text-xs" />
+            <BrandIcon name="fa-times" className="text-xs" />
           </button>
         </div>
       </div>
@@ -199,7 +200,7 @@ function NotificationPanel({ onClose }: { onClose: () => void }) {
           </div>
         ) : notifs.length === 0 ? (
           <div className="py-12 text-center">
-            <i className="fas fa-bell text-3xl mb-3 block" style={{ color: 'rgba(255,255,255,0.1)' }} />
+            <BrandIcon name="fa-bell" className="text-3xl mb-3 block mx-auto" style={{ color: 'rgba(255,255,255,0.1)' }} />
             <p className="text-sm" style={{ color: 'rgba(255,255,255,0.3)' }}>No notifications yet</p>
           </div>
         ) : (
@@ -217,7 +218,7 @@ function NotificationPanel({ onClose }: { onClose: () => void }) {
                 }}
               >
                 <div className="w-8 h-8 rounded-full grid place-items-center text-[11px] shrink-0" style={{ background: color + '18', color, border: `1px solid ${color}30` }}>
-                  <i className={`fas ${icon}`} />
+                  <BrandIcon name={icon} className="text-[11px]" />
                 </div>
                 <div className="flex-1 min-w-0">
                   {n.title && <p className="text-[12.5px] font-semibold mb-0.5 leading-snug" style={{ color: 'rgba(255,255,255,0.85)' }}>{n.title}</p>}
@@ -225,7 +226,7 @@ function NotificationPanel({ onClose }: { onClose: () => void }) {
                   <p className="text-[10.5px] mt-1 font-medium" style={{ color: 'rgba(255,255,255,0.25)' }}>{n.createdAt ? <TimeAgo date={n.createdAt} /> : ''}</p>
                 </div>
                 {target ? (
-                  <i className="fas fa-chevron-right text-[10px] shrink-0 mt-1.5" style={{ color: 'rgba(255,255,255,0.3)' }} />
+                  <BrandIcon name="fa-chevron-right" className="text-[10px] shrink-0 mt-1.5" style={{ color: 'rgba(255,255,255,0.3)' }} />
                 ) : !n.read ? (
                   <div className="w-1.5 h-1.5 rounded-full shrink-0 mt-2" style={{ background: '#4F8EF7' }} />
                 ) : null}
@@ -273,7 +274,7 @@ function ProfileDropdown({ user, isEmployer, onClose }: { user: any; isEmployer:
             onMouseEnter={e => (e.currentTarget.style.background = 'rgba(255,255,255,0.06)')}
             onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
           >
-            <i className={`fas ${item.icon} w-4 text-center text-[12px]`} style={{ color: 'rgba(255,255,255,0.3)' }} />
+            <BrandIcon name={item.icon} className="w-4 text-center text-[12px]" style={{ color: 'rgba(255,255,255,0.3)' }} />
             {item.label}
           </Link>
         ))}
@@ -285,7 +286,7 @@ function ProfileDropdown({ user, isEmployer, onClose }: { user: any; isEmployer:
           onMouseEnter={e => (e.currentTarget.style.background = 'rgba(239,68,68,0.1)')}
           onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
         >
-          <i className="fas fa-sign-out-alt text-[12px] w-4 text-center" /> Log Out
+          <BrandIcon name="fa-sign-out-alt" className="text-[12px] w-4 text-center" /> Log Out
         </button>
       </div>
     </div>
@@ -414,7 +415,7 @@ export function SidebarLayout({ children, navItems, pageTitle }: SidebarLayoutPr
             <span className="font-jakarta font-extrabold text-[18px] text-white tracking-tight">SkillHub</span>
           </div>
           <button onClick={() => setMobileOpen(false)} className="md:hidden w-8 h-8 rounded-lg grid place-items-center" style={{ background: 'rgba(255,255,255,0.06)', color: 'rgba(255,255,255,0.6)' }}>
-            <i className="fas fa-times text-sm" />
+            <BrandIcon name="fa-times" className="text-sm" />
           </button>
         </div>
 
@@ -508,7 +509,7 @@ export function SidebarLayout({ children, navItems, pageTitle }: SidebarLayoutPr
             onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = 'rgba(239,68,68,0.14)'; }}
             onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = 'rgba(239,68,68,0.07)'; }}
           >
-            <i className="fas fa-sign-out-alt text-[11px]" /> Log Out
+            <BrandIcon name="fa-sign-out-alt" className="text-[11px]" /> Log Out
           </button>
         </div>
       </aside>
@@ -516,13 +517,13 @@ export function SidebarLayout({ children, navItems, pageTitle }: SidebarLayoutPr
       <div className="flex-1 flex flex-col min-h-screen w-full overflow-x-hidden md:pl-70">
         <header className="h-14 flex items-center justify-between px-4 md:px-6 sticky top-0 z-50 gap-4" style={{ background: 'rgba(8,12,20,0.95)', borderBottom: '1px solid rgba(255,255,255,0.06)', backdropFilter: 'blur(16px)', WebkitBackdropFilter: 'blur(16px)' }}>
           <button onClick={() => setMobileOpen(true)} className="md:hidden w-8 h-8 rounded-lg grid place-items-center cursor-pointer border-0 transition-all shrink-0" style={{ background: 'rgba(255,255,255,0.06)', color: 'rgba(255,255,255,0.6)' }}>
-            <i className="fas fa-bars text-[13px]" />
+            <BrandIcon name="fa-bars" className="text-[13px]" />
           </button>
 
           <span className="font-jakarta font-semibold text-[15px] text-white/85 tracking-tight truncate flex-1 md:flex-none">{pageTitle}</span>
 
           <div className="relative flex-1 max-w-[320px] hidden md:block">
-            <i className="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-[12px]" style={{ color: 'rgba(255,255,255,0.2)' }} />
+            <BrandIcon name="fa-search" className="absolute left-3 top-1/2 -translate-y-1/2 text-[12px]" style={{ color: 'rgba(255,255,255,0.2)' }} />
             <input
               type="text"
               id="search-courses-jobs-skills"
@@ -545,7 +546,7 @@ export function SidebarLayout({ children, navItems, pageTitle }: SidebarLayoutPr
           <div className="flex items-center gap-2 shrink-0">
             {!isEmployer && (
               <Link href="/dashboard/community/messages" className="w-8 h-8 border-0 rounded-lg grid place-items-center cursor-pointer text-[14px] transition-all relative no-underline" style={{ background: 'rgba(255,255,255,0.05)', color: 'rgba(255,255,255,0.4)' }} title="Messages">
-                <i className="fas fa-comment-dots" />
+                <BrandIcon name="fa-comment-dots" />
                 {unreadMsgs > 0 && <span className="absolute -top-0.5 -right-0.5 w-3.5 h-3.5 rounded-full text-white text-[8px] font-bold grid place-items-center" style={{ background: '#4F8EF7', border: '2px solid #080C14' }}>{unreadMsgs > 9 ? '9+' : unreadMsgs}</span>}
               </Link>
             )}
@@ -558,7 +559,7 @@ export function SidebarLayout({ children, navItems, pageTitle }: SidebarLayoutPr
                 onMouseEnter={e => { (e.currentTarget as HTMLElement).style.color = 'rgba(255,255,255,0.8)'; }}
                 onMouseLeave={e => { (e.currentTarget as HTMLElement).style.color = 'rgba(255,255,255,0.4)'; }}
               >
-                <i className="fas fa-bell" />
+                <BrandIcon name="fa-bell" />
                 {unreadCount > 0 && <span className="absolute -top-0.5 -right-0.5 w-3.5 h-3.5 rounded-full text-white text-[8px] font-bold grid place-items-center" style={{ background: '#EF4444', border: '2px solid #080C14' }}>{unreadCount > 9 ? '9+' : unreadCount}</span>}
               </button>
               {showNotifs && <NotificationPanel onClose={() => setShowNotifs(false)} />}

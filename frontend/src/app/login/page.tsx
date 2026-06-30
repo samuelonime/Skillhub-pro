@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback, Suspense } from 'react';
 import { setCachedUser, apiFetch, API_BASE } from '@/lib/api';
 import { useRouter, useSearchParams } from 'next/navigation';
+import { BrandIcon } from '@/components/ui/BrandIcon';
 
 type Tab = 'login' | 'register' | 'forgot' | 'reset';
 type Role = 'student' | 'employer';
@@ -38,14 +39,14 @@ declare global {
 function Alert({ msg, type }: { msg: string; type: AlertType }) {
   if (!msg) return null;
   return (
-    <div className={`flex items-center gap-2.5 p-3 rounded-[10px] text-[13px] mb-3.5 ${type === 'ok' ? 'bg-[#0d2818] text-[#2da44e] border border-[#2da44e]/30' : 'bg-[#2d0f0f] text-[#f85149] border border-[#f85149]/30'}`}>
-      <i className={`fas fa-${type === 'ok' ? 'check-circle' : 'exclamation-circle'}`} /> {msg}
+    <div className={`mb-3.5 flex items-center gap-2.5 rounded-2xl border p-3 text-[13px] ${type === 'ok' ? 'bg-[#092218] text-[#7FF0BF] border-[#00E5A0]/20' : 'bg-[#2A1114] text-[#FCA5A5] border-[#F87171]/20'}`}>
+      <BrandIcon name={type === 'ok' ? 'fa-check-circle' : 'fa-exclamation-circle'} /> {msg}
     </div>
   );
 }
 
 function Spinner() {
-  return <div className="w-[17px] h-[17px] border-2 border-white/30 border-t-white rounded-full mx-auto" style={{ animation: 'spin 0.7s linear infinite' }} />;
+  return <BrandIcon name="fa-spinner" className="mx-auto animate-spin text-[17px]" />;
 }
 
 
@@ -155,10 +156,10 @@ function GoogleButton({ onAlert, role, niche, label = 'Continue with Google' }: 
       type="button"
       onClick={handleGoogle}
       disabled={gLoading}
-      className="w-full py-[0.7rem] bg-[#21262d] border border-[#3d444d] rounded-[8px] text-sm font-medium font-[inherit] text-[#f0f6fc] cursor-pointer flex items-center justify-center gap-3 hover:bg-[#2c313a] hover:border-[#6e7681] disabled:opacity-60 disabled:cursor-not-allowed transition-all"
+      className="w-full py-[0.7rem] bg-[#21262d] border border-[#3d444d] rounded-lg text-sm font-medium font-[inherit] text-[#f0f6fc] cursor-pointer flex items-center justify-center gap-3 hover:bg-[#2c313a] hover:border-[#6e7681] disabled:opacity-60 disabled:cursor-not-allowed transition-all"
     >
       {gLoading ? (
-        <div className="w-[17px] h-[17px] border-2 border-[#4285f4]/30 border-t-[#4285f4] rounded-full" style={{ animation: 'spin 0.7s linear infinite' }} />
+        <div className="w-4.25 h-4.25 border-2 border-[#4285f4]/30 border-t-[#4285f4] rounded-full" style={{ animation: 'spin 0.7s linear infinite' }} />
       ) : (
         <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24">
           <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
@@ -246,10 +247,10 @@ function AppleButton({ onAlert, role, niche, label = 'Continue with Apple' }: {
       type="button"
       onClick={handleApple}
       disabled={loading}
-      className="w-full py-[0.7rem] bg-[#21262d] border border-[#3d444d] rounded-[8px] text-sm font-medium font-[inherit] text-[#f0f6fc] cursor-pointer flex items-center justify-center gap-3 hover:bg-[#2c313a] hover:border-[#6e7681] disabled:opacity-60 disabled:cursor-not-allowed transition-all"
+      className="w-full py-[0.7rem] bg-[#21262d] border border-[#3d444d] rounded-lg text-sm font-medium font-[inherit] text-[#f0f6fc] cursor-pointer flex items-center justify-center gap-3 hover:bg-[#2c313a] hover:border-[#6e7681] disabled:opacity-60 disabled:cursor-not-allowed transition-all"
     >
       {loading ? (
-        <div className="w-[17px] h-[17px] border-2 border-white/30 border-t-white rounded-full" style={{ animation: 'spin 0.7s linear infinite' }} />
+        <div className="w-4.25 h-4.25 border-2 border-white/30 border-t-white rounded-full" style={{ animation: 'spin 0.7s linear infinite' }} />
       ) : (
         <svg width="17" height="17" viewBox="0 0 814 1000" fill="white" xmlns="http://www.w3.org/2000/svg">
           <path d="M788.1 340.9c-5.8 4.5-108.2 62.2-108.2 190.5 0 148.4 130.3 200.9 134.2 202.2-.6 3.2-20.7 71.9-68.7 141.9-42.8 61.6-87.5 123.1-155.5 123.1s-85.5-39.5-164-39.5c-76 0-103.7 40.8-165.9 40.8s-105-42.4-145.5-100.5C92.8 790.4 51.3 699.2 51.3 612.5c0-151.3 104.6-231.6 206.7-231.6 55.4 0 101.4 37.4 136.5 37.4 33.5 0 85.8-39.6 149.1-39.6 24.2 0 108.2 2.6 168.6 71.4zm-109.4-194.5c31.4-37.4 53.9-89.6 53.9-141.9 0-7.1-.6-14.3-1.9-20.1-50.6 1.9-110.4 33.5-146.5 75.3-28.2 32.2-55.4 84.4-55.4 137.4 0 7.8 1.3 15.6 1.9 18.1 3.2.6 8.4 1.3 13.6 1.3 45.4 0 102.5-30.4 134.4-69.4z"/>
@@ -325,7 +326,7 @@ function LoginForm({ onAlert }: { onAlert: (msg: string, type?: AlertType) => vo
           placeholder="name@example.com"
           required
           autoComplete="email"
-          className="w-full bg-[#0d1117] border border-[#30363d] rounded-[8px] px-3 py-[0.7rem] text-[0.9rem] text-[#e6edf3] font-[inherit] outline-none focus:border-[#2f81f7] focus:shadow-[0_0_0_2px_rgba(47,129,247,0.25)] transition-all"
+          className="w-full bg-[#0d1117] border border-[#30363d] rounded-lg px-3 py-[0.7rem] text-[0.9rem] text-[#e6edf3] font-[inherit] outline-none focus:border-[#2f81f7] focus:shadow-[0_0_0_2px_rgba(47,129,247,0.25)] transition-all"
         />
       </div>
       <div className="mb-2">
@@ -338,10 +339,10 @@ function LoginForm({ onAlert }: { onAlert: (msg: string, type?: AlertType) => vo
             placeholder="••••••••"
             required
             autoComplete="current-password"
-            className="w-full bg-[#0d1117] border border-[#30363d] rounded-[8px] px-3 pr-10 py-[0.7rem] text-[0.9rem] text-[#e6edf3] font-[inherit] outline-none focus:border-[#2f81f7] focus:shadow-[0_0_0_2px_rgba(47,129,247,0.25)] transition-all"
+            className="w-full bg-[#0d1117] border border-[#30363d] rounded-lg px-3 pr-10 py-[0.7rem] text-[0.9rem] text-[#e6edf3] font-[inherit] outline-none focus:border-[#2f81f7] focus:shadow-[0_0_0_2px_rgba(47,129,247,0.25)] transition-all"
           />
-          <button type="button" onClick={() => setShowPwd(v => !v)} className="absolute right-3 top-1/2 -translate-y-1/2 text-[#6e7681] text-sm cursor-pointer p-1 border-0 bg-transparent">
-            <i className={`fas fa-${showPwd ? 'eye-slash' : 'eye'}`} />
+          <button type="button" onClick={() => setShowPwd(v => !v)} className="absolute right-3 top-1/2 -translate-y-1/2 text-[#8FA8D6] text-sm cursor-pointer p-1 border-0 bg-transparent">
+            <BrandIcon name={showPwd ? 'fa-eye-slash' : 'fa-eye'} />
           </button>
         </div>
       </div>
@@ -351,9 +352,10 @@ function LoginForm({ onAlert }: { onAlert: (msg: string, type?: AlertType) => vo
       <button
         type="submit"
         disabled={loading}
-        className="w-full bg-[#238636] border-0 rounded-[8px] py-3 text-[0.95rem] font-semibold text-white cursor-pointer hover:bg-[#2ea043] disabled:opacity-60 disabled:cursor-not-allowed transition-all mb-5"
+        className="mb-5 w-full rounded-2xl border-0 py-3 text-[0.95rem] font-semibold text-white transition-all disabled:cursor-not-allowed disabled:opacity-60"
+        style={{ background: 'linear-gradient(135deg, #4F8EF7, #2F6FED)', boxShadow: '0 16px 36px rgba(47,111,237,0.28)' }}
       >
-        {loading ? <Spinner /> : 'Sign In →'}
+        {loading ? <Spinner /> : 'Enter workspace'}
       </button>
       <div className="flex items-center gap-2 text-[0.75rem] text-[#6e7681] my-4">
         <div className="flex-1 h-px bg-[#30363d]" /><span>or continue with</span><div className="flex-1 h-px bg-[#30363d]" />
@@ -448,8 +450,8 @@ function RegisterForm({ onAlert }: { onAlert: (msg: string, type?: AlertType) =>
         <label className={labelCls}>Password</label>
         <div className="relative">
           <input type={showPwd ? 'text' : 'password'} value={fields.pwd} onChange={e => up('pwd', e.target.value)} placeholder="Min 8 chars, 1 uppercase, 1 number" required className={`${inputCls} pr-10`} />
-          <button type="button" onClick={() => setShowPwd(v => !v)} className="absolute right-3 top-1/2 -translate-y-1/2 text-[#6e7681] text-sm cursor-pointer p-1 border-0 bg-transparent">
-            <i className={`fas fa-${showPwd ? 'eye-slash' : 'eye'}`} />
+          <button type="button" onClick={() => setShowPwd(v => !v)} className="absolute right-3 top-1/2 -translate-y-1/2 text-[#8FA8D6] text-sm cursor-pointer p-1 border-0 bg-transparent">
+            <BrandIcon name={showPwd ? 'fa-eye-slash' : 'fa-eye'} />
           </button>
         </div>
       </div>
@@ -481,9 +483,10 @@ function RegisterForm({ onAlert }: { onAlert: (msg: string, type?: AlertType) =>
       <button
         type="submit"
         disabled={loading}
-        className="w-full bg-[#238636] border-0 rounded-[8px] py-3 text-[0.95rem] font-semibold text-white cursor-pointer hover:bg-[#2ea043] disabled:opacity-60 disabled:cursor-not-allowed transition-all mb-5"
+        className="mb-5 w-full rounded-2xl border-0 py-3 text-[0.95rem] font-semibold text-white transition-all disabled:cursor-not-allowed disabled:opacity-60"
+        style={{ background: 'linear-gradient(135deg, #00A6A6, #0E7490)', boxShadow: '0 16px 36px rgba(14,116,144,0.22)' }}
       >
-        {loading ? <Spinner /> : 'Create Account →'}
+        {loading ? <Spinner /> : 'Create account'}
       </button>
 
       <div className="flex items-center gap-2 text-[0.75rem] text-[#6e7681] mb-4">
@@ -504,12 +507,12 @@ function RegisterForm({ onAlert }: { onAlert: (msg: string, type?: AlertType) =>
 
 /* ── Feature list for hero column ───────────────────────────────────────── */
 const features = [
-  { title: 'Curated Skill Paths', desc: 'Follow structured learning tracks designed for career growth.' },
-  { title: 'Verified Certificates', desc: 'Upload and verify certificates from leading learning platforms.' },
-  { title: 'Professional Portfolio', desc: 'Showcase your skills, projects, and accomplishments in one place.' },
-  { title: 'Smart Job Matching', desc: 'Discover jobs and internships aligned with your skills and certifications.' },
-  { title: 'Employer Connections', desc: 'Get noticed by recruiters searching for verified talent.' },
-  { title: 'Progress Tracking', desc: 'Monitor your learning journey and career readiness from your dashboard.' },
+  { icon: 'fa-graduation-cap', title: 'Career-grade learning paths', desc: 'Move from exploration to job-ready capability with structured, high-signal learning tracks.' },
+  { icon: 'fa-certificate', title: 'Verified proof of skill', desc: 'Bring together certificates, assessments, and outcomes in one trusted profile.' },
+  { icon: 'fa-layer-group', title: 'Portfolio with hiring context', desc: 'Show work, impact, and technologies in a format employers can screen quickly.' },
+  { icon: 'fa-briefcase', title: 'Matched opportunities', desc: 'Surface roles and AI-scouted openings that align with your skill profile.' },
+  { icon: 'fa-users', title: 'Community momentum', desc: 'Share progress, ask better questions, and stay accountable with peers.' },
+  { icon: 'fa-chart-line', title: 'Readiness signals', desc: 'Track progress, merit standing, and the actions that improve employability.' },
 ];
 
 /* ── Main Page ───────────────────────────────────────────────────────────── */
@@ -526,94 +529,97 @@ function LoginPageInner() {
   return (
     <div
       className="min-h-screen text-[#e6edf3] flex items-start justify-center py-8 px-4"
-      style={{ background: '#0a0c10', fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, Arial, sans-serif" }}
+      style={{ background: 'radial-gradient(circle at top left, rgba(79,142,247,0.16) 0%, transparent 34%), radial-gradient(circle at bottom right, rgba(0,229,160,0.1) 0%, transparent 30%), #080C14', fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" }}
     >
-      <div className="w-full max-w-[1280px]">
+      <div className="w-full max-w-7xl">
         <div className="flex flex-wrap gap-8 items-stretch">
 
           {/* ── LEFT: Hero / features ──────────────────────────────────── */}
           <div
-            className="flex-[1.2] rounded-[2rem] p-8 border border-[#2a2f38] shadow-[0_20px_35px_-12px_rgba(0,0,0,0.4)]"
-            style={{ background: 'linear-gradient(145deg,#0d1117 0%,#06080c 100%)' }}
+            className="flex-[1.2] rounded-4xl p-8 border shadow-[0_30px_70px_rgba(0,0,0,0.34)]"
+            style={{ background: 'linear-gradient(145deg, rgba(12,18,32,0.98) 0%, rgba(8,12,20,0.98) 100%)', borderColor: 'rgba(79,142,247,0.16)' }}
           >
             {/* Logo */}
             <div className="flex items-center gap-2.5 mb-6">
               <img src="/meritlives.svg" alt="SkillHub" style={{ width: 28, height: 28 }} />
-              <span className="font-syne font-extrabold text-[22px] tracking-tight text-white">SkillHub</span>
+              <span className="font-jakarta font-extrabold text-[22px] tracking-tight text-white">SkillHub Pro</span>
+            </div>
+
+            <div className="inline-flex items-center gap-2 rounded-full px-4 py-2 text-[11px] font-bold uppercase tracking-[0.18em]"
+              style={{ background: 'rgba(79,142,247,0.1)', border: '1px solid rgba(79,142,247,0.22)', color: '#8FB8FF' }}>
+              <BrandIcon name="fa-sparkles" />
+              Workforce acceleration for Africa
             </div>
 
             <h1
-              className="font-syne font-extrabold mb-3 leading-[1.2]"
-              style={{ fontSize: 'clamp(1.8rem,3vw,2.4rem)', background: 'linear-gradient(135deg,#ffffff 0%,#b0c4ff 100%)', WebkitBackgroundClip: 'text', backgroundClip: 'text', color: 'transparent' }}
+              className="mb-3 mt-6 font-jakarta font-extrabold leading-[1.1]"
+              style={{ fontSize: 'clamp(2rem,3vw,2.8rem)', background: 'linear-gradient(135deg,#ffffff 0%,#b9d3ff 45%,#8DE1D8 100%)', WebkitBackgroundClip: 'text', backgroundClip: 'text', color: 'transparent' }}
             >
-              {tab === 'login' ? 'Welcome back to SkillHub' : 'Create Your Free SkillHub Account'}
+              {tab === 'login' ? 'Return to your operating system for skills, proof, and hiring.' : 'Build a profile employers can trust from day one.'}
             </h1>
-            <p className="text-[1rem] text-[#b1bac4] mb-8 border-l-[3px] border-[#2f81f7] pl-4">
-              Build in-demand skills, showcase your achievements, and connect with employers.
+            <p className="mb-8 border-l-[3px] pl-4 text-[1rem]" style={{ borderColor: '#4F8EF7', color: 'rgba(255,255,255,0.62)' }}>
+              SkillHub Pro connects learning, proof of work, community momentum, and matched opportunities in one production-grade workspace.
             </p>
 
             <ul className="list-none">
               {features.map(f => (
                 <li key={f.title} className="flex gap-3 mb-6">
-                  <div
-                    className="flex-shrink-0 mt-[2px]"
-                    style={{
-                      width: 24, height: 24,
-                      backgroundColor: '#2da44e',
-                      WebkitMask: "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='white'%3E%3Cpath d='M13.78 4.22a.75.75 0 0 1 0 1.06l-7.25 7.25a.75.75 0 0 1-1.06 0L2.22 9.28a.751.751 0 0 1 .018-1.042.751.751 0 0 1 1.042-.018L6 10.94l6.72-6.72a.75.75 0 0 1 1.06 0Z'/%3E%3C/svg%3E\") no-repeat center",
-                      WebkitMaskSize: 'contain',
-                      mask: "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='white'%3E%3Cpath d='M13.78 4.22a.75.75 0 0 1 0 1.06l-7.25 7.25a.75.75 0 0 1-1.06 0L2.22 9.28a.751.751 0 0 1 .018-1.042.751.751 0 0 1 1.042-.018L6 10.94l6.72-6.72a.75.75 0 0 1 1.06 0Z'/%3E%3C/svg%3E\") no-repeat center",
-                      maskSize: 'contain',
-                    }}
-                  />
+                  <div className="mt-0.5 grid h-8 w-8 shrink-0 place-items-center rounded-xl"
+                    style={{ background: 'rgba(0,229,160,0.12)', color: '#00E5A0' }}>
+                    <BrandIcon name={f.icon} />
+                  </div>
                   <div>
                     <h3 className="text-[1rem] font-semibold text-[#e6edf3] mb-[0.2rem]">{f.title}</h3>
-                    <p className="text-[0.85rem] text-[#8b949e]">{f.desc}</p>
+                    <p className="text-[0.85rem]" style={{ color: 'rgba(255,255,255,0.48)' }}>{f.desc}</p>
                   </div>
                 </li>
               ))}
             </ul>
 
             {/* Testimonial */}
-            <div className="mt-2 rounded-[1rem] p-5 backdrop-blur-lg" style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.07)' }}>
-              <p className="text-[13.5px] leading-relaxed italic mb-3.5 text-[rgba(255,255,255,0.72)]">
-                "SkillHub helped me transition from marketing to data science in 6 months. Landed a role with a 40% salary increase."
+            <div className="mt-2 rounded-2xl p-5 backdrop-blur-lg" style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.07)' }}>
+              <p className="mb-3.5 text-[13.5px] italic leading-relaxed text-[rgba(255,255,255,0.72)]">
+                “The platform made my profile look serious. Recruiters could see proof, not just claims, and that changed the quality of interviews I got.”
               </p>
               <div className="flex items-center gap-2.5">
-                <img className="w-8 h-8 rounded-full object-cover border-2 border-[#2f81f7]" src="https://randomuser.me/api/portraits/women/32.jpg" alt="Sarah" />
+                <div className="grid h-8 w-8 place-items-center rounded-full border-2 border-[#2F6FED] bg-[#10213B] text-xs font-bold text-white">AO</div>
                 <div>
-                  <div className="text-sm font-semibold text-white">Sarah Johnson</div>
-                  <div className="text-xs text-[#8b949e]">Data Analyst, TechVision Africa</div>
+                  <div className="text-sm font-semibold text-white">Adaeze Okoye</div>
+                  <div className="text-xs text-[#8b949e]">Product Analyst, Lagos Growth Lab</div>
                 </div>
               </div>
             </div>
           </div>
 
           {/* ── RIGHT: Auth card ────────────────────────────────────────── */}
-          <div className="flex-1 min-w-[340px]">
+          <div className="flex-1 min-w-85">
             <div
-              className="rounded-[1.5rem] border border-[#30363d] p-7 shadow-[0_12px_32px_rgba(0,0,0,0.3)] h-full"
-              style={{ backgroundColor: '#161b22' }}
+              className="rounded-[1.75rem] border p-7 shadow-[0_18px_48px_rgba(0,0,0,0.32)] h-full"
+              style={{ background: 'rgba(12,18,32,0.96)', borderColor: 'rgba(255,255,255,0.08)' }}
             >
               {/* Sign In / Create Account tabs */}
-              <div className="flex gap-2 bg-[#0d1117] p-[0.3rem] rounded-[48px] mb-7 border border-[#2a2f38]">
+              <div
+                className="mb-7 flex gap-2 rounded-[48px] border p-[0.3rem]"
+                style={{ background: 'rgba(255,255,255,0.03)', borderColor: 'rgba(255,255,255,0.08)' }}
+              >
                 {(['login', 'register'] as Tab[]).map(t => (
                   <button
                     key={t}
                     type="button"
                     onClick={() => { setTab(t); setAlert({ msg: '', type: 'err' }); }}
-                    className={`flex-1 text-center py-[0.6rem] text-[0.9rem] font-medium rounded-[40px] cursor-pointer transition-all border-0 font-[inherit] ${tab === t ? 'bg-[#2f81f7] text-white shadow-[0_2px_6px_rgba(47,129,247,0.3)]' : 'bg-transparent text-[#8b949e] hover:bg-[#21262d] hover:text-[#e6edf3]'}`}
+                    className={`flex-1 text-center py-[0.6rem] text-[0.9rem] font-medium rounded-[40px] cursor-pointer transition-all border-0 font-[inherit] ${tab === t ? 'text-white shadow-[0_2px_6px_rgba(47,129,247,0.3)]' : 'bg-transparent text-[#8b949e] hover:text-[#e6edf3]'}`}
+                    style={tab === t ? { background: 'linear-gradient(135deg, #4F8EF7, #2F6FED)' } : undefined}
                   >
                     {t === 'login' ? 'Sign In' : 'Create Account'}
                   </button>
                 ))}
               </div>
 
-              <h2 className="font-syne font-extrabold text-[1.6rem] tracking-tight mb-1 text-white">
-                {tab === 'login' ? 'Welcome back' : 'Create your account'}
+              <h2 className="mb-1 font-jakarta text-[1.8rem] font-extrabold tracking-tight text-white">
+                {tab === 'login' ? 'Resume your progress' : 'Open your SkillHub Pro account'}
               </h2>
-              <p className="text-[0.85rem] text-[#8b949e] mb-6">
-                {tab === 'login' ? 'Sign in to your SkillHub account' : 'Join 50,000+ professionals on SkillHub'}
+              <p className="mb-6 text-[0.9rem]" style={{ color: 'rgba(255,255,255,0.46)' }}>
+                {tab === 'login' ? 'Access your courses, portfolio proof, AI insights, and matched opportunities.' : 'Start with a profile built for learners, builders, and hiring teams.'}
               </p>
 
               <Alert msg={alert.msg} type={alert.type} />

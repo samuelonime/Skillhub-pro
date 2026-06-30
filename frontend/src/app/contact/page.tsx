@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { SidebarLayout } from '@/components/layout/SidebarLayout';
 import { apiFetch } from '@/lib/api';
+import { BrandIcon } from '@/components/ui/BrandIcon';
 
 const navItems = [
   { href: '/dashboard',              icon: 'fa-home',             label: 'Dashboard' },
@@ -20,44 +21,44 @@ const navItems = [
 
 // ── Topic config ──────────────────────────────────────────────────────────────
 const TOPICS = [
-  { value: 'billing',     label: 'Billing & Subscription', icon: 'fa-credit-card',         color: '#ef4444', bg: '#fef2f2' },
-  { value: 'technical',   label: 'Technical Issue',         icon: 'fa-triangle-exclamation', color: '#f59e0b', bg: '#fffbeb' },
-  { value: 'account',     label: 'Account Help',            icon: 'fa-user-shield',          color: '#3b82f6', bg: '#eff6ff' },
-  { value: 'courses',     label: 'Courses & Learning',      icon: 'fa-book-open',            color: '#5b4cf5', bg: '#f4f2ff' },
-  { value: 'jobs',        label: 'Jobs & Applications',     icon: 'fa-briefcase',            color: '#10b981', bg: '#f0fdf4' },
-  { value: 'ai_features', label: 'AI Features',             icon: 'fa-brain',                color: '#7c3aed', bg: '#f4f2ff' },
-  { value: 'partnership', label: 'Partnership Enquiry',     icon: 'fa-handshake',            color: '#d97706', bg: '#fffbeb' },
-  { value: 'other',       label: 'Something Else',          icon: 'fa-ellipsis',             color: '#6b7280', bg: '#f5f5fb' },
+  { value: 'billing',     label: 'Billing & Access',        icon: 'fa-credit-card',         color: '#F87171', bg: 'rgba(248,113,113,0.12)' },
+  { value: 'technical',   label: 'Platform Incident',       icon: 'fa-triangle-exclamation', color: '#F59E0B', bg: 'rgba(245,158,11,0.12)' },
+  { value: 'account',     label: 'Account Security',        icon: 'fa-user-shield',         color: '#4F8EF7', bg: 'rgba(79,142,247,0.12)' },
+  { value: 'courses',     label: 'Learning Progress',       icon: 'fa-book-open',           color: '#A78BFA', bg: 'rgba(167,139,250,0.12)' },
+  { value: 'jobs',        label: 'Jobs & Hiring',           icon: 'fa-briefcase',           color: '#00E5A0', bg: 'rgba(0,229,160,0.12)' },
+  { value: 'ai_features', label: 'AI Product Feedback',     icon: 'fa-brain',               color: '#8B5CF6', bg: 'rgba(139,92,246,0.12)' },
+  { value: 'partnership', label: 'Partnerships',            icon: 'fa-handshake',           color: '#F59E0B', bg: 'rgba(245,158,11,0.12)' },
+  { value: 'other',       label: 'General Request',         icon: 'fa-ellipsis',            color: '#94A3B8', bg: 'rgba(148,163,184,0.12)' },
 ];
 
 // ── Contact channels ──────────────────────────────────────────────────────────
 const CHANNELS = [
   {
     icon:  'fa-envelope',
-    color: '#5b4cf5',
-    bg:    '#f4f2ff',
-    label: 'Email us',
+    color: '#4F8EF7',
+    bg:    'rgba(79,142,247,0.12)',
+    label: 'Support inbox',
     value: 'support@skillhub.ng',
-    sub:   'We reply within 24 hours',
+    sub:   'Best for billing, access, and technical issues',
     href:  'mailto:support@skillhub.ng',
   },
   {
     icon:  'fa-users',
-    color: '#10b981',
-    bg:    '#f0fdf4',
-    label: 'Community forum',
-    value: 'Ask the community',
-    sub:   'Usually answered within the hour',
+    color: '#00E5A0',
+    bg:    'rgba(0,229,160,0.12)',
+    label: 'Community desk',
+    value: 'Get peer support',
+    sub:   'Useful for workflow advice and product questions',
     href:  '/dashboard/community',
   },
   {
     icon:  'fa-users',
-    color: '#f59e0b',
-    bg:    '#fffbeb',
-    label: 'Community',
-    value: 'Browse 33 answers',
-    sub:   'Find answers without waiting',
-    href:  '/dashboard/community',
+    color: '#F59E0B',
+    bg:    'rgba(245,158,11,0.12)',
+    label: 'Partnership desk',
+    value: 'Request a commercial conversation',
+    sub:   'For institutions, employers, and ecosystem partners',
+    href:  'mailto:partnerships@skillhub.ng',
   },
 ];
 
@@ -91,14 +92,14 @@ function Field({
 }) {
   return (
     <div className="flex flex-col gap-1.5">
-      <label className="text-[13px] font-semibold text-[#0a0a0f]">
+      <label className="text-[13px] font-semibold text-white/88">
         {label}
         {required && <span className="text-[#ef4444] ml-0.5">*</span>}
       </label>
       {children}
       {error && (
         <span className="text-[12px] text-[#ef4444] flex items-center gap-1">
-          <i className="fas fa-circle-exclamation text-[10px]" />{error}
+          <BrandIcon name="fa-circle-exclamation" className="text-[10px]" />{error}
         </span>
       )}
     </div>
@@ -106,8 +107,8 @@ function Field({
 }
 
 const INPUT_BASE =
-  'px-4 py-2.5 rounded-xl border text-[13px] outline-none transition-all bg-white text-[#0a0a0f] placeholder:text-[#9898b8]';
-const INPUT_IDLE  = 'border-[#e8e8f0] focus:border-[#5b4cf5] focus:ring-2 focus:ring-[#5b4cf5]/10';
+  'px-4 py-2.5 rounded-xl border text-[13px] outline-none transition-all bg-white/5 text-white placeholder:text-white/28';
+const INPUT_IDLE  = 'border-white/8 focus:border-[#4F8EF7] focus:ring-2 focus:ring-[#4F8EF7]/10';
 const INPUT_ERROR = 'border-[#ef4444] focus:border-[#ef4444] focus:ring-2 focus:ring-[#ef4444]/10';
 
 // ── Page ──────────────────────────────────────────────────────────────────────
@@ -175,28 +176,30 @@ export default function ContactPage() {
     return (
       <SidebarLayout navItems={navItems} pageTitle="Contact Us">
         <div className="max-w-lg mx-auto mt-8">
-          <div className="bg-white rounded-2xl border border-[#e8e8f0] p-8 text-center">
-            <div className="w-16 h-16 rounded-2xl bg-[#f0fdf4] grid place-items-center mx-auto mb-4">
-              <i className="fas fa-circle-check text-[32px] text-[#10b981]" />
+          <div className="rounded-3xl border p-8 text-center" style={{ background: '#0F1521', borderColor: 'rgba(255,255,255,0.08)' }}>
+            <div className="mx-auto mb-4 grid h-16 w-16 place-items-center rounded-2xl" style={{ background: 'rgba(0,229,160,0.12)' }}>
+              <BrandIcon name="fa-circle-check" className="text-[32px] text-[#00E5A0]" />
             </div>
-            <h2 className="font-syne font-bold text-[20px] mb-2">Message sent!</h2>
-            <p className="text-[13.5px] text-[#6b6b8a] mb-1">
+            <h2 className="font-jakarta font-bold text-[20px] mb-2 text-white">Message routed to support</h2>
+            <p className="text-[13.5px] mb-1 text-white/58">
               Your reference number is{' '}
-              <span className="font-bold text-[#5b4cf5] font-mono">#{submitted.reference}</span>.
+              <span className="font-bold text-[#4F8EF7] font-mono">#{submitted.reference}</span>.
             </p>
-            <p className="text-[13px] text-[#6b6b8a] mb-6">
-              We'll reply to your email within 24 hours. Keep an eye on your inbox.
+            <p className="text-[13px] mb-6 text-white/44">
+              Your request is in queue. Expect an email response within the SLA shown below.
             </p>
             <div className="flex gap-3 justify-center">
               <button
                 onClick={() => setSubmitted(null)}
-                className="px-5 py-2.5 rounded-xl bg-[#5b4cf5] text-white text-[13px] font-semibold hover:bg-[#4f46e5] transition-all"
+                className="px-5 py-2.5 rounded-xl text-white text-[13px] font-semibold transition-all"
+                style={{ background: 'linear-gradient(135deg, #4F8EF7, #2F6FED)' }}
               >
                 Send another message
               </button>
               <a
                 href="/dashboard"
-                className="px-5 py-2.5 rounded-xl bg-[#f5f5fb] text-[#5b4cf5] text-[13px] font-semibold no-underline hover:bg-[#f4f2ff] transition-all"
+                className="px-5 py-2.5 rounded-xl text-[#8FB8FF] text-[13px] font-semibold no-underline transition-all"
+                style={{ background: 'rgba(79,142,247,0.1)', border: '1px solid rgba(79,142,247,0.18)' }}
               >
                 Back to Dashboard
               </a>
@@ -223,12 +226,12 @@ export default function ContactPage() {
         <div className="relative z-[1]">
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full mb-3 text-[11px] font-bold text-white/80"
             style={{ background: 'rgba(255,255,255,0.15)' }}>
-            <i className="fas fa-headset" />
-            Support
+            <BrandIcon name="fa-headset" />
+            Support operations
           </div>
-          <h2 className="font-syne font-bold text-[22px] text-white mb-1">Contact Us</h2>
+          <h2 className="font-jakarta font-bold text-[22px] text-white mb-1">Support that matches the product</h2>
           <p className="text-white/70 text-[13px] max-w-md">
-            Have a question, found a bug, or want to partner with us? Fill in the form and we'll get back to you fast.
+            Report incidents, unblock account issues, or start a commercial conversation without falling into a generic ticket queue.
           </p>
         </div>
       </div>
@@ -237,17 +240,18 @@ export default function ContactPage() {
       <div className="grid grid-cols-3 gap-3 mb-5 max-md:grid-cols-1">
         {CHANNELS.map(ch => (
           <a key={ch.label} href={ch.href}
-            className="bg-white rounded-2xl border border-[#e8e8f0] p-4 flex items-center gap-3 no-underline hover:-translate-y-0.5 hover:shadow-[0_4px_16px_rgba(0,0,0,0.07)] transition-all group">
+            className="rounded-2xl border p-4 flex items-center gap-3 no-underline hover:-translate-y-0.5 transition-all group"
+            style={{ background: '#0F1521', borderColor: 'rgba(255,255,255,0.08)' }}>
             <div className="w-10 h-10 rounded-xl grid place-items-center flex-shrink-0"
               style={{ background: ch.bg, color: ch.color }}>
-              <i className={`fas ${ch.icon} text-[16px]`} />
+              <BrandIcon name={ch.icon} className="text-[16px]" />
             </div>
             <div className="min-w-0">
-              <div className="text-[12px] text-[#9898b8]">{ch.label}</div>
-              <div className="font-syne font-bold text-[13px] text-[#0a0a0f] truncate group-hover:text-[#5b4cf5] transition-colors">
+              <div className="text-[12px] text-white/34">{ch.label}</div>
+              <div className="font-jakarta font-bold text-[13px] text-white truncate group-hover:text-[#8FB8FF] transition-colors">
                 {ch.value}
               </div>
-              <div className="text-[11px] text-[#9898b8]">{ch.sub}</div>
+              <div className="text-[11px] text-white/38">{ch.sub}</div>
             </div>
           </a>
         ))}
@@ -257,9 +261,9 @@ export default function ContactPage() {
       <div className="grid grid-cols-[1fr_300px] gap-5 max-lg:grid-cols-1">
 
         {/* ── Contact form ──────────────────────────────────────────────── */}
-        <div className="bg-white rounded-2xl border border-[#e8e8f0] p-6">
-          <h3 className="font-syne font-bold text-[16px] mb-1">Send us a message</h3>
-          <p className="text-[13px] text-[#6b6b8a] mb-5">
+        <div className="rounded-2xl border p-6" style={{ background: '#0F1521', borderColor: 'rgba(255,255,255,0.08)' }}>
+          <h3 className="font-jakarta font-bold text-[16px] mb-1 text-white">Open a support case</h3>
+          <p className="text-[13px] text-white/44 mb-5">
             All fields marked <span className="text-[#ef4444]">*</span> are required.
           </p>
 
@@ -298,13 +302,13 @@ export default function ContactPage() {
                       onClick={() => set('topic', t.value)}
                       className="flex flex-col items-center gap-1.5 py-3 px-2 rounded-xl border transition-all text-center"
                       style={{
-                        background:   active ? t.bg         : '#fafafa',
-                        borderColor:  active ? t.color      : '#e8e8f0',
+                        background:   active ? t.bg         : 'rgba(255,255,255,0.03)',
+                        borderColor:  active ? t.color      : 'rgba(255,255,255,0.08)',
                         borderWidth:  active ? '2px'        : '1px',
-                        color:        active ? t.color      : '#6b7280',
+                        color:        active ? t.color      : 'rgba(255,255,255,0.42)',
                       }}
                     >
-                      <i className={`fas ${t.icon} text-[15px]`} />
+                      <BrandIcon name={t.icon} className="text-[15px]" />
                       <span className="text-[10px] font-semibold leading-tight">{t.label}</span>
                     </button>
                   );
@@ -312,7 +316,7 @@ export default function ContactPage() {
               </div>
               {errors.topic && (
                 <span className="text-[12px] text-[#ef4444] flex items-center gap-1 mt-1">
-                  <i className="fas fa-circle-exclamation text-[10px]" />{errors.topic}
+                  <BrandIcon name="fa-circle-exclamation" className="text-[10px]" />{errors.topic}
                 </span>
               )}
             </Field>
@@ -321,7 +325,7 @@ export default function ContactPage() {
             {selectedTopic && (
               <div className="flex items-center gap-2.5 px-4 py-3 rounded-xl"
                 style={{ background: selectedTopic.bg }}>
-                <i className={`fas fa-clock text-[13px]`} style={{ color: selectedTopic.color }} />
+                <BrandIcon name="fa-clock" className="text-[13px]" style={{ color: selectedTopic.color }} />
                 <p className="text-[12.5px] font-medium" style={{ color: selectedTopic.color }}>
                   {RESPONSE_TIME[selectedTopic.value]}
                 </p>
@@ -359,31 +363,32 @@ export default function ContactPage() {
 
             {/* Server error */}
             {serverError && (
-              <div className="flex items-start gap-3 px-4 py-3 rounded-xl bg-[#fef2f2] border border-[#fecaca]">
-                <i className="fas fa-circle-exclamation text-[#ef4444] mt-0.5" />
-                <p className="text-[13px] text-[#b91c1c]">{serverError}</p>
+              <div className="flex items-start gap-3 px-4 py-3 rounded-xl border" style={{ background: 'rgba(239,68,68,0.12)', borderColor: 'rgba(239,68,68,0.22)' }}>
+                <BrandIcon name="fa-circle-exclamation" className="mt-0.5 text-[#ef4444]" />
+                <p className="text-[13px] text-[#FCA5A5]">{serverError}</p>
               </div>
             )}
 
             {/* Submit */}
             <div className="flex items-center justify-between gap-4 pt-1">
-              <p className="text-[12px] text-[#9898b8]">
-                <i className="fas fa-lock text-[10px] mr-1" />
+              <p className="text-[12px] text-white/34">
+                <BrandIcon name="fa-lock" className="mr-1 text-[10px]" />
                 Your message is private and only seen by our support team.
               </p>
               <button
                 onClick={handleSubmit}
                 disabled={submitting}
-                className="flex items-center gap-2 px-6 py-2.5 rounded-xl bg-[#5b4cf5] text-white text-[13px] font-semibold hover:bg-[#4f46e5] transition-all disabled:opacity-60 disabled:cursor-not-allowed flex-shrink-0"
+                className="flex items-center gap-2 px-6 py-2.5 rounded-xl text-white text-[13px] font-semibold transition-all disabled:opacity-60 disabled:cursor-not-allowed flex-shrink-0"
+                style={{ background: 'linear-gradient(135deg, #4F8EF7, #2F6FED)' }}
               >
                 {submitting ? (
                   <>
-                    <i className="fas fa-circle-notch fa-spin text-[12px]" />
+                    <BrandIcon name="fa-circle-notch" className="text-[12px] animate-spin" />
                     Sending…
                   </>
                 ) : (
                   <>
-                    <i className="fas fa-paper-plane text-[12px]" />
+                    <BrandIcon name="fa-paper-plane" className="text-[12px]" />
                     Send message
                   </>
                 )}
@@ -397,25 +402,25 @@ export default function ContactPage() {
         <div className="flex flex-col gap-4">
 
           {/* Office info */}
-          <div className="bg-white rounded-2xl border border-[#e8e8f0] p-5">
-            <h4 className="font-syne font-bold text-[14px] mb-4">Our office</h4>
+          <div className="rounded-2xl border p-5" style={{ background: '#0F1521', borderColor: 'rgba(255,255,255,0.08)' }}>
+            <h4 className="font-jakarta font-bold text-[14px] mb-4 text-white">Support coverage</h4>
             <div className="space-y-3">
               {[
-                { icon: 'fa-location-dot', color: '#5b4cf5', bg: '#f4f2ff',
-                  lines: ['SkillHub Technologies', '14 Adeola Hopewell Street', 'Victoria Island, Lagos', 'Nigeria'] },
-                { icon: 'fa-clock', color: '#10b981', bg: '#f0fdf4',
-                  lines: ['Mon – Fri: 9 AM – 6 PM WAT', 'Sat: 10 AM – 2 PM WAT', 'Sun: Closed'] },
-                { icon: 'fa-phone', color: '#f59e0b', bg: '#fffbeb',
-                  lines: ['+234 901 234 5678'] },
+                { icon: 'fa-location-dot', color: '#4F8EF7', bg: 'rgba(79,142,247,0.12)',
+                  lines: ['SkillHub Pro operations', 'Victoria Island, Lagos', 'Coverage across West Africa'] },
+                { icon: 'fa-clock', color: '#00E5A0', bg: 'rgba(0,229,160,0.12)',
+                  lines: ['Mon – Fri: 9 AM – 6 PM WAT', 'Critical incidents triaged first', 'Weekend response for premium partners'] },
+                { icon: 'fa-phone', color: '#F59E0B', bg: 'rgba(245,158,11,0.12)',
+                  lines: ['Escalations handled by email first', 'Phone support available for enterprise accounts'] },
               ].map((item, i) => (
                 <div key={i} className="flex items-start gap-3">
                   <div className="w-8 h-8 rounded-lg grid place-items-center flex-shrink-0 mt-0.5"
                     style={{ background: item.bg, color: item.color }}>
-                    <i className={`fas ${item.icon} text-[12px]`} />
+                    <BrandIcon name={item.icon} className="text-[12px]" />
                   </div>
                   <div>
                     {item.lines.map((l, j) => (
-                      <div key={j} className={`text-[12.5px] ${j === 0 ? 'font-semibold text-[#0a0a0f]' : 'text-[#6b6b8a]'}`}>{l}</div>
+                      <div key={j} className={`text-[12.5px] ${j === 0 ? 'font-semibold text-white' : 'text-white/42'}`}>{l}</div>
                     ))}
                   </div>
                 </div>
@@ -424,31 +429,31 @@ export default function ContactPage() {
           </div>
 
           {/* Before you write */}
-          <div className="bg-white rounded-2xl border border-[#e8e8f0] p-5">
-            <h4 className="font-syne font-bold text-[14px] mb-3">Before you write</h4>
-            <p className="text-[12px] text-[#6b6b8a] mb-3">
+          <div className="rounded-2xl border p-5" style={{ background: '#0F1521', borderColor: 'rgba(255,255,255,0.08)' }}>
+            <h4 className="font-jakarta font-bold text-[14px] mb-3 text-white">Fastest path to resolution</h4>
+            <p className="text-[12px] text-white/42 mb-3">
               You might find the answer faster in one of these:
             </p>
             <div className="space-y-2">
               {[
-                { href: '/dashboard/community',       icon: 'fa-users', color: '#f59e0b', bg: '#fffbeb', label: 'Browse the Community' },
-                { href: '/dashboard/community', icon: 'fa-users',            color: '#10b981', bg: '#f0fdf4', label: 'Ask the community' },
-                { href: '/dashboard/settings',  icon: 'fa-gear',             color: '#5b4cf5', bg: '#f4f2ff', label: 'Account settings' },
+                { href: '/dashboard/community', icon: 'fa-users', color: '#F59E0B', bg: 'rgba(245,158,11,0.12)', label: 'Browse community solutions' },
+                { href: '/dashboard/community', icon: 'fa-users', color: '#00E5A0', bg: 'rgba(0,229,160,0.12)', label: 'Ask product peers' },
+                { href: '/dashboard/settings',  icon: 'fa-gear',  color: '#4F8EF7', bg: 'rgba(79,142,247,0.12)', label: 'Review account settings' },
               ].map(link => (
                 <a key={link.href} href={link.href}
                   className="flex items-center gap-3 px-3 py-2.5 rounded-xl no-underline transition-all hover:-translate-y-px"
                   style={{ background: link.bg }}>
-                  <i className={`fas ${link.icon} text-[13px]`} style={{ color: link.color }} />
+                  <BrandIcon name={link.icon} className="text-[13px]" style={{ color: link.color }} />
                   <span className="text-[12.5px] font-semibold" style={{ color: link.color }}>{link.label}</span>
-                  <i className="fas fa-arrow-right text-[10px] ml-auto" style={{ color: link.color }} />
+                  <BrandIcon name="fa-arrow-right" className="text-[10px] ml-auto" style={{ color: link.color }} />
                 </a>
               ))}
             </div>
           </div>
 
           {/* SLA card */}
-          <div className="bg-white rounded-2xl border border-[#e8e8f0] p-5">
-            <h4 className="font-syne font-bold text-[14px] mb-3">Response times</h4>
+          <div className="rounded-2xl border p-5" style={{ background: '#0F1521', borderColor: 'rgba(255,255,255,0.08)' }}>
+            <h4 className="font-jakarta font-bold text-[14px] mb-3 text-white">Response targets</h4>
             <div className="space-y-2">
               {[
                 { label: 'Billing',    time: '≤ 4 hrs',  color: '#ef4444', bg: '#fef2f2' },
@@ -464,7 +469,7 @@ export default function ContactPage() {
                 </div>
               ))}
             </div>
-            <p className="text-[11px] text-[#9898b8] mt-3">
+            <p className="text-[11px] text-white/34 mt-3">
               Times are during business hours (Mon–Fri, WAT).
             </p>
           </div>

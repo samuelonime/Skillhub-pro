@@ -3,6 +3,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
+import { BrandIcon } from '@/components/ui/BrandIcon';
 
 /* ── Animated counter hook ──────────────────────────────────────────────── */
 function useCountUp(target: number, duration = 1800, start = false) {
@@ -76,7 +77,7 @@ function ValueCard({ icon, title, desc, accent, delay }: {
       }}>
       <div className="w-12 h-12 rounded-2xl grid place-items-center text-[18px]"
         style={{ background: `${accent}18`, color: accent }}>
-        <i className={`fas ${icon}`} />
+        <BrandIcon name={icon} />
       </div>
       <div>
         <div className="font-jakarta font-bold text-[16px] text-white mb-2">{title}</div>
@@ -99,9 +100,9 @@ function PillarCard({ num, icon, title, items, accent }: {
       onClick={() => setOpen(v => !v)}
     >
       <div className="p-5 flex items-center gap-4">
-        <div className="w-12 h-12 rounded-2xl grid place-items-center text-[18px] flex-shrink-0"
+        <div className="w-12 h-12 rounded-2xl grid place-items-center text-[18px] shrink-0"
           style={{ background: `${accent}18`, color: accent }}>
-          <i className={`fas ${icon}`} />
+          <BrandIcon name={icon} />
         </div>
         <div className="flex-1 min-w-0">
           <div className="text-[10px] font-bold uppercase tracking-[0.15em] mb-0.5" style={{ color: `${accent}80` }}>
@@ -109,9 +110,9 @@ function PillarCard({ num, icon, title, items, accent }: {
           </div>
           <div className="font-jakarta font-bold text-[15px] text-white">{title}</div>
         </div>
-        <div className="w-7 h-7 rounded-lg grid place-items-center flex-shrink-0 transition-transform duration-200"
+        <div className="w-7 h-7 rounded-lg grid place-items-center shrink-0 transition-transform duration-200"
           style={{ background: 'rgba(255,255,255,0.06)', transform: open ? 'rotate(180deg)' : 'none' }}>
-          <i className="fas fa-chevron-down text-[10px]" style={{ color: 'rgba(255,255,255,0.3)' }} />
+          <BrandIcon name="fa-chevron-down" className="text-[10px]" style={{ color: 'rgba(255,255,255,0.3)' }} />
         </div>
       </div>
       {open && (
@@ -119,7 +120,7 @@ function PillarCard({ num, icon, title, items, accent }: {
           <ul className="flex flex-col gap-2.5">
             {items.map((item, i) => (
               <li key={i} className="flex items-start gap-2.5 text-[13px]" style={{ color: 'rgba(255,255,255,0.5)' }}>
-                <div className="w-1.5 h-1.5 rounded-full flex-shrink-0 mt-[5px]" style={{ background: accent }} />
+                <div className="w-1.5 h-1.5 rounded-full shrink-0 mt-1.25" style={{ background: accent }} />
                 {item}
               </li>
             ))}
@@ -139,7 +140,7 @@ function TimelineItem({ year, title, desc, accent, last }: {
     <div ref={ref} className="flex gap-6 transition-all duration-600"
       style={{ opacity: inView ? 1 : 0, transform: inView ? 'translateX(0)' : 'translateX(-20px)', transition: 'opacity 0.5s ease, transform 0.5s ease' }}>
       {/* Line + dot */}
-      <div className="flex flex-col items-center flex-shrink-0" style={{ width: 40 }}>
+      <div className="flex flex-col items-center shrink-0" style={{ width: 40 }}>
         <div className="w-10 h-10 rounded-full grid place-items-center text-[11px] font-black z-10 relative"
           style={{ background: `${accent}20`, border: `2px solid ${accent}`, color: accent }}>
           {year.slice(2)}
@@ -162,7 +163,7 @@ function SocialLink({ icon, label, href, color }: { icon: string; label: string;
     <a href={href} target="_blank" rel="noreferrer"
       className="flex items-center gap-2.5 px-4 py-3 rounded-xl no-underline transition-all hover:-translate-y-0.5 hover:opacity-90"
       style={{ background: `${color}12`, border: `1px solid ${color}30`, color }}>
-      <i className={`fab ${icon} text-[15px]`} />
+      <BrandIcon name={`fab ${icon}`} className="text-[15px]" />
       <span className="text-[12.5px] font-semibold">{label}</span>
     </a>
   );
@@ -236,7 +237,7 @@ export default function AboutPage() {
           backgroundSize: '80px 80px',
         }} />
 
-        <div className="relative z-10 text-center max-w-[860px] mx-auto">
+        <div className="relative z-10 text-center max-w-215 mx-auto">
           {/* Eyebrow */}
           <div className="inline-flex items-center gap-2.5 px-4 py-2 rounded-full mb-8"
             style={{ background: 'rgba(79,142,247,0.1)', border: '1px solid rgba(79,142,247,0.25)' }}>
@@ -256,7 +257,7 @@ export default function AboutPage() {
             </span>
           </h1>
 
-          <p className="text-[16px] leading-relaxed max-w-[600px] mx-auto mb-10" style={{ color: 'rgba(255,255,255,0.5)' }}>
+          <p className="text-[16px] leading-relaxed max-w-150 mx-auto mb-10" style={{ color: 'rgba(255,255,255,0.5)' }}>
             SkillHub is built by Meritlives — a digital innovation subsidiary of KGC Meritzone Consults Ltd — with a single mandate: bridge the gap between human potential and the digital economy across Africa and beyond.
           </p>
 
@@ -264,12 +265,12 @@ export default function AboutPage() {
             <Link href="/login?tab=register"
               className="flex items-center gap-2.5 px-6 py-3.5 rounded-2xl no-underline font-jakarta font-bold text-[14px] text-white transition-all hover:opacity-90"
               style={{ background: 'linear-gradient(135deg, #4F8EF7, #A78BFA)', boxShadow: '0 12px 40px rgba(79,142,247,0.35)' }}>
-              <i className="fas fa-rocket text-[12px]" /> Join SkillHub Free
+              <BrandIcon name="fa-rocket" className="text-[12px]" /> Join SkillHub Free
             </Link>
             <a href="#who"
               className="flex items-center gap-2.5 px-6 py-3.5 rounded-2xl no-underline font-jakarta font-semibold text-[14px] transition-all hover:opacity-80"
               style={{ background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.1)', color: 'rgba(255,255,255,0.7)' }}>
-              Our Story <i className="fas fa-arrow-down text-[11px]" />
+              Our Story <BrandIcon name="fa-arrow-down" className="text-[11px]" />
             </a>
           </div>
 
@@ -286,7 +287,7 @@ export default function AboutPage() {
       </section>
 
       {/* ── STATS STRIP ───────────────────────────────────────────── */}
-      <section className="px-6 py-8 max-w-[1200px] mx-auto -mt-4">
+      <section className="px-6 py-8 max-w-300 mx-auto -mt-4">
         <div className="grid grid-cols-4 gap-4 max-md:grid-cols-2">
           <StatCard value={50000}  suffix="+"  label="Active Learners"       accent="#4F8EF7" />
           <StatCard value={8}      suffix=""   label="Learning Platforms"    accent="#00E5A0" />
@@ -296,7 +297,7 @@ export default function AboutPage() {
       </section>
 
       {/* ── WHO WE ARE ────────────────────────────────────────────── */}
-      <section id="who" className="px-6 py-20 max-w-[1200px] mx-auto">
+      <section id="who" className="px-6 py-20 max-w-300 mx-auto">
         <div className="grid grid-cols-2 gap-16 items-center max-lg:grid-cols-1">
           {/* Text side */}
           <div>
@@ -343,12 +344,12 @@ export default function AboutPage() {
                     {i > 0 && (
                       <div className="flex items-center gap-2 my-1 ml-4">
                         <div className="w-px h-4" style={{ background: 'rgba(255,255,255,0.1)' }} />
-                        <i className="fas fa-arrow-down text-[9px]" style={{ color: 'rgba(255,255,255,0.2)' }} />
+                        <BrandIcon name="fa-arrow-down" className="text-[9px]" style={{ color: 'rgba(255,255,255,0.2)' }} />
                       </div>
                     )}
                     <div className="flex items-center gap-3 p-3.5 rounded-xl"
                       style={{ background: `${item.color}0d`, border: `1px solid ${item.color}25` }}>
-                      <div className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: item.color }} />
+                      <div className="w-2 h-2 rounded-full shrink-0" style={{ background: item.color }} />
                       <div>
                         <div className="font-jakarta font-semibold text-[13px] text-white">{item.label}</div>
                         <div className="text-[10.5px]" style={{ color: 'rgba(255,255,255,0.35)' }}>{item.note}</div>
@@ -368,7 +369,7 @@ export default function AboutPage() {
 
       {/* ── CORE PILLARS ──────────────────────────────────────────── */}
       <section id="pillars" className="px-6 py-20" style={{ background: 'rgba(255,255,255,0.02)' }}>
-        <div className="max-w-[1200px] mx-auto">
+        <div className="max-w-300 mx-auto">
           <div className="text-center mb-12">
             <div className="text-[10px] font-bold uppercase tracking-[0.2em] mb-3" style={{ color: 'rgba(0,229,160,0.7)' }}>
               Our Core Pillars
@@ -376,7 +377,7 @@ export default function AboutPage() {
             <h2 className="font-jakarta font-extrabold text-[2rem] text-white tracking-tight mb-4">
               Four Pillars. One Ecosystem.
             </h2>
-            <p className="text-[14px] max-w-[520px] mx-auto" style={{ color: 'rgba(255,255,255,0.4)' }}>
+            <p className="text-[14px] max-w-130 mx-auto" style={{ color: 'rgba(255,255,255,0.4)' }}>
               Meritlives operates as an integrated ecosystem of digital services. SkillHub sits at the intersection of all four, delivering them as one seamless career platform.
             </p>
           </div>
@@ -431,7 +432,7 @@ export default function AboutPage() {
       </section>
 
       {/* ── VALUES ────────────────────────────────────────────────── */}
-      <section id="values" className="px-6 py-20 max-w-[1200px] mx-auto">
+      <section id="values" className="px-6 py-20 max-w-300 mx-auto">
         <div className="text-center mb-12">
           <div className="text-[10px] font-bold uppercase tracking-[0.2em] mb-3" style={{ color: 'rgba(167,139,250,0.7)' }}>
             Our Values
@@ -439,7 +440,7 @@ export default function AboutPage() {
           <h2 className="font-jakarta font-extrabold text-[2rem] text-white tracking-tight mb-4">
             The Principles We Build By
           </h2>
-          <p className="text-[14px] max-w-[480px] mx-auto" style={{ color: 'rgba(255,255,255,0.4)' }}>
+          <p className="text-[14px] max-w-120 mx-auto" style={{ color: 'rgba(255,255,255,0.4)' }}>
             Every product decision, every hire, every feature — filtered through five values that haven't changed since day one.
           </p>
         </div>
@@ -460,7 +461,7 @@ export default function AboutPage() {
       {/* ── VISION + MISSION ──────────────────────────────────────── */}
       <section id="vision" className="px-6 py-20"
         style={{ background: 'linear-gradient(180deg, rgba(255,255,255,0.02) 0%, #080C14 100%)' }}>
-        <div className="max-w-[1200px] mx-auto">
+        <div className="max-w-300 mx-auto">
           <div className="grid grid-cols-2 gap-6 mb-8 max-md:grid-cols-1">
             {/* Vision */}
             <div className="relative rounded-3xl overflow-hidden p-8"
@@ -469,7 +470,7 @@ export default function AboutPage() {
               <div className="relative z-10">
                 <div className="w-12 h-12 rounded-2xl grid place-items-center mb-5 text-[18px]"
                   style={{ background: 'rgba(79,142,247,0.15)', color: '#4F8EF7' }}>
-                  <i className="fas fa-eye" />
+                  <BrandIcon name="fa-eye" />
                 </div>
                 <div className="text-[10px] font-bold uppercase tracking-[0.2em] mb-3" style={{ color: 'rgba(79,142,247,0.6)' }}>
                   Our Vision
@@ -487,7 +488,7 @@ export default function AboutPage() {
               <div className="relative z-10">
                 <div className="w-12 h-12 rounded-2xl grid place-items-center mb-5 text-[18px]"
                   style={{ background: 'rgba(0,229,160,0.12)', color: '#00E5A0' }}>
-                  <i className="fas fa-bullseye" />
+                  <BrandIcon name="fa-bullseye" />
                 </div>
                 <div className="text-[10px] font-bold uppercase tracking-[0.2em] mb-3" style={{ color: 'rgba(0,229,160,0.6)' }}>
                   Our Mission
@@ -515,9 +516,9 @@ export default function AboutPage() {
                 { icon: 'fa-coins',         title: 'Reward-Driven Learning',         desc: 'Merit Coins incentivise consistent learning. Earn as you grow, unlock premium features, and build momentum that keeps you progressing.',           accent: '#38BDF8' },
               ].map(d => (
                 <div key={d.title} className="flex items-start gap-3.5">
-                  <div className="w-9 h-9 rounded-xl grid place-items-center flex-shrink-0 text-[12px]"
+                  <div className="w-9 h-9 rounded-xl grid place-items-center shrink-0 text-[12px]"
                     style={{ background: `${d.accent}15`, color: d.accent }}>
-                    <i className={`fas ${d.icon}`} />
+                    <BrandIcon name={d.icon} />
                   </div>
                   <div>
                     <div className="font-jakarta font-semibold text-[13px] text-white mb-1">{d.title}</div>
@@ -531,7 +532,7 @@ export default function AboutPage() {
       </section>
 
       {/* ── JOURNEY / TIMELINE ────────────────────────────────────── */}
-      <section id="journey" className="px-6 py-20 max-w-[1200px] mx-auto">
+      <section id="journey" className="px-6 py-20 max-w-300 mx-auto">
         <div className="grid grid-cols-2 gap-16 max-lg:grid-cols-1">
           <div>
             <div className="text-[10px] font-bold uppercase tracking-[0.2em] mb-4" style={{ color: 'rgba(167,139,250,0.7)' }}>
@@ -559,7 +560,7 @@ export default function AboutPage() {
                   'International recognition as Africa\'s #1 digital empowerment brand',
                 ].map((item, i) => (
                   <div key={i} className="flex items-center gap-2.5 text-[12.5px]" style={{ color: 'rgba(255,255,255,0.5)' }}>
-                    <i className="fas fa-arrow-right text-[9px]" style={{ color: '#4F8EF7' }} />
+                    <BrandIcon name="fa-arrow-right" className="text-[9px]" style={{ color: '#4F8EF7' }} />
                     {item}
                   </div>
                 ))}
@@ -593,13 +594,13 @@ export default function AboutPage() {
 
       {/* ── PARENT COMPANY CALLOUT ─────────────────────────────────── */}
       <section className="px-6 py-16" style={{ background: 'rgba(255,255,255,0.02)' }}>
-        <div className="max-w-[900px] mx-auto rounded-3xl overflow-hidden relative"
+        <div className="max-w-225 mx-auto rounded-3xl overflow-hidden relative"
           style={{ background: 'linear-gradient(135deg, #080C14, #0D1A2E)', border: '1px solid rgba(245,158,11,0.2)' }}>
           <div className="absolute pointer-events-none" style={{ top: -60, right: -30, width: 300, height: 300, background: 'radial-gradient(circle, rgba(245,158,11,0.12) 0%, transparent 65%)' }} />
           <div className="relative z-10 p-10 text-center">
             <div className="w-14 h-14 rounded-2xl grid place-items-center text-[22px] mx-auto mb-5"
               style={{ background: 'rgba(245,158,11,0.14)', color: '#F59E0B' }}>
-              <i className="fas fa-building" />
+              <BrandIcon name="fa-building" />
             </div>
             <div className="text-[10px] font-bold uppercase tracking-[0.2em] mb-3" style={{ color: 'rgba(245,158,11,0.65)' }}>
               Our Parent Company
@@ -607,7 +608,7 @@ export default function AboutPage() {
             <h3 className="font-jakarta font-extrabold text-[1.8rem] text-white mb-4 tracking-tight">
               KGC Meritzone Consults Ltd
             </h3>
-            <p className="text-[14px] leading-relaxed max-w-[580px] mx-auto mb-6" style={{ color: 'rgba(255,255,255,0.5)' }}>
+            <p className="text-[14px] leading-relaxed max-w-145 mx-auto mb-6" style={{ color: 'rgba(255,255,255,0.5)' }}>
               A globally positioned firm specialising in consulting, technology services, training, and enterprise solutions. As the parent company, KGC Meritzone provides Meritlives — and by extension SkillHub — with the operational discipline, compliance infrastructure, and corporate stability to build at scale.
             </p>
             <div className="flex items-center justify-center gap-3 flex-wrap">
@@ -619,7 +620,7 @@ export default function AboutPage() {
               ].map(tag => (
                 <div key={tag.label} className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[11px] font-semibold"
                   style={{ background: 'rgba(245,158,11,0.1)', color: '#F59E0B', border: '1px solid rgba(245,158,11,0.22)' }}>
-                  <i className={`fas ${tag.icon} text-[9px]`} />
+                  <BrandIcon name={tag.icon} className="text-[9px]" />
                   {tag.label}
                 </div>
               ))}
@@ -632,7 +633,7 @@ export default function AboutPage() {
       <section className="px-6 py-24 text-center relative overflow-hidden">
         <div className="absolute inset-0 pointer-events-none"
           style={{ background: 'radial-gradient(ellipse 60% 50% at 50% 50%, rgba(79,142,247,0.12) 0%, transparent 70%)' }} />
-        <div className="relative z-10 max-w-[600px] mx-auto">
+        <div className="relative z-10 max-w-150 mx-auto">
           <h2 className="font-jakarta font-extrabold text-[2.2rem] text-white tracking-tight leading-tight mb-4">
             Ready to Build Your Future?
           </h2>
@@ -643,12 +644,12 @@ export default function AboutPage() {
             <Link href="/login?tab=register"
               className="flex items-center gap-2 px-7 py-4 rounded-2xl no-underline font-jakarta font-bold text-[15px] text-white transition-all hover:opacity-90"
               style={{ background: 'linear-gradient(135deg, #4F8EF7, #A78BFA)', boxShadow: '0 12px 40px rgba(79,142,247,0.4)' }}>
-              <i className="fas fa-rocket text-[12px]" /> Create Free Account
+              <BrandIcon name="fa-rocket" className="text-[12px]" /> Create Free Account
             </Link>
             <a href="https://meritlives.com" target="_blank" rel="noreferrer"
               className="flex items-center gap-2 px-7 py-4 rounded-2xl no-underline font-jakarta font-semibold text-[14px] transition-all hover:opacity-80"
               style={{ background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.1)', color: 'rgba(255,255,255,0.65)' }}>
-              <i className="fas fa-external-link-alt text-[11px]" /> Visit Meritlives
+              <BrandIcon name="fa-external-link-alt" className="text-[11px]" /> Visit Meritlives
             </a>
           </div>
         </div>
@@ -656,7 +657,7 @@ export default function AboutPage() {
 
       {/* ── Footer ────────────────────────────────────────────────── */}
       <footer className="px-6 py-10" style={{ borderTop: '1px solid rgba(255,255,255,0.06)' }}>
-        <div className="max-w-[1200px] mx-auto">
+        <div className="max-w-300 mx-auto">
           <div className="flex items-center justify-between gap-6 flex-wrap mb-8">
             <Link href="/" className="flex items-center gap-2.5 no-underline">
               <img src="/meritlives.svg" alt="SkillHub" style={{ width: 22, height: 22 }} />

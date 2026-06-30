@@ -1,0 +1,21 @@
+<svg width="1200" height="675" viewBox="0 0 1200 675" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="1200" height="675" rx="40" fill="#091320"/>
+  <circle cx="1000" cy="86" r="232" fill="#2F6FED" fill-opacity="0.20"/>
+  <circle cx="178" cy="590" r="240" fill="#17B5C2" fill-opacity="0.14"/>
+  <rect x="76" y="76" width="1048" height="523" rx="34" fill="url(#paint0_linear)" stroke="rgba(255,255,255,0.10)"/>
+  <text x="126" y="126" fill="#8DE1D8" font-family="Inter, Arial, sans-serif" font-size="28" font-weight="700" letter-spacing="4">DISCUSSION</text>
+  <text x="126" y="214" fill="#FFFFFF" font-family="Plus Jakarta Sans, Arial, sans-serif" font-size="60" font-weight="800">Ideas worth sharing</text>
+  <text x="126" y="284" fill="#FFFFFF" font-family="Plus Jakarta Sans, Arial, sans-serif" font-size="60" font-weight="800">with the community.</text>
+  <rect x="126" y="338" width="320" height="18" rx="9" fill="#DDE8F8" fill-opacity="0.44"/>
+  <rect x="126" y="372" width="250" height="18" rx="9" fill="#DDE8F8" fill-opacity="0.28"/>
+  <g opacity="0.95">
+    <rect x="736" y="180" width="248" height="132" rx="28" fill="#0F1E31" stroke="rgba(255,255,255,0.12)"/>
+    <rect x="676" y="328" width="232" height="118" rx="28" fill="#0F1E31" stroke="rgba(255,255,255,0.12)"/>
+  </g>
+  <defs>
+    <linearGradient id="paint0_linear" x1="126" y1="86" x2="1040" y2="592" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#13243A"/>
+      <stop offset="1" stop-color="#0A1525"/>
+    </linearGradient>
+  </defs>
+</svg>

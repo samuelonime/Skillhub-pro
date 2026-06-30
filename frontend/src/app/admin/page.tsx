@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { apiFetch } from '@/lib/api';
+import { BrandIcon } from '@/components/ui/BrandIcon';
 
 /* ─── Types ─────────────────────────────────────────────────────────────── */
 interface Stats {
@@ -75,7 +76,7 @@ function StatCard({ icon, label, value, sub, accent }: {
         <div className="flex items-center justify-between mb-4">
           <div className="w-9 h-9 rounded-xl grid place-items-center text-sm"
             style={{ background: accent + '18', color: accent }}>
-            <i className={`fas ${icon}`} />
+            <BrandIcon name={icon} />
           </div>
           <span className="text-[11px] font-semibold text-[#3a3a55] uppercase tracking-widest">{label}</span>
         </div>
@@ -120,9 +121,9 @@ function Toggle({ on, onChange, loading }: { on: boolean; onChange: (v: boolean)
     <button
       onClick={() => !loading && onChange(!on)}
       disabled={loading}
-      className={`relative w-14 h-7 rounded-full border-0 cursor-pointer transition-all flex-shrink-0 ${on ? 'bg-[#5b4cf5]' : 'bg-[#1e1e2e]'} ${loading ? 'opacity-50 cursor-not-allowed' : ''}`}
+      className={`relative w-14 h-7 rounded-full border-0 cursor-pointer transition-all shrink-0 ${on ? 'bg-[#5b4cf5]' : 'bg-[#1e1e2e]'} ${loading ? 'opacity-50 cursor-not-allowed' : ''}`}
       style={{ padding: 0 }}>
-      <div className={`absolute top-1 w-5 h-5 bg-white rounded-full shadow-lg transition-all duration-300 ${on ? 'left-[34px]' : 'left-1'}`} />
+      <div className={`absolute top-1 w-5 h-5 bg-white rounded-full shadow-lg transition-all duration-300 ${on ? 'left-8.5' : 'left-1'}`} />
     </button>
   );
 }
@@ -319,11 +320,11 @@ export default function AdminPage() {
     <div className="min-h-screen bg-[#080810] text-white font-[DM_Sans,sans-serif] flex">
 
       {/* ── Sidebar ── */}
-      <aside className="w-[220px] flex-shrink-0 border-r border-[#13131f] flex flex-col pt-0 sticky top-0 h-screen">
+      <aside className="w-55 shrink-0 border-r border-[#13131f] flex flex-col pt-0 sticky top-0 h-screen">
         <div className="px-6 py-6 border-b border-[#13131f]">
           <div className="flex items-center gap-3">
             <div className="w-8 h-8 rounded-xl bg-[#5b4cf5] grid place-items-center">
-              <i className="fas fa-shield-halved text-white text-sm" />
+              <BrandIcon name="fa-shield-halved" className="text-sm text-white" />
             </div>
             <div>
               <div className="font-syne font-bold text-[13px] text-white">Admin</div>
@@ -336,7 +337,7 @@ export default function AdminPage() {
           {NAV.map(n => (
             <button key={n.id} onClick={() => setTab(n.id)}
               className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-[13px] font-medium mb-0.5 border-0 cursor-pointer transition-all text-left ${tab === n.id ? 'bg-[#5b4cf5]/15 text-[#7c6ff7] font-semibold' : 'bg-transparent text-[#4a4a65] hover:text-white hover:bg-[#13131f]'}`}>
-              <i className={`fas ${n.icon} w-4 text-center`} style={{ color: tab === n.id ? '#5b4cf5' : undefined }} />
+              <BrandIcon name={n.icon} className="w-4 text-center" style={{ color: tab === n.id ? '#5b4cf5' : undefined }} />
               {n.label}
             </button>
           ))}
@@ -344,7 +345,7 @@ export default function AdminPage() {
 
         <div className="px-3 pb-5">
           <a href="/dashboard" className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-[12px] font-medium border-0 cursor-pointer text-[#3a3a55] hover:text-white hover:bg-[#13131f] transition-all no-underline">
-            <i className="fas fa-arrow-left w-4 text-center" />Back to App
+            <BrandIcon name="fa-arrow-left" className="w-4 text-center" />Back to App
           </a>
         </div>
       </aside>
@@ -358,7 +359,7 @@ export default function AdminPage() {
             toast.type === 'error'   ? 'bg-[#1a0a0a] border-[#3d1010] text-[#f87171]' :
             toast.type === 'info'   ? 'bg-[#0d0d1a] border-[#2a2a50] text-[#a78bfa]' :
                                       'bg-[#0a1a12] border-[#103d20] text-[#4ade80]'}`}>
-            <i className={`fas ${toast.type === 'error' ? 'fa-xmark-circle' : toast.type === 'info' ? 'fa-info-circle' : 'fa-check-circle'}`} />
+            <BrandIcon name={toast.type === 'error' ? 'fa-xmark-circle' : toast.type === 'info' ? 'fa-info-circle' : 'fa-check-circle'} />
             {toast.msg}
           </div>
         )}
@@ -368,7 +369,7 @@ export default function AdminPage() {
           <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4">
             <div className="bg-[#0d0d18] border border-[#1e1e2e] rounded-2xl p-6 w-full max-w-sm shadow-2xl">
               <div className="w-12 h-12 rounded-2xl bg-[#ef4444]/10 grid place-items-center text-2xl mx-auto mb-4">
-                <i className="fas fa-triangle-exclamation text-[#ef4444]" />
+                <BrandIcon name="fa-triangle-exclamation" className="text-[#ef4444]" />
               </div>
               <h3 className="font-syne font-bold text-lg text-white text-center mb-1">Delete User</h3>
               <p className="text-sm text-[#6b6b8a] text-center mb-6">This will permanently delete <span className="text-white font-semibold">{deleteModal.name}</span> and all their data.</p>
@@ -402,8 +403,8 @@ export default function AdminPage() {
               {/* Quick billing banner on overview */}
               {billingEnabled !== null && (
                 <div className={`mb-6 rounded-2xl border p-4 flex items-center gap-4 ${billingEnabled ? 'bg-[#5b4cf5]/08 border-[#5b4cf5]/25' : 'bg-[#0d0d18] border-[#1e1e2e]'}`}>
-                  <div className={`w-9 h-9 rounded-xl grid place-items-center flex-shrink-0 ${billingEnabled ? 'bg-[#5b4cf5] shadow-[0_0_20px_rgba(91,76,245,0.4)]' : 'bg-[#1e1e2e]'}`}>
-                    <i className={`fas fa-toggle-${billingEnabled ? 'on' : 'off'} text-sm ${billingEnabled ? 'text-white' : 'text-[#4a4a65]'}`} />
+                  <div className={`w-9 h-9 rounded-xl grid place-items-center shrink-0 ${billingEnabled ? 'bg-[#5b4cf5] shadow-[0_0_20px_rgba(91,76,245,0.4)]' : 'bg-[#1e1e2e]'}`}>
+                    <BrandIcon name={`fa-toggle-${billingEnabled ? 'on' : 'off'}`} className={`text-sm ${billingEnabled ? 'text-white' : 'text-[#4a4a65]'}`} />
                   </div>
                   <div className="flex-1">
                     <div className="text-[13px] font-semibold text-white">Employer Subscription</div>
@@ -509,7 +510,7 @@ export default function AdminPage() {
               {/* Filters */}
               <div className="flex items-center gap-3 mb-6">
                 <div className="relative flex-1 max-w-sm">
-                  <i className="fas fa-search absolute left-3.5 top-1/2 -translate-y-1/2 text-[#3a3a55] text-sm" />
+                  <BrandIcon name="fa-search" className="absolute left-3.5 top-1/2 -translate-y-1/2 text-sm text-[#3a3a55]" />
                   <input value={userSearch} onChange={e => setUserSearch(e.target.value)}
                     placeholder="Search users…"
                     className="w-full pl-10 pr-4 py-2.5 bg-[#0d0d18] border border-[#1e1e2e] rounded-xl text-sm text-white placeholder-[#3a3a55] outline-none focus:border-[#5b4cf5] transition-all font-[inherit]" />
@@ -548,7 +549,7 @@ export default function AdminPage() {
                       <tr key={u.id} className="border-b border-[#13131f] hover:bg-[#0a0a14] transition-colors group">
                         <td className="px-5 py-3.5">
                           <div className="flex items-center gap-3">
-                            <div className="w-8 h-8 rounded-xl grid place-items-center text-xs font-bold text-white flex-shrink-0"
+                            <div className="w-8 h-8 rounded-xl grid place-items-center text-xs font-bold text-white shrink-0"
                               style={{ background: avatarColor(u.firstName || u.email) }}>
                               {initials(u)}
                             </div>
@@ -561,13 +562,13 @@ export default function AdminPage() {
                         <td className="px-5 py-3.5"><Badge text={u.role} /></td>
                         <td className="px-5 py-3.5">
                           <span className="text-[12px] font-semibold text-[#f59e0b]">
-                            <i className="fas fa-coins mr-1 text-[10px]" />{fmt(u.meritCoins)}
+                            <BrandIcon name="fa-coins" className="mr-1 text-[10px]" />{fmt(u.meritCoins)}
                           </span>
                         </td>
                         <td className="px-5 py-3.5">
                           <button onClick={() => toggleUserVerified(u)}
                             className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[10.5px] font-bold border-0 cursor-pointer transition-all ${u.verified ? 'bg-[#10b981]/10 text-[#10b981] hover:bg-[#ef4444]/10 hover:text-[#ef4444]' : 'bg-[#1e1e2e] text-[#4a4a65] hover:bg-[#10b981]/10 hover:text-[#10b981]'}`}>
-                            <i className={`fas ${u.verified ? 'fa-check-circle' : 'fa-circle-xmark'} text-[9px]`} />
+                            <BrandIcon name={u.verified ? 'fa-check-circle' : 'fa-circle-xmark'} className="text-[9px]" />
                             {u.verified ? 'Verified' : 'Unverified'}
                           </button>
                         </td>
@@ -575,7 +576,7 @@ export default function AdminPage() {
                         <td className="px-5 py-3.5">
                           <button onClick={() => setDeleteModal({ id: u.id, name: `${u.firstName} ${u.lastName}` })}
                             className="w-7 h-7 rounded-lg bg-transparent border border-[#1e1e2e] text-[#3a3a55] text-xs cursor-pointer hover:bg-[#ef4444]/10 hover:text-[#ef4444] hover:border-[#ef4444]/30 transition-all grid place-items-center opacity-0 group-hover:opacity-100">
-                            <i className="fas fa-trash" />
+                            <BrandIcon name="fa-trash" />
                           </button>
                         </td>
                       </tr>
@@ -623,7 +624,7 @@ export default function AdminPage() {
                         <td className="px-5 py-3.5 text-[12px] text-[#4a4a65]">{j.type}</td>
                         <td className="px-5 py-3.5">
                           <span className="text-[12px] font-semibold text-[#5b4cf5]">
-                            <i className="fas fa-paper-plane mr-1 text-[10px]" />{j._count.applications}
+                            <BrandIcon name="fa-paper-plane" className="mr-1 text-[10px]" />{j._count.applications}
                           </span>
                         </td>
                         <td className="px-5 py-3.5"><Badge text={j.status} /></td>
@@ -683,7 +684,7 @@ export default function AdminPage() {
                           {c.status === 'pending' ? (
                             <button onClick={() => verifyCert(c.id)} disabled={verifyingCert === c.id}
                               className="px-3.5 py-1.5 rounded-lg text-[11px] font-semibold bg-[#5b4cf5] text-white border-0 cursor-pointer hover:bg-[#7c6ff7] transition-all disabled:opacity-50">
-                              {verifyingCert === c.id ? <><i className="fas fa-spinner fa-spin mr-1" />Verifying…</> : <><i className="fas fa-check mr-1" />Verify</>}
+                              {verifyingCert === c.id ? <><BrandIcon name="fa-spinner" className="mr-1 animate-spin" />Verifying…</> : <><BrandIcon name="fa-check" className="mr-1" />Verify</>}
                             </button>
                           ) : (
                             <span className="text-[11px] text-[#3a3a55]">—</span>
@@ -756,7 +757,7 @@ export default function AdminPage() {
                           <td className="px-5 py-3.5">
                             <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[10.5px] font-bold"
                               style={{ background: providerColor + '18', color: providerColor }}>
-                              <i className={`${p.provider === 'paypal' ? 'fab fa-paypal' : 'fas fa-credit-card'} text-[9px]`} />
+                              <BrandIcon name={p.provider === 'paypal' ? 'fab fa-paypal' : 'fa-credit-card'} className="text-[9px]" />
                               {providerLabel}
                             </span>
                           </td>
@@ -801,7 +802,7 @@ export default function AdminPage() {
                         <div className="flex items-center justify-between mb-3">
                           <div className="text-[11px] text-[#4a4a65] font-medium uppercase tracking-wide">{card.label}</div>
                           <div className="w-7 h-7 rounded-lg grid place-items-center" style={{ background: card.accent + '18' }}>
-                            <i className={`fas ${card.icon} text-[11px]`} style={{ color: card.accent }} />
+                            <BrandIcon name={card.icon} className="text-[11px]" style={{ color: card.accent }} />
                           </div>
                         </div>
                         <div className="font-syne font-bold text-xl text-white">{card.value}</div>
@@ -822,7 +823,7 @@ export default function AdminPage() {
                         </div>
                       ) : affiliate.platformSummary.map(p => (
                         <div key={p.platform} className="px-6 py-4 flex items-center gap-4">
-                          <div className="w-9 h-9 rounded-xl flex items-center justify-center text-white text-[11px] font-black flex-shrink-0 bg-[#5b4cf5]">
+                          <div className="w-9 h-9 rounded-xl flex items-center justify-center text-white text-[11px] font-black shrink-0 bg-[#5b4cf5]">
                             {p.label.slice(0, 2).toUpperCase()}
                           </div>
                           <div className="flex-1 min-w-0">
@@ -852,7 +853,7 @@ export default function AdminPage() {
                     {affiliate.earnings.length === 0 ? (
                       <div className="px-6 py-10 text-center">
                         <div className="w-12 h-12 rounded-2xl bg-[#5b4cf5]/10 grid place-items-center mx-auto mb-3">
-                          <i className="fas fa-handshake text-[#5b4cf5] text-lg" />
+                          <BrandIcon name="fa-handshake" className="text-lg text-[#5b4cf5]" />
                         </div>
                         <div className="text-[13px] text-white font-semibold mb-1">No conversions yet</div>
                         <div className="text-[11px] text-[#3a3a55]">
@@ -904,7 +905,7 @@ export default function AdminPage() {
                   <div className="bg-[#0d0d18] border border-[#1e1e2e] rounded-2xl p-6">
                     <div className="flex items-center gap-3 mb-4">
                       <div className="w-8 h-8 rounded-xl bg-[#5b4cf5]/10 grid place-items-center">
-                        <i className="fas fa-plug text-[#5b4cf5] text-sm" />
+                        <BrandIcon name="fa-plug" className="text-sm text-[#5b4cf5]" />
                       </div>
                       <div>
                         <div className="text-[14px] font-semibold text-white">Webhook URLs</div>
@@ -918,7 +919,7 @@ export default function AdminPage() {
                         { label: 'ShareASale — Alison',                                       path: '/api/v1/platforms/webhook/shareasale/alison',  color: '#10b981' },
                       ].map(w => (
                         <div key={w.label} className="flex items-start gap-3 p-3 bg-[#0a0a14] rounded-xl border border-[#1e1e2e]">
-                          <div className="w-2 h-2 rounded-full flex-shrink-0 mt-1.5" style={{ background: w.color }} />
+                          <div className="w-2 h-2 rounded-full shrink-0 mt-1.5" style={{ background: w.color }} />
                           <div>
                             <div className="text-[11px] text-white font-medium mb-0.5">{w.label}</div>
                             <div className="text-[10px] text-[#3a3a55] font-mono">https://api.skillhub.meritlives.com{w.path}</div>
@@ -943,7 +944,7 @@ export default function AdminPage() {
               <div className="bg-[#0d0d18] border border-[#1e1e2e] rounded-2xl overflow-hidden mt-6">
                 <div className="px-6 py-4 border-b border-[#1e1e2e] flex items-center gap-3">
                   <div className="w-8 h-8 rounded-xl bg-[#f59e0b]/10 grid place-items-center">
-                    <i className="fas fa-credit-card text-[#f59e0b] text-sm" />
+                    <BrandIcon name="fa-credit-card" className="text-sm text-[#f59e0b]" />
                   </div>
                   <div>
                     <div className="text-[14px] font-semibold text-white">Subscription & Billing</div>
@@ -992,7 +993,7 @@ export default function AdminPage() {
                         <div key={plan.key} className="bg-[#0a0a14] border border-[#1e1e2e] rounded-xl p-4">
                           <div className="flex items-center gap-2.5 mb-2">
                             <div className="w-7 h-7 rounded-lg bg-[#5b4cf5]/10 grid place-items-center">
-                              <i className={`fas ${plan.icon} text-[#5b4cf5] text-[11px]`} />
+                              <BrandIcon name={plan.icon} className="text-[11px] text-[#5b4cf5]" />
                             </div>
                             <div className="text-[12px] font-semibold text-white">{plan.label}</div>
                           </div>
@@ -1002,7 +1003,7 @@ export default function AdminPage() {
                       ))}
                     </div>
                     <div className="mt-3 flex items-start gap-2 p-3 rounded-xl bg-[#0a0a14] border border-[#1e1e2e]">
-                      <i className="fas fa-info-circle text-[#3a3a55] text-[11px] mt-0.5 flex-shrink-0" />
+                      <BrandIcon name="fa-info-circle" className="mt-0.5 shrink-0 text-[11px] text-[#3a3a55]" />
                       <div className="text-[11px] text-[#3a3a55] leading-relaxed">
                         Plan pricing and amounts are configured in your Paystack dashboard. Toggling billing above enables or disables the subscription gate — plan settings remain intact either way.
                       </div>
@@ -1015,7 +1016,7 @@ export default function AdminPage() {
               <div className="bg-[#0d0d18] border border-[#1e1e2e] rounded-2xl overflow-hidden mt-4">
                 <div className="px-6 py-4 border-b border-[#1e1e2e] flex items-center gap-3">
                   <div className="w-8 h-8 rounded-xl bg-[#5b4cf5]/10 grid place-items-center">
-                    <i className="fas fa-certificate text-[#5b4cf5] text-sm" />
+                    <BrandIcon name="fa-certificate" className="text-sm text-[#5b4cf5]" />
                   </div>
                   <div>
                     <div className="text-[14px] font-semibold text-white">Certificate Rewards</div>

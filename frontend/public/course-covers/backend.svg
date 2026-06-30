@@ -1,0 +1,32 @@
+<svg width="1200" height="675" viewBox="0 0 1200 675" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="1200" height="675" rx="40" fill="#08131F"/>
+  <circle cx="1030" cy="76" r="210" fill="#2F6FED" fill-opacity="0.20"/>
+  <circle cx="124" cy="600" r="240" fill="#F59E0B" fill-opacity="0.15"/>
+  <rect x="74" y="74" width="1052" height="527" rx="34" fill="url(#paint0_linear)" stroke="rgba(255,255,255,0.10)"/>
+  <text x="126" y="124" fill="#FBBF24" font-family="Inter, Arial, sans-serif" font-size="28" font-weight="700" letter-spacing="4">BACKEND</text>
+  <text x="126" y="214" fill="#FFFFFF" font-family="Plus Jakarta Sans, Arial, sans-serif" font-size="62" font-weight="800">APIs, systems,</text>
+  <text x="126" y="286" fill="#FFFFFF" font-family="Plus Jakarta Sans, Arial, sans-serif" font-size="62" font-weight="800">and real scalability.</text>
+  <rect x="126" y="338" width="310" height="18" rx="9" fill="#DDE8F8" fill-opacity="0.50"/>
+  <rect x="126" y="372" width="248" height="18" rx="9" fill="#DDE8F8" fill-opacity="0.35"/>
+  <g opacity="0.9">
+    <rect x="686" y="150" width="298" height="92" rx="24" fill="#0C1A2A" stroke="rgba(255,255,255,0.12)"/>
+    <rect x="686" y="266" width="298" height="92" rx="24" fill="#0C1A2A" stroke="rgba(255,255,255,0.12)"/>
+    <rect x="686" y="382" width="298" height="92" rx="24" fill="#0C1A2A" stroke="rgba(255,255,255,0.12)"/>
+    <path d="M628 196H686" stroke="#FBBF24" stroke-width="8" stroke-linecap="round"/>
+    <path d="M628 312H686" stroke="#2F6FED" stroke-width="8" stroke-linecap="round"/>
+    <path d="M628 428H686" stroke="#17B5C2" stroke-width="8" stroke-linecap="round"/>
+    <path d="M984 196H1058" stroke="#FBBF24" stroke-width="8" stroke-linecap="round"/>
+    <path d="M984 312H1058" stroke="#2F6FED" stroke-width="8" stroke-linecap="round"/>
+    <path d="M984 428H1058" stroke="#17B5C2" stroke-width="8" stroke-linecap="round"/>
+  </g>
+  <rect x="126" y="434" width="170" height="46" rx="23" fill="#F59E0B"/>
+  <text x="724" y="208" fill="#FFFFFF" font-family="Inter, Arial, sans-serif" font-size="26" font-weight="700">Node.js Services</text>
+  <text x="724" y="324" fill="#FFFFFF" font-family="Inter, Arial, sans-serif" font-size="26" font-weight="700">SQL + Data Models</text>
+  <text x="724" y="440" fill="#FFFFFF" font-family="Inter, Arial, sans-serif" font-size="26" font-weight="700">Cloud Deployment</text>
+  <defs>
+    <linearGradient id="paint0_linear" x1="124" y1="84" x2="1040" y2="592" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#112235"/>
+      <stop offset="1" stop-color="#0A1321"/>
+    </linearGradient>
+  </defs>
+</svg>

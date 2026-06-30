@@ -1,0 +1,20 @@
+<svg width="1200" height="675" viewBox="0 0 1200 675" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="1200" height="675" rx="40" fill="#091320"/>
+  <circle cx="1004" cy="96" r="232" fill="#00E5A0" fill-opacity="0.16"/>
+  <circle cx="180" cy="580" r="240" fill="#2F6FED" fill-opacity="0.14"/>
+  <rect x="76" y="76" width="1048" height="523" rx="34" fill="url(#paint0_linear)" stroke="rgba(255,255,255,0.10)"/>
+  <text x="126" y="126" fill="#86EFAC" font-family="Inter, Arial, sans-serif" font-size="28" font-weight="700" letter-spacing="4">PROJECT</text>
+  <text x="126" y="214" fill="#FFFFFF" font-family="Plus Jakarta Sans, Arial, sans-serif" font-size="60" font-weight="800">Build work that</text>
+  <text x="126" y="284" fill="#FFFFFF" font-family="Plus Jakarta Sans, Arial, sans-serif" font-size="60" font-weight="800">proves your ability.</text>
+  <rect x="126" y="338" width="302" height="18" rx="9" fill="#DDE8F8" fill-opacity="0.44"/>
+  <rect x="126" y="372" width="222" height="18" rx="9" fill="#DDE8F8" fill-opacity="0.28"/>
+  <rect x="720" y="174" width="278" height="300" rx="28" fill="#0F1E31" stroke="rgba(255,255,255,0.12)"/>
+  <rect x="756" y="210" width="206" height="120" rx="20" fill="#13243A"/>
+  <path d="M780 302L824 262L860 292L930 228L958 256" stroke="#00E5A0" stroke-width="12" stroke-linecap="round" stroke-linejoin="round"/>
+  <defs>
+    <linearGradient id="paint0_linear" x1="126" y1="86" x2="1040" y2="592" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#11283A"/>
+      <stop offset="1" stop-color="#0A1625"/>
+    </linearGradient>
+  </defs>
+</svg>

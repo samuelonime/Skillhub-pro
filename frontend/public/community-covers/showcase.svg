@@ -1,0 +1,19 @@
+<svg width="1200" height="675" viewBox="0 0 1200 675" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="1200" height="675" rx="40" fill="#091320"/>
+  <circle cx="1016" cy="92" r="234" fill="#F59E0B" fill-opacity="0.18"/>
+  <circle cx="182" cy="588" r="240" fill="#F87171" fill-opacity="0.12"/>
+  <rect x="76" y="76" width="1048" height="523" rx="34" fill="url(#paint0_linear)" stroke="rgba(255,255,255,0.10)"/>
+  <text x="126" y="126" fill="#FBBF24" font-family="Inter, Arial, sans-serif" font-size="28" font-weight="700" letter-spacing="4">SHOWCASE</text>
+  <text x="126" y="214" fill="#FFFFFF" font-family="Plus Jakarta Sans, Arial, sans-serif" font-size="60" font-weight="800">Present standout work</text>
+  <text x="126" y="284" fill="#FFFFFF" font-family="Plus Jakarta Sans, Arial, sans-serif" font-size="60" font-weight="800">with confidence.</text>
+  <rect x="126" y="338" width="310" height="18" rx="9" fill="#FDE9C2" fill-opacity="0.36"/>
+  <rect x="126" y="372" width="236" height="18" rx="9" fill="#FDE9C2" fill-opacity="0.24"/>
+  <path d="M836 184L860.717 234.076L916 242.111L876 281.096L885.434 336.111L836 310.076L786.566 336.111L796 281.096L756 242.111L811.283 234.076L836 184Z" fill="#F59E0B"/>
+  <rect x="710" y="386" width="252" height="94" rx="24" fill="#0F1E31" stroke="rgba(255,255,255,0.12)"/>
+  <defs>
+    <linearGradient id="paint0_linear" x1="126" y1="86" x2="1040" y2="592" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#1E2237"/>
+      <stop offset="1" stop-color="#0A1525"/>
+    </linearGradient>
+  </defs>
+</svg>
