@@ -157,12 +157,12 @@ function NotificationPanel({ onClose }: { onClose: () => void }) {
   return (
     <div
       className="absolute top-12 right-0 w-90 rounded-2xl z-200 overflow-hidden"
-      style={{ background: '#0F1521', border: '1px solid rgba(255,255,255,0.09)', boxShadow: '0 24px 60px rgba(0,0,0,0.5)' }}
+      style={{ background: 'var(--surface)', border: '1px solid var(--border-strong)', boxShadow: 'var(--panel-shadow)' }}
       onClick={e => e.stopPropagation()}
     >
-      <div className="flex items-center justify-between px-4 py-3.5" style={{ borderBottom: '1px solid rgba(255,255,255,0.07)' }}>
+      <div className="flex items-center justify-between px-4 py-3.5" style={{ borderBottom: '1px solid var(--border-subtle)' }}>
         <div className="flex items-center gap-2">
-          <span className="font-jakarta font-semibold text-[13px] text-white/90">Notifications</span>
+          <span className="font-jakarta font-semibold text-[13px]" style={{ color: 'var(--text-strong)' }}>Notifications</span>
           {unread > 0 && <span className="text-[10px] font-bold text-white px-1.5 py-0.5 rounded-full" style={{ background: '#EF4444' }}>{unread}</span>}
         </div>
         <div className="flex items-center gap-2">
@@ -178,7 +178,7 @@ function NotificationPanel({ onClose }: { onClose: () => void }) {
           <button
             onClick={onClose}
             className="w-7 h-7 rounded-lg grid place-items-center cursor-pointer border-0 transition-all hover:opacity-70"
-            style={{ background: 'rgba(255,255,255,0.06)', color: 'rgba(255,255,255,0.4)' }}
+            style={{ background: 'var(--surface-soft)', color: 'var(--text-faint)' }}
           >
             <BrandIcon name="fa-times" className="text-xs" />
           </button>
@@ -190,18 +190,18 @@ function NotificationPanel({ onClose }: { onClose: () => void }) {
           <div className="flex flex-col gap-0">
             {[1, 2, 3, 4].map(i => (
               <div key={i} className="flex items-start gap-3 px-4 py-3.5" style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
-                <div className="w-8 h-8 rounded-lg shrink-0 animate-pulse" style={{ background: 'rgba(255,255,255,0.07)' }} />
+                <div className="w-8 h-8 rounded-lg shrink-0 animate-pulse" style={{ background: 'var(--surface-soft)' }} />
                 <div className="flex-1 flex flex-col gap-1.5">
-                  <div className="h-3 rounded animate-pulse w-3/4" style={{ background: 'rgba(255,255,255,0.07)' }} />
-                  <div className="h-2.5 rounded animate-pulse w-1/3" style={{ background: 'rgba(255,255,255,0.05)' }} />
+                  <div className="h-3 rounded animate-pulse w-3/4" style={{ background: 'var(--surface-soft)' }} />
+                  <div className="h-2.5 rounded animate-pulse w-1/3" style={{ background: 'var(--surface-soft)' }} />
                 </div>
               </div>
             ))}
           </div>
         ) : notifs.length === 0 ? (
           <div className="py-12 text-center">
-            <BrandIcon name="fa-bell" className="text-3xl mb-3 block mx-auto" style={{ color: 'rgba(255,255,255,0.1)' }} />
-            <p className="text-sm" style={{ color: 'rgba(255,255,255,0.3)' }}>No notifications yet</p>
+            <BrandIcon name="fa-bell" className="text-3xl mb-3 block mx-auto" style={{ color: 'var(--text-ghost)' }} />
+            <p className="text-sm" style={{ color: 'var(--text-faint)' }}>No notifications yet</p>
           </div>
         ) : (
           notifs.map(n => {
@@ -213,7 +213,7 @@ function NotificationPanel({ onClose }: { onClose: () => void }) {
                 onClick={() => handleClick(n)}
                 className="flex items-start gap-3 px-4 py-3.5 transition-colors cursor-pointer"
                 style={{
-                  borderBottom: '1px solid rgba(255,255,255,0.05)',
+                  borderBottom: '1px solid var(--border-subtle)',
                   background: !n.read ? 'rgba(79,142,247,0.05)' : 'transparent',
                 }}
               >
@@ -221,12 +221,12 @@ function NotificationPanel({ onClose }: { onClose: () => void }) {
                   <BrandIcon name={icon} className="text-[11px]" />
                 </div>
                 <div className="flex-1 min-w-0">
-                  {n.title && <p className="text-[12.5px] font-semibold mb-0.5 leading-snug" style={{ color: 'rgba(255,255,255,0.85)' }}>{n.title}</p>}
-                  <p className="text-[12px] leading-snug" style={{ color: 'rgba(255,255,255,0.45)' }}>{n.message}</p>
-                  <p className="text-[10.5px] mt-1 font-medium" style={{ color: 'rgba(255,255,255,0.25)' }}>{n.createdAt ? <TimeAgo date={n.createdAt} /> : ''}</p>
+                  {n.title && <p className="text-[12.5px] font-semibold mb-0.5 leading-snug" style={{ color: 'var(--text-body)' }}>{n.title}</p>}
+                  <p className="text-[12px] leading-snug" style={{ color: 'var(--text-faint)' }}>{n.message}</p>
+                  <p className="text-[10.5px] mt-1 font-medium" style={{ color: 'var(--text-ghost)' }}>{n.createdAt ? <TimeAgo date={n.createdAt} /> : ''}</p>
                 </div>
                 {target ? (
-                  <BrandIcon name="fa-chevron-right" className="text-[10px] shrink-0 mt-1.5" style={{ color: 'rgba(255,255,255,0.3)' }} />
+                  <BrandIcon name="fa-chevron-right" className="text-[10px] shrink-0 mt-1.5" style={{ color: 'var(--text-faint)' }} />
                 ) : !n.read ? (
                   <div className="w-1.5 h-1.5 rounded-full shrink-0 mt-2" style={{ background: '#4F8EF7' }} />
                 ) : null}
@@ -243,12 +243,12 @@ function ProfileDropdown({ user, isEmployer, onClose }: { user: any; isEmployer:
   return (
     <div
       className="absolute top-12 right-0 w-55 rounded-2xl z-200 overflow-hidden"
-      style={{ background: '#0F1521', border: '1px solid rgba(255,255,255,0.09)', boxShadow: '0 24px 60px rgba(0,0,0,0.5)' }}
+      style={{ background: 'var(--surface)', border: '1px solid var(--border-strong)', boxShadow: 'var(--panel-shadow)' }}
       onClick={e => e.stopPropagation()}
     >
-      <div className="px-4 py-3.5" style={{ borderBottom: '1px solid rgba(255,255,255,0.07)' }}>
-        <div className="font-semibold text-[13px]" style={{ color: 'rgba(255,255,255,0.85)' }}>{user?.firstName} {user?.lastName}</div>
-        <div className="text-[11px] mt-0.5" style={{ color: 'rgba(255,255,255,0.3)' }}>{user?.email}</div>
+      <div className="px-4 py-3.5" style={{ borderBottom: '1px solid var(--border-subtle)' }}>
+        <div className="font-semibold text-[13px]" style={{ color: 'var(--text-body)' }}>{user?.firstName} {user?.lastName}</div>
+        <div className="text-[11px] mt-0.5" style={{ color: 'var(--text-faint)' }}>{user?.email}</div>
         <span
           className="inline-block text-[10px] font-bold px-2 py-0.5 rounded-full capitalize mt-2"
           style={{
@@ -270,20 +270,20 @@ function ProfileDropdown({ user, isEmployer, onClose }: { user: any; isEmployer:
             href={item.href}
             onClick={onClose}
             className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-[13px] font-medium no-underline transition-all hover:opacity-80"
-            style={{ color: 'rgba(255,255,255,0.6)' }}
-            onMouseEnter={e => (e.currentTarget.style.background = 'rgba(255,255,255,0.06)')}
+            style={{ color: 'var(--text-muted)' }}
+            onMouseEnter={e => (e.currentTarget.style.background = 'var(--surface-soft)')}
             onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
           >
-            <BrandIcon name={item.icon} className="w-4 text-center text-[12px]" style={{ color: 'rgba(255,255,255,0.3)' }} />
+            <BrandIcon name={item.icon} className="w-4 text-center text-[12px]" style={{ color: 'var(--text-faint)' }} />
             {item.label}
           </Link>
         ))}
-        <div className="h-px my-1" style={{ background: 'rgba(255,255,255,0.07)' }} />
+        <div className="h-px my-1" style={{ background: 'var(--border-subtle)' }} />
         <button
           onClick={logout}
           className="flex items-center gap-2.5 w-full px-3 py-2.5 rounded-xl text-[13px] font-medium border-0 bg-transparent cursor-pointer transition-all"
           style={{ color: '#F87171' }}
-          onMouseEnter={e => (e.currentTarget.style.background = 'rgba(239,68,68,0.1)')}
+          onMouseEnter={e => (e.currentTarget.style.background = 'var(--danger-soft)')}
           onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
         >
           <BrandIcon name="fa-sign-out-alt" className="text-[12px] w-4 text-center" /> Log Out
@@ -402,26 +402,26 @@ export function SidebarLayout({ children, navItems, pageTitle }: SidebarLayoutPr
   }, [mobileOpen]);
 
   return (
-    <div className="flex min-h-screen" style={{ background: '#080C14' }}>
+    <div className="flex min-h-screen theme-transition" style={{ background: 'var(--page-bg-solid)' }}>
       {mobileOpen && <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-99 md:hidden transition-opacity duration-300" onClick={() => setMobileOpen(false)} />}
 
       <aside
         className={`fixed top-0 left-0 z-100 w-70 h-full transition-transform duration-300 ease-in-out md:translate-x-0 ${mobileOpen ? 'translate-x-0' : '-translate-x-full'}`}
-        style={{ background: '#080C14', borderRight: '1px solid rgba(255,255,255,0.06)', display: 'flex', flexDirection: 'column' }}
+        style={{ background: 'var(--sidebar-bg)', borderRight: '1px solid var(--border-subtle)', display: 'flex', flexDirection: 'column' }}
       >
-        <div className="flex items-center justify-between px-5 py-5 shrink-0" style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+        <div className="flex items-center justify-between px-5 py-5 shrink-0" style={{ borderBottom: '1px solid var(--border-subtle)' }}>
           <div className="flex items-center gap-2.5">
             <img src="/meritlives.svg" alt="SkillHub" style={{ width: 26, height: 26 }} />
-            <span className="font-jakarta font-extrabold text-[18px] text-white tracking-tight">SkillHub</span>
+            <span className="font-jakarta font-extrabold text-[18px] tracking-tight" style={{ color: 'var(--text-strong)' }}>SkillHub</span>
           </div>
-          <button onClick={() => setMobileOpen(false)} className="md:hidden w-8 h-8 rounded-lg grid place-items-center" style={{ background: 'rgba(255,255,255,0.06)', color: 'rgba(255,255,255,0.6)' }}>
+          <button onClick={() => setMobileOpen(false)} className="md:hidden w-8 h-8 rounded-lg grid place-items-center" style={{ background: 'var(--surface-soft)', color: 'var(--text-muted)' }}>
             <BrandIcon name="fa-times" className="text-sm" />
           </button>
         </div>
 
-        <div className="flex-1 overflow-y-auto" style={{ scrollbarWidth: 'thin', scrollbarColor: 'rgba(255,255,255,0.2) rgba(255,255,255,0.05)' }}>
+        <div className="flex-1 overflow-y-auto" style={{ scrollbarWidth: 'thin', scrollbarColor: 'var(--scroll-thumb) transparent' }}>
           <nav className="p-3">
-            <div className="text-[9px] font-bold uppercase tracking-[0.15em] px-3 mb-2" style={{ color: 'rgba(255,255,255,0.2)' }}>Navigation</div>
+            <div className="text-[9px] font-bold uppercase tracking-[0.15em] px-3 mb-2" style={{ color: 'var(--text-ghost)' }}>Navigation</div>
             {navItems.map(item => {
               if (item.children) {
                 const groupActive = item.children.some(isItemActive);
@@ -434,7 +434,7 @@ export function SidebarLayout({ children, navItems, pageTitle }: SidebarLayoutPr
                       className="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-[10px] text-sm font-medium no-underline transition-all relative"
                       style={{
                         background: groupActive ? 'rgba(79,142,247,0.12)' : 'transparent',
-                        color: '#FFFFFF',
+                        color: 'var(--text-strong)',
                         border: groupActive ? '1px solid rgba(79,142,247,0.2)' : '1px solid transparent',
                       }}
                     >
@@ -455,7 +455,7 @@ export function SidebarLayout({ children, navItems, pageTitle }: SidebarLayoutPr
                               className="flex items-center gap-2.5 px-3 py-2 rounded-[10px] text-[13px] font-medium no-underline transition-all relative"
                               style={{
                                 background: active ? 'rgba(79,142,247,0.12)' : 'transparent',
-                                color: '#FFFFFF',
+                                color: 'var(--text-strong)',
                                 border: active ? '1px solid rgba(79,142,247,0.2)' : '1px solid transparent',
                               }}
                             >
@@ -480,7 +480,7 @@ export function SidebarLayout({ children, navItems, pageTitle }: SidebarLayoutPr
                   className="flex items-center gap-2.5 px-3 py-2.5 rounded-[10px] text-sm font-medium mb-0.5 no-underline transition-all relative"
                   style={{
                     background: active ? 'rgba(79,142,247,0.12)' : 'transparent',
-                    color: '#FFFFFF',
+                    color: 'var(--text-strong)',
                     border: active ? '1px solid rgba(79,142,247,0.2)' : '1px solid transparent',
                   }}
                 >
@@ -494,20 +494,20 @@ export function SidebarLayout({ children, navItems, pageTitle }: SidebarLayoutPr
           </nav>
         </div>
 
-        <div className="p-3 shrink-0" style={{ borderTop: '1px solid rgba(255,255,255,0.05)', background: '#080C14' }}>
+        <div className="p-3 shrink-0" style={{ borderTop: '1px solid var(--border-subtle)', background: 'var(--sidebar-bg)' }}>
           <div className="flex items-center gap-2.5 px-2 py-2 rounded-xl mb-2">
             <UserAvatar user={user} size={8} />
             <div className="flex-1 min-w-0">
-              <div className="text-[12px] font-semibold text-white/80 truncate">{user ? `${user.firstName} ${user.lastName}` : 'Loading...'}</div>
-              <div className="text-[10px] truncate" style={{ color: 'rgba(255,255,255,0.3)' }}>{user?.email || ''}</div>
+              <div className="text-[12px] font-semibold truncate" style={{ color: 'var(--text-body)' }}>{user ? `${user.firstName} ${user.lastName}` : 'Loading...'}</div>
+              <div className="text-[10px] truncate" style={{ color: 'var(--text-faint)' }}>{user?.email || ''}</div>
             </div>
           </div>
           <button
             onClick={logout}
             className="flex items-center gap-2 w-full px-3 py-2 rounded-[10px] text-[12px] font-medium cursor-pointer transition-all border-0"
-            style={{ background: 'rgba(239,68,68,0.07)', color: 'rgba(248,113,113,0.8)', border: '1px solid rgba(239,68,68,0.15)' }}
-            onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = 'rgba(239,68,68,0.14)'; }}
-            onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = 'rgba(239,68,68,0.07)'; }}
+            style={{ background: 'var(--danger-soft)', color: 'rgba(248,113,113,0.9)', border: '1px solid var(--danger-border)' }}
+            onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = 'var(--danger-soft-strong)'; }}
+            onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = 'var(--danger-soft)'; }}
           >
             <BrandIcon name="fa-sign-out-alt" className="text-[11px]" /> Log Out
           </button>
@@ -515,12 +515,12 @@ export function SidebarLayout({ children, navItems, pageTitle }: SidebarLayoutPr
       </aside>
 
       <div className="flex-1 flex flex-col min-h-screen w-full overflow-x-hidden md:pl-70">
-        <header className="h-14 flex items-center justify-between px-4 md:px-6 sticky top-0 z-50 gap-4" style={{ background: 'rgba(8,12,20,0.95)', borderBottom: '1px solid rgba(255,255,255,0.06)', backdropFilter: 'blur(16px)', WebkitBackdropFilter: 'blur(16px)' }}>
-          <button onClick={() => setMobileOpen(true)} className="md:hidden w-8 h-8 rounded-lg grid place-items-center cursor-pointer border-0 transition-all shrink-0" style={{ background: 'rgba(255,255,255,0.06)', color: 'rgba(255,255,255,0.6)' }}>
+        <header className="h-14 flex items-center justify-between px-4 md:px-6 sticky top-0 z-50 gap-4" style={{ background: 'var(--header-bg)', borderBottom: '1px solid var(--border-subtle)', backdropFilter: 'blur(16px)', WebkitBackdropFilter: 'blur(16px)' }}>
+          <button onClick={() => setMobileOpen(true)} className="md:hidden w-8 h-8 rounded-lg grid place-items-center cursor-pointer border-0 transition-all shrink-0" style={{ background: 'var(--surface-soft)', color: 'var(--text-muted)' }}>
             <BrandIcon name="fa-bars" className="text-[13px]" />
           </button>
 
-          <span className="font-jakarta font-semibold text-[15px] text-white/85 tracking-tight truncate flex-1 md:flex-none">{pageTitle}</span>
+          <span className="font-jakarta font-semibold text-[15px] tracking-tight truncate flex-1 md:flex-none" style={{ color: 'var(--text-body)' }}>{pageTitle}</span>
 
           <div className="relative flex-1 max-w-[320px] hidden md:block">
             <BrandIcon name="fa-search" className="absolute left-3 top-1/2 -translate-y-1/2 text-[12px]" style={{ color: 'rgba(255,255,255,0.2)' }} />
@@ -537,17 +537,17 @@ export function SidebarLayout({ children, navItems, pageTitle }: SidebarLayoutPr
                 }
               }}
               className="w-full pl-8 pr-3 py-2 rounded-xl text-[13px] font-[inherit] outline-none transition-all"
-              style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)', color: 'rgba(255,255,255,0.7)' }}
-              onFocus={e => { e.target.style.border = '1px solid rgba(79,142,247,0.4)'; e.target.style.background = 'rgba(79,142,247,0.06)'; }}
-              onBlur={e => { e.target.style.border = '1px solid rgba(255,255,255,0.08)'; e.target.style.background = 'rgba(255,255,255,0.05)'; }}
+              style={{ background: 'var(--input-bg)', border: '1px solid var(--input-border)', color: 'var(--text-body)' }}
+              onFocus={e => { e.target.style.border = '1px solid var(--focus-ring)'; e.target.style.background = 'var(--input-focus-bg)'; }}
+              onBlur={e => { e.target.style.border = '1px solid var(--input-border)'; e.target.style.background = 'var(--input-bg)'; }}
             />
           </div>
 
           <div className="flex items-center gap-2 shrink-0">
             {!isEmployer && (
-              <Link href="/dashboard/community/messages" className="w-8 h-8 border-0 rounded-lg grid place-items-center cursor-pointer text-[14px] transition-all relative no-underline" style={{ background: 'rgba(255,255,255,0.05)', color: 'rgba(255,255,255,0.4)' }} title="Messages">
+              <Link href="/dashboard/community/messages" className="w-8 h-8 border-0 rounded-lg grid place-items-center cursor-pointer text-[14px] transition-all relative no-underline" style={{ background: 'var(--surface-soft)', color: 'var(--text-faint)' }} title="Messages">
                 <BrandIcon name="fa-comment-dots" />
-                {unreadMsgs > 0 && <span className="absolute -top-0.5 -right-0.5 w-3.5 h-3.5 rounded-full text-white text-[8px] font-bold grid place-items-center" style={{ background: '#4F8EF7', border: '2px solid #080C14' }}>{unreadMsgs > 9 ? '9+' : unreadMsgs}</span>}
+                {unreadMsgs > 0 && <span className="absolute -top-0.5 -right-0.5 w-3.5 h-3.5 rounded-full text-white text-[8px] font-bold grid place-items-center" style={{ background: '#4F8EF7', border: '2px solid var(--header-bg)' }}>{unreadMsgs > 9 ? '9+' : unreadMsgs}</span>}
               </Link>
             )}
 
@@ -555,12 +555,12 @@ export function SidebarLayout({ children, navItems, pageTitle }: SidebarLayoutPr
               <button
                 onClick={() => { setShowNotifs(v => !v); setShowProfile(false); }}
                 className="w-8 h-8 border-0 rounded-lg grid place-items-center cursor-pointer text-[14px] transition-all relative"
-                style={{ background: 'rgba(255,255,255,0.05)', color: 'rgba(255,255,255,0.4)' }}
-                onMouseEnter={e => { (e.currentTarget as HTMLElement).style.color = 'rgba(255,255,255,0.8)'; }}
-                onMouseLeave={e => { (e.currentTarget as HTMLElement).style.color = 'rgba(255,255,255,0.4)'; }}
+                style={{ background: 'var(--surface-soft)', color: 'var(--text-faint)' }}
+                onMouseEnter={e => { (e.currentTarget as HTMLElement).style.color = 'var(--text-body)'; }}
+                onMouseLeave={e => { (e.currentTarget as HTMLElement).style.color = 'var(--text-faint)'; }}
               >
                 <BrandIcon name="fa-bell" />
-                {unreadCount > 0 && <span className="absolute -top-0.5 -right-0.5 w-3.5 h-3.5 rounded-full text-white text-[8px] font-bold grid place-items-center" style={{ background: '#EF4444', border: '2px solid #080C14' }}>{unreadCount > 9 ? '9+' : unreadCount}</span>}
+                {unreadCount > 0 && <span className="absolute -top-0.5 -right-0.5 w-3.5 h-3.5 rounded-full text-white text-[8px] font-bold grid place-items-center" style={{ background: '#EF4444', border: '2px solid var(--header-bg)' }}>{unreadCount > 9 ? '9+' : unreadCount}</span>}
               </button>
               {showNotifs && <NotificationPanel onClose={() => setShowNotifs(false)} />}
             </div>
@@ -574,7 +574,7 @@ export function SidebarLayout({ children, navItems, pageTitle }: SidebarLayoutPr
           </div>
         </header>
 
-        <main className="p-4 md:p-6 flex-1" style={{ color: '#E2E8F0' }}>
+        <main className="p-4 md:p-6 flex-1" style={{ color: 'var(--text-body)' }}>
           {children}
         </main>
       </div>
