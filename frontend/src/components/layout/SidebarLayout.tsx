@@ -545,7 +545,7 @@ export function SidebarLayout({ children, navItems, pageTitle }: SidebarLayoutPr
 
           <div className="flex items-center gap-2 shrink-0">
             {!isEmployer && (
-              <Link href="/dashboard/community/messages" className="w-8 h-8 border-0 rounded-lg grid place-items-center cursor-pointer text-[14px] transition-all relative no-underline" style={{ background: 'var(--surface-soft)', color: 'var(--text-faint)' }} title="Messages">
+              <Link href="/dashboard/community/messages" className="w-10 h-10 border-0 rounded-lg grid place-items-center cursor-pointer text-[18px] transition-all relative no-underline" style={{ background: 'var(--surface-soft)', color: 'var(--text-faint)' }} title="Messages">
                 <BrandIcon name="fa-comment-dots" />
                 {unreadMsgs > 0 && <span className="absolute -top-0.5 -right-0.5 w-3.5 h-3.5 rounded-full text-white text-[8px] font-bold grid place-items-center" style={{ background: '#4F8EF7', border: '2px solid var(--header-bg)' }}>{unreadMsgs > 9 ? '9+' : unreadMsgs}</span>}
               </Link>
@@ -554,7 +554,7 @@ export function SidebarLayout({ children, navItems, pageTitle }: SidebarLayoutPr
             <div ref={notifRef} className="relative">
               <button
                 onClick={() => { setShowNotifs(v => !v); setShowProfile(false); }}
-                className="w-8 h-8 border-0 rounded-lg grid place-items-center cursor-pointer text-[14px] transition-all relative"
+                className="w-10 h-10 border-0 rounded-lg grid place-items-center cursor-pointer text-[18px] transition-all relative"
                 style={{ background: 'var(--surface-soft)', color: 'var(--text-faint)' }}
                 onMouseEnter={e => { (e.currentTarget as HTMLElement).style.color = 'var(--text-body)'; }}
                 onMouseLeave={e => { (e.currentTarget as HTMLElement).style.color = 'var(--text-faint)'; }}
