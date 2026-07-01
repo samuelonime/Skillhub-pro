@@ -112,7 +112,7 @@ function ProjectCard({ project, onEdit, onDelete, onToggleCommunity }: any) {
     <div className={`rounded-2xl border overflow-hidden hover:-translate-y-0.5 transition-all group ${shared ? 'border-[#4F8EF7]/40 ring-1 ring-[#4F8EF7]/20' : 'border-[rgba(255,255,255,0.07)]'}`} style={{ background: '#0F1521' }}>
       <div className="relative h-40 overflow-hidden" style={{ background: 'linear-gradient(135deg, rgba(79,142,247,0.1) 0%, rgba(167,139,250,0.1) 100%)' }}>
         {project.thumbnail ? (
-          <Image src={project.thumbnail} alt={project.title} fill sizes="(max-width: 768px) 100vw, 33vw" className="object-cover" loading="lazy" />
+          <Image src={project.thumbnail} alt={project.title} fill sizes="(max-width: 768px) 100vw, 33vw" className="object-cover" />
         ) : (
           <div className="w-full h-full flex items-center justify-center">
             <i className="fas fa-code text-4xl" style={{ color: 'rgba(79,142,247,0.3)' }} />

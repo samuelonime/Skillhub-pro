@@ -778,12 +778,12 @@ function NewPostModal({ onClose, onCreated }: { onClose: () => void; onCreated: 
         const img = new window.Image();
         img.onload = () => {
           if (img.naturalWidth < MIN_IMAGE_DIMENSION || img.naturalHeight < MIN_IMAGE_DIMENSION) {
-            reject(new Error(`Images must be at least ${MIN_IMAGE_DIMENSION} × ${MIN_IMAGE_DIMENSION} pixels.`));
+            reject(new Error(`Images must be at least ${MIN_IMAGE_DIMENSION} × ${MIN_IMAGE_DIMENSION} pixels`));
             return;
           }
           resolve();
         };
-        img.onerror = () => reject(new Error('Invalid image file.'));
+        img.onerror = () => reject(new Error('Invalid image file'));
         img.src = src;
       });
     } finally {
@@ -804,7 +804,7 @@ function NewPostModal({ onClose, onCreated }: { onClose: () => void; onCreated: 
     try {
       await assertMinimumImageSize(file);
     } catch (validationErr: any) {
-      alert(validationErr?.message || 'Invalid image size.');
+      alert(validationErr?.message || 'Image validation failed');
       if (fileRef.current) fileRef.current.value = '';
       return;
     }
