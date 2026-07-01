@@ -484,12 +484,7 @@ router.get('/curated-jobs', authenticate, async (req, res) => {
       },
     });
 
-    return success(res, {
-      jobs: jobs.map((job) => ({
-        ...job,
-        label: 'Curated Job',
-      })),
-    });
+    return success(res, { jobs });
   } catch (e) {
     console.error(e);
     return error(res, 'Failed to fetch curated jobs');

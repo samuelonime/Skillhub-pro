@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from 'react';
 import Image from 'next/image';
 import { SidebarLayout } from '@/components/layout/SidebarLayout';
 import { apiFetch } from '@/lib/api';
+import { MIN_IMAGE_DIMENSION } from '@/lib/mediaStandards';
 
 const navItems = [
   { href: '/dashboard',             icon: 'fa-home',          label: 'Dashboard' },
@@ -257,8 +258,8 @@ function ProjectModal({ project, onClose, onSaved }: any) {
       await new Promise<void>((resolve, reject) => {
         const img = new window.Image();
         img.onload = () => {
-          if (img.naturalWidth < 600 || img.naturalHeight < 600) {
-            reject(new Error('Image must be at least 600 × 600 pixels'));
+          if (img.naturalWidth < MIN_IMAGE_DIMENSION || img.naturalHeight < MIN_IMAGE_DIMENSION) {
+            reject(new Error(`Image must be at least ${MIN_IMAGE_DIMENSION} × ${MIN_IMAGE_DIMENSION} pixels`));
             return;
           }
           resolve();
@@ -370,7 +371,7 @@ function ProjectModal({ project, onClose, onSaved }: any) {
                   </div>
                   <div className="text-center">
                     <p className="text-sm font-semibold"><span style={{ color: '#4F8EF7' }}>Click to upload</span> or drag & drop</p>
-                    <p className="text-[11px] mt-0.5" style={{ color: 'rgba(255,255,255,0.45)' }}>JPEG, PNG, WebP • min 600×600 • auto-optimized for feed/share</p>
+                    <p className="text-[11px] mt-0.5" style={{ color: 'rgba(255,255,255,0.45)' }}>JPEG, PNG, WebP • min {MIN_IMAGE_DIMENSION}×{MIN_IMAGE_DIMENSION} • auto-optimized for feed/share</p>
                   </div>
                 </>
               )}

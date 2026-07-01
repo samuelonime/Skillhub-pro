@@ -1,0 +1,3 @@
+export const MIN_IMAGE_DIMENSION = 600;
+export const MAX_DISPLAYED_JOB_SKILLS = 4;
+export const MAX_SHARE_DESCRIPTION_LENGTH = 200;

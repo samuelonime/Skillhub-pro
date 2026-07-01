@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
+import { MAX_SHARE_DESCRIPTION_LENGTH } from '@/lib/mediaStandards';
 
 const backendUrl = process.env.BACKEND_URL || process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:5000';
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://skillhub.meritlives.com';
@@ -27,7 +28,7 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
 
   const title = `${project.title} | SkillHub Project`;
   const description =
-    (project.description || 'Explore this project shared on SkillHub.').slice(0, 200);
+    (project.description || 'Explore this project shared on SkillHub.').slice(0, MAX_SHARE_DESCRIPTION_LENGTH);
   const image = project.thumbnail || `${siteUrl}/community-covers/project.svg`;
   const url = `${siteUrl}/project/${id}`;
 

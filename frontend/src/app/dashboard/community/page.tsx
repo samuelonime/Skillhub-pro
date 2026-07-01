@@ -5,6 +5,7 @@ import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import Link from 'next/link';
 import { SidebarLayout } from '@/components/layout/SidebarLayout';
 import { apiFetch } from '@/lib/api';
+import { MAX_DISPLAYED_JOB_SKILLS, MIN_IMAGE_DIMENSION } from '@/lib/mediaStandards';
 
 const navItems = [
   { href: '/dashboard',             icon: 'fa-home',          label: 'Dashboard' },
@@ -303,7 +304,7 @@ function CuratedJobCard({ job }: { job: any }) {
 
       {job.skills?.length > 0 && (
         <div className="flex flex-wrap gap-1.5 mb-3">
-          {job.skills.slice(0, 4).map((skill: string) => (
+          {job.skills.slice(0, MAX_DISPLAYED_JOB_SKILLS).map((skill: string) => (
             <span key={skill} className="text-[10.5px] px-2 py-0.5 rounded-full"
               style={{ background: `${D.accent}14`, color: D.accent }}
             >
@@ -776,8 +777,8 @@ function NewPostModal({ onClose, onCreated }: { onClose: () => void; onCreated: 
       await new Promise<void>((resolve, reject) => {
         const img = new window.Image();
         img.onload = () => {
-          if (img.naturalWidth < 600 || img.naturalHeight < 600) {
-            reject(new Error('Images must be at least 600 × 600 pixels.'));
+          if (img.naturalWidth < MIN_IMAGE_DIMENSION || img.naturalHeight < MIN_IMAGE_DIMENSION) {
+            reject(new Error(`Images must be at least ${MIN_IMAGE_DIMENSION} × ${MIN_IMAGE_DIMENSION} pixels.`));
             return;
           }
           resolve();
@@ -939,7 +940,9 @@ function NewPostModal({ onClose, onCreated }: { onClose: () => void; onCreated: 
                     </div>
                     <div className="text-[12px] text-center" style={{ color: D.subtext }}>
                       <span className="font-semibold" style={{ color: D.accent }}>Click to upload</span> or drag & drop<br />
-                      <span className="text-[11px]" style={{ color: D.muted }}>PNG, JPG, GIF, MP4 · min image 600×600 · Max 50MB</span>
+                      <span className="text-[11px]" style={{ color: D.muted }}>
+                        PNG, JPG, GIF, MP4 · min image {MIN_IMAGE_DIMENSION}×{MIN_IMAGE_DIMENSION} · Max 50MB
+                      </span>
                     </div>
                   </label>
                 </div>
