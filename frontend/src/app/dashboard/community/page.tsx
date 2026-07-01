@@ -912,6 +912,10 @@ function PortfolioSpotlights({ onMessage }: { onMessage: (u: any) => void }) {
   const [portfolios, setPortfolios] = useState<any[]>([]);
   const [loading, setLoading]       = useState(true);
   const [collapsed, setCollapsed]   = useState(false);
+  const [sharedPostId, setSharedPostId] = useState<string | null>(null);
+  const [shareMenuPostId, setShareMenuPostId] = useState<string | null>(null);
+
+  const reactionOptions = ['👍', '🔥', '🚀', '💯'];
 
   useEffect(() => {
     apiFetch('/portfolio/community-feed?limit=6')
@@ -922,6 +926,56 @@ function PortfolioSpotlights({ onMessage }: { onMessage: (u: any) => void }) {
       .catch(() => setPortfolios([]))
       .finally(() => setLoading(false));
   }, []);
+
+  function updateProjectCommunity(postId: string, updater: (community: any) => any) {
+    setPortfolios((prev) => prev.map((portfolio) => ({
+      ...portfolio,
+      projects: portfolio.projects?.map((project: any) =>
+        project.community?.postId === postId
+          ? { ...project, community: updater(project.community) }
+          : project
+      ),
+    })));
+  }
+
+  async function toggleProjectReaction(postId: string, currentLiked: boolean, emoji: string) {
+    const res = await apiFetch(`/community/${postId}/like`, {
+      method: 'POST',
+      body: JSON.stringify({ reactionType: emoji }),
+    }).catch(() => null);
+    if (!res?.success) return;
+
+    updateProjectCommunity(postId, (community) => ({
+      ...community,
+      likedByMe: res.data.liked,
+      likes: community.likes + (
+        community.likedByMe
+          ? (res.data.liked ? 0 : -1)
+          : (res.data.liked ? 1 : 0)
+      ),
+      reactionType: res.data.reactionType,
+      reactions: res.data.reactions || {},
+    }));
+  }
+
+  function handleProjectShare(postId: string, platform?: string) {
+    const url = `${typeof window !== 'undefined' ? window.location.origin : ''}/dashboard/community/post/${postId}`;
+    const text = encodeURIComponent('Check out this SkillHub community project');
+
+    if (platform === 'copy') {
+      navigator.clipboard?.writeText(url).catch(() => {});
+      setSharedPostId(postId);
+      setTimeout(() => setSharedPostId((current) => (current === postId ? null : current)), 2000);
+    } else if (platform === 'twitter') {
+      window.open(`https://twitter.com/intent/tweet?text=${text}&url=${encodeURIComponent(url)}`, '_blank');
+    } else if (platform === 'linkedin') {
+      window.open(`https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(url)}`, '_blank');
+    } else if (platform === 'whatsapp') {
+      window.open(`https://wa.me/?text=${text}%20${encodeURIComponent(url)}`, '_blank');
+    }
+
+    setShareMenuPostId(null);
+  }
 
   if (loading) return (
     <div className="rounded-2xl p-5 mb-5 animate-pulse" style={{ background: D.card, border: `1px solid ${D.border}` }}>
@@ -953,20 +1007,27 @@ function PortfolioSpotlights({ onMessage }: { onMessage: (u: any) => void }) {
       </div>
       {!collapsed && (
         <div className="p-4 grid grid-cols-3 gap-3 max-[900px]:grid-cols-2 max-md:grid-cols-1">
-          {portfolios.map(u => (
+          {portfolios.map(u => {
+            const project = u.projects?.[0];
+            const community = project?.community;
+            const postId = community?.postId;
+            const selectedReaction = community?.reactionType || '';
+            const shared = sharedPostId === postId;
+
+            return (
             <div key={u.id} className="rounded-xl overflow-hidden group transition-all hover:-translate-y-0.5"
               style={{ border: `1px solid ${D.border}` }}>
               <div className="relative h-24 overflow-hidden" style={{ background: `linear-gradient(135deg, ${D.accent}20, ${D.purple}20)` }}>
                 <SafeImageMedia
-                  src={u.projects[0]?.thumbnail}
-                  alt={u.projects[0]?.title || 'Project cover'}
+                  src={project?.thumbnail}
+                  alt={project?.title || 'Project cover'}
                   fallbackType="project"
                   className="object-cover group-hover:scale-105 transition-transform duration-500"
                   maxHeightClass="h-full"
                 />
                 <div className="absolute inset-0" style={{ background: 'linear-gradient(to top, rgba(15,21,33,0.7), transparent)' }} />
                 <div className="absolute bottom-2 left-2.5 right-2.5">
-                  <div className="text-white font-semibold text-[11px] truncate">{u.projects[0]?.title || 'Project'}</div>
+                  <div className="text-white font-semibold text-[11px] truncate">{project?.title || 'Project'}</div>
                 </div>
               </div>
               <div className="p-3" style={{ background: D.card }}>
@@ -993,9 +1054,110 @@ function PortfolioSpotlights({ onMessage }: { onMessage: (u: any) => void }) {
                     <i className="fas fa-paper-plane text-[9px]" />Message
                   </button>
                 </div>
+
+                {postId && (
+                  <>
+                    <div className="mt-3 pt-3" style={{ borderTop: `1px solid ${D.border}` }}>
+                      <div className="flex flex-wrap items-center gap-1.5 mb-2.5">
+                        {reactionOptions.map((emoji) => {
+                          const isActive = selectedReaction === emoji;
+                          return (
+                            <button
+                              key={emoji}
+                              onClick={() => toggleProjectReaction(postId, !!community?.likedByMe, emoji)}
+                              className="px-2 py-1 rounded-lg text-[13px] border-0 cursor-pointer transition-all"
+                              style={{
+                                background: isActive ? `${D.accent}22` : D.input,
+                                boxShadow: isActive ? `0 0 0 1px ${D.accent}` : 'none',
+                              }}
+                              title={`React with ${emoji}`}
+                            >
+                              {emoji}
+                            </button>
+                          );
+                        })}
+                      </div>
+
+                      <div className="flex items-center justify-between gap-2 flex-wrap">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <button
+                            onClick={() => toggleProjectReaction(postId, !!community?.likedByMe, selectedReaction || '👍')}
+                            className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[10.5px] font-semibold border-0 cursor-pointer transition-all"
+                            style={{
+                              background: community?.likedByMe ? `${D.red}18` : D.input,
+                              color: community?.likedByMe ? D.red : D.muted,
+                            }}
+                          >
+                            <span>{selectedReaction || '👍'}</span>
+                            <span>{community?.likes ?? 0}</span>
+                          </button>
+
+                          <span className="flex items-center gap-1.5 text-[10px]" style={{ color: D.muted }}>
+                            {reactionOptions.map((emoji) => (
+                              <span key={emoji} className="inline-flex items-center gap-1">
+                                <span>{emoji}</span>
+                                <span>{community?.reactions?.[emoji] ?? 0}</span>
+                              </span>
+                            ))}
+                          </span>
+
+                          <Link
+                            href={`/dashboard/community/post/${postId}`}
+                            className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[10.5px] font-semibold no-underline transition-all"
+                            style={{ background: D.input, color: D.muted }}
+                          >
+                            <i className="far fa-comment" />
+                            <span>{community?.commentsCount ?? 0}</span>
+                          </Link>
+
+                          <div className="relative">
+                            <button
+                              onClick={() => setShareMenuPostId((current) => (current === postId ? null : postId))}
+                              className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[10.5px] font-semibold border-0 cursor-pointer transition-all"
+                              style={{ background: shared ? `${D.green}18` : `${D.accent}18`, color: shared ? D.green : D.accent }}
+                            >
+                              <i className={`fas ${shared ? 'fa-check' : 'fa-share-nodes'}`} />
+                              <span>{shared ? 'Copied' : 'Share'}</span>
+                            </button>
+                            {shareMenuPostId === postId && (
+                              <>
+                                <div className="fixed inset-0 z-100" onClick={() => setShareMenuPostId(null)} />
+                                <div className="absolute right-0 bottom-full mb-2 z-101 rounded-2xl overflow-hidden w-45 shadow-2xl"
+                                  style={{ background: '#0D1525', border: `1px solid ${D.border}` }}>
+                                  <div className="px-3.5 py-2.5" style={{ borderBottom: `1px solid ${D.border}` }}>
+                                    <p className="text-[11px] font-semibold uppercase tracking-wide" style={{ color: D.muted }}>Share project</p>
+                                  </div>
+                                  {[
+                                    { icon: 'fa-link', label: 'Copy link', action: 'copy', color: D.accent },
+                                    { icon: 'fa-brands fa-x-twitter', label: 'X / Twitter', action: 'twitter', color: '#E2E8F0' },
+                                    { icon: 'fa-brands fa-linkedin', label: 'LinkedIn', action: 'linkedin', color: '#38BDF8' },
+                                    { icon: 'fa-brands fa-whatsapp', label: 'WhatsApp', action: 'whatsapp', color: D.green },
+                                  ].map((item) => (
+                                    <button
+                                      key={item.action}
+                                      onClick={() => handleProjectShare(postId, item.action)}
+                                      className="w-full flex items-center gap-3 px-3.5 py-2.5 text-[13px] font-medium border-0 bg-transparent cursor-pointer text-left transition-all hover:opacity-80"
+                                      style={{ color: item.color }}
+                                    >
+                                      <i className={`fas ${item.icon}`} />{item.label}
+                                    </button>
+                                  ))}
+                                </div>
+                              </>
+                            )}
+                          </div>
+                        </div>
+
+                        <span className="text-[10px]" style={{ color: D.muted }}>
+                          <i className="far fa-eye mr-1" />{community?.views ?? 0}
+                        </span>
+                      </div>
+                    </div>
+                  </>
+                )}
               </div>
             </div>
-          ))}
+          );})}
         </div>
       )}
     </div>

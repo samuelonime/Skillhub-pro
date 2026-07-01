@@ -9,6 +9,7 @@ const { success, created, badRequest, notFound, error } = require('../utils/resp
 
 const PAGE_SIZE      = 15;
 const FEED_PAGE_SIZE = 20;
+const POST_REACTIONS = ['👍', '🔥', '🚀', '💯'];
 
 // ── Multer — memory storage, buffer goes straight to Cloudinary ────────────
 const upload = multer({
@@ -53,6 +54,39 @@ const postSelect = {
   author: { select: { id: true, firstName: true, lastName: true, avatar: true, title: true } },
   _count: { select: { comments: true } },
 };
+
+function normalizeReactionType(value) {
+  return POST_REACTIONS.includes(value) ? value : '👍';
+}
+
+function buildReactionSummary(likes = []) {
+  return likes.reduce((summary, like) => {
+    const reaction = normalizeReactionType(like.reactionType);
+    summary[reaction] = (summary[reaction] || 0) + 1;
+    return summary;
+  }, {});
+}
+
+function decoratePostsWithReactions(posts, likes, currentUserId) {
+  const likesByPostId = likes.reduce((map, like) => {
+    if (!like.postId) return map;
+    if (!map.has(like.postId)) map.set(like.postId, []);
+    map.get(like.postId).push(like);
+    return map;
+  }, new Map());
+
+  return posts.map((post) => {
+    const postLikes = likesByPostId.get(post.id) || [];
+    const myReaction = postLikes.find((like) => like.userId === currentUserId);
+
+    return {
+      ...post,
+      likedByMe: !!myReaction,
+      reactionType: myReaction ? normalizeReactionType(myReaction.reactionType) : null,
+      reactions: buildReactionSummary(postLikes),
+    };
+  });
+}
 
 // ── Activity type display metadata ─────────────────────────────────────────
 const ACTIVITY_META = {
@@ -120,15 +154,14 @@ router.get('/activity-feed', authenticate, async (req, res) => {
     // attach the full post so the feed can render a rich card with all details.
     const postIds = enriched.filter(i => i.type === 'community_post' && i.postId).map(i => i.postId);
     if (postIds.length > 0) {
-      const [posts, myLikes] = await Promise.all([
+      const [posts, postLikes] = await Promise.all([
         prisma.communityPost.findMany({ where: { id: { in: postIds } }, select: postSelect }),
         prisma.communityLike.findMany({
-          where: { userId: req.user.id, postId: { in: postIds }, commentId: null },
-          select: { postId: true },
+          where: { postId: { in: postIds }, commentId: null },
+          select: { postId: true, reactionType: true, userId: true },
         }),
       ]);
-      const likedSet = new Set(myLikes.map(l => l.postId));
-      const postMap = new Map(posts.map(p => [p.id, { ...p, likedByMe: likedSet.has(p.id) }]));
+      const postMap = new Map(decoratePostsWithReactions(posts, postLikes, req.user.id).map((post) => [post.id, post]));
       enriched.forEach(item => {
         if (item.type === 'community_post' && item.postId && postMap.has(item.postId)) {
           item.post = postMap.get(item.postId);
@@ -176,15 +209,15 @@ router.get('/', authenticate, async (req, res) => {
       prisma.communityPost.count({ where }),
     ]);
 
-    // Attach liked-by-me flag
-    const likedPostIds = new Set(
-      (await prisma.communityLike.findMany({
-        where: { userId: req.user.id, postId: { not: null }, commentId: null },
-        select: { postId: true },
-      })).map(l => l.postId)
-    );
+    const postIds = posts.map((post) => post.id);
+    const postLikes = postIds.length > 0
+      ? await prisma.communityLike.findMany({
+          where: { postId: { in: postIds }, commentId: null },
+          select: { postId: true, reactionType: true, userId: true },
+        })
+      : [];
 
-    const data = posts.map(p => ({ ...p, likedByMe: likedPostIds.has(p.id) }));
+    const data = decoratePostsWithReactions(posts, postLikes, req.user.id);
 
     return success(res, { posts: data, total, page: parseInt(page), pages: Math.ceil(total / PAGE_SIZE) });
   } catch (e) {
@@ -452,8 +485,11 @@ router.get('/:id', authenticate, async (req, res) => {
     await prisma.communityPost.update({ where: { id: post.id }, data: { views: { increment: 1 } } }).catch(() => {});
 
     // Like flags
-    const [postLike, commentLikes] = await prisma.$transaction([
-      prisma.communityLike.findFirst({ where: { userId: req.user.id, postId: post.id } }),
+    const [postLikes, commentLikes] = await prisma.$transaction([
+      prisma.communityLike.findMany({
+        where: { postId: post.id, commentId: null },
+        select: { postId: true, reactionType: true, userId: true },
+      }),
       prisma.communityLike.findMany({
         where: { userId: req.user.id, commentId: { not: null } },
         select: { commentId: true },
@@ -462,9 +498,10 @@ router.get('/:id', authenticate, async (req, res) => {
 
     const likedCommentIds = new Set(commentLikes.map(l => l.commentId));
 
+    const decoratedPost = decoratePostsWithReactions([post], postLikes, req.user.id)[0];
+
     return success(res, {
-      ...post,
-      likedByMe: !!postLike,
+      ...decoratedPost,
       comments: post.comments.map(c => ({ ...c, likedByMe: likedCommentIds.has(c.id) })),
     });
   } catch (e) {
@@ -520,22 +557,51 @@ router.delete('/:id', authenticate, async (req, res) => {
 // ── POST /:id/like  — toggle like ─────────────────────────────────────────
 router.post('/:id/like', authenticate, async (req, res) => {
   try {
+    const reactionType = normalizeReactionType(req.body?.reactionType);
     const existing = await prisma.communityLike.findFirst({
       where: { userId: req.user.id, postId: req.params.id, commentId: null },
     });
 
     if (existing) {
-      await prisma.$transaction([
-        prisma.communityLike.delete({ where: { id: existing.id } }),
-        prisma.communityPost.update({ where: { id: req.params.id }, data: { likes: { decrement: 1 } } }),
-      ]);
-      return success(res, { liked: false });
+      const existingReaction = normalizeReactionType(existing.reactionType);
+
+      if (existingReaction === reactionType) {
+        await prisma.$transaction([
+          prisma.communityLike.delete({ where: { id: existing.id } }),
+          prisma.communityPost.update({ where: { id: req.params.id }, data: { likes: { decrement: 1 } } }),
+        ]);
+
+        const postLikes = await prisma.communityLike.findMany({
+          where: { postId: req.params.id, commentId: null },
+          select: { reactionType: true },
+        });
+
+        return success(res, { liked: false, reactionType: null, reactions: buildReactionSummary(postLikes) });
+      }
+
+      await prisma.communityLike.update({
+        where: { id: existing.id },
+        data: { reactionType },
+      });
+
+      const postLikes = await prisma.communityLike.findMany({
+        where: { postId: req.params.id, commentId: null },
+        select: { reactionType: true },
+      });
+
+      return success(res, { liked: true, reactionType, reactions: buildReactionSummary(postLikes) });
     } else {
       await prisma.$transaction([
-        prisma.communityLike.create({ data: { userId: req.user.id, postId: req.params.id } }),
+        prisma.communityLike.create({ data: { userId: req.user.id, postId: req.params.id, reactionType } }),
         prisma.communityPost.update({ where: { id: req.params.id }, data: { likes: { increment: 1 } } }),
       ]);
-      return success(res, { liked: true });
+
+      const postLikes = await prisma.communityLike.findMany({
+        where: { postId: req.params.id, commentId: null },
+        select: { reactionType: true },
+      });
+
+      return success(res, { liked: true, reactionType, reactions: buildReactionSummary(postLikes) });
     }
   } catch (e) {
     console.error(e);
@@ -632,6 +698,91 @@ router.post('/:id/comments/:cid/like', authenticate, async (req, res) => {
   } catch (e) {
     console.error(e);
     return error(res, 'Failed to toggle comment like');
+  }
+});
+
+// ── POST /:id/share  — share post to profile ──────────────────────────────
+router.post('/:id/share', authenticate, async (req, res) => {
+  try {
+    const { note } = req.body;
+    const post = await prisma.communityPost.findUnique({ where: { id: req.params.id } });
+    if (!post) return notFound(res, 'Post not found');
+
+    const existing = await prisma.postShare.findFirst({
+      where: { userId: req.user.id, postId: req.params.id },
+    });
+
+    if (existing) {
+      await prisma.postShare.delete({ where: { id: existing.id } });
+      return success(res, { shared: false }, 'Post unshared');
+    }
+
+    const share = await prisma.postShare.create({
+      data: {
+        userId: req.user.id,
+        postId: req.params.id,
+        note: note?.trim() || null,
+      },
+    });
+
+    await logActivity({
+      userId: req.user.id,
+      type: 'community_post',
+      title: `Shared a post: "${post.title.slice(0, 60)}"`,
+      postId: post.id,
+    });
+
+    return created(res, { shared: true, shareId: share.id }, 'Post shared successfully');
+  } catch (e) {
+    console.error(e);
+    return error(res, 'Failed to share post');
+  }
+});
+
+// ── GET /shared — get user's shared posts ──────────────────────────────────
+router.get('/user/:userId/shared', authenticate, async (req, res) => {
+  try {
+    const { page = 1 } = req.query;
+    const skip = (parseInt(page) - 1) * PAGE_SIZE;
+
+    const [shares, total] = await prisma.$transaction([
+      prisma.postShare.findMany({
+        where: { userId: req.params.userId },
+        orderBy: { sharedAt: 'desc' },
+        skip,
+        take: PAGE_SIZE,
+        select: {
+          id: true,
+          note: true,
+          sharedAt: true,
+          post: { select: postSelect },
+        },
+      }),
+      prisma.postShare.count({ where: { userId: req.params.userId } }),
+    ]);
+
+    const postIds = shares.map(s => s.post.id);
+    const postLikes = postIds.length > 0
+      ? await prisma.communityLike.findMany({
+          where: { postId: { in: postIds }, commentId: null },
+          select: { postId: true, reactionType: true, userId: true },
+        })
+      : [];
+
+    const data = shares.map(share => ({
+      ...share,
+      post: decoratePostsWithReactions([share.post], postLikes, req.user.id)[0],
+    }));
+
+    return success(res, {
+      shares: data,
+      total,
+      page: parseInt(page),
+      pages: Math.ceil(total / PAGE_SIZE),
+    });
+  } catch (e) {
+    console.error(e);
+    return error(res, 'Failed to fetch shared posts');
   }
 });
 

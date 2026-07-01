@@ -5,6 +5,76 @@ const prisma  = require('../config/database');
 const { authenticate } = require('../middleware/auth');
 const { uploadImage } = require('../utils/cloudinary');
 const { success, created, notFound, badRequest, error } = require('../utils/response');
+const POST_REACTIONS = ['👍', '🔥', '🚀', '💯'];
+
+const projectCommunityPostSelect = {
+  id: true,
+  title: true,
+  projectUrl: true,
+  likes: true,
+  views: true,
+  _count: { select: { comments: true } },
+};
+
+function buildProjectCommunityPostData(project, userId) {
+  const stack = [...new Set([...(project.techStack || []), ...(project.technologies || [])])];
+  const links = [];
+  if (project.liveUrl) links.push(`🔗 Live demo: ${project.liveUrl}`);
+  if (project.githubUrl) links.push(`💻 Source code: ${project.githubUrl}`);
+
+  const bodyParts = [
+    project.description || `Check out my latest community project: ${project.title}`,
+  ];
+  if (stack.length) bodyParts.push(`\n\n🛠 Built with: ${stack.join(', ')}`);
+  if (links.length) bodyParts.push(`\n\n${links.join('\n')}`);
+
+  return {
+    authorId: userId,
+    title: `Shared project: ${project.title}`,
+    body: bodyParts.join(''),
+    type: 'project',
+    tags: [...new Set(['project', ...stack.map((skill) => skill.toLowerCase())])].slice(0, 5),
+    imageUrl: project.thumbnail,
+    projectUrl: project.liveUrl || project.githubUrl || null,
+  };
+}
+
+function normalizeReactionType(value) {
+  return POST_REACTIONS.includes(value) ? value : '👍';
+}
+
+function buildReactionSummary(likes = []) {
+  return likes.reduce((summary, like) => {
+    const reaction = normalizeReactionType(like.reactionType);
+    summary[reaction] = (summary[reaction] || 0) + 1;
+    return summary;
+  }, {});
+}
+
+async function ensureCommunityProjectPost(project, userId) {
+  const matchers = [
+    { title: `Shared project: ${project.title}` },
+  ];
+
+  if (project.liveUrl) matchers.push({ projectUrl: project.liveUrl });
+  if (project.githubUrl) matchers.push({ projectUrl: project.githubUrl });
+
+  const existing = await prisma.communityPost.findFirst({
+    where: {
+      authorId: userId,
+      type: 'project',
+      OR: matchers,
+    },
+    select: projectCommunityPostSelect,
+  });
+
+  if (existing) return existing;
+
+  return prisma.communityPost.create({
+    data: buildProjectCommunityPostData(project, userId),
+    select: projectCommunityPostSelect,
+  });
+}
 
 // ── Multer — memory storage for project thumbnails ─────────────────────────
 const upload = multer({
@@ -111,13 +181,61 @@ router.get('/community-feed', authenticate, async (req, res) => {
       orderBy: { updatedAt: 'desc' },
     });
 
-    const feed = users.map(u => ({
-      id:       u.id,
-      name:     `${u.firstName} ${u.lastName}`,
-      avatar:   u.avatar,
-      title:    u.title,
-      skills:   u.skills.map(s => s.name),
-      projects: u.projects,
+    const usersWithCommunityPosts = await Promise.all(
+      users.map(async (user) => ({
+        ...user,
+        projects: await Promise.all(
+          user.projects.map(async (project) => {
+            const communityPost = await ensureCommunityProjectPost(project, user.id);
+            return { project, communityPost };
+          })
+        ),
+      }))
+    );
+
+    const postIds = usersWithCommunityPosts.flatMap((user) =>
+      user.projects.map(({ communityPost }) => communityPost.id)
+    );
+
+    const postLikes = postIds.length > 0
+      ? await prisma.communityLike.findMany({
+          where: { postId: { in: postIds }, commentId: null },
+          select: { postId: true, reactionType: true, userId: true },
+        })
+      : [];
+    const postLikesById = postLikes.reduce((map, like) => {
+      if (!like.postId) return map;
+      if (!map.has(like.postId)) map.set(like.postId, []);
+      map.get(like.postId).push(like);
+      return map;
+    }, new Map());
+
+    const feed = usersWithCommunityPosts.map((user) => ({
+      id: user.id,
+      firstName: user.firstName,
+      lastName: user.lastName,
+      name: `${user.firstName} ${user.lastName}`,
+      avatar: user.avatar,
+      title: user.title,
+      skills: user.skills.map((skill) => skill.name),
+      projects: user.projects.map(({ project, communityPost }) => {
+        const likes = postLikesById.get(communityPost.id) || [];
+        const myReaction = likes.find((like) => like.userId === req.user.id);
+
+        return {
+          ...project,
+          community: {
+            postId: communityPost.id,
+            title: communityPost.title,
+            likes: communityPost.likes,
+            views: communityPost.views,
+            commentsCount: communityPost._count.comments,
+            likedByMe: !!myReaction,
+            reactionType: myReaction ? normalizeReactionType(myReaction.reactionType) : null,
+            reactions: buildReactionSummary(likes),
+          },
+        };
+      }),
     }));
 
     return success(res, feed);
@@ -219,44 +337,7 @@ router.put('/projects/:id/community', authenticate, async (req, res) => {
       data: { visibility: showInCommunity ? 'community' : 'public' },
     });
 
-    if (showInCommunity) {
-      const existingPost = await prisma.communityPost.findFirst({
-        where: {
-          authorId: req.user.id,
-          title:   `Shared project: ${project.title}`,
-          projectUrl: project.liveUrl || project.githubUrl,
-        },
-      });
-
-      if (!existingPost) {
-        // Build a rich body that surfaces the project's full details
-        const stack = [...new Set([...(project.techStack || []), ...(project.technologies || [])])];
-        const links = [];
-        if (project.liveUrl)   links.push(`🔗 Live demo: ${project.liveUrl}`);
-        if (project.githubUrl) links.push(`💻 Source code: ${project.githubUrl}`);
-
-        const bodyParts = [
-          project.description || `Check out my latest community project: ${project.title}`,
-        ];
-        if (stack.length) bodyParts.push(`\n\n🛠 Built with: ${stack.join(', ')}`);
-        if (links.length) bodyParts.push(`\n\n${links.join('\n')}`);
-
-        // Tags = the project's tech stack (so it's filterable/searchable), capped at 5
-        const tags = [...new Set(['project', ...stack.map(s => s.toLowerCase())])].slice(0, 5);
-
-        await prisma.communityPost.create({
-          data: {
-            authorId:  req.user.id,
-            title:     `Shared project: ${project.title}`,
-            body:      bodyParts.join(''),
-            type:      'project',
-            tags,
-            imageUrl:  project.thumbnail,
-            projectUrl: project.liveUrl || project.githubUrl || null,
-          },
-        });
-      }
-    }
+    if (showInCommunity) await ensureCommunityProjectPost(project, req.user.id);
 
     return success(res, updated, showInCommunity ? 'Project shared to community feed' : 'Project removed from community feed');
   } catch (err) { return error(res, 'Failed to update project visibility'); }
@@ -285,6 +366,84 @@ router.put('/skills', authenticate, async (req, res) => {
   } catch (err) {
     console.error('Skills update error:', err);
     return error(res, 'Failed to update skills');
+  }
+});
+
+// POST /portfolio/projects/:id/share — share project to profile
+router.post('/projects/:id/share', authenticate, async (req, res) => {
+  try {
+    const { note } = req.body;
+    const project = await prisma.project.findFirst({
+      where: { id: req.params.id, userId: req.user.id },
+    });
+    if (!project) return notFound(res, 'Project not found');
+
+    const existing = await prisma.projectShare.findFirst({
+      where: { userId: req.user.id, projectId: req.params.id },
+    });
+
+    if (existing) {
+      await prisma.projectShare.delete({ where: { id: existing.id } });
+      return success(res, { shared: false }, 'Project unshared');
+    }
+
+    const share = await prisma.projectShare.create({
+      data: {
+        userId: req.user.id,
+        projectId: req.params.id,
+        note: note?.trim() || null,
+      },
+    });
+
+    return created(res, { shared: true, shareId: share.id }, 'Project shared successfully');
+  } catch (err) {
+    console.error('Project share error:', err);
+    return error(res, 'Failed to share project');
+  }
+});
+
+// GET /portfolio/shares — get user's shared projects
+router.get('/shares', authenticate, async (req, res) => {
+  try {
+    const { userId = req.user.id, page = 1 } = req.query;
+    const skip = (parseInt(page) - 1) * 15;
+
+    const [shares, total] = await prisma.$transaction([
+      prisma.projectShare.findMany({
+        where: { userId },
+        orderBy: { sharedAt: 'desc' },
+        skip,
+        take: 15,
+        select: {
+          id: true,
+          note: true,
+          sharedAt: true,
+          project: {
+            select: {
+              id: true,
+              title: true,
+              description: true,
+              technologies: true,
+              liveUrl: true,
+              githubUrl: true,
+              thumbnail: true,
+              score: true,
+            },
+          },
+        },
+      }),
+      prisma.projectShare.count({ where: { userId } }),
+    ]);
+
+    return success(res, {
+      shares,
+      total,
+      page: parseInt(page),
+      pages: Math.ceil(total / 15),
+    });
+  } catch (err) {
+    console.error('Shared projects fetch error:', err);
+    return error(res, 'Failed to fetch shared projects');
   }
 });
 
