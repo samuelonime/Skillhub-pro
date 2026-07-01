@@ -462,6 +462,40 @@ router.get('/stats/overview', authenticate, async (req, res) => {
   }
 });
 
+// ── GET /curated-jobs — curated opportunities mixed into community feed ─────
+router.get('/curated-jobs', authenticate, async (req, res) => {
+  try {
+    const limit = Math.min(Math.max(parseInt(req.query.limit) || 8, 1), 20);
+    const jobs = await prisma.jobScoutLead.findMany({
+      where: { status: { in: ['pending', 'sent'] } },
+      orderBy: [{ postedAt: 'desc' }, { fetchedAt: 'desc' }],
+      take: limit,
+      select: {
+        id: true,
+        title: true,
+        company: true,
+        location: true,
+        type: true,
+        source: true,
+        url: true,
+        postedAt: true,
+        fetchedAt: true,
+        skills: true,
+      },
+    });
+
+    return success(res, {
+      jobs: jobs.map((job) => ({
+        ...job,
+        label: 'Curated Job',
+      })),
+    });
+  } catch (e) {
+    console.error(e);
+    return error(res, 'Failed to fetch curated jobs');
+  }
+});
+
 // ── GET /:id  — single post with comments ─────────────────────────────────
 router.get('/:id', authenticate, async (req, res) => {
   try {

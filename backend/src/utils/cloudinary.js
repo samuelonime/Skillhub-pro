@@ -29,6 +29,38 @@ function uploadImage(buffer, folder, publicId) {
         if (err || !result) return reject(err || new Error('Cloudinary upload failed'));
         resolve(result.secure_url);
       }
+
+      /**
+       * Upload a portfolio project cover image using share/feed-friendly dimensions.
+       * Generates a 1200x628 image suitable for rich link previews.
+       */
+      function uploadProjectImage(buffer, folder, publicId) {
+        return new Promise((resolve, reject) => {
+          const stream = cloudinary.uploader.upload_stream(
+            {
+              folder,
+              public_id: publicId,
+              overwrite: true,
+              resource_type: 'image',
+              transformation: [
+                {
+                  width: 1200,
+                  height: 628,
+                  crop: 'fill',
+                  gravity: 'auto',
+                  quality: 'auto:good',
+                  fetch_format: 'auto',
+                },
+              ],
+            },
+            (err, result) => {
+              if (err || !result) return reject(err || new Error('Cloudinary upload failed'));
+              resolve(result.secure_url);
+            }
+          );
+          stream.end(buffer);
+        });
+      }
     );
     stream.end(buffer);
   });
@@ -79,12 +111,23 @@ async function deleteFile(publicId, type = 'image') {
  */
 function uploadMedia(buffer, resourceType = 'image') {
   return new Promise((resolve, reject) => {
+    const imageTransformations = [
+      {
+        width: 1080,
+        height: 1350,
+        crop: 'fill',
+        gravity: 'auto',
+        quality: 'auto:good',
+        fetch_format: 'auto',
+      },
+    ];
     const stream = cloudinary.uploader.upload_stream(
       {
         folder:        'skillhub/community',
         resource_type: resourceType,
-        quality:       'auto',
-        fetch_format:  'auto',
+        ...(resourceType === 'image'
+          ? { transformation: imageTransformations }
+          : { quality: 'auto', fetch_format: 'auto' }),
       },
       (err, result) => {
         if (err || !result) return reject(err || new Error('Cloudinary upload failed'));
@@ -98,4 +141,12 @@ function uploadMedia(buffer, resourceType = 'image') {
 // Keep backward-compatible alias
 const deleteImage = (publicId) => deleteFile(publicId, 'image');
 
-module.exports = { cloudinary, uploadImage, uploadRaw, uploadMedia, deleteFile, deleteImage };
+module.exports = {
+  cloudinary,
+  uploadImage,
+  uploadProjectImage,
+  uploadRaw,
+  uploadMedia,
+  deleteFile,
+  deleteImage,
+};

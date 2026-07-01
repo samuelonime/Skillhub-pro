@@ -67,19 +67,50 @@ function Toggle({ on, onChange, loading }: { on: boolean; onChange: (v: boolean)
 function ProjectCard({ project, onEdit, onDelete, onToggleCommunity }: any) {
   const [expanded, setExpanded] = useState(false);
   const [toggling, setToggling] = useState(false);
+  const [showShareMenu, setShowShareMenu] = useState(false);
+  const [copied, setCopied] = useState(false);
   const shared = project.visibility === 'community';
 
-  async function handleToggleCommunity() {
+  async function handlePostToCommunity() {
     setToggling(true);
-    await onToggleCommunity(project.id, !shared);
+    await onToggleCommunity(project.id, true);
     setToggling(false);
+  }
+
+  function buildShareUrl() {
+    if (typeof window === 'undefined') return '';
+    return `${window.location.origin}/project/${project.id}`;
+  }
+
+  function handleShare(platform?: string) {
+    const url = buildShareUrl();
+    const text = encodeURIComponent(`${project.title} on SkillHub`);
+
+    if (!url) return;
+    if (platform === 'copy') {
+      navigator.clipboard?.writeText(url).catch(() => {});
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2200);
+    } else if (platform === 'facebook') {
+      window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}`, '_blank');
+    } else if (platform === 'twitter') {
+      window.open(`https://twitter.com/intent/tweet?text=${text}&url=${encodeURIComponent(url)}`, '_blank');
+    } else if (platform === 'linkedin') {
+      window.open(`https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(url)}`, '_blank');
+    } else if (platform === 'whatsapp') {
+      window.open(`https://wa.me/?text=${text}%20${encodeURIComponent(url)}`, '_blank');
+    } else if (platform === 'telegram') {
+      window.open(`https://t.me/share/url?url=${encodeURIComponent(url)}&text=${text}`, '_blank');
+    }
+
+    setShowShareMenu(false);
   }
 
   return (
     <div className={`rounded-2xl border overflow-hidden hover:-translate-y-0.5 transition-all group ${shared ? 'border-[#4F8EF7]/40 ring-1 ring-[#4F8EF7]/20' : 'border-[rgba(255,255,255,0.07)]'}`} style={{ background: '#0F1521' }}>
       <div className="relative h-40 overflow-hidden" style={{ background: 'linear-gradient(135deg, rgba(79,142,247,0.1) 0%, rgba(167,139,250,0.1) 100%)' }}>
         {project.thumbnail ? (
-          <img src={project.thumbnail} alt={project.title} className="w-full h-full object-cover" />
+          <img src={project.thumbnail} alt={project.title} className="w-full h-full object-cover" loading="lazy" decoding="async" />
         ) : (
           <div className="w-full h-full flex items-center justify-center">
             <i className="fas fa-code text-4xl" style={{ color: 'rgba(79,142,247,0.3)' }} />
@@ -142,16 +173,63 @@ function ProjectCard({ project, onEdit, onDelete, onToggleCommunity }: any) {
           )}
         </div>
 
-        {/* Community share toggle per project */}
         <div className={`flex items-center justify-between pt-3 border-t ${shared ? 'border-[#4F8EF7]/20' : 'border-[rgba(255,255,255,0.06)]'}`}>
-          <div className="flex items-center gap-2">
-            <Toggle on={shared} onChange={() => handleToggleCommunity()} loading={toggling} />
-            <span className="text-[11.5px] font-medium" style={{ color: shared ? '#4F8EF7' : 'rgba(255,255,255,0.45)' }}>
-              {shared ? <span style={{ color: '#4F8EF7', fontWeight: 600 }}>Shared to feed</span> : 'Share to feed'}
-            </span>
+          <div className="flex items-center gap-2 flex-wrap">
+            <button
+              onClick={handlePostToCommunity}
+              disabled={shared || toggling}
+              className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[10.5px] font-semibold border-0 cursor-pointer disabled:opacity-60"
+              style={{ background: shared ? 'rgba(79,142,247,0.18)' : 'rgba(79,142,247,0.12)', color: '#4F8EF7' }}
+            >
+              <i className={`fas ${shared ? 'fa-check' : 'fa-paper-plane'}`} />
+              {shared ? 'Posted to Community' : toggling ? 'Posting…' : 'Post to Community'}
+            </button>
+            {!shared && (
+              <Toggle on={false} onChange={() => handlePostToCommunity()} loading={toggling} />
+            )}
           </div>
-          <div className="flex items-center gap-3 text-xs" style={{ color: 'rgba(255,255,255,0.35)' }}>
+          <div className="flex items-center gap-2 text-xs" style={{ color: 'rgba(255,255,255,0.35)' }}>
             <span><i className="fas fa-eye mr-1" />{project.views || 0}</span>
+            <div className="relative">
+              <button
+                onClick={() => setShowShareMenu(v => !v)}
+                className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[10.5px] font-semibold border-0 cursor-pointer transition-all"
+                style={{ background: copied ? 'rgba(0,229,160,0.12)' : 'rgba(79,142,247,0.12)', color: copied ? '#00E5A0' : '#4F8EF7' }}
+              >
+                <i className={`fas ${copied ? 'fa-check' : 'fa-share-nodes'}`} />
+                {copied ? 'Copied' : 'Share'}
+              </button>
+              {showShareMenu && (
+                <>
+                  <div className="fixed inset-0 z-100" onClick={() => setShowShareMenu(false)} />
+                  <div
+                    className="absolute right-0 bottom-full mb-2 z-101 rounded-2xl overflow-hidden w-46 shadow-2xl"
+                    style={{ background: '#0D1525', border: '1px solid rgba(255,255,255,0.08)' }}
+                  >
+                    <div className="px-3.5 py-2.5" style={{ borderBottom: '1px solid rgba(255,255,255,0.08)' }}>
+                      <p className="text-[11px] font-semibold uppercase tracking-wide" style={{ color: 'rgba(255,255,255,0.45)' }}>Share project</p>
+                    </div>
+                    {[
+                      { icon: 'fas fa-link', label: 'Copy link', action: 'copy', color: '#4F8EF7' },
+                      { icon: 'fab fa-facebook', label: 'Facebook', action: 'facebook', color: '#60A5FA' },
+                      { icon: 'fab fa-x-twitter', label: 'X / Twitter', action: 'twitter', color: '#E2E8F0' },
+                      { icon: 'fab fa-linkedin', label: 'LinkedIn', action: 'linkedin', color: '#38BDF8' },
+                      { icon: 'fab fa-whatsapp', label: 'WhatsApp', action: 'whatsapp', color: '#00E5A0' },
+                      { icon: 'fab fa-telegram', label: 'Telegram', action: 'telegram', color: '#60A5FA' },
+                    ].map((item) => (
+                      <button
+                        key={item.action}
+                        onClick={() => handleShare(item.action)}
+                        className="w-full flex items-center gap-3 px-3.5 py-2.5 text-[13px] font-medium border-0 bg-transparent cursor-pointer text-left transition-all hover:opacity-80"
+                        style={{ color: item.color }}
+                      >
+                        <i className={item.icon} />{item.label}
+                      </button>
+                    ))}
+                  </div>
+                </>
+              )}
+            </div>
           </div>
         </div>
       </div>
@@ -175,8 +253,34 @@ function ProjectModal({ project, onClose, onSaved }: any) {
   const [error, setError]           = useState('');
   const imgRef = useRef<HTMLInputElement>(null);
 
+  async function assertMinimumImageSize(file: File) {
+    const src = URL.createObjectURL(file);
+    try {
+      await new Promise<void>((resolve, reject) => {
+        const img = new Image();
+        img.onload = () => {
+          if (img.naturalWidth < 600 || img.naturalHeight < 600) {
+            reject(new Error('Image must be at least 600 × 600 pixels'));
+            return;
+          }
+          resolve();
+        };
+        img.onerror = () => reject(new Error('Invalid image file'));
+        img.src = src;
+      });
+    } finally {
+      URL.revokeObjectURL(src);
+    }
+  }
+
   async function uploadImage(file: File) {
     if (!file.type.startsWith('image/')) { setError('Only image files are allowed'); return; }
+    try {
+      await assertMinimumImageSize(file);
+    } catch (e: any) {
+      setError(e.message || 'Image validation failed');
+      return;
+    }
     setUploading(true);
     setError('');
     const localUrl = URL.createObjectURL(file);
@@ -268,7 +372,7 @@ function ProjectModal({ project, onClose, onSaved }: any) {
                   </div>
                   <div className="text-center">
                     <p className="text-sm font-semibold"><span style={{ color: '#4F8EF7' }}>Click to upload</span> or drag & drop</p>
-                    <p className="text-[11px] mt-0.5" style={{ color: 'rgba(255,255,255,0.45)' }}>Project cover image or logo • JPEG, PNG, WebP • max 8MB</p>
+                    <p className="text-[11px] mt-0.5" style={{ color: 'rgba(255,255,255,0.45)' }}>JPEG, PNG, WebP • min 600×600 • auto-optimized for feed/share</p>
                   </div>
                 </>
               )}

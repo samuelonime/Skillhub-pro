@@ -3,7 +3,7 @@ const multer = require('multer');
 const { body, validationResult } = require('express-validator');
 const prisma  = require('../config/database');
 const { authenticate } = require('../middleware/auth');
-const { uploadImage } = require('../utils/cloudinary');
+const { uploadProjectImage } = require('../utils/cloudinary');
 const { success, created, notFound, badRequest, error } = require('../utils/response');
 const POST_REACTIONS = ['👍', '🔥', '🚀', '💯'];
 
@@ -91,7 +91,7 @@ router.post('/projects/upload-image', authenticate, upload.single('image'), asyn
   if (!req.file) return badRequest(res, 'No image uploaded');
   try {
     const publicId = `project-${req.user.id}-${Date.now()}`;
-    const url = await uploadImage(req.file.buffer, 'skillhub/projects', publicId);
+    const url = await uploadProjectImage(req.file.buffer, 'skillhub/projects', publicId);
     return success(res, { url });
   } catch (e) {
     console.error('Project image upload error:', e);
@@ -251,6 +251,52 @@ router.get('/projects', authenticate, async (req, res) => {
     const projects = await prisma.project.findMany({ where: { userId: req.user.id }, orderBy: { createdAt: 'desc' } });
     return success(res, projects);
   } catch (err) { return error(res, 'Failed to fetch projects'); }
+});
+
+// GET /portfolio/projects/:id/public
+router.get('/projects/:id/public', async (req, res) => {
+  try {
+    const project = await prisma.project.findFirst({
+      where: {
+        id: req.params.id,
+        visibility: { in: ['public', 'community'] },
+        user: { portfolioPublic: true, isActive: true },
+      },
+      select: {
+        id: true,
+        title: true,
+        description: true,
+        technologies: true,
+        techStack: true,
+        thumbnail: true,
+        liveUrl: true,
+        githubUrl: true,
+        createdAt: true,
+        updatedAt: true,
+        user: {
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true,
+            title: true,
+            avatar: true,
+          },
+        },
+      },
+    });
+
+    if (!project) return notFound(res, 'Project not found');
+
+    const skills = [...new Set([...(project.technologies || []), ...(project.techStack || [])])];
+    const { user, ...projectData } = project;
+    return success(res, {
+      ...projectData,
+      creator: user,
+      skills,
+    });
+  } catch (err) {
+    return error(res, 'Failed to fetch public project');
+  }
 });
 
 // POST /portfolio/projects

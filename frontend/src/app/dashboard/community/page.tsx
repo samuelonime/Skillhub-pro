@@ -1,7 +1,7 @@
 'use client';
 
 import Image from 'next/image';
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import Link from 'next/link';
 import { SidebarLayout } from '@/components/layout/SidebarLayout';
 import { apiFetch } from '@/lib/api';
@@ -91,6 +91,19 @@ function timeAgo(d: string) {
   if (s < 3600)  return `${Math.floor(s / 60)}m ago`;
   if (s < 86400) return `${Math.floor(s / 3600)}h ago`;
   return `${Math.floor(s / 86400)}d ago`;
+}
+
+function formatDateLabel(value?: string) {
+  if (!value) return 'Recently posted';
+  const dt = new Date(value);
+  if (Number.isNaN(dt.getTime())) return 'Recently posted';
+  return dt.toLocaleDateString();
+}
+
+function formatSourceLabel(source?: string) {
+  return String(source || 'web')
+    .replace(/_/g, ' ')
+    .replace(/\b\w/g, (char) => char.toUpperCase());
 }
 
 function Avatar({ user, size = 9 }: { user: any; size?: number }) {
@@ -257,6 +270,58 @@ function StatsBar({ stats }: { stats: any }) {
   );
 }
 
+function CuratedJobCard({ job }: { job: any }) {
+  return (
+    <div className="rounded-2xl p-5 hover:-translate-y-0.5 transition-all duration-200"
+      style={{ background: D.card, border: `1px solid ${D.green}40` }}>
+      <div className="flex items-center justify-between gap-3 mb-2.5">
+        <span className="inline-flex items-center gap-1.5 text-[10.5px] font-bold px-2.5 py-1 rounded-full"
+          style={{ background: `${D.green}1a`, color: D.green, border: `1px solid ${D.green}44` }}>
+          <i className="fas fa-briefcase" />Curated Job
+        </span>
+        <span className="text-[11px]" style={{ color: D.muted }}>{formatDateLabel(job.postedAt || job.fetchedAt)}</span>
+      </div>
+
+      <h3 className="font-jakarta font-bold text-[15px] mb-1.5 text-white">{job.title}</h3>
+      <p className="text-[13px] mb-3" style={{ color: D.subtext }}>{job.company}</p>
+
+      <div className="flex flex-wrap gap-2 mb-3">
+        {job.location && (
+          <span className="text-[11px] px-2 py-1 rounded-md" style={{ background: D.input, color: D.subtext }}>
+            <i className="fas fa-location-dot mr-1" />{job.location}
+          </span>
+        )}
+        {job.type && (
+          <span className="text-[11px] px-2 py-1 rounded-md" style={{ background: D.input, color: D.subtext }}>
+            <i className="fas fa-briefcase mr-1" />{job.type}
+          </span>
+        )}
+        <span className="text-[11px] px-2 py-1 rounded-md" style={{ background: `${D.accent}16`, color: D.accent }}>
+          <i className="fas fa-link mr-1" />{formatSourceLabel(job.source)}
+        </span>
+      </div>
+
+      {job.skills?.length > 0 && (
+        <div className="flex flex-wrap gap-1.5 mb-3">
+          {job.skills.slice(0, 4).map((skill: string) => (
+            <span key={skill} className="text-[10.5px] px-2 py-0.5 rounded-full"
+              style={{ background: `${D.accent}14`, color: D.accent }}
+            >
+              #{skill}
+            </span>
+          ))}
+        </div>
+      )}
+
+      <a href={normalizeExternalLink(job.url)} target="_blank" rel="noopener noreferrer"
+        className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl text-[12.5px] font-semibold no-underline"
+        style={{ background: `${D.green}1a`, color: D.green }}>
+        <i className="fas fa-arrow-up-right-from-square text-[11px]" />Apply
+      </a>
+    </div>
+  );
+}
+
 /* ═══════════════════════════════════════════════════════════════════════════
    NEW: Activity Feed Component
    ═══════════════════════════════════════════════════════════════════════════ */
@@ -268,6 +333,7 @@ function ActivityFeed({ currentUserId, onMessage, onEdit, refreshKey }: {
   refreshKey?: number;
 }) {
   const [items, setItems]     = useState<any[]>([]);
+  const [curatedJobs, setCuratedJobs] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [page, setPage]       = useState(1);
   const [hasMore, setHasMore] = useState(true);
@@ -307,8 +373,19 @@ function ActivityFeed({ currentUserId, onMessage, onEdit, refreshKey }: {
     finally { setLoading(false); }
   }, []);
 
+  const fetchCuratedJobs = useCallback(async () => {
+    try {
+      const res = await apiFetch('/community/curated-jobs?limit=8');
+      if (res.success) setCuratedJobs(res.data?.jobs || []);
+      else setCuratedJobs([]);
+    } catch {
+      setCuratedJobs([]);
+    }
+  }, []);
+
   useEffect(() => { setPage(1); setItems([]); setLoading(true); fetchFeed(1, filter); }, [filter, fetchFeed, refreshKey]);
   useEffect(() => { if (page > 1) fetchFeed(page, filter); }, [page, fetchFeed, filter]);
+  useEffect(() => { fetchCuratedJobs(); }, [fetchCuratedJobs, refreshKey]);
 
   // Live updates: every 15s, check page 1 and prepend any brand-new activities.
   // This keeps the feed fresh without disturbing scroll position or pagination.
@@ -340,6 +417,24 @@ function ActivityFeed({ currentUserId, onMessage, onEdit, refreshKey }: {
     return () => obs.disconnect();
   }, [hasMore, loading]);
 
+  const mergedFeed = useMemo(() => {
+    if (!curatedJobs.length) return items.map((item) => ({ kind: 'activity', item }));
+    const merged: any[] = [];
+    let jobIndex = 0;
+    items.forEach((item, index) => {
+      merged.push({ kind: 'activity', item });
+      if ((index + 1) % 4 === 0 && jobIndex < curatedJobs.length) {
+        merged.push({ kind: 'curated-job', item: curatedJobs[jobIndex] });
+        jobIndex += 1;
+      }
+    });
+    while (jobIndex < curatedJobs.length && merged.length < items.length + 3) {
+      merged.push({ kind: 'curated-job', item: curatedJobs[jobIndex] });
+      jobIndex += 1;
+    }
+    return merged;
+  }, [items, curatedJobs]);
+
   return (
     <div>
       {loading && items.length === 0 && (
@@ -366,7 +461,11 @@ function ActivityFeed({ currentUserId, onMessage, onEdit, refreshKey }: {
       )}
 
       <div className="grid gap-3">
-        {items.map(item => {
+        {mergedFeed.map((entry, idx) => {
+          if (entry.kind === 'curated-job') {
+            return <CuratedJobCard key={`job-${entry.item.id}-${idx}`} job={entry.item} />;
+          }
+          const item = entry.item;
           const meta = ACTIVITY_META[item.type] || { icon: '📌', color: D.muted, label: item.type };
           // Posts (discussions, projects, showcases) render as full cards with details
           if (item.type === 'community_post' && item.post) {
@@ -667,6 +766,27 @@ function NewPostModal({ onClose, onCreated }: { onClose: () => void; onCreated: 
   const [mediaUrl, setMediaUrl]   = useState('');
   const fileRef = useRef<HTMLInputElement>(null);
 
+  async function assertMinimumImageSize(file: File) {
+    if (!file.type.startsWith('image/')) return;
+    const src = URL.createObjectURL(file);
+    try {
+      await new Promise<void>((resolve, reject) => {
+        const img = new window.Image();
+        img.onload = () => {
+          if (img.naturalWidth < 600 || img.naturalHeight < 600) {
+            reject(new Error('Images must be at least 600 × 600 pixels.'));
+            return;
+          }
+          resolve();
+        };
+        img.onerror = () => reject(new Error('Invalid image file.'));
+        img.src = src;
+      });
+    } finally {
+      URL.revokeObjectURL(src);
+    }
+  }
+
   function handleMediaUrl() {
     if (!mediaUrl.trim()) return;
     const isGif  = mediaUrl.toLowerCase().includes('.gif') || mediaUrl.includes('giphy');
@@ -677,6 +797,13 @@ function NewPostModal({ onClose, onCreated }: { onClose: () => void; onCreated: 
 
   async function handleFileUpload(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]; if (!file) return;
+    try {
+      await assertMinimumImageSize(file);
+    } catch (validationErr: any) {
+      alert(validationErr?.message || 'Invalid image size.');
+      if (fileRef.current) fileRef.current.value = '';
+      return;
+    }
     const localUrl = URL.createObjectURL(file);
     const type = file.type.startsWith('video') ? 'video' : file.type.includes('gif') ? 'gif' : 'image';
     setMediaPreview({ url: localUrl, type });
@@ -809,7 +936,7 @@ function NewPostModal({ onClose, onCreated }: { onClose: () => void; onCreated: 
                     </div>
                     <div className="text-[12px] text-center" style={{ color: D.subtext }}>
                       <span className="font-semibold" style={{ color: D.accent }}>Click to upload</span> or drag & drop<br />
-                      <span className="text-[11px]" style={{ color: D.muted }}>PNG, JPG, GIF, MP4 · Max 50MB</span>
+                      <span className="text-[11px]" style={{ color: D.muted }}>PNG, JPG, GIF, MP4 · min image 600×600 · Max 50MB</span>
                     </div>
                   </label>
                 </div>
