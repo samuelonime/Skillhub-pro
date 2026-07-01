@@ -124,7 +124,7 @@ function Avatar({ user, size = 9 }: { user: any; size?: number }) {
 }
 
 function Skeleton({ h = 'h-4', w = 'w-full' }: { h?: string; w?: string }) {
-  return <div className={`${h} ${w} rounded-xl animate-pulse`} style={{ background: 'rgba(255,255,255,0.06)' }} />;
+  return <div className={`${h} ${w} rounded-xl animate-pulse`} style={{ background: 'var(--surface-soft)' }} />;
 }
 
 function Card({ children, className = '' }: { children: React.ReactNode; className?: string }) {
@@ -483,7 +483,7 @@ function PostCard({ post, onLike, onMessage, onEdit, onDelete, currentUserId }: 
                 <>
                   <div className="fixed inset-0 z-100" onClick={() => setShowActions(false)} />
                   <div className="absolute right-0 top-full mt-1.5 z-101 rounded-2xl overflow-hidden w-37.5 shadow-2xl"
-                    style={{ background: '#0D1525', border: `1px solid ${D.border}` }}>
+                    style={{ background: 'var(--card-bg)', border: `1px solid ${D.border}` }}>
                     <button onClick={() => { setShowActions(false); onEdit(post); }}
                       className="w-full flex items-center gap-2.5 px-3.5 py-2.5 text-[13px] font-medium border-0 bg-transparent cursor-pointer text-left transition-all hover:opacity-80"
                       style={{ color: D.accent }}><i className="fas fa-pen text-[11px]" /> Edit</button>
@@ -572,7 +572,7 @@ function PostCard({ post, onLike, onMessage, onEdit, onDelete, currentUserId }: 
               <>
                 <div className="fixed inset-0 z-100" onClick={() => setShowShareMenu(false)} />
                 <div className="absolute right-0 bottom-full mb-2 z-101 rounded-2xl overflow-hidden w-45 shadow-2xl"
-                  style={{ background: '#0D1525', border: `1px solid ${D.border}` }}>
+                  style={{ background: 'var(--card-bg)', border: `1px solid ${D.border}` }}>
                   <div className="px-3.5 py-2.5" style={{ borderBottom: `1px solid ${D.border}` }}>
                     <p className="text-[11px] font-semibold uppercase tracking-wide" style={{ color: D.muted }}>Share via</p>
                   </div>
@@ -618,7 +618,7 @@ function EditPostModal({ post, onClose, onUpdated }: { post: any; onClose: () =>
     <div className="fixed inset-0 z-300 flex items-center justify-center p-4 backdrop-blur-sm"
       style={{ background: 'rgba(0,0,0,0.7)' }} onClick={onClose}>
       <div className="rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto p-6"
-        style={{ background: '#0D1525', border: `1px solid ${D.border}` }} onClick={e => e.stopPropagation()}>
+        style={{ background: 'var(--card-bg)', border: `1px solid ${D.border}` }} onClick={e => e.stopPropagation()}>
         <div className="flex items-center justify-between mb-5">
           <h2 className="font-jakarta font-bold text-[17px] text-white">Edit Post</h2>
           <button onClick={onClose} className="w-8 h-8 rounded-xl border-0 cursor-pointer grid place-items-center"
@@ -712,7 +712,7 @@ function NewPostModal({ onClose, onCreated }: { onClose: () => void; onCreated: 
     <div className="fixed inset-0 z-300 flex items-center justify-center p-4 backdrop-blur-sm"
       style={{ background: 'rgba(0,0,0,0.7)' }} onClick={onClose}>
       <div className="rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto p-6"
-        style={{ background: '#0D1525', border: `1px solid ${D.border}` }} onClick={e => e.stopPropagation()}>
+        style={{ background: 'var(--card-bg)', border: `1px solid ${D.border}` }} onClick={e => e.stopPropagation()}>
         <div className="flex items-center justify-between mb-5">
           <h2 className="font-jakarta font-bold text-[17px] text-white">New Post</h2>
           <button onClick={onClose} className="w-8 h-8 rounded-xl border-0 cursor-pointer grid place-items-center"
@@ -858,7 +858,7 @@ function ChatPanel({ user, onClose }: { user: any; onClose: () => void }) {
   const name = `${user.firstName} ${user.lastName}`;
   return (
     <div className={`fixed bottom-6 right-6 z-400 w-85 rounded-2xl overflow-hidden flex flex-col shadow-2xl transition-all ${minimized ? 'h-14' : 'h-115'}`}
-      style={{ background: '#0D1525', border: `1px solid ${D.border}` }}>
+      style={{ background: 'var(--card-bg)', border: `1px solid ${D.border}` }}>
       <div className="flex items-center gap-2.5 px-4 py-3 shrink-0" style={{ background: `linear-gradient(135deg, ${D.accent}, #38BDF8)` }}>
         <Avatar user={user} size={8} />
         <div className="flex-1 min-w-0">
@@ -979,8 +979,8 @@ function PortfolioSpotlights({ onMessage }: { onMessage: (u: any) => void }) {
 
   if (loading) return (
     <div className="rounded-2xl p-5 mb-5 animate-pulse" style={{ background: D.card, border: `1px solid ${D.border}` }}>
-      <div className="h-4 rounded w-40 mb-4" style={{ background: 'rgba(255,255,255,0.06)' }} />
-      <div className="grid grid-cols-3 gap-3">{[1,2,3].map(i => <div key={i} className="h-44 rounded-xl" style={{ background: 'rgba(255,255,255,0.06)' }} />)}</div>
+      <div className="h-4 rounded w-40 mb-4" style={{ background: 'var(--surface-soft)' }} />
+      <div className="grid grid-cols-3 gap-3">{[1,2,3].map(i => <div key={i} className="h-44 rounded-xl" style={{ background: 'var(--surface-soft)' }} />)}</div>
     </div>
   );
   if (portfolios.length === 0) return null;
@@ -1123,7 +1123,7 @@ function PortfolioSpotlights({ onMessage }: { onMessage: (u: any) => void }) {
                               <>
                                 <div className="fixed inset-0 z-100" onClick={() => setShareMenuPostId(null)} />
                                 <div className="absolute right-0 bottom-full mb-2 z-101 rounded-2xl overflow-hidden w-45 shadow-2xl"
-                                  style={{ background: '#0D1525', border: `1px solid ${D.border}` }}>
+                                  style={{ background: 'var(--card-bg)', border: `1px solid ${D.border}` }}>
                                   <div className="px-3.5 py-2.5" style={{ borderBottom: `1px solid ${D.border}` }}>
                                     <p className="text-[11px] font-semibold uppercase tracking-wide" style={{ color: D.muted }}>Share project</p>
                                   </div>

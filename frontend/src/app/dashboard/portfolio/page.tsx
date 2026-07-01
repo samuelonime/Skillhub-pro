@@ -76,7 +76,7 @@ function ProjectCard({ project, onEdit, onDelete, onToggleCommunity }: any) {
   }
 
   return (
-    <div className={`rounded-2xl border overflow-hidden hover:-translate-y-0.5 transition-all group ${shared ? 'border-[#4F8EF7]/40 ring-1 ring-[#4F8EF7]/20' : 'border-[rgba(255,255,255,0.07)]'}`} style={{ background: 'var(--card-bg)' }}>
+    <div className={`rounded-2xl border overflow-hidden hover:-translate-y-0.5 transition-all group ${shared ? 'border-[#4F8EF7]/40 ring-1 ring-[#4F8EF7]/20' : 'border-[var(--border-soft)]'}`} style={{ background: 'var(--card-bg)' }}>
       <div className="relative h-40 overflow-hidden" style={{ background: 'linear-gradient(135deg, rgba(79,142,247,0.1) 0%, rgba(167,139,250,0.1) 100%)' }}>
         {project.thumbnail ? (
           <img src={project.thumbnail} alt={project.title} className="w-full h-full object-cover" />
@@ -113,10 +113,10 @@ function ProjectCard({ project, onEdit, onDelete, onToggleCommunity }: any) {
         <div className="flex items-start justify-between gap-2 mb-2">
           <h3 className="font-jakarta font-bold text-[14.5px] leading-tight flex-1" style={{ color: 'var(--text-body)' }}>{project.title}</h3>
           <div className="flex items-center gap-1 flex-shrink-0">
-            <button onClick={() => onEdit(project)} className="w-7 h-7 rounded-lg text-xs border-0 cursor-pointer transition-all grid place-items-center" style={{ background: 'rgba(255,255,255,0.06)', color: 'rgba(255,255,255,0.6)' }}>
+            <button onClick={() => onEdit(project)} className="w-7 h-7 rounded-lg text-xs border-0 cursor-pointer transition-all grid place-items-center" style={{ background: 'var(--surface-soft)', color: 'var(--text-muted)' }}>
               <i className="fas fa-pen" />
             </button>
-            <button onClick={() => onDelete(project.id)} className="w-7 h-7 rounded-lg text-xs border-0 cursor-pointer transition-all grid place-items-center" style={{ background: 'rgba(255,255,255,0.06)', color: 'rgba(255,255,255,0.6)' }}>
+            <button onClick={() => onDelete(project.id)} className="w-7 h-7 rounded-lg text-xs border-0 cursor-pointer transition-all grid place-items-center" style={{ background: 'var(--surface-soft)', color: 'var(--text-muted)' }}>
               <i className="fas fa-trash" />
             </button>
           </div>
@@ -138,7 +138,7 @@ function ProjectCard({ project, onEdit, onDelete, onToggleCommunity }: any) {
             </span>
           ))}
           {(project.technologies || []).length > 5 && (
-            <span className="text-[10.5px] px-2 py-0.5 rounded-full" style={{ background: 'rgba(255,255,255,0.06)', color: 'rgba(255,255,255,0.45)' }}>+{project.technologies.length - 5}</span>
+            <span className="text-[10.5px] px-2 py-0.5 rounded-full" style={{ background: 'var(--surface-soft)', color: 'var(--text-faint)' }}>+{project.technologies.length - 5}</span>
           )}
         </div>
 
@@ -146,7 +146,7 @@ function ProjectCard({ project, onEdit, onDelete, onToggleCommunity }: any) {
         <div className={`flex items-center justify-between pt-3 border-t ${shared ? 'border-[#4F8EF7]/20' : 'border-[rgba(255,255,255,0.06)]'}`}>
           <div className="flex items-center gap-2">
             <Toggle on={shared} onChange={() => handleToggleCommunity()} loading={toggling} />
-            <span className="text-[11.5px] font-medium" style={{ color: shared ? '#4F8EF7' : 'rgba(255,255,255,0.45)' }}>
+            <span className="text-[11.5px] font-medium" style={{ color: shared ? '#4F8EF7' : 'var(--text-faint)' }}>
               {shared ? <span style={{ color: '#4F8EF7', fontWeight: 600 }}>Shared to feed</span> : 'Share to feed'}
             </span>
           </div>
@@ -260,7 +260,7 @@ function ProjectModal({ project, onClose, onSaved }: any) {
           ) : (
             <div className={`w-full h-full flex flex-col items-center justify-center gap-2 border-2 border-dashed ${dragOver ? 'border-[#4F8EF7]' : 'border-[rgba(255,255,255,0.1)]'} rounded-t-2xl transition-all`} style={{ background: 'rgba(255,255,255,0.04)' }}>
               {uploading ? (
-                <><div className="w-8 h-8 border-2 border-[#4F8EF7]/30 border-t-[#4F8EF7] rounded-full animate-spin" /><p className="text-xs font-medium" style={{ color: 'rgba(255,255,255,0.45)' }}>Uploading…</p></>
+                <><div className="w-8 h-8 border-2 border-[#4F8EF7]/30 border-t-[#4F8EF7] rounded-full animate-spin" /><p className="text-xs font-medium" style={{ color: 'var(--text-faint)' }}>Uploading…</p></>
               ) : (
                 <>
                   <div className="w-12 h-12 rounded-xl grid place-items-center" style={{ background: 'rgba(79,142,247,0.1)' }}>
@@ -268,7 +268,7 @@ function ProjectModal({ project, onClose, onSaved }: any) {
                   </div>
                   <div className="text-center">
                     <p className="text-sm font-semibold"><span style={{ color: '#4F8EF7' }}>Click to upload</span> or drag & drop</p>
-                    <p className="text-[11px] mt-0.5" style={{ color: 'rgba(255,255,255,0.45)' }}>Project cover image or logo • JPEG, PNG, WebP • max 8MB</p>
+                    <p className="text-[11px] mt-0.5" style={{ color: 'var(--text-faint)' }}>Project cover image or logo • JPEG, PNG, WebP • max 8MB</p>
                   </div>
                 </>
               )}
@@ -281,7 +281,7 @@ function ProjectModal({ project, onClose, onSaved }: any) {
         <div className="p-6">
           <div className="flex items-center justify-between mb-5">
             <h3 className="font-jakarta font-bold text-[17px]" style={{ color: 'var(--text-body)' }}>{project?.id ? 'Edit Project' : 'Add Project'}</h3>
-            <button onClick={onClose} className="w-8 h-8 rounded-xl border-0 cursor-pointer transition-all grid place-items-center" style={{ background: 'rgba(255,255,255,0.06)', color: 'rgba(255,255,255,0.6)' }}>
+            <button onClick={onClose} className="w-8 h-8 rounded-xl border-0 cursor-pointer transition-all grid place-items-center" style={{ background: 'var(--surface-soft)', color: 'var(--text-muted)' }}>
               <i className="fas fa-times" />
             </button>
           </div>
@@ -294,30 +294,30 @@ function ProjectModal({ project, onClose, onSaved }: any) {
               { label: 'Technologies (comma-separated)', key: 'technologies', placeholder: 'React, TypeScript, Node.js' },
             ].map(f => (
               <div key={f.key}>
-                <label className="block text-xs font-semibold mb-1" style={{ color: 'rgba(255,255,255,0.45)' }}>{f.label}</label>
+                <label className="block text-xs font-semibold mb-1" style={{ color: 'var(--text-faint)' }}>{f.label}</label>
                 <input value={(form as any)[f.key]} onChange={e => setForm(p => ({ ...p, [f.key]: e.target.value }))}
                   placeholder={f.placeholder}
                   className="w-full px-3.5 py-2.5 rounded-xl text-sm font-[inherit] outline-none transition-all"
-                  style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)', color: 'rgba(255,255,255,0.85)' }}
+                  style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid var(--card-border)', color: 'rgba(255,255,255,0.85)' }}
                   onFocus={e => { e.target.style.border = '1px solid rgba(79,142,247,0.4)'; e.target.style.background = 'rgba(79,142,247,0.06)'; }}
-                  onBlur={e => { e.target.style.border = '1px solid rgba(255,255,255,0.08)'; e.target.style.background = 'rgba(255,255,255,0.05)'; }}
+                  onBlur={e => { e.target.style.border = '1px solid var(--card-border)'; e.target.style.background = 'rgba(255,255,255,0.05)'; }}
                 />
               </div>
             ))}
             <div>
-              <label className="block text-xs font-semibold mb-1" style={{ color: 'rgba(255,255,255,0.45)' }}>Description *</label>
+              <label className="block text-xs font-semibold mb-1" style={{ color: 'var(--text-faint)' }}>Description *</label>
               <textarea value={form.description} onChange={e => setForm(p => ({ ...p, description: e.target.value }))}
                 placeholder="Describe what this project does, your role, and the impact…"
                 rows={4}
                 className="w-full px-3.5 py-2.5 rounded-xl text-sm font-[inherit] outline-none transition-all resize-none"
-                style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)', color: 'rgba(255,255,255,0.85)' }}
+                style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid var(--card-border)', color: 'rgba(255,255,255,0.85)' }}
                 onFocus={e => { e.target.style.border = '1px solid rgba(79,142,247,0.4)'; e.target.style.background = 'rgba(79,142,247,0.06)'; }}
-                onBlur={e => { e.target.style.border = '1px solid rgba(255,255,255,0.08)'; e.target.style.background = 'rgba(255,255,255,0.05)'; }}
+                onBlur={e => { e.target.style.border = '1px solid var(--card-border)'; e.target.style.background = 'rgba(255,255,255,0.05)'; }}
               />
             </div>
           </div>
           <div className="flex gap-2.5 mt-5">
-            <button onClick={onClose} className="flex-1 py-2.5 rounded-xl text-sm font-semibold border cursor-pointer transition-all" style={{ background: 'transparent', color: 'rgba(255,255,255,0.6)', borderColor: 'rgba(255,255,255,0.08)' }}>
+            <button onClick={onClose} className="flex-1 py-2.5 rounded-xl text-sm font-semibold border cursor-pointer transition-all" style={{ background: 'transparent', color: 'var(--text-muted)', borderColor: 'var(--card-border)' }}>
               Cancel
             </button>
             <button onClick={submit} disabled={saving || uploading}
@@ -349,8 +349,8 @@ function CommunityVisibilityBanner({ portfolioPublic, onToggle, sharedCount, tot
   }
 
   return (
-    <div className={`rounded-2xl p-5 mb-6 border flex items-center gap-4 transition-all ${portfolioPublic ? 'border-[#4F8EF7]/25' : 'border-[rgba(255,255,255,0.07)]'}`} style={{ background: portfolioPublic ? 'rgba(79,142,247,0.06)' : 'var(--card-bg)' }}>
-      <div className={`w-11 h-11 rounded-xl grid place-items-center flex-shrink-0 text-lg transition-all ${portfolioPublic ? 'text-white shadow-[0_4px_14px_rgba(79,142,247,0.35)]' : 'border'}`} style={portfolioPublic ? { background: '#4F8EF7' } : { background: 'rgba(255,255,255,0.06)', color: 'rgba(255,255,255,0.45)', borderColor: 'rgba(255,255,255,0.08)' }}>
+    <div className={`rounded-2xl p-5 mb-6 border flex items-center gap-4 transition-all ${portfolioPublic ? 'border-[#4F8EF7]/25' : 'border-[var(--border-soft)]'}`} style={{ background: portfolioPublic ? 'rgba(79,142,247,0.06)' : 'var(--card-bg)' }}>
+      <div className={`w-11 h-11 rounded-xl grid place-items-center flex-shrink-0 text-lg transition-all ${portfolioPublic ? 'text-white shadow-[0_4px_14px_rgba(79,142,247,0.35)]' : 'border'}`} style={portfolioPublic ? { background: '#4F8EF7' } : { background: 'var(--surface-soft)', color: 'var(--text-faint)', borderColor: 'var(--card-border)' }}>
         <i className="fas fa-users" />
       </div>
       <div className="flex-1 min-w-0">
@@ -360,7 +360,7 @@ function CommunityVisibilityBanner({ portfolioPublic, onToggle, sharedCount, tot
             <span className="text-[10px] font-bold px-2 py-0.5 rounded-full" style={{ background: 'rgba(79,142,247,0.12)', color: '#4F8EF7' }}>VISIBLE</span>
           )}
         </div>
-        <p className="text-[12px] leading-relaxed" style={{ color: 'rgba(255,255,255,0.45)' }}>
+        <p className="text-[12px] leading-relaxed" style={{ color: 'var(--text-faint)' }}>
           {portfolioPublic
             ? `Your profile is visible in the community feed. ${sharedCount} of ${totalCount} projects are shared.`
             : 'Enable to let fellow learners discover your work and projects in the Community tab.'}
@@ -375,7 +375,7 @@ function CommunityVisibilityBanner({ portfolioPublic, onToggle, sharedCount, tot
         {portfolioPublic && (
           <div className="text-right hidden sm:block">
             <div className="font-jakarta font-bold text-[18px]" style={{ color: '#4F8EF7' }}>{sharedCount}</div>
-            <div className="text-[10.5px]" style={{ color: 'rgba(255,255,255,0.45)' }}>shared</div>
+            <div className="text-[10.5px]" style={{ color: 'var(--text-faint)' }}>shared</div>
           </div>
         )}
         <Toggle on={portfolioPublic} onChange={handle} loading={toggling} />
@@ -491,7 +491,7 @@ export default function PortfolioPage() {
     <SidebarLayout navItems={navItems} pageTitle="Portfolio">
       {/* Toast */}
       {toast && (
-        <div className={`fixed top-5 right-5 z-50 text-sm font-semibold px-5 py-3 rounded-xl shadow-xl flex items-center gap-2 ${toastType === 'info' ? 'border' : ''}`} style={toastType === 'info' ? { background: '#0F1521', color: '#4F8EF7', borderColor: 'rgba(79,142,247,0.3)' } : { background: '#0F1521', color: '#00E5A0', border: '1px solid rgba(0,229,160,0.3)' }}>
+        <div className={`fixed top-5 right-5 z-50 text-sm font-semibold px-5 py-3 rounded-xl shadow-xl flex items-center gap-2 ${toastType === 'info' ? 'border' : ''}`} style={toastType === 'info' ? { background: 'var(--card-bg)', color: '#4F8EF7', borderColor: 'rgba(79,142,247,0.3)' } : { background: 'var(--card-bg)', color: '#00E5A0', border: '1px solid rgba(0,229,160,0.3)' }}>
           <i className={`fas ${toastType === 'info' ? 'fa-users' : 'fa-check-circle'}`} />{toast}
         </div>
       )}
@@ -507,7 +507,7 @@ export default function PortfolioPage() {
           </div>
           <div className="flex-1 min-w-0">
             <h2 className="font-jakarta font-bold text-xl mb-0.5" style={{ color: 'var(--text-body)' }}>{user?.name || 'Your Name'}</h2>
-            <p className="text-sm" style={{ color: 'rgba(255,255,255,0.45)' }}>{user?.title || 'Add your title in Settings'}</p>
+            <p className="text-sm" style={{ color: 'var(--text-faint)' }}>{user?.title || 'Add your title in Settings'}</p>
             <p className="text-xs mt-0.5" style={{ color: 'rgba(255,255,255,0.35)' }}>{user?.location || ''}</p>
           </div>
           <div className="flex gap-5">
@@ -519,7 +519,7 @@ export default function PortfolioPage() {
             ].map(s => (
               <div key={s.label} className="text-center">
                 <div className="font-jakarta font-bold text-xl" style={{ color: s.color }}>{s.value}</div>
-                <div className="text-xs mt-0.5" style={{ color: 'rgba(255,255,255,0.45)' }}>{s.label}</div>
+                <div className="text-xs mt-0.5" style={{ color: 'var(--text-faint)' }}>{s.label}</div>
               </div>
             ))}
           </div>
@@ -559,7 +559,7 @@ export default function PortfolioPage() {
             <div>
               <h2 className="font-jakarta font-bold text-[15px]" style={{ color: 'var(--text-body)' }}>My Projects</h2>
               {portfolioPublic && (
-                <p className="text-[12px] mt-0.5" style={{ color: 'rgba(255,255,255,0.45)' }}>
+                <p className="text-[12px] mt-0.5" style={{ color: 'var(--text-faint)' }}>
                   Toggle <i className="fas fa-users text-[10px]" style={{ color: '#4F8EF7' }} /> on each project to share it to the Community feed
                 </p>
               )}
@@ -578,7 +578,7 @@ export default function PortfolioPage() {
                 <i className="fas fa-layer-group" />
               </div>
               <h3 className="font-jakarta font-bold text-[15px] mb-2" style={{ color: 'rgba(255,255,255,0.85)' }}>No projects yet</h3>
-              <p className="text-sm mb-5" style={{ color: 'rgba(255,255,255,0.45)' }}>Showcase your work and earn 1 Merit Coin per project!</p>
+              <p className="text-sm mb-5" style={{ color: 'var(--text-faint)' }}>Showcase your work and earn 1 Merit Coin per project!</p>
               <button onClick={() => setModal({})}
                 className="inline-flex items-center gap-2 px-5 py-2.5 text-white rounded-xl text-sm font-semibold border-0 cursor-pointer transition-all"
                 style={{ background: '#4F8EF7' }}
@@ -620,7 +620,7 @@ export default function PortfolioPage() {
               <div className="flex gap-2">
                 <button onClick={() => { setEditingSkills(false); setSkills(savedSkillsRef.current); }}
                   className="px-3.5 py-2 text-sm font-semibold rounded-xl border cursor-pointer transition-all"
-                  style={{ background: 'transparent', color: 'rgba(255,255,255,0.6)', borderColor: 'rgba(255,255,255,0.08)' }}>
+                  style={{ background: 'transparent', color: 'var(--text-muted)', borderColor: 'var(--card-border)' }}>
                   Cancel
                 </button>
                 <button onClick={saveSkills}
@@ -639,9 +639,9 @@ export default function PortfolioPage() {
                 onKeyDown={e => { if (e.key === 'Enter' || e.key === ',') { e.preventDefault(); addSkill(skillInput); } }}
                 placeholder="Type a skill and press Enter…"
                 className="flex-1 px-3.5 py-2.5 rounded-xl text-sm font-[inherit] outline-none transition-all"
-                style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)', color: 'rgba(255,255,255,0.85)' }}
+                style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid var(--card-border)', color: 'rgba(255,255,255,0.85)' }}
                 onFocus={e => { e.target.style.border = '1px solid rgba(79,142,247,0.4)'; e.target.style.background = 'rgba(79,142,247,0.06)'; }}
-                onBlur={e => { e.target.style.border = '1px solid rgba(255,255,255,0.08)'; e.target.style.background = 'rgba(255,255,255,0.05)'; }}
+                onBlur={e => { e.target.style.border = '1px solid var(--card-border)'; e.target.style.background = 'rgba(255,255,255,0.05)'; }}
               />
               <button onClick={() => addSkill(skillInput)}
                 className="px-4 py-2.5 text-white text-sm font-semibold rounded-xl border-0 cursor-pointer transition-all"
@@ -653,7 +653,7 @@ export default function PortfolioPage() {
             </div>
           )}
           {skills.length === 0 ? (
-            <div className="py-10 text-center" style={{ color: 'rgba(255,255,255,0.45)' }}>
+            <div className="py-10 text-center" style={{ color: 'var(--text-faint)' }}>
               <i className="fas fa-tools text-3xl mb-3 block" />
               <p className="text-sm">No skills listed yet. Click Edit Skills to add them.</p>
             </div>
@@ -681,13 +681,13 @@ export default function PortfolioPage() {
         <div>
           <div className="flex items-center justify-between mb-4">
             <h2 className="font-jakarta font-bold text-[15px]" style={{ color: 'var(--text-body)' }}>Earned Certificates</h2>
-            <a href="/dashboard/certificates" className="text-xs font-semibold px-3 py-1.5 rounded-lg no-underline transition-all" style={{ background: 'rgba(255,255,255,0.06)', color: '#4F8EF7', border: '1px solid rgba(255,255,255,0.08)' }}>View all</a>
+            <a href="/dashboard/certificates" className="text-xs font-semibold px-3 py-1.5 rounded-lg no-underline transition-all" style={{ background: 'var(--surface-soft)', color: '#4F8EF7', border: '1px solid var(--card-border)' }}>View all</a>
           </div>
           {certificates.length === 0 ? (
             <div className="rounded-2xl p-12 text-center" style={{ background: 'var(--card-bg)', border: '1px solid var(--card-border)' }}>
               <i className="fas fa-certificate text-4xl mb-4 block" style={{ color: '#F59E0B' }} />
               <h3 className="font-jakarta font-bold text-[15px] mb-2" style={{ color: 'rgba(255,255,255,0.85)' }}>No certificates yet</h3>
-              <p className="text-sm mb-5" style={{ color: 'rgba(255,255,255,0.45)' }}>Complete courses to earn certificates that display here.</p>
+              <p className="text-sm mb-5" style={{ color: 'var(--text-faint)' }}>Complete courses to earn certificates that display here.</p>
               <a href="/dashboard/courses" className="inline-flex items-center gap-2 px-5 py-2.5 text-white rounded-xl text-sm font-semibold no-underline transition-all" style={{ background: '#4F8EF7' }}>Browse Courses</a>
             </div>
           ) : (
@@ -696,7 +696,7 @@ export default function PortfolioPage() {
                 <div key={cert.id} className="rounded-2xl p-5 transition-all" style={{ background: 'var(--card-bg)', border: '1px solid var(--card-border)' }}>
                   <div className="w-12 h-12 rounded-xl grid place-items-center text-2xl mb-3" style={{ background: 'rgba(245,158,11,0.1)' }}>🏆</div>
                   <h3 className="font-jakarta font-bold text-[14px] mb-0.5" style={{ color: 'var(--text-body)' }}>{cert.title}</h3>
-                  <p className="text-xs mb-3" style={{ color: 'rgba(255,255,255,0.45)' }}>{cert.issuer || cert.course?.title}</p>
+                  <p className="text-xs mb-3" style={{ color: 'var(--text-faint)' }}>{cert.issuer || cert.course?.title}</p>
                   <div className="text-[11px]" style={{ color: 'rgba(255,255,255,0.35)' }}>{cert.issuedAt ? new Date(cert.issuedAt).toLocaleDateString() : ''}</div>
                 </div>
               ))}
