@@ -4,19 +4,12 @@ import { useState, useEffect, useRef } from 'react';
 import { SidebarLayout } from '@/components/layout/SidebarLayout';
 import { apiFetch } from '@/lib/api';
 import { BrandIcon } from '@/components/ui/BrandIcon';
+import { useTheme } from '@/providers/ThemeProvider';
 
 type ThemeMode = 'dark' | 'light';
 
-const THEME_STORAGE_KEY = 'skillhub-theme';
-
-function getStoredTheme(): ThemeMode {
-  if (typeof window === 'undefined') return 'dark';
-  return window.localStorage.getItem(THEME_STORAGE_KEY) === 'light' ? 'light' : 'dark';
-}
-
-function applyTheme(theme: ThemeMode) {
-  document.documentElement.dataset.theme = theme;
-  window.localStorage.setItem(THEME_STORAGE_KEY, theme);
+function Skeleton({ h = 'h-4', w = 'w-full', rounded = 'rounded-lg' }: { h?: string; w?: string; rounded?: string }) {
+  return <div className={`${h} ${w} ${rounded} animate-pulse`} style={{ background: 'rgba(255,255,255,0.06)' }} />;
 }
 
 const navItems = [
@@ -68,10 +61,8 @@ function Skeleton({ h = 'h-4', w = 'w-full', rounded = 'rounded-lg' }: { h?: str
 }
 
 export default function SettingsPage() {
+  const { theme: themeMode, setTheme: setThemeMode } = useTheme();
   const [tab, setTab] = useState<SettingsTab>('profile');
-  const [profile, setProfile] = useState<any>({});
-  const [settings, setSettings] = useState<any>({});
-  const [themeMode, setThemeMode] = useState<ThemeMode>('dark');
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [toast, setToast] = useState('');
@@ -142,10 +133,6 @@ export default function SettingsPage() {
   }
 
   useEffect(() => {
-    const currentTheme = getStoredTheme();
-    setThemeMode(currentTheme);
-    applyTheme(currentTheme);
-
     async function load() {
       setLoading(true);
       try {
@@ -167,7 +154,6 @@ export default function SettingsPage() {
 
   function handleThemeChange(nextTheme: ThemeMode) {
     setThemeMode(nextTheme);
-    applyTheme(nextTheme);
     showToast(`${nextTheme === 'light' ? 'Light' : 'Dark'} theme enabled.`);
   }
 
