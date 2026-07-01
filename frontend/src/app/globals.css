@@ -104,6 +104,33 @@ html[data-theme='light'] body {
   transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease, box-shadow 0.2s ease;
 }
 
+/* ── Theme-aware neutral utilities ───────────────────────────────────────────
+   Replaces hardcoded `text-white`, `text-white/NN`, and dark surface classes on
+   PAGE CONTENT so it recolours with the light/dark toggle. Button/badge labels
+   sitting on coloured backgrounds keep the original `text-white` class and stay
+   white in both themes. */
+.text-ink    { color: var(--text-strong); }
+.text-ink-90 { color: var(--text-strong); }
+.text-ink-85 { color: var(--text-body); }
+.text-ink-80 { color: var(--text-body); }
+.text-ink-70 { color: var(--text-muted); }
+.text-ink-60 { color: var(--text-muted); }
+.text-ink-50 { color: var(--text-faint); }
+.text-ink-40 { color: var(--text-faint); }
+.text-ink-30 { color: var(--text-ghost); }
+
+.bg-ink        { background: var(--surface); }
+.bg-ink-strong { background: var(--surface-strong); }
+.bg-ink-soft   { background: var(--surface-soft); }
+.border-ink    { border-color: var(--border-soft); }
+
+/* Dark hero banners keep a fixed dark gradient in BOTH themes, so their inner
+   text must stay light regardless of theme. */
+.hero-dark, .hero-dark * { color: inherit; }
+.hero-ink        { color: rgba(255,255,255,0.92); }
+.hero-ink-muted  { color: rgba(255,255,255,0.62); }
+.hero-ink-faint  { color: rgba(255,255,255,0.45); }
+
 /* Heading font — replaces Syne throughout the app */
 .font-syne { font-family: 'Plus Jakarta Sans', sans-serif !important; }
 .font-jakarta { font-family: 'Plus Jakarta Sans', sans-serif !important; }
