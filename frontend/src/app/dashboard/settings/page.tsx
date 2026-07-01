@@ -1,5 +1,7 @@
 'use client';
 
+export const dynamic = 'force-dynamic';
+
 import { useState, useEffect, useRef } from 'react';
 import { SidebarLayout } from '@/components/layout/SidebarLayout';
 import { apiFetch } from '@/lib/api';
@@ -56,10 +58,6 @@ function Toggle({ label, desc, value, onChange }: { label: string; desc?: string
   );
 }
 
-function Skeleton({ h = 'h-4', w = 'w-full', rounded = 'rounded-lg' }: { h?: string; w?: string; rounded?: string }) {
-  return <div className={`${h} ${w} ${rounded} animate-pulse`} style={{ background: 'rgba(255,255,255,0.06)' }} />;
-}
-
 export default function SettingsPage() {
   const { theme: themeMode, setTheme: setThemeMode } = useTheme();
   const [tab, setTab] = useState<SettingsTab>('profile');
@@ -78,6 +76,10 @@ export default function SettingsPage() {
 
   // New skill input
   const [newSkill, setNewSkill] = useState('');
+
+  // Profile and settings state
+  const [profile, setProfile] = useState<any>(null);
+  const [settings, setSettings] = useState<any>(null);
 
   function showToast(msg: string, type: 'ok' | 'err' = 'ok') {
     setToast(msg); setToastType(type);
