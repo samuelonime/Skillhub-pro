@@ -32,18 +32,18 @@ const navItems = [
 
 /* ── Design tokens ─────────────────────────────────────────────────────────── */
 const D = {
-  card:    '#0F1521',
-  border:  'rgba(255,255,255,0.07)',
+  card:    'var(--card-bg)',
+  border:  'var(--card-border)',
   accent:  '#4F8EF7',
   green:   '#00E5A0',
   amber:   '#F59E0B',
   purple:  '#A78BFA',
   red:     '#F87171',
-  muted:   'rgba(255,255,255,0.35)',
-  text:    'rgba(255,255,255,0.85)',
-  subtext: 'rgba(255,255,255,0.45)',
-  input:   'rgba(255,255,255,0.06)',
-  hover:   'rgba(255,255,255,0.04)',
+  muted:   'var(--text-ghost)',
+  text:    'var(--text-body)',
+  subtext: 'var(--text-faint)',
+  input:   'var(--input-bg)',
+  hover:   'var(--surface-soft)',
 };
 
 const POST_TYPES = [

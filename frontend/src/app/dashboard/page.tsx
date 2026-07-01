@@ -155,7 +155,7 @@ export default function DashboardPage() {
 
   return (
     <SidebarLayout navItems={navItems} pageTitle="Dashboard">
-      <div style={{ color: '#E2E8F0' }}>
+      <div style={{ color: 'var(--text-body)' }}>
 
         {/* ── Hero banner ──────────────────────────────────────────────── */}
         <div

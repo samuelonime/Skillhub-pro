@@ -76,7 +76,7 @@ function ProjectCard({ project, onEdit, onDelete, onToggleCommunity }: any) {
   }
 
   return (
-    <div className={`rounded-2xl border overflow-hidden hover:-translate-y-0.5 transition-all group ${shared ? 'border-[#4F8EF7]/40 ring-1 ring-[#4F8EF7]/20' : 'border-[rgba(255,255,255,0.07)]'}`} style={{ background: '#0F1521' }}>
+    <div className={`rounded-2xl border overflow-hidden hover:-translate-y-0.5 transition-all group ${shared ? 'border-[#4F8EF7]/40 ring-1 ring-[#4F8EF7]/20' : 'border-[rgba(255,255,255,0.07)]'}`} style={{ background: 'var(--card-bg)' }}>
       <div className="relative h-40 overflow-hidden" style={{ background: 'linear-gradient(135deg, rgba(79,142,247,0.1) 0%, rgba(167,139,250,0.1) 100%)' }}>
         {project.thumbnail ? (
           <img src={project.thumbnail} alt={project.title} className="w-full h-full object-cover" />
@@ -111,7 +111,7 @@ function ProjectCard({ project, onEdit, onDelete, onToggleCommunity }: any) {
 
       <div className="p-4">
         <div className="flex items-start justify-between gap-2 mb-2">
-          <h3 className="font-jakarta font-bold text-[14.5px] leading-tight flex-1" style={{ color: 'rgba(255,255,255,0.85)' }}>{project.title}</h3>
+          <h3 className="font-jakarta font-bold text-[14.5px] leading-tight flex-1" style={{ color: 'var(--text-body)' }}>{project.title}</h3>
           <div className="flex items-center gap-1 flex-shrink-0">
             <button onClick={() => onEdit(project)} className="w-7 h-7 rounded-lg text-xs border-0 cursor-pointer transition-all grid place-items-center" style={{ background: 'rgba(255,255,255,0.06)', color: 'rgba(255,255,255,0.6)' }}>
               <i className="fas fa-pen" />
@@ -122,7 +122,7 @@ function ProjectCard({ project, onEdit, onDelete, onToggleCommunity }: any) {
           </div>
         </div>
 
-        <p className={`text-xs leading-relaxed mb-3 ${expanded ? '' : 'line-clamp-2'}`} style={{ color: 'rgba(255,255,255,0.45)' }}>
+        <p className={`text-xs leading-relaxed mb-3 ${expanded ? '' : 'line-clamp-2'}`} style={{ color: 'var(--text-faint)' }}>
           {project.description}
         </p>
         {project.description?.length > 80 && (
@@ -230,7 +230,7 @@ function ProjectModal({ project, onClose, onSaved }: any) {
 
   return (
     <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4" onClick={onClose}>
-      <div className="rounded-2xl w-full max-w-lg shadow-2xl max-h-[90vh] overflow-y-auto" style={{ background: '#0F1521', border: '1px solid rgba(255,255,255,0.09)' }} onClick={e => e.stopPropagation()}>
+      <div className="rounded-2xl w-full max-w-lg shadow-2xl max-h-[90vh] overflow-y-auto" style={{ background: 'var(--card-bg)', border: '1px solid var(--card-border)' }} onClick={e => e.stopPropagation()}>
 
         {/* Image / banner area */}
         <div
@@ -280,7 +280,7 @@ function ProjectModal({ project, onClose, onSaved }: any) {
         {/* Form body */}
         <div className="p-6">
           <div className="flex items-center justify-between mb-5">
-            <h3 className="font-jakarta font-bold text-[17px]" style={{ color: 'rgba(255,255,255,0.85)' }}>{project?.id ? 'Edit Project' : 'Add Project'}</h3>
+            <h3 className="font-jakarta font-bold text-[17px]" style={{ color: 'var(--text-body)' }}>{project?.id ? 'Edit Project' : 'Add Project'}</h3>
             <button onClick={onClose} className="w-8 h-8 rounded-xl border-0 cursor-pointer transition-all grid place-items-center" style={{ background: 'rgba(255,255,255,0.06)', color: 'rgba(255,255,255,0.6)' }}>
               <i className="fas fa-times" />
             </button>
@@ -349,13 +349,13 @@ function CommunityVisibilityBanner({ portfolioPublic, onToggle, sharedCount, tot
   }
 
   return (
-    <div className={`rounded-2xl p-5 mb-6 border flex items-center gap-4 transition-all ${portfolioPublic ? 'border-[#4F8EF7]/25' : 'border-[rgba(255,255,255,0.07)]'}`} style={{ background: portfolioPublic ? 'rgba(79,142,247,0.06)' : '#0F1521' }}>
+    <div className={`rounded-2xl p-5 mb-6 border flex items-center gap-4 transition-all ${portfolioPublic ? 'border-[#4F8EF7]/25' : 'border-[rgba(255,255,255,0.07)]'}`} style={{ background: portfolioPublic ? 'rgba(79,142,247,0.06)' : 'var(--card-bg)' }}>
       <div className={`w-11 h-11 rounded-xl grid place-items-center flex-shrink-0 text-lg transition-all ${portfolioPublic ? 'text-white shadow-[0_4px_14px_rgba(79,142,247,0.35)]' : 'border'}`} style={portfolioPublic ? { background: '#4F8EF7' } : { background: 'rgba(255,255,255,0.06)', color: 'rgba(255,255,255,0.45)', borderColor: 'rgba(255,255,255,0.08)' }}>
         <i className="fas fa-users" />
       </div>
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2 mb-0.5">
-          <span className="font-jakarta font-bold text-[14px]" style={{ color: 'rgba(255,255,255,0.85)' }}>Community Portfolio Feed</span>
+          <span className="font-jakarta font-bold text-[14px]" style={{ color: 'var(--text-body)' }}>Community Portfolio Feed</span>
           {portfolioPublic && (
             <span className="text-[10px] font-bold px-2 py-0.5 rounded-full" style={{ background: 'rgba(79,142,247,0.12)', color: '#4F8EF7' }}>VISIBLE</span>
           )}
@@ -500,13 +500,13 @@ export default function PortfolioPage() {
       )}
 
       {/* Profile header */}
-      <div className="rounded-2xl p-6 mb-5" style={{ background: '#0F1521', border: '1px solid rgba(255,255,255,0.07)' }}>
+      <div className="rounded-2xl p-6 mb-5" style={{ background: 'var(--card-bg)', border: '1px solid var(--card-border)' }}>
         <div className="flex items-center gap-5 flex-wrap">
           <div className="w-16 h-16 rounded-2xl flex items-center justify-center font-jakarta font-bold text-white text-2xl flex-shrink-0" style={{ background: 'linear-gradient(135deg, #4F8EF7 0%, #A78BFA 100%)' }}>
             {user?.name?.charAt(0) || 'U'}
           </div>
           <div className="flex-1 min-w-0">
-            <h2 className="font-jakarta font-bold text-xl mb-0.5" style={{ color: 'rgba(255,255,255,0.85)' }}>{user?.name || 'Your Name'}</h2>
+            <h2 className="font-jakarta font-bold text-xl mb-0.5" style={{ color: 'var(--text-body)' }}>{user?.name || 'Your Name'}</h2>
             <p className="text-sm" style={{ color: 'rgba(255,255,255,0.45)' }}>{user?.title || 'Add your title in Settings'}</p>
             <p className="text-xs mt-0.5" style={{ color: 'rgba(255,255,255,0.35)' }}>{user?.location || ''}</p>
           </div>
@@ -535,7 +535,7 @@ export default function PortfolioPage() {
       />
 
       {/* Tabs */}
-      <div className="flex gap-1 p-1 rounded-xl w-fit mb-6" style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.06)' }}>
+      <div className="flex gap-1 p-1 rounded-xl w-fit mb-6" style={{ background: 'var(--surface-soft)', border: '1px solid var(--border-subtle)' }}>
         {(['projects', 'skills', 'certificates'] as const).map(t => (
           <button key={t} onClick={() => setActiveTab(t)}
             className={`px-5 py-2 rounded-[9px] text-sm font-medium font-[inherit] cursor-pointer capitalize transition-all border-0 ${
@@ -543,7 +543,7 @@ export default function PortfolioPage() {
                 ? 'font-semibold shadow-[0_1px_5px_rgba(0,0,0,0.09)]' 
                 : 'bg-transparent'
             }`}
-            style={activeTab === t ? { background: '#0F1521', color: '#FFFFFF', border: '1px solid rgba(255,255,255,0.09)' } : { color: 'rgba(255,255,255,0.45)' }}>
+            style={activeTab === t ? { background: 'var(--card-bg)', color: '#FFFFFF', border: '1px solid var(--card-border)' } : { color: 'var(--text-faint)' }}>
             {t}
             {t === 'projects' && sharedCount > 0 && portfolioPublic && (
               <span className="ml-1.5 text-[9px] font-bold px-1.5 py-0.5 rounded-full align-middle" style={{ background: 'rgba(79,142,247,0.12)', color: '#4F8EF7' }}>{sharedCount}</span>
@@ -557,7 +557,7 @@ export default function PortfolioPage() {
         <>
           <div className="flex items-center justify-between mb-4">
             <div>
-              <h2 className="font-jakarta font-bold text-[15px]" style={{ color: 'rgba(255,255,255,0.85)' }}>My Projects</h2>
+              <h2 className="font-jakarta font-bold text-[15px]" style={{ color: 'var(--text-body)' }}>My Projects</h2>
               {portfolioPublic && (
                 <p className="text-[12px] mt-0.5" style={{ color: 'rgba(255,255,255,0.45)' }}>
                   Toggle <i className="fas fa-users text-[10px]" style={{ color: '#4F8EF7' }} /> on each project to share it to the Community feed
@@ -573,7 +573,7 @@ export default function PortfolioPage() {
             </button>
           </div>
           {projects.length === 0 ? (
-            <div className="rounded-2xl p-12 text-center" style={{ background: '#0F1521', border: '1px solid rgba(255,255,255,0.07)' }}>
+            <div className="rounded-2xl p-12 text-center" style={{ background: 'var(--card-bg)', border: '1px solid var(--card-border)' }}>
               <div className="w-16 h-16 rounded-2xl grid place-items-center text-3xl mx-auto mb-4" style={{ background: 'rgba(79,142,247,0.1)', color: '#4F8EF7' }}>
                 <i className="fas fa-layer-group" />
               </div>
@@ -605,9 +605,9 @@ export default function PortfolioPage() {
 
       {/* Skills Tab */}
       {activeTab === 'skills' && (
-        <div className="rounded-2xl p-6" style={{ background: '#0F1521', border: '1px solid rgba(255,255,255,0.07)' }}>
+        <div className="rounded-2xl p-6" style={{ background: 'var(--card-bg)', border: '1px solid var(--card-border)' }}>
           <div className="flex items-center justify-between mb-5">
-            <h2 className="font-jakarta font-bold text-[15px]" style={{ color: 'rgba(255,255,255,0.85)' }}>My Skills</h2>
+            <h2 className="font-jakarta font-bold text-[15px]" style={{ color: 'var(--text-body)' }}>My Skills</h2>
             {!editingSkills ? (
               <button onClick={() => setEditingSkills(true)}
                 className="inline-flex items-center gap-2 px-3.5 py-2 text-sm font-semibold rounded-xl border-0 cursor-pointer transition-all"
@@ -680,11 +680,11 @@ export default function PortfolioPage() {
       {activeTab === 'certificates' && (
         <div>
           <div className="flex items-center justify-between mb-4">
-            <h2 className="font-jakarta font-bold text-[15px]" style={{ color: 'rgba(255,255,255,0.85)' }}>Earned Certificates</h2>
+            <h2 className="font-jakarta font-bold text-[15px]" style={{ color: 'var(--text-body)' }}>Earned Certificates</h2>
             <a href="/dashboard/certificates" className="text-xs font-semibold px-3 py-1.5 rounded-lg no-underline transition-all" style={{ background: 'rgba(255,255,255,0.06)', color: '#4F8EF7', border: '1px solid rgba(255,255,255,0.08)' }}>View all</a>
           </div>
           {certificates.length === 0 ? (
-            <div className="rounded-2xl p-12 text-center" style={{ background: '#0F1521', border: '1px solid rgba(255,255,255,0.07)' }}>
+            <div className="rounded-2xl p-12 text-center" style={{ background: 'var(--card-bg)', border: '1px solid var(--card-border)' }}>
               <i className="fas fa-certificate text-4xl mb-4 block" style={{ color: '#F59E0B' }} />
               <h3 className="font-jakarta font-bold text-[15px] mb-2" style={{ color: 'rgba(255,255,255,0.85)' }}>No certificates yet</h3>
               <p className="text-sm mb-5" style={{ color: 'rgba(255,255,255,0.45)' }}>Complete courses to earn certificates that display here.</p>
@@ -693,9 +693,9 @@ export default function PortfolioPage() {
           ) : (
             <div className="grid grid-cols-3 gap-4 max-md:grid-cols-1">
               {certificates.map((cert: any) => (
-                <div key={cert.id} className="rounded-2xl p-5 transition-all" style={{ background: '#0F1521', border: '1px solid rgba(255,255,255,0.07)' }}>
+                <div key={cert.id} className="rounded-2xl p-5 transition-all" style={{ background: 'var(--card-bg)', border: '1px solid var(--card-border)' }}>
                   <div className="w-12 h-12 rounded-xl grid place-items-center text-2xl mb-3" style={{ background: 'rgba(245,158,11,0.1)' }}>🏆</div>
-                  <h3 className="font-jakarta font-bold text-[14px] mb-0.5" style={{ color: 'rgba(255,255,255,0.85)' }}>{cert.title}</h3>
+                  <h3 className="font-jakarta font-bold text-[14px] mb-0.5" style={{ color: 'var(--text-body)' }}>{cert.title}</h3>
                   <p className="text-xs mb-3" style={{ color: 'rgba(255,255,255,0.45)' }}>{cert.issuer || cert.course?.title}</p>
                   <div className="text-[11px]" style={{ color: 'rgba(255,255,255,0.35)' }}>{cert.issuedAt ? new Date(cert.issuedAt).toLocaleDateString() : ''}</div>
                 </div>
