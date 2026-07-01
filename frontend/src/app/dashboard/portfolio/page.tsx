@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
+import Image from 'next/image';
 import { SidebarLayout } from '@/components/layout/SidebarLayout';
 import { apiFetch } from '@/lib/api';
 
@@ -110,7 +111,7 @@ function ProjectCard({ project, onEdit, onDelete, onToggleCommunity }: any) {
     <div className={`rounded-2xl border overflow-hidden hover:-translate-y-0.5 transition-all group ${shared ? 'border-[#4F8EF7]/40 ring-1 ring-[#4F8EF7]/20' : 'border-[rgba(255,255,255,0.07)]'}`} style={{ background: '#0F1521' }}>
       <div className="relative h-40 overflow-hidden" style={{ background: 'linear-gradient(135deg, rgba(79,142,247,0.1) 0%, rgba(167,139,250,0.1) 100%)' }}>
         {project.thumbnail ? (
-          <img src={project.thumbnail} alt={project.title} className="w-full h-full object-cover" loading="lazy" decoding="async" />
+          <Image src={project.thumbnail} alt={project.title} fill sizes="(max-width: 768px) 100vw, 33vw" className="object-cover" loading="lazy" />
         ) : (
           <div className="w-full h-full flex items-center justify-center">
             <i className="fas fa-code text-4xl" style={{ color: 'rgba(79,142,247,0.3)' }} />
@@ -184,9 +185,6 @@ function ProjectCard({ project, onEdit, onDelete, onToggleCommunity }: any) {
               <i className={`fas ${shared ? 'fa-check' : 'fa-paper-plane'}`} />
               {shared ? 'Posted to Community' : toggling ? 'Posting…' : 'Post to Community'}
             </button>
-            {!shared && (
-              <Toggle on={false} onChange={() => handlePostToCommunity()} loading={toggling} />
-            )}
           </div>
           <div className="flex items-center gap-2 text-xs" style={{ color: 'rgba(255,255,255,0.35)' }}>
             <span><i className="fas fa-eye mr-1" />{project.views || 0}</span>
@@ -257,7 +255,7 @@ function ProjectModal({ project, onClose, onSaved }: any) {
     const src = URL.createObjectURL(file);
     try {
       await new Promise<void>((resolve, reject) => {
-        const img = new Image();
+        const img = new window.Image();
         img.onload = () => {
           if (img.naturalWidth < 600 || img.naturalHeight < 600) {
             reject(new Error('Image must be at least 600 × 600 pixels'));

@@ -322,6 +322,9 @@ function CuratedJobCard({ job }: { job: any }) {
   );
 }
 
+const JOB_INSERT_INTERVAL = 4;
+const MAX_TRAILING_CURATED_JOBS = 3;
+
 /* ═══════════════════════════════════════════════════════════════════════════
    NEW: Activity Feed Component
    ═══════════════════════════════════════════════════════════════════════════ */
@@ -423,12 +426,12 @@ function ActivityFeed({ currentUserId, onMessage, onEdit, refreshKey }: {
     let jobIndex = 0;
     items.forEach((item, index) => {
       merged.push({ kind: 'activity', item });
-      if ((index + 1) % 4 === 0 && jobIndex < curatedJobs.length) {
+      if ((index + 1) % JOB_INSERT_INTERVAL === 0 && jobIndex < curatedJobs.length) {
         merged.push({ kind: 'curated-job', item: curatedJobs[jobIndex] });
         jobIndex += 1;
       }
     });
-    while (jobIndex < curatedJobs.length && merged.length < items.length + 3) {
+    while (jobIndex < curatedJobs.length && merged.length < items.length + MAX_TRAILING_CURATED_JOBS) {
       merged.push({ kind: 'curated-job', item: curatedJobs[jobIndex] });
       jobIndex += 1;
     }
