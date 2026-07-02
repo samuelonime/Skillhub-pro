@@ -986,8 +986,8 @@ function PortfolioSpotlights({ onMessage }: { onMessage: (u: any) => void }) {
   if (portfolios.length === 0) return null;
 
   return (
-    <div className="rounded-2xl mb-5 overflow-hidden" style={{ background: D.card, border: `1px solid ${D.border}` }}>
-      <div className="flex items-center justify-between px-5 py-4" style={{ borderBottom: `1px solid ${D.border}` }}>
+    <div className="rounded-2xl mb-5" style={{ background: D.card, border: `1px solid ${D.border}` }}>
+      <div className="flex items-center justify-between px-5 py-4 rounded-t-2xl" style={{ borderBottom: `1px solid ${D.border}` }}>
         <div className="flex items-center gap-2.5">
           <div className="w-8 h-8 rounded-xl grid place-items-center text-[13px] text-white"
             style={{ background: `linear-gradient(135deg, ${D.accent}, ${D.purple})` }}>
@@ -1006,7 +1006,7 @@ function PortfolioSpotlights({ onMessage }: { onMessage: (u: any) => void }) {
         </div>
       </div>
       {!collapsed && (
-        <div className="p-4 grid grid-cols-3 gap-3 max-[900px]:grid-cols-2 max-md:grid-cols-1">
+        <div className="p-4 rounded-b-2xl grid grid-cols-3 gap-3 max-[900px]:grid-cols-2 max-md:grid-cols-1">
           {portfolios.map(u => {
             const project = u.projects?.[0];
             const community = project?.community;
@@ -1015,9 +1015,9 @@ function PortfolioSpotlights({ onMessage }: { onMessage: (u: any) => void }) {
             const shared = sharedPostId === postId;
 
             return (
-            <div key={u.id} className="rounded-xl overflow-hidden group transition-all hover:-translate-y-0.5"
+            <div key={u.id} className="rounded-xl group transition-all hover:-translate-y-0.5"
               style={{ border: `1px solid ${D.border}` }}>
-              <div className="relative h-24 overflow-hidden" style={{ background: `linear-gradient(135deg, ${D.accent}20, ${D.purple}20)` }}>
+              <div className="relative h-24 overflow-hidden rounded-t-xl" style={{ background: `linear-gradient(135deg, ${D.accent}20, ${D.purple}20)` }}>
                 <SafeImageMedia
                   src={project?.thumbnail}
                   alt={project?.title || 'Project cover'}
@@ -1030,7 +1030,10 @@ function PortfolioSpotlights({ onMessage }: { onMessage: (u: any) => void }) {
                   <div className="text-white font-semibold text-[11px] truncate">{project?.title || 'Project'}</div>
                 </div>
               </div>
-              <div className="p-3" style={{ background: D.card }}>
+              {/* No overflow-hidden here (unlike the image wrapper above) — the
+                  Share dropdown below needs to render outside this box; overflow-hidden
+                  on this container was clipping it, causing it to show cut off. */}
+              <div className="p-3 rounded-b-xl" style={{ background: D.card }}>
                 <div className="flex items-center gap-2 mb-2">
                   <Avatar user={u} size={7} />
                   <div className="flex-1 min-w-0">
