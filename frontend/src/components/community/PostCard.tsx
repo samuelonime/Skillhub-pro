@@ -37,6 +37,7 @@ export function PostCard({ post, onRefresh, isLoggedIn }: {
   const [shareNote, setShareNote] = useState('');
   const [showShareModal, setShowShareModal] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [copied, setCopied] = useState(false);
   const reactionRef = useRef<HTMLDivElement>(null);
 
   async function handleLike(reaction = '👍') {
@@ -130,10 +131,9 @@ export function PostCard({ post, onRefresh, isLoggedIn }: {
   function copyShareLink() {
     const shareUrl = `${window.location.origin}/share/post/${post.id}`;
     navigator.clipboard.writeText(shareUrl).then(() => {
-      alert('Share link copied to clipboard!');
-    }).catch(() => {
-      alert('Failed to copy link');
-    });
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    }).catch(() => {});
   }
 
   function shareToSocial(platform: 'twitter' | 'facebook' | 'linkedin') {
@@ -367,10 +367,10 @@ export function PostCard({ post, onRefresh, isLoggedIn }: {
               <button
                 onClick={copyShareLink}
                 className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-lg transition-all"
-                style={{ background: D.input, color: D.text, border: `1px solid ${D.border}` }}
+                style={{ background: copied ? 'rgba(0,229,160,0.1)' : D.input, color: copied ? D.green : D.text, border: `1px solid ${copied ? D.green : D.border}` }}
               >
-                <i className="fas fa-link" style={{ fontSize: 14 }} />
-                <span className="text-sm">Copy share link</span>
+                <i className={`fas ${copied ? 'fa-check' : 'fa-link'}`} style={{ fontSize: 14 }} />
+                <span className="text-sm">{copied ? 'Link copied!' : 'Copy share link'}</span>
               </button>
             </div>
 
