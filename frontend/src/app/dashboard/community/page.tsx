@@ -343,9 +343,9 @@ function ActivityFeed({ currentUserId, onMessage, onEdit, refreshKey }: {
   return (
     <div>
       {loading && items.length === 0 && (
-        <div className="grid gap-3 md:gap-4 lg:gap-5 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+        <div className="mx-auto w-full max-w-3xl space-y-4">
           {[1,2,3,4].map(i => (
-            <div key={i} className="rounded-2xl p-4 aspect-[4/5] md:aspect-square lg:aspect-[1200/628]"
+            <div key={i} className="rounded-2xl p-4"
               style={{ background: D.card, border: `1px solid ${D.border}` }}>
               <div className="flex items-center gap-3 mb-3">
                 <Skeleton h="h-10 w-10 md:h-12 md:w-12" />
@@ -366,17 +366,19 @@ function ActivityFeed({ currentUserId, onMessage, onEdit, refreshKey }: {
       )}
 
       {!loading && items.length === 0 && (
-        <div className="rounded-2xl p-8 text-center aspect-[4/5] md:aspect-square lg:aspect-[1200/628] md:p-12 lg:p-16"
-          style={{ background: D.card, border: `1px solid ${D.border}` }}>
-          <div className="text-5xl md:text-6xl lg:text-7xl mb-4">🌱</div>
-          <h3 className="font-jakarta font-bold text-[16px] text-white mb-2 md:text-[20px] lg:text-[24px]">No activity yet</h3>
-          <p className="text-[13px] md:text-[15px] lg:text-[16px]" style={{ color: D.subtext }}>
-            Start learning to see your progress appear here for the whole community!
-          </p>
+        <div className="mx-auto w-full max-w-3xl">
+          <div className="rounded-2xl p-8 text-center md:p-12 lg:p-16"
+            style={{ background: D.card, border: `1px solid ${D.border}` }}>
+            <div className="text-5xl md:text-6xl lg:text-7xl mb-4">🌱</div>
+            <h3 className="font-jakarta font-bold text-[16px] text-white mb-2 md:text-[20px] lg:text-[24px]">No activity yet</h3>
+            <p className="text-[13px] md:text-[15px] lg:text-[16px]" style={{ color: D.subtext }}>
+              Start learning to see your progress appear here for the whole community!
+            </p>
+          </div>
         </div>
       )}
 
-      <div className="grid gap-3 md:gap-4 lg:gap-5 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+      <div className="mx-auto w-full max-w-3xl space-y-4">
         {items.map(item => {
           const meta = ACTIVITY_META[item.type] || { icon: '📌', color: D.muted, label: item.type };
           // Posts (discussions, projects, showcases) render as full cards with details
@@ -388,7 +390,7 @@ function ActivityFeed({ currentUserId, onMessage, onEdit, refreshKey }: {
             );
           }
           return (
-            <div key={item.id} className="rounded-2xl p-4 hover:-translate-y-0.5 transition-all duration-200 w-full aspect-[4/5] md:aspect-square lg:aspect-[1200/628]"
+            <div key={item.id} className="rounded-2xl p-4 hover:-translate-y-0.5 transition-all duration-200 w-full"
               style={{ background: D.card, border: `1px solid ${D.border}` }}>
               <div className="flex flex-col h-full">
                 <div className="flex gap-3 items-start flex-1">
@@ -427,7 +429,7 @@ function ActivityFeed({ currentUserId, onMessage, onEdit, refreshKey }: {
                   </div>
                 </div>
 
-                <div className="mt-auto pt-2 text-center md:pt-3">
+                <div className="mt-auto pt-3">
                   <span className="text-[11px] md:text-[13px] lg:text-[14px]" style={{ color: D.muted }}>
                     <i className="fas fa-chevron-right" /> View details
                   </span>
@@ -470,7 +472,7 @@ function PostCard({ post, onLike, onMessage, onEdit, onDelete, currentUserId }: 
   }
 
   return (
-    <div className="w-full rounded-2xl p-5 aspect-[4/5] flex flex-col hover:-translate-y-0.5 transition-all duration-200 group"
+    <div className="w-full rounded-2xl p-5 flex flex-col hover:-translate-y-0.5 transition-all duration-200 group"
       style={{ background: D.card, border: `1px solid ${D.border}` }}>
 
       {/* Header */}
