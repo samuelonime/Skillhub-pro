@@ -881,3 +881,22 @@ model ProjectShare {
   @@index([projectId])
   @@map("project_shares")
 }
+
+model ContactMessage {
+  id         String    @id @default(uuid())
+  name       String
+  email      String
+  topic      String
+  subject    String
+  message    String    @db.Text
+  priority   String    @default("normal")
+  status     String    @default("open")
+  userId     String?
+  createdAt  DateTime  @default(now())
+  resolvedAt DateTime?
+
+  @@index([status])
+  @@index([topic])
+  @@index([createdAt])
+  @@map("contact_messages")
+}

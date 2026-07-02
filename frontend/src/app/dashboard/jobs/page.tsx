@@ -335,7 +335,8 @@ export default function JobsPage() {
     if (job?.kind === 'scouted') return; // scouted leads aren't saved server-side
     setSaving(jobId);
     try {
-      const res = await apiFetch(`/jobs/${jobId}/save`, { method: isSaved ? 'DELETE' : 'POST' });
+      // Backend POST /jobs/:id/save is a toggle — it saves if unsaved, removes if saved.
+      const res = await apiFetch(`/jobs/${jobId}/save`, { method: 'POST' });
       if (res.success) {
         apiFetch('/jobs/featured').then(r => { if (r.success) setFeatured(r.data); });
         apiFetch('/jobs').then(r => { if (r.success) setAllJobs(r.data); });

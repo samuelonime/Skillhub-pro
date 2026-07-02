@@ -14,8 +14,7 @@ const navItems = [
   { href: '/dashboard/jobs',         icon: 'fa-briefcase',        label: 'Jobs' },
   { href: '/dashboard/certificates', icon: 'fa-certificate',      label: 'Certificates' },
   { href: '/dashboard/rewards',      icon: 'fa-coins',            label: 'Rewards' },
-  { href: '/dashboard/community',          icon: 'fa-users',  label: 'Community' },
-  { href: '/dashboard/contact',      icon: 'fa-envelope',         label: 'Contact Us' },
+  { href: '/contact',                icon: 'fa-envelope',         label: 'Contact Us' },
   { href: '/dashboard/settings',     icon: 'fa-gear',             label: 'Settings' },
 ];
 
