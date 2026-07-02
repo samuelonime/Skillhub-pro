@@ -381,6 +381,30 @@ export default function ResumePage() {
         });
       }
     }).catch(() => {}).finally(() => setLoading(false));
+
+    // Refresh profile data when window comes into focus (e.g., after editing in settings)
+    const handleFocus = () => {
+      apiFetch('/dashboard').then(dash => {
+        if (dash.success && dash.data) {
+          const u = dash.data.user || dash.data;
+          setProfile((p: any) => ({
+            ...p,
+            firstName:    u.firstName,
+            email:        u.email,
+            title:        u.title,
+            bio:          u.bio,
+            location:     u.location,
+            skills:       u.skills || [],
+            profileStrength: u.profileStrength ?? 20,
+            projectCount: (dash.data.projects?.length || 0),
+            certCount:    (dash.data.certificates?.length || 0),
+          }));
+        }
+      }).catch(() => {});
+    };
+
+    window.addEventListener('focus', handleFocus);
+    return () => window.removeEventListener('focus', handleFocus);
   }, []);
 
   /* ── Upload ───────────────────────────────────────────────────── */

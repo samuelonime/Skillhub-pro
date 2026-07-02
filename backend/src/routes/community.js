@@ -786,4 +786,35 @@ router.get('/user/:userId/shared', authenticate, async (req, res) => {
   }
 });
 
+// ── GET /public/:id  — public post (for social sharing, no auth required) ────
+router.get('/public/:id', async (req, res) => {
+  try {
+    const post = await prisma.communityPost.findUnique({
+      where: { id: req.params.id },
+      select: {
+        id: true,
+        title: true,
+        body: true,
+        type: true,
+        tags: true,
+        imageUrl: true,
+        projectUrl: true,
+        likes: true,
+        views: true,
+        createdAt: true,
+        updatedAt: true,
+        author: { select: { id: true, firstName: true, lastName: true, avatar: true, title: true } },
+        _count: { select: { comments: true } },
+      },
+    });
+
+    if (!post) return notFound(res, 'Post not found');
+
+    return success(res, post);
+  } catch (e) {
+    console.error(e);
+    return error(res, 'Failed to fetch post');
+  }
+});
+
 module.exports = router;

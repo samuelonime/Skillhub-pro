@@ -32,19 +32,19 @@ const navItems = [
 
 /* ── Design tokens (matches all other dashboard pages) ─────────────────── */
 const D = {
-  bg:      '#080E19',
-  card:    '#0F1521',
-  card2:   '#0D1525',
-  border:  'rgba(255,255,255,0.07)',
+  bg:      'var(--page-bg-solid)',
+  card:    'var(--card-bg)',
+  card2:   'var(--surface)',
+  border:  'var(--card-border)',
   accent:  '#4F8EF7',
   green:   '#00E5A0',
   amber:   '#F59E0B',
   red:     '#F87171',
   purple:  '#A78BFA',
-  text:    'rgba(255,255,255,0.85)',
-  subtext: 'rgba(255,255,255,0.45)',
-  muted:   'rgba(255,255,255,0.25)',
-  input:   'rgba(255,255,255,0.06)',
+  text:    'var(--text-body)',
+  subtext: 'var(--text-faint)',
+  muted:   'var(--text-ghost)',
+  input:   'var(--input-bg)',
 };
 
 const TYPE_COLORS: Record<string, string> = {

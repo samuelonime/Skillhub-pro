@@ -6,17 +6,17 @@ import Link from 'next/link';
 import { apiFetch } from '@/lib/api';
 
 const D = {
-  card: '#0F1521',
-  border: 'rgba(255,255,255,0.07)',
+  card: 'var(--card-bg)',
+  border: 'var(--card-border)',
   accent: '#4F8EF7',
   green: '#00E5A0',
   amber: '#F59E0B',
   red: '#F87171',
-  muted: 'rgba(255,255,255,0.35)',
-  text: 'rgba(255,255,255,0.85)',
-  subtext: 'rgba(255,255,255,0.45)',
-  input: 'rgba(255,255,255,0.06)',
-  hover: 'rgba(255,255,255,0.04)',
+  muted: 'var(--text-ghost)',
+  text: 'var(--text-body)',
+  subtext: 'var(--text-faint)',
+  input: 'var(--input-bg)',
+  hover: 'var(--surface-soft-hover)',
 };
 
 const REACTIONS = ['👍', '🔥', '🚀', '💯'];
@@ -125,6 +125,29 @@ export function PostCard({ post, onRefresh, isLoggedIn }: {
     } finally {
       setLoading(false);
     }
+  }
+
+  function copyShareLink() {
+    const shareUrl = `${window.location.origin}/share/post/${post.id}`;
+    navigator.clipboard.writeText(shareUrl).then(() => {
+      alert('Share link copied to clipboard!');
+    }).catch(() => {
+      alert('Failed to copy link');
+    });
+  }
+
+  function shareToSocial(platform: 'twitter' | 'facebook' | 'linkedin') {
+    const shareUrl = `${window.location.origin}/share/post/${post.id}`;
+    const title = encodeURIComponent(post.title);
+    const text = encodeURIComponent(`Check out this post: ${post.title}`);
+
+    const urls: Record<string, string> = {
+      twitter: `https://twitter.com/intent/tweet?url=${encodeURIComponent(shareUrl)}&text=${text}`,
+      facebook: `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareUrl)}`,
+      linkedin: `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(shareUrl)}`,
+    };
+
+    window.open(urls[platform], '_blank', 'width=600,height=400');
   }
 
   const totalLikes = (Object.values(reactions).reduce((a: any, b: any) => a + b, 0) as number);
@@ -303,14 +326,68 @@ export function PostCard({ post, onRefresh, isLoggedIn }: {
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
           <div className="rounded-2xl p-6 w-full max-w-md" style={{ background: D.card, border: `1px solid ${D.border}` }}>
             <h3 className="text-lg font-bold text-white mb-4">Share this post</h3>
-            <textarea
-              value={shareNote}
-              onChange={(e) => setShareNote(e.target.value)}
-              placeholder="Add a note (optional)"
-              className="w-full rounded-lg px-3 py-2 text-sm outline-none text-white mb-4 resize-none"
-              style={{ background: D.input, border: `1px solid ${D.border}` }}
-              rows={3}
-            />
+
+            {/* Share to social media */}
+            <div className="mb-4">
+              <p className="text-xs font-medium mb-2" style={{ color: D.subtext }}>Share to social media</p>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => shareToSocial('twitter')}
+                  className="flex-1 flex items-center justify-center gap-2 px-3 py-2 rounded-lg transition-all"
+                  style={{ background: D.input, color: D.text, border: `1px solid ${D.border}` }}
+                  title="Share on Twitter"
+                >
+                  <i className="fab fa-twitter" style={{ fontSize: 14 }} />
+                  <span className="text-xs">Twitter</span>
+                </button>
+                <button
+                  onClick={() => shareToSocial('facebook')}
+                  className="flex-1 flex items-center justify-center gap-2 px-3 py-2 rounded-lg transition-all"
+                  style={{ background: D.input, color: D.text, border: `1px solid ${D.border}` }}
+                  title="Share on Facebook"
+                >
+                  <i className="fab fa-facebook" style={{ fontSize: 14 }} />
+                  <span className="text-xs">Facebook</span>
+                </button>
+                <button
+                  onClick={() => shareToSocial('linkedin')}
+                  className="flex-1 flex items-center justify-center gap-2 px-3 py-2 rounded-lg transition-all"
+                  style={{ background: D.input, color: D.text, border: `1px solid ${D.border}` }}
+                  title="Share on LinkedIn"
+                >
+                  <i className="fab fa-linkedin" style={{ fontSize: 14 }} />
+                  <span className="text-xs">LinkedIn</span>
+                </button>
+              </div>
+            </div>
+
+            {/* Copy link */}
+            <div className="mb-4">
+              <p className="text-xs font-medium mb-2" style={{ color: D.subtext }}>Copy link</p>
+              <button
+                onClick={copyShareLink}
+                className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-lg transition-all"
+                style={{ background: D.input, color: D.text, border: `1px solid ${D.border}` }}
+              >
+                <i className="fas fa-link" style={{ fontSize: 14 }} />
+                <span className="text-sm">Copy share link</span>
+              </button>
+            </div>
+
+            {/* Save to profile note */}
+            <div className="mb-4 pb-4" style={{ borderTop: `1px solid ${D.border}`, borderBottom: `1px solid ${D.border}`, paddingTop: 16 }}>
+              <p className="text-xs font-medium mb-2" style={{ color: D.subtext }}>Save to profile</p>
+              <textarea
+                value={shareNote}
+                onChange={(e) => setShareNote(e.target.value)}
+                placeholder="Add a note (optional)"
+                className="w-full rounded-lg px-3 py-2 text-sm outline-none text-white mb-2 resize-none"
+                style={{ background: D.input, border: `1px solid ${D.border}` }}
+                rows={2}
+              />
+            </div>
+
+            {/* Action buttons */}
             <div className="flex gap-2">
               <button
                 onClick={() => setShowShareModal(false)}
@@ -325,7 +402,7 @@ export function PostCard({ post, onRefresh, isLoggedIn }: {
                 className="flex-1 px-4 py-2 rounded-lg text-sm font-semibold text-white transition-opacity disabled:opacity-50"
                 style={{ background: D.green }}
               >
-                {loading ? 'Sharing...' : 'Share'}
+                {loading ? 'Saving...' : 'Save to profile'}
               </button>
             </div>
           </div>
