@@ -162,7 +162,7 @@ export default function SettingsPage() {
   async function saveProfile() {
     setSaving(true);
     try {
-      const { id, email, role, meritCoins, profileStrength, verified, createdAt, skills, ...safeProfile } = profile;
+      const { id, email, role, meritCoins, profileStrength, verified, createdAt, ...safeProfile } = profile;
       const res = await apiFetch('/users/profile', {
         method: 'PUT',
         body: JSON.stringify(safeProfile),

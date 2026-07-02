@@ -77,32 +77,57 @@ router.put('/profile', authenticate, [
   body('industry').optional().trim().isLength({ max: 50 }),
   body('phone').optional().trim().matches(/^[+]?[\d\s-]{8,20}$/),
   body('interestNiche').optional().trim().isLength({ max: 60 }),
+  body('skills').optional().isArray(),
 ], async (req, res) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) return badRequest(res, 'Validation failed', errors.array());
 
   // Explicitly define which fields can be updated (prevents mass assignment attacks)
   const ALLOWED = ['firstName', 'lastName', 'title', 'bio', 'location',
-                   'company', 'companyWebsite', 'companySize', 'industry', 'phone', 'interestNiche'];
+                   'company', 'companyWebsite', 'companySize', 'industry', 'phone', 'interestNiche', 'skills'];
   const data = {};
-  ALLOWED.forEach(k => { 
-    if (req.body[k] !== undefined) data[k] = req.body[k]; 
+  ALLOWED.forEach(k => {
+    if (req.body[k] !== undefined) data[k] = req.body[k];
   });
 
   try {
-    const user = await prisma.user.update({ 
-      where: { id: req.user.id }, 
-      data 
+    const user = await prisma.user.update({
+      where: { id: req.user.id },
+      data
     });
+
+    // Calculate profile strength based on completed fields
+    const projectCount = await prisma.project.count({ where: { userId: user.id } });
+    const certCount = await prisma.certificate.count({ where: { userId: user.id } });
+
+    let strength = 0;
+    if (user.firstName && user.lastName) strength += 15;
+    if (user.email) strength += 10;
+    if (user.title) strength += 12;
+    if (user.bio) strength += 15;
+    if (user.location) strength += 10;
+    if (user.skills && Array.isArray(user.skills) && user.skills.length > 0) strength += 15;
+    if (projectCount > 0) strength += 12;
+    if (certCount > 0) strength += 11;
+
+    // Cap at 100, ensure minimum 5
+    strength = Math.max(5, Math.min(100, strength));
+
+    // Update profileStrength
+    const updatedUser = await prisma.user.update({
+      where: { id: user.id },
+      data: { profileStrength: strength }
+    });
+
     // If the user set/changed their niche, kick off a scout for it
     if (data.interestNiche && user.role === 'student') {
       triggerScoutForNiche(data.interestNiche);
     }
-    const { password: _, ...safeUser } = user;
+    const { password: _, ...safeUser } = updatedUser;
     return success(res, safeUser, 'Profile updated');
-  } catch (err) { 
+  } catch (err) {
     console.error(err);
-    return error(res, 'Failed to update profile'); 
+    return error(res, 'Failed to update profile');
   }
 });
 
