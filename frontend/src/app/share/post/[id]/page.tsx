@@ -1,286 +1,213 @@
-/**
- * Public community share page — /share/post/[id]
- *
- * This is a SERVER component (no 'use client'), so Next.js renders real
- * <head> meta tags on the server. That is what social crawlers (Facebook,
- * WhatsApp, LinkedIn, X/Twitter, Slack, Telegram…) read to build a link
- * preview. The interactive page lives at /dashboard/community/post/[id]
- * behind the login wall — but the *preview* must be public, or crawlers
- * only ever see the login screen and the image never pulls.
- *
- * This is the route PostCard.tsx actually generates share links for
- * (`${origin}/share/post/${post.id}`) — see copyShareLink() / shareToSocial().
- *
- * Flow:
- *   1. Sharing a post pulls the post image + title + body (OG tags below).
- *   2. Anyone can SEE the full post on this page.
- *   3. Clicking "Log in to reply" sends them to /dashboard/... which the
- *      middleware guards → login is requested, then they land on the post.
- */
-
 import type { Metadata } from 'next';
-import Link from 'next/link';
 
-export const revalidate = 300; // crawlers get a fresh-enough cached copy
-
-/* Base URLs -------------------------------------------------------------- */
-const SITE =
-  process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, '') ||
-  'https://skillhub.meritlives.com';
-
-// Server-side calls go straight to the backend (same var next.config uses).
-const BACKEND = (process.env.BACKEND_URL || 'http://localhost:5000').replace(/\/$/, '');
-
-/* Design tokens (match the dashboard) ------------------------------------ */
-const D = {
-  bg: '#080E19', card: '#0F1521', card2: '#0D1525',
-  border: 'rgba(255,255,255,0.08)', accent: '#4F8EF7', brand: '#2563EB',
-  green: '#00E5A0', amber: '#F59E0B', red: '#F87171', sky: '#38BDF8',
-  text: 'rgba(255,255,255,0.88)', sub: 'rgba(255,255,255,0.5)', muted: 'rgba(255,255,255,0.3)',
-};
-const TYPE_COLORS: Record<string, string> = {
-  discussion: D.accent, project: D.green, resource: D.sky, question: D.amber, showcase: D.red,
-};
-
-interface PublicPost {
-  id: string; title: string; body: string; type: string; tags: string[];
-  imageUrl: string | null; projectUrl: string | null;
-  likes: number; views: number; commentCount: number; createdAt: string;
-  author: { firstName: string; lastName: string; avatar: string | null; title: string | null };
+interface Props {
+  params: Promise<{ id: string }>;
 }
 
-/* Fetch the public post (no auth) ---------------------------------------- */
-async function getPost(id: string): Promise<PublicPost | null> {
+async function getPublicPost(id: string) {
   try {
-    const res = await fetch(`${BACKEND}/api/v1/community/public/${id}`, {
-      next: { revalidate },
+    const backend = process.env.BACKEND_URL || 'http://localhost:5000';
+    const res = await fetch(`${backend}/api/v1/community/public/${id}`, {
+      next: { revalidate: 60 },
     });
     if (!res.ok) return null;
     const json = await res.json();
-    return json?.success ? (json.data as PublicPost) : null;
+    return json.success ? json.data : null;
   } catch {
     return null;
   }
 }
 
-/* Build a reliable raster OG image --------------------------------------- */
-// SVGs and un-sized images render inconsistently on social platforms, so:
-//  • Cloudinary image uploads → transform to a clean 1200×630 JPG card.
-//  • Cloudinary video uploads → generate a 1200×630 JPG poster frame.
-//  • Other raster URLs → use as-is.
-//  • No image → branded default PNG.
-function ogImage(imageUrl: string | null): string {
-  if (!imageUrl) return `${SITE}/og-default.png`;
-
-  if (imageUrl.includes('res.cloudinary.com')) {
-    if (imageUrl.includes('/image/upload/')) {
-      const [head, tail] = imageUrl.split('/image/upload/');
-      return `${head}/image/upload/c_fill,g_auto,w_1200,h_630,f_jpg,q_auto/${tail}`;
-    }
-    if (imageUrl.includes('/video/upload/')) {
-      // First-frame poster as a static JPG (valid og:image; videos are not).
-      const [head, tail] = imageUrl.split('/video/upload/');
-      const poster = tail.replace(/\.(mp4|webm|mov|m4v)(\?.*)?$/i, '.jpg');
-      return `${head}/video/upload/so_0,c_fill,g_auto,w_1200,h_630,f_jpg,q_auto/${poster}`;
-    }
-  }
-  return imageUrl;
-}
-
-function excerpt(body: string, max = 200): string {
-  const clean = (body || '').replace(/\s+/g, ' ').trim();
-  return clean.length > max ? `${clean.slice(0, max - 1).trimEnd()}…` : clean;
-}
-
-/* ── SEO / social metadata (what crawlers read) ─────────────────────────── */
-export async function generateMetadata(
-  { params }: { params: Promise<{ id: string }> },
-): Promise<Metadata> {
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { id } = await params;
-  const post = await getPost(id);
+  const post = await getPublicPost(id);
+
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL ||
+    (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'http://localhost:3000');
 
   if (!post) {
-    return {
-      metadataBase: new URL(SITE),
-      title: 'Post not found · SkillHub Community',
-      description: 'This community post is no longer available.',
-    };
+    return { title: 'Skillhub Community', description: 'Join the Skillhub community.' };
   }
 
-  const authorName = `${post.author.firstName} ${post.author.lastName}`.trim();
-  const title = `${post.title} · SkillHub Community`;
-  const description = excerpt(post.body) || `A ${post.type} shared by ${authorName} on SkillHub.`;
-  const image = ogImage(post.imageUrl);
-  const url = `${SITE}/share/post/${post.id}`;
+  const title = post.title;
+  const description = (post.body || '').slice(0, 160);
+  const image = post.imageUrl || `${appUrl}/og-default.png`;
+  const url = `${appUrl}/share/post/${id}`;
 
   return {
-    metadataBase: new URL(SITE),
     title,
     description,
-    alternates: { canonical: url },
     openGraph: {
-      type: 'article',
-      url,
-      siteName: 'SkillHub',
-      title: post.title,
+      title,
       description,
-      images: [{ url: image, width: 1200, height: 630, alt: post.title }],
-      authors: [authorName],
-      tags: post.tags,
+      url,
+      type: 'article',
+      images: [{ url: image, width: 1200, height: 630, alt: title }],
+      publishedTime: post.createdAt,
+      authors: [
+        `${post.author?.firstName ?? ''} ${post.author?.lastName ?? ''}`.trim(),
+      ],
     },
     twitter: {
       card: 'summary_large_image',
-      title: post.title,
+      title,
       description,
       images: [image],
     },
   };
 }
 
-/* ── Visible public page ────────────────────────────────────────────────── */
-export default async function SharedCommunityPostPage(
-  { params }: { params: Promise<{ id: string }> },
-) {
+export default async function SharePostPage({ params }: Props) {
   const { id } = await params;
-  const post = await getPost(id);
-  const loginTarget = `/dashboard/community/post/${id}`; // middleware requests login, then lands here
+  const post = await getPublicPost(id);
 
-  const shell: React.CSSProperties = {
-    minHeight: '100vh', background: D.bg, color: D.text,
-    fontFamily: 'Inter, system-ui, sans-serif',
-    display: 'flex', flexDirection: 'column', alignItems: 'center',
-    padding: '32px 20px 64px',
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL ||
+    (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'http://localhost:3000');
+  const loginUrl = `${appUrl}/login?next=/dashboard/community/post/${id}`;
+  const dashUrl = `${appUrl}/dashboard/community/post/${id}`;
+
+  const TYPE_COLORS: Record<string, string> = {
+    discussion: '#4F8EF7',
+    project: '#00E5A0',
+    resource: '#38BDF8',
+    question: '#F59E0B',
+    showcase: '#F87171',
   };
 
   if (!post) {
     return (
-      <main style={shell}>
-        <div style={{ maxWidth: 560, width: '100%', textAlign: 'center', marginTop: 80 }}>
-          <BrandHeader />
-          <div style={{ background: D.card, border: `1px solid ${D.border}`, borderRadius: 20, padding: 40, marginTop: 24 }}>
-            <div style={{ fontSize: 40, marginBottom: 12 }}>🔍</div>
-            <h1 style={{ fontSize: 20, fontWeight: 800, color: '#fff', margin: '0 0 8px' }}>Post not found</h1>
-            <p style={{ color: D.sub, fontSize: 14, margin: '0 0 24px' }}>
-              This community post may have been removed or the link is incorrect.
-            </p>
-            <Link href={SITE} style={btnPrimary}>Explore SkillHub</Link>
-          </div>
+      <main style={{ minHeight: '100vh', background: '#080E19', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'system-ui' }}>
+        <div style={{ textAlign: 'center', color: '#fff', padding: 40 }}>
+          <div style={{ fontSize: 64, marginBottom: 16 }}>🔍</div>
+          <h1 style={{ fontSize: 24, fontWeight: 700, marginBottom: 8 }}>Post not found</h1>
+          <p style={{ color: 'rgba(255,255,255,0.5)', marginBottom: 24 }}>This post may have been removed.</p>
+          <a href={`${appUrl}/dashboard/community`}
+            style={{ display: 'inline-block', padding: '10px 24px', background: '#4F8EF7', color: '#fff', borderRadius: 10, textDecoration: 'none', fontWeight: 600 }}>
+            Browse Community
+          </a>
         </div>
       </main>
     );
   }
 
-  const authorName = `${post.author.firstName} ${post.author.lastName}`.trim();
-  const initials = authorName.split(' ').filter(Boolean).map(p => p[0]).join('').slice(0, 2).toUpperCase() || '?';
-  const typeColor = TYPE_COLORS[post.type] || D.accent;
-  const displayImage = post.imageUrl ? ogImage(post.imageUrl) : null;
+  const author = post.author ?? {};
+  const typeColor = TYPE_COLORS[post.type] ?? '#4F8EF7';
+  const initials = `${author.firstName?.[0] ?? ''}${author.lastName?.[0] ?? ''}`.toUpperCase() || '?';
 
   return (
-    <main style={shell}>
-      <div style={{ maxWidth: 640, width: '100%' }}>
-        <BrandHeader />
+    <main style={{ minHeight: '100vh', background: '#080E19', fontFamily: 'system-ui, -apple-system, sans-serif', color: '#fff' }}>
 
-        <article style={{ background: D.card, border: `1px solid ${D.border}`, borderRadius: 22, overflow: 'hidden', marginTop: 24 }}>
-          {/* Post image (the thing that now pulls into every share preview) */}
-          {displayImage && (
-            /* eslint-disable-next-line @next/next/no-img-element */
+      {/* Top bar */}
+      <div style={{ background: '#0A1120', borderBottom: '1px solid rgba(255,255,255,0.07)', padding: '12px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <span style={{ fontWeight: 800, fontSize: 17, color: '#4F8EF7' }}>Skillhub</span>
+        <a href={loginUrl}
+          style={{ padding: '8px 20px', background: '#4F8EF7', color: '#fff', borderRadius: 8, textDecoration: 'none', fontSize: 13, fontWeight: 600 }}>
+          Login to join
+        </a>
+      </div>
+
+      <div style={{ maxWidth: 760, margin: '0 auto', padding: '32px 20px 80px' }}>
+
+        {/* Post image */}
+        {post.imageUrl && (
+          <div style={{ borderRadius: 16, overflow: 'hidden', marginBottom: 28 }}>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
-              src={displayImage}
+              src={post.imageUrl}
               alt={post.title}
-              style={{ width: '100%', maxHeight: 340, objectFit: 'cover', display: 'block', borderBottom: `1px solid ${D.border}` }}
+              style={{ width: '100%', maxHeight: 420, objectFit: 'cover', display: 'block' }}
             />
-          )}
+          </div>
+        )}
 
-          <div style={{ padding: 28 }}>
-            {/* Author + type */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 18, flexWrap: 'wrap' }}>
-              {post.author.avatar ? (
-                /* eslint-disable-next-line @next/next/no-img-element */
-                <img src={post.author.avatar} alt={authorName} style={{ width: 44, height: 44, borderRadius: '50%', objectFit: 'cover' }} />
+        {/* Card */}
+        <div style={{ background: '#0F1521', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 20, padding: 28, marginBottom: 20 }}>
+
+          {/* Author row */}
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20, flexWrap: 'wrap', gap: 12 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+              {author.avatar ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={author.avatar} alt={initials} style={{ width: 46, height: 46, borderRadius: '50%', objectFit: 'cover', border: '2px solid rgba(255,255,255,0.1)' }} />
               ) : (
-                <div style={{ width: 44, height: 44, borderRadius: '50%', background: D.brand, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontWeight: 700 }}>
+                <div style={{ width: 46, height: 46, borderRadius: '50%', background: '#4F8EF7', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: 16 }}>
                   {initials}
                 </div>
               )}
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ fontWeight: 700, fontSize: 15, color: '#fff' }}>{authorName}</div>
-                {post.author.title && <div style={{ fontSize: 12, color: D.sub }}>{post.author.title}</div>}
+              <div>
+                <div style={{ fontWeight: 700, fontSize: 15 }}>
+                  {author.firstName} {author.lastName}
+                </div>
+                {author.title && (
+                  <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.45)', marginTop: 2 }}>{author.title}</div>
+                )}
               </div>
-              <span style={{ fontSize: 11, fontWeight: 700, padding: '5px 12px', borderRadius: 20, background: `${typeColor}18`, color: typeColor, border: `1px solid ${typeColor}30`, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                {post.type}
-              </span>
             </div>
 
-            {/* Title + body */}
-            <h1 style={{ fontFamily: 'var(--font-jakarta, sans-serif)', fontWeight: 800, fontSize: 24, color: '#fff', margin: '0 0 14px', lineHeight: 1.25 }}>
-              {post.title}
-            </h1>
-            <p style={{ fontSize: 15, lineHeight: 1.75, color: D.text, whiteSpace: 'pre-line', margin: 0 }}>{post.body}</p>
-
-            {/* Project link */}
-            {post.projectUrl && (
-              <a href={post.projectUrl} target="_blank" rel="noreferrer"
-                style={{ display: 'inline-flex', alignItems: 'center', gap: 6, marginTop: 18, color: D.sky, fontSize: 14, fontWeight: 600, textDecoration: 'none' }}>
-                🔗 {post.projectUrl.replace(/^https?:\/\//, '')}
-              </a>
-            )}
-
-            {/* Tags */}
-            {post.tags?.length > 0 && (
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginTop: 18 }}>
-                {post.tags.map(t => (
-                  <span key={t} style={{ fontSize: 12, padding: '4px 10px', borderRadius: 20, background: `${D.accent}12`, color: D.accent }}>#{t}</span>
-                ))}
-              </div>
-            )}
-
-            {/* Stats */}
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, marginTop: 22, paddingTop: 18, borderTop: `1px solid ${D.border}` }}>
-              {[
-                { icon: '👁', val: `${post.views} views` },
-                { icon: '💬', val: `${post.commentCount} replies` },
-                { icon: '❤️', val: `${post.likes} likes` },
-              ].map(s => (
-                <span key={s.val} style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 12, padding: '5px 14px', borderRadius: 20, background: 'rgba(255,255,255,0.06)', color: D.sub }}>
-                  {s.icon} {s.val}
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, alignItems: 'center' }}>
+              {post.type && (
+                <span style={{ fontSize: 11, fontWeight: 700, padding: '4px 12px', borderRadius: 20, background: `${typeColor}18`, color: typeColor, border: `1px solid ${typeColor}30`, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                  {post.type}
+                </span>
+              )}
+              {post.tags?.slice(0, 3).map((tag: string) => (
+                <span key={tag} style={{ fontSize: 11, padding: '4px 10px', borderRadius: 20, background: 'rgba(79,142,247,0.1)', color: '#4F8EF7' }}>
+                  #{tag}
                 </span>
               ))}
             </div>
           </div>
 
-          {/* Login CTA — clicking asks for login, then lands on the full post */}
-          <div style={{ background: D.card2, borderTop: `1px solid ${D.border}`, padding: '22px 28px', display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 14 }}>
-            <div style={{ flex: 1, minWidth: 200 }}>
-              <div style={{ fontWeight: 700, fontSize: 14, color: '#fff' }}>Join the discussion</div>
-              <div style={{ fontSize: 12.5, color: D.sub, marginTop: 2 }}>Log in to like, comment and reply on SkillHub.</div>
-            </div>
-            <Link href={loginTarget} style={btnPrimary}>Log in to reply →</Link>
+          {/* Stats */}
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, marginBottom: 20 }}>
+            {[
+              { icon: '👁️', val: `${post.views ?? 0} views` },
+              { icon: '❤️', val: `${post.likes ?? 0} likes` },
+              { icon: '💬', val: `${post._count?.comments ?? 0} comments` },
+            ].map(s => (
+              <span key={s.icon} style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 12, padding: '5px 12px', borderRadius: 20, background: 'rgba(255,255,255,0.05)', color: 'rgba(255,255,255,0.5)' }}>
+                {s.icon} {s.val}
+              </span>
+            ))}
+            <span style={{ fontSize: 12, color: 'rgba(255,255,255,0.3)', marginLeft: 'auto' }}>
+              {new Date(post.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+            </span>
           </div>
-        </article>
 
-        <p style={{ textAlign: 'center', fontSize: 12, color: D.muted, marginTop: 20 }}>
-          A community post on <Link href={SITE} style={{ color: D.accent, textDecoration: 'none' }}>SkillHub</Link> — the workforce platform for African tech talent.
-        </p>
+          <div style={{ height: 1, background: 'rgba(255,255,255,0.07)', marginBottom: 20 }} />
+
+          {/* Title + body */}
+          <h1 style={{ fontSize: 22, fontWeight: 800, margin: '0 0 14px', lineHeight: 1.3 }}>{post.title}</h1>
+          <p style={{ fontSize: 15, lineHeight: 1.75, color: 'rgba(255,255,255,0.82)', margin: 0, whiteSpace: 'pre-wrap' }}>{post.body}</p>
+
+          {post.projectUrl && (
+            <a href={post.projectUrl} target="_blank" rel="noreferrer"
+              style={{ display: 'inline-flex', alignItems: 'center', gap: 6, marginTop: 16, color: '#38BDF8', fontSize: 13, fontWeight: 600, textDecoration: 'none' }}>
+              🔗 {post.projectUrl.replace(/^https?:\/\//, '')}
+            </a>
+          )}
+        </div>
+
+        {/* Login CTA */}
+        <div style={{ background: 'linear-gradient(135deg, rgba(79,142,247,0.12), rgba(0,229,160,0.08))', border: '1px solid rgba(79,142,247,0.2)', borderRadius: 20, padding: 28, textAlign: 'center' }}>
+          <div style={{ fontSize: 36, marginBottom: 12 }}>💬</div>
+          <h2 style={{ fontSize: 18, fontWeight: 700, margin: '0 0 8px' }}>Join the conversation</h2>
+          <p style={{ fontSize: 14, color: 'rgba(255,255,255,0.55)', margin: '0 0 20px', lineHeight: 1.6 }}>
+            Log in to like, comment, and connect with {author.firstName || 'this'} and others in the Skillhub community.
+          </p>
+          <div style={{ display: 'flex', gap: 12, justifyContent: 'center', flexWrap: 'wrap' }}>
+            <a href={loginUrl}
+              style={{ padding: '12px 28px', background: '#4F8EF7', color: '#fff', borderRadius: 10, textDecoration: 'none', fontWeight: 700, fontSize: 14 }}>
+              Log in to reply
+            </a>
+            <a href={dashUrl}
+              style={{ padding: '12px 28px', background: 'rgba(255,255,255,0.07)', color: '#fff', borderRadius: 10, textDecoration: 'none', fontWeight: 600, fontSize: 14, border: '1px solid rgba(255,255,255,0.1)' }}>
+              View full post
+            </a>
+          </div>
+        </div>
+
       </div>
     </main>
   );
 }
-
-/* ── Small server-rendered pieces ───────────────────────────────────────── */
-function BrandHeader() {
-  return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: 12, justifyContent: 'center' }}>
-      <div style={{ width: 40, height: 40, borderRadius: 11, background: D.brand, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontWeight: 800, fontSize: 22 }}>S</div>
-      <div>
-        <div style={{ fontWeight: 800, fontSize: 18, color: '#fff', lineHeight: 1 }}>SkillHub</div>
-        <div style={{ fontSize: 11, color: D.brand, fontWeight: 600 }}>Community</div>
-      </div>
-    </div>
-  );
-}
-
-const btnPrimary: React.CSSProperties = {
-  display: 'inline-flex', alignItems: 'center', gap: 8,
-  padding: '11px 22px', borderRadius: 12, background: D.brand, color: '#fff',
-  fontSize: 14, fontWeight: 700, textDecoration: 'none', whiteSpace: 'nowrap',
-};
