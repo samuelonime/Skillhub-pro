@@ -230,7 +230,7 @@ export default function SettingsPage() {
     { key: 'appearance', icon: 'fa-circle-half-stroke', label: 'Appearance' },
   ];
 
-  const initials = profile.firstName && profile.lastName
+  const initials = profile.firstName && profile?.lastName
     ? `${profile.firstName[0]}${profile.lastName[0]}`.toUpperCase()
     : '?';
 
