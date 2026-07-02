@@ -463,6 +463,37 @@ router.get('/stats/overview', authenticate, async (req, res) => {
 });
 
 // ── GET /:id  — single post with comments ─────────────────────────────────
+// ── GET /public/:id — PUBLIC post view (no auth) ───────────────────────────
+// Powers social-share link previews (Open Graph) and the public read-only
+// share page. Returns only display-safe fields — never anything private.
+// Deliberately NOT behind `authenticate` so crawlers (Facebook, WhatsApp,
+// LinkedIn, X) and logged-out visitors can read the post to build the preview.
+router.get('/public/:id', async (req, res) => {
+  try {
+    const post = await prisma.communityPost.findUnique({
+      where: { id: req.params.id },
+      select: {
+        id: true, title: true, body: true, type: true, tags: true,
+        imageUrl: true, projectUrl: true, likes: true, views: true,
+        createdAt: true, updatedAt: true,
+        author: { select: { firstName: true, lastName: true, avatar: true, title: true } },
+        _count: { select: { comments: true } },
+      },
+    });
+
+    if (!post) return notFound(res, 'Post not found');
+
+    return success(res, {
+      ...post,
+      commentCount: post._count?.comments ?? 0,
+      _count: undefined,
+    });
+  } catch (e) {
+    console.error('Public post fetch error:', e);
+    return error(res, 'Failed to fetch post');
+  }
+});
+
 router.get('/:id', authenticate, async (req, res) => {
   try {
     const post = await prisma.communityPost.findUnique({

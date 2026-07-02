@@ -442,7 +442,7 @@ function PostCard({ post, onLike, onMessage, onEdit, onDelete, currentUserId }: 
   const isOwner = currentUserId && post.author?.id === currentUserId;
 
   function handleShare(platform?: string) {
-    const url  = `${typeof window !== 'undefined' ? window.location.origin : ''}/dashboard/community/post/${post.id}`;
+    const url  = `${typeof window !== 'undefined' ? window.location.origin : ''}/community/${post.id}`;
     const text = encodeURIComponent(post.title);
     if (platform === 'copy') { navigator.clipboard?.writeText(url).catch(() => {}); setShared(true); setTimeout(() => setShared(false), 2000); }
     else if (platform === 'twitter')  window.open(`https://twitter.com/intent/tweet?text=${text}&url=${encodeURIComponent(url)}`, '_blank');
@@ -959,7 +959,7 @@ function PortfolioSpotlights({ onMessage }: { onMessage: (u: any) => void }) {
   }
 
   function handleProjectShare(postId: string, platform?: string) {
-    const url = `${typeof window !== 'undefined' ? window.location.origin : ''}/dashboard/community/post/${postId}`;
+    const url = `${typeof window !== 'undefined' ? window.location.origin : ''}/community/${postId}`;
     const text = encodeURIComponent('Check out this SkillHub community project');
 
     if (platform === 'copy') {
