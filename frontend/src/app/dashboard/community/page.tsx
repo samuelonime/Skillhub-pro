@@ -343,29 +343,40 @@ function ActivityFeed({ currentUserId, onMessage, onEdit, refreshKey }: {
   return (
     <div>
       {loading && items.length === 0 && (
-        <div className="grid gap-3">
+        <div className="grid gap-3 md:gap-4 lg:gap-5 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
           {[1,2,3,4].map(i => (
-            <div key={i} className="rounded-2xl p-4" style={{ background: D.card, border: `1px solid ${D.border}` }}>
+            <div key={i} className="rounded-2xl p-4 aspect-[4/5] md:aspect-square lg:aspect-[1200/628]"
+              style={{ background: D.card, border: `1px solid ${D.border}` }}>
               <div className="flex items-center gap-3 mb-3">
-                <Skeleton h="h-10" w="w-10" /><div className="flex-1"><Skeleton h="h-3" w="w-1/3" /><div className="mt-1.5"><Skeleton h="h-2.5" w="w-1/5" /></div></div>
+                <Skeleton h="h-10 w-10 md:h-12 md:w-12" />
+                <div className="flex-1">
+                  <Skeleton h="h-3 md:h-4" w="w-1/3" />
+                  <div className="mt-1.5">
+                    <Skeleton h="h-2.5 md:h-3" w="w-1/5" />
+                  </div>
+                </div>
               </div>
-              <Skeleton h="h-4" w="w-3/4" />
+              <Skeleton h="h-4 md:h-5" w="w-3/4" />
+              <div className="mt-4">
+                <Skeleton h="h-3 md:h-4" w="w-1/2" />
+              </div>
             </div>
           ))}
         </div>
       )}
 
       {!loading && items.length === 0 && (
-        <div className="rounded-2xl p-14 text-center" style={{ background: D.card, border: `1px solid ${D.border}` }}>
-          <div className="text-5xl mb-4">🌱</div>
-          <h3 className="font-jakarta font-bold text-[16px] text-white mb-2">No activity yet</h3>
-          <p className="text-[13px]" style={{ color: D.subtext }}>
+        <div className="rounded-2xl p-8 text-center aspect-[4/5] md:aspect-square lg:aspect-[1200/628] md:p-12 lg:p-16"
+          style={{ background: D.card, border: `1px solid ${D.border}` }}>
+          <div className="text-5xl md:text-6xl lg:text-7xl mb-4">🌱</div>
+          <h3 className="font-jakarta font-bold text-[16px] text-white mb-2 md:text-[20px] lg:text-[24px]">No activity yet</h3>
+          <p className="text-[13px] md:text-[15px] lg:text-[16px]" style={{ color: D.subtext }}>
             Start learning to see your progress appear here for the whole community!
           </p>
         </div>
       )}
 
-      <div className="grid gap-3">
+      <div className="grid gap-3 md:gap-4 lg:gap-5 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
         {items.map(item => {
           const meta = ACTIVITY_META[item.type] || { icon: '📌', color: D.muted, label: item.type };
           // Posts (discussions, projects, showcases) render as full cards with details
@@ -377,41 +388,48 @@ function ActivityFeed({ currentUserId, onMessage, onEdit, refreshKey }: {
             );
           }
           return (
-            <div key={item.id} className="rounded-2xl p-4 hover:-translate-y-0.5 transition-all duration-200"
+            <div key={item.id} className="rounded-2xl p-4 hover:-translate-y-0.5 transition-all duration-200 w-full aspect-[4/5] md:aspect-square lg:aspect-[1200/628]"
               style={{ background: D.card, border: `1px solid ${D.border}` }}>
-              <div className="flex gap-3 items-start">
-                {/* Activity icon bubble */}
-                <div className="w-10 h-10 rounded-xl shrink-0 grid place-items-center text-lg"
-                  style={{ background: meta.color + '18', border: `1px solid ${meta.color}30` }}>
-                  {meta.icon}
-                </div>
-                <div className="flex-1 min-w-0">
-                  {/* User row */}
-                  <div className="flex items-center gap-2 mb-1 flex-wrap">
-                    <Avatar user={item.user} size={6} />
-                    <span className="font-semibold text-[13px] text-white">
-                      {item.user.firstName} {item.user.lastName}
-                    </span>
-                    {item.user.interestNiche && (
-                      <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full"
-                        style={{ background: D.accent + '18', color: D.accent }}>
-                        {item.user.interestNiche}
-                      </span>
-                    )}
-                    <span className="ml-auto text-[11px]" style={{ color: D.muted }}>{timeAgo(item.createdAt)}</span>
+              <div className="flex flex-col h-full">
+                <div className="flex gap-3 items-start flex-1">
+                  <div className="w-10 h-10 rounded-xl shrink-0 grid place-items-center text-lg md:w-12 md:h-12"
+                    style={{ background: meta.color + '18', border: `1px solid ${meta.color}30` }}>
+                    {meta.icon}
                   </div>
-                  {/* Title */}
-                  <p className="text-[13.5px] font-semibold mb-1" style={{ color: D.text }}>{item.title}</p>
-                  {/* Body excerpt */}
-                  {item.body && (
-                    <p className="text-[12px] mb-1.5" style={{ color: D.subtext }}>
-                      {item.body.slice(0, 120)}{item.body.length > 120 ? '…' : ''}
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 mb-1 flex-wrap">
+                      <Avatar user={item.user} size={6} />
+                      <span className="font-semibold text-[13px] text-white md:text-[14px]">
+                        {item.user.firstName} {item.user.lastName}
+                      </span>
+                      {item.user.interestNiche && (
+                        <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full md:text-[11px] md:px-3"
+                          style={{ background: D.accent + '18', color: D.accent }}>
+                          {item.user.interestNiche}
+                        </span>
+                      )}
+                      <span className="ml-auto text-[11px] md:text-[12px]" style={{ color: D.muted }}>
+                        {timeAgo(item.createdAt)}
+                      </span>
+                    </div>
+                    <p className="text-[13.5px] font-semibold mb-1 md:text-[15px]" style={{ color: D.text }}>
+                      {item.title}
                     </p>
-                  )}
-                  {/* Type badge */}
-                  <span className="inline-block text-[10.5px] font-semibold px-2.5 py-0.5 rounded-full"
-                    style={{ background: meta.color + '15', color: meta.color }}>
-                    {meta.label}
+                    {item.body && (
+                      <p className="text-[12px] mb-1.5 md:text-[13px]" style={{ color: D.subtext }}>
+                        {item.body.slice(0, 120)}{item.body.length > 120 ? '…' : ''}
+                      </p>
+                    )}
+                    <span className="inline-block text-[10.5px] font-semibold px-2.5 py-0.5 rounded-full md:text-[11.5px] md:px-3.5 md:py-1"
+                      style={{ background: meta.color + '15', color: meta.color }}>
+                      {meta.label}
+                    </span>
+                  </div>
+                </div>
+
+                <div className="mt-auto pt-2 text-center md:pt-3">
+                  <span className="text-[11px] md:text-[13px] lg:text-[14px]" style={{ color: D.muted }}>
+                    <i className="fas fa-chevron-right" /> View details
                   </span>
                 </div>
               </div>
