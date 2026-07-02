@@ -345,15 +345,11 @@ function ActivityFeed({ currentUserId, onMessage, onEdit, refreshKey }: {
       {loading && items.length === 0 && (
         <div className="grid gap-3">
           {[1,2,3,4].map(i => (
-            <div key={i} className="w-full rounded-2xl p-4 flex flex-col aspect-[4/5]" style={{ background: D.card, border: `1px solid ${D.border}` }}>
+            <div key={i} className="rounded-2xl p-4" style={{ background: D.card, border: `1px solid ${D.border}` }}>
               <div className="flex items-center gap-3 mb-3">
                 <Skeleton h="h-10" w="w-10" /><div className="flex-1"><Skeleton h="h-3" w="w-1/3" /><div className="mt-1.5"><Skeleton h="h-2.5" w="w-1/5" /></div></div>
               </div>
               <Skeleton h="h-4" w="w-3/4" />
-              <div className="flex-1" />
-              <div className="mt-auto pt-3" style={{ borderTop: `1px solid ${D.border}` }}>
-                <Skeleton h="h-3" w="w-1/2" />
-              </div>
             </div>
           ))}
         </div>
@@ -381,12 +377,9 @@ function ActivityFeed({ currentUserId, onMessage, onEdit, refreshKey }: {
             );
           }
           return (
-            <div key={item.id}
-              className="w-full rounded-2xl p-4 aspect-[4/5] flex flex-col hover:-translate-y-0.5 transition-all duration-200"
+            <div key={item.id} className="rounded-2xl p-4 hover:-translate-y-0.5 transition-all duration-200"
               style={{ background: D.card, border: `1px solid ${D.border}` }}>
-
-              {/* Main content — grows to fill available space */}
-              <div className="flex gap-3 items-start flex-1">
+              <div className="flex gap-3 items-start">
                 {/* Activity icon bubble */}
                 <div className="w-10 h-10 rounded-xl shrink-0 grid place-items-center text-lg"
                   style={{ background: meta.color + '18', border: `1px solid ${meta.color}30` }}>
@@ -421,18 +414,6 @@ function ActivityFeed({ currentUserId, onMessage, onEdit, refreshKey }: {
                     {meta.label}
                   </span>
                 </div>
-              </div>
-
-              {/* Footer — pinned to bottom via mt-auto */}
-              <div className="mt-auto pt-3 flex items-center justify-between"
-                style={{ borderTop: `1px solid ${D.border}` }}>
-                <span className="text-[11px]" style={{ color: D.muted }}>
-                  {timeAgo(item.createdAt)}
-                </span>
-                <span className="flex items-center gap-1 text-[11px] font-semibold"
-                  style={{ color: meta.color }}>
-                  {meta.icon} {meta.label}
-                </span>
               </div>
             </div>
           );
@@ -471,7 +452,7 @@ function PostCard({ post, onLike, onMessage, onEdit, onDelete, currentUserId }: 
   }
 
   return (
-    <div className="rounded-2xl p-5 hover:-translate-y-0.5 transition-all duration-200 group"
+    <div className="w-full rounded-2xl p-5 aspect-[4/5] flex flex-col hover:-translate-y-0.5 transition-all duration-200 group"
       style={{ background: D.card, border: `1px solid ${D.border}` }}>
 
       {/* Header */}
@@ -517,19 +498,20 @@ function PostCard({ post, onLike, onMessage, onEdit, onDelete, currentUserId }: 
         </div>
       </div>
 
-      {/* Content */}
-      <Link href={`/dashboard/community/post/${post.id}`} className="block no-underline group">
-        <h3 className="font-jakarta font-bold text-[15px] mb-1.5 leading-snug transition-colors" style={{ color: 'rgba(255,255,255,0.9)' }}
-          onMouseEnter={e => (e.currentTarget.style.color = D.accent)}
-          onMouseLeave={e => (e.currentTarget.style.color = 'rgba(255,255,255,0.9)')}>
-          {post.title}
-        </h3>
-        <p className="text-[13px] leading-relaxed line-clamp-2" style={{ color: D.subtext }}>{post.body}</p>
-      </Link>
+      {/* Content — flex-1 pushes footer to bottom */}
+      <div className="flex-1 min-h-0">
+        <Link href={`/dashboard/community/post/${post.id}`} className="block no-underline group">
+          <h3 className="font-jakarta font-bold text-[15px] mb-1.5 leading-snug transition-colors" style={{ color: 'rgba(255,255,255,0.9)' }}
+            onMouseEnter={e => (e.currentTarget.style.color = D.accent)}
+            onMouseLeave={e => (e.currentTarget.style.color = 'rgba(255,255,255,0.9)')}>
+            {post.title}
+          </h3>
+          <p className="text-[13px] leading-relaxed line-clamp-3" style={{ color: D.subtext }}>{post.body}</p>
+        </Link>
 
-      {(post.mediaUrl || post.imageUrl) && (
-        <MediaPreview url={post.mediaUrl || post.imageUrl} type={post.mediaType || detectMediaType(post.mediaUrl || post.imageUrl)} />
-      )}
+        {(post.mediaUrl || post.imageUrl) && (
+          <MediaPreview url={post.mediaUrl || post.imageUrl} type={post.mediaType || detectMediaType(post.mediaUrl || post.imageUrl)} />
+        )}
 
       {post.tags?.length > 0 && (
         <div className="flex flex-wrap gap-1.5 mt-3">
@@ -550,6 +532,8 @@ function PostCard({ post, onLike, onMessage, onEdit, onDelete, currentUserId }: 
           </a>
         );
       })()}
+
+      </div>{/* end flex-1 content */}
 
       {/* Footer */}
       <div className="flex items-center justify-between mt-3.5 pt-3.5" style={{ borderTop: `1px solid ${D.border}` }}>
