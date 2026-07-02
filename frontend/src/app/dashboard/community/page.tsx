@@ -345,7 +345,7 @@ function ActivityFeed({ currentUserId, onMessage, onEdit, refreshKey }: {
       {loading && items.length === 0 && (
         <div className="mx-auto w-full max-w-3xl space-y-4">
           {[1,2,3,4].map(i => (
-            <div key={i} className="rounded-2xl p-4"
+            <div key={i} className="rounded-2xl p-4 aspect-[4/5] md:aspect-square lg:aspect-[1200/628]"
               style={{ background: D.card, border: `1px solid ${D.border}` }}>
               <div className="flex items-center gap-3 mb-3">
                 <Skeleton h="h-10 w-10 md:h-12 md:w-12" />
@@ -367,7 +367,7 @@ function ActivityFeed({ currentUserId, onMessage, onEdit, refreshKey }: {
 
       {!loading && items.length === 0 && (
         <div className="mx-auto w-full max-w-3xl">
-          <div className="rounded-2xl p-8 text-center md:p-12 lg:p-16"
+          <div className="rounded-2xl p-8 text-center aspect-[4/5] md:aspect-square lg:aspect-[1200/628] md:p-12 lg:p-16"
             style={{ background: D.card, border: `1px solid ${D.border}` }}>
             <div className="text-5xl md:text-6xl lg:text-7xl mb-4">🌱</div>
             <h3 className="font-jakarta font-bold text-[16px] text-white mb-2 md:text-[20px] lg:text-[24px]">No activity yet</h3>
@@ -390,7 +390,7 @@ function ActivityFeed({ currentUserId, onMessage, onEdit, refreshKey }: {
             );
           }
           return (
-            <div key={item.id} className="rounded-2xl p-4 hover:-translate-y-0.5 transition-all duration-200 w-full"
+            <div key={item.id} className="rounded-2xl p-4 hover:-translate-y-0.5 transition-all duration-200 w-full aspect-[4/5] md:aspect-square lg:aspect-[1200/628]"
               style={{ background: D.card, border: `1px solid ${D.border}` }}>
               <div className="flex flex-col h-full">
                 <div className="flex gap-3 items-start flex-1">
@@ -472,7 +472,7 @@ function PostCard({ post, onLike, onMessage, onEdit, onDelete, currentUserId }: 
   }
 
   return (
-    <div className="w-full rounded-2xl p-5 flex flex-col hover:-translate-y-0.5 transition-all duration-200 group"
+    <div className="w-full rounded-2xl p-5 aspect-[4/5] md:aspect-square lg:aspect-[1200/628] flex flex-col hover:-translate-y-0.5 transition-all duration-200 group"
       style={{ background: D.card, border: `1px solid ${D.border}` }}>
 
       {/* Header */}
