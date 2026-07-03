@@ -254,6 +254,28 @@ html[data-theme='light'] body {
 /* Heading utility — Plus Jakarta Sans */
 .font-jakarta { font-family: 'Plus Jakarta Sans', sans-serif !important; }
 
+.touch-manipulation {
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+}
+
+.feed-scroll {
+  scroll-behavior: smooth;
+  -webkit-overflow-scrolling: touch;
+}
+
+.btn-feedback:active {
+  opacity: 0.7;
+  transform: scale(0.95);
+}
+
+@media (hover: none) {
+  .hover-lift:hover {
+    transform: none !important;
+  }
+}
+
 /* iOS fix: dynamic viewport height so full-height layouts don't overshoot
    on iPhone Safari (which causes white space when scrolling to the bottom). */
 @supports (min-height: 100dvh) {

@@ -215,15 +215,26 @@ function SafeImageMedia({ src, alt, className, fallbackType, sizes, maxHeightCla
   );
 }
 
-function MediaPreview({ url, type }: { url: string; type: string }) {
+function MediaPreview({ url, type, aspectClass, minHeightClass }: {
+  url: string;
+  type: string;
+  aspectClass?: string;
+  minHeightClass?: string;
+}) {
   if (!url) return null;
   const cls = 'mt-3 rounded-xl overflow-hidden';
   const borderStyle = { border: `1px solid ${D.border}` };
-  if (type === 'video') return <div className={cls} style={borderStyle}><video src={url} controls className="w-full max-h-72" /></div>;
+  if (type === 'video') {
+    return (
+      <div className={`${cls} ${aspectClass || 'aspect-video'}`} style={borderStyle}>
+        <video src={url} controls className="h-full w-full object-cover" />
+      </div>
+    );
+  }
   return (
-    <div className={cls} style={borderStyle}>
-      <div className="relative max-h-72 min-h-54 w-full">
-        <SafeImageMedia src={url} alt="Post media" fallbackType={type} maxHeightClass="max-h-72 min-h-54" />
+    <div className={`${cls} ${aspectClass || 'aspect-[4/5]'}`} style={borderStyle}>
+      <div className={`relative h-full w-full ${minHeightClass || 'min-h-[200px]'}`}>
+        <SafeImageMedia src={url} alt="Post media" fallbackType={type} maxHeightClass="h-full" />
       </div>
     </div>
   );
@@ -343,7 +354,7 @@ function ActivityFeed({ currentUserId, onMessage, onEdit, refreshKey }: {
   return (
     <div>
       {loading && items.length === 0 && (
-        <div className="mx-auto w-full max-w-3xl space-y-4">
+        <div className="mx-auto w-full max-w-2xl space-y-4 feed-scroll">
           {[1,2,3,4].map(i => (
             <div key={i} className="rounded-2xl p-4"
               style={{ background: D.card, border: `1px solid ${D.border}` }}>
@@ -366,7 +377,7 @@ function ActivityFeed({ currentUserId, onMessage, onEdit, refreshKey }: {
       )}
 
       {!loading && items.length === 0 && (
-        <div className="mx-auto w-full max-w-3xl">
+        <div className="mx-auto w-full max-w-2xl">
           <div className="rounded-2xl p-8 text-center md:p-12 lg:p-16"
             style={{ background: D.card, border: `1px solid ${D.border}` }}>
             <div className="text-5xl md:text-6xl lg:text-7xl mb-4">🌱</div>
@@ -378,7 +389,7 @@ function ActivityFeed({ currentUserId, onMessage, onEdit, refreshKey }: {
         </div>
       )}
 
-      <div className="mx-auto w-full max-w-3xl space-y-4">
+      <div className="mx-auto w-full max-w-2xl space-y-4 feed-scroll">
         {items.map(item => {
           const meta = ACTIVITY_META[item.type] || { icon: '📌', color: D.muted, label: item.type };
           // Posts (discussions, projects, showcases) render as full cards with details
@@ -390,50 +401,54 @@ function ActivityFeed({ currentUserId, onMessage, onEdit, refreshKey }: {
             );
           }
           return (
-            <div key={item.id} className="rounded-2xl p-4 hover:-translate-y-0.5 transition-all duration-200 w-full"
-              style={{ background: D.card, border: `1px solid ${D.border}` }}>
-              <div className="flex flex-col h-full">
-                <div className="flex gap-3 items-start flex-1">
-                  <div className="w-10 h-10 rounded-xl shrink-0 grid place-items-center text-lg md:w-12 md:h-12"
+            <div key={item.id}
+              className="w-full rounded-2xl p-4 hover:shadow-lg transition-all duration-200 touch-manipulation select-none"
+              style={{ background: D.card, border: `1px solid ${D.border}`, touchAction: 'pan-y' }}>
+              <div className="flex gap-3 items-start">
+                <div className="w-10 h-10 rounded-full shrink-0 grid place-items-center text-lg md:w-12 md:h-12"
                     style={{ background: meta.color + '18', border: `1px solid ${meta.color}30` }}>
-                    {meta.icon}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 mb-1 flex-wrap">
-                      <Avatar user={item.user} size={6} />
-                      <span className="font-semibold text-[13px] text-white md:text-[14px]">
-                        {item.user.firstName} {item.user.lastName}
+                  {meta.icon}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 mb-1 flex-wrap min-h-[28px]">
+                    <Avatar user={item.user} size={6} />
+                    <span className="font-semibold text-[13px] text-white md:text-[14px]">
+                      {item.user.firstName} {item.user.lastName}
+                    </span>
+                    {item.user.interestNiche && (
+                      <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full md:text-[11px] md:px-3 touch-manipulation"
+                        style={{ background: D.accent + '18', color: D.accent }}>
+                        {item.user.interestNiche}
                       </span>
-                      {item.user.interestNiche && (
-                        <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full md:text-[11px] md:px-3"
-                          style={{ background: D.accent + '18', color: D.accent }}>
-                          {item.user.interestNiche}
-                        </span>
-                      )}
-                      <span className="ml-auto text-[11px] md:text-[12px]" style={{ color: D.muted }}>
-                        {timeAgo(item.createdAt)}
-                      </span>
-                    </div>
-                    <p className="text-[13.5px] font-semibold mb-1 md:text-[15px]" style={{ color: D.text }}>
-                      {item.title}
-                    </p>
-                    {item.body && (
-                      <p className="text-[12px] mb-1.5 md:text-[13px]" style={{ color: D.subtext }}>
-                        {item.body.slice(0, 120)}{item.body.length > 120 ? '…' : ''}
-                      </p>
                     )}
-                    <span className="inline-block text-[10.5px] font-semibold px-2.5 py-0.5 rounded-full md:text-[11.5px] md:px-3.5 md:py-1"
-                      style={{ background: meta.color + '15', color: meta.color }}>
-                      {meta.label}
+                    <span className="ml-auto text-[11px] md:text-[12px]" style={{ color: D.muted }}>
+                      {timeAgo(item.createdAt)}
                     </span>
                   </div>
-                </div>
-
-                <div className="mt-auto pt-3">
-                  <span className="text-[11px] md:text-[13px] lg:text-[14px]" style={{ color: D.muted }}>
-                    <i className="fas fa-chevron-right" /> View details
+                  <p className="text-[13.5px] font-semibold mb-1 md:text-[15px]" style={{ color: D.text }}>
+                    {item.title}
+                  </p>
+                  {item.body && (
+                    <p className="text-[12px] mb-1.5 md:text-[13px]" style={{ color: D.subtext }}>
+                      {item.body.slice(0, 120)}{item.body.length > 120 ? '…' : ''}
+                    </p>
+                  )}
+                  <span className="inline-block text-[10.5px] font-semibold px-2.5 py-0.5 rounded-full md:text-[11.5px] md:px-3.5 md:py-1 touch-manipulation"
+                    style={{ background: meta.color + '15', color: meta.color }}>
+                    {meta.label}
                   </span>
                 </div>
+              </div>
+
+              <div className="mt-3 pt-3 flex items-center justify-between"
+                style={{ borderTop: `1px solid ${D.border}` }}>
+                <span className="inline-flex items-center gap-2 text-[11px] md:text-[13px]" style={{ color: D.muted }}>
+                  <i className="fas fa-chevron-right" /> View details
+                </span>
+                <span className="inline-flex items-center gap-2 text-[11px] md:text-[13px] font-medium touch-manipulation min-h-[36px] px-3"
+                  style={{ color: D.accent }}>
+                  <i className="fas fa-arrow-right" />
+                </span>
               </div>
             </div>
           );
@@ -460,6 +475,14 @@ function PostCard({ post, onLike, onMessage, onEdit, onDelete, currentUserId }: 
   const [showShareMenu, setShowShareMenu] = useState(false);
   const [showActions, setShowActions] = useState(false);
   const isOwner = currentUserId && post.author?.id === currentUserId;
+  const mediaUrl = post.mediaUrl || post.imageUrl;
+  const mediaType = post.mediaType || detectMediaType(mediaUrl || '');
+
+  function getMediaAspect() {
+    if (!mediaUrl) return '';
+    if (mediaType === 'video') return 'aspect-video';
+    return 'aspect-[4/5]';
+  }
 
   function handleShare(platform?: string) {
     const url  = `${typeof window !== 'undefined' ? window.location.origin : ''}/community/${post.id}`;
@@ -472,71 +495,73 @@ function PostCard({ post, onLike, onMessage, onEdit, onDelete, currentUserId }: 
   }
 
   return (
-    <div className="w-full rounded-2xl p-5 flex flex-col hover:-translate-y-0.5 transition-all duration-200 group"
-      style={{ background: D.card, border: `1px solid ${D.border}` }}>
+    <div className="w-full rounded-2xl p-4 md:p-5 hover:shadow-lg transition-all duration-200 group touch-manipulation select-none"
+      style={{ background: D.card, border: `1px solid ${D.border}`, touchAction: 'pan-y' }}>
 
-      {/* Header */}
+      {/* Facebook-style header */}
       <div className="flex items-start justify-between gap-3 mb-3">
-        <div className="flex items-center gap-2.5">
-          <div className="relative cursor-pointer" onClick={() => onMessage(post.author)}>
+        <div className="flex items-center gap-2.5 min-h-[44px]">
+          <div className="relative cursor-pointer touch-manipulation" onClick={() => onMessage(post.author)}>
             <Avatar user={post.author} />
             <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full border-2" style={{ background: D.green, borderColor: D.card }} />
           </div>
           <div>
-            <div className="font-semibold text-[13px] text-white/90">{post.author.firstName} {post.author.lastName}</div>
-            {post.author.title && <div className="text-[11px]" style={{ color: D.muted }}>{post.author.title}</div>}
+            <div className="font-semibold text-[15px] text-white/90 leading-tight">{post.author.firstName} {post.author.lastName}</div>
+            <div className="flex items-center gap-1.5 text-[12px] leading-tight" style={{ color: D.muted }}>
+              <span>{timeAgo(post.createdAt)}</span>
+              <span>·</span>
+              <span className="text-[10.5px] font-semibold px-2 py-0.5 rounded-full"
+                style={{ background: tm.color + '18', color: tm.color }}>
+                {post.type ? post.type.charAt(0).toUpperCase() + post.type.slice(1) : 'Post'}
+              </span>
+              {post.isPinned && <span className="text-base">📌</span>}
+            </div>
           </div>
         </div>
-        <div className="flex items-center gap-2 shrink-0">
-          <span className="text-[10.5px] font-semibold px-2.5 py-1 rounded-full" style={{ background: tm.color + '18', color: tm.color, border: `1px solid ${tm.color}30` }}>
-            <i className={`fas ${tm.icon} mr-1`} />{post.type ? post.type.charAt(0).toUpperCase() + post.type.slice(1) : 'Post'}
-          </span>
-          {post.isPinned && <span className="text-base">📌</span>}
-          {isOwner && (
-            <div className="relative">
-              <button onClick={() => setShowActions(v => !v)}
-                className="w-7 h-7 rounded-lg border-0 cursor-pointer grid place-items-center transition-all hover:opacity-80"
-                style={{ background: D.input, color: D.muted }}>
-                <i className="fas fa-ellipsis-h text-[11px]" />
-              </button>
-              {showActions && (
-                <>
-                  <div className="fixed inset-0 z-100" onClick={() => setShowActions(false)} />
-                  <div className="absolute right-0 top-full mt-1.5 z-101 rounded-2xl overflow-hidden w-37.5 shadow-2xl"
-                    style={{ background: 'var(--card-bg)', border: `1px solid ${D.border}` }}>
-                    <button onClick={() => { setShowActions(false); onEdit(post); }}
-                      className="w-full flex items-center gap-2.5 px-3.5 py-2.5 text-[13px] font-medium border-0 bg-transparent cursor-pointer text-left transition-all hover:opacity-80"
-                      style={{ color: D.accent }}><i className="fas fa-pen text-[11px]" /> Edit</button>
-                    <button onClick={() => { setShowActions(false); onDelete(post.id); }}
-                      className="w-full flex items-center gap-2.5 px-3.5 py-2.5 text-[13px] font-medium border-0 bg-transparent cursor-pointer text-left transition-all hover:opacity-80"
-                      style={{ color: D.red }}><i className="fas fa-trash text-[11px]" /> Delete</button>
-                  </div>
-                </>
-              )}
-            </div>
-          )}
-        </div>
+        {isOwner && (
+          <div className="relative shrink-0">
+            <button onClick={() => setShowActions(v => !v)}
+              className="w-9 h-9 rounded-full border-0 cursor-pointer grid place-items-center transition-all touch-manipulation min-h-[44px]"
+              style={{ background: 'transparent', color: D.muted }}
+              aria-label="Post actions">
+              <i className="fas fa-ellipsis-h text-[16px]" />
+            </button>
+            {showActions && (
+              <>
+                <div className="fixed inset-0 z-100" onClick={() => setShowActions(false)} />
+                <div className="absolute right-0 top-full mt-1.5 z-101 rounded-2xl overflow-hidden w-44 shadow-2xl"
+                  style={{ background: 'var(--card-bg)', border: `1px solid ${D.border}` }}>
+                  <button onClick={() => { setShowActions(false); onEdit(post); }}
+                    className="w-full flex items-center gap-3 px-4 py-3 text-[14px] font-medium border-0 bg-transparent cursor-pointer text-left transition-all touch-manipulation min-h-[44px]"
+                    style={{ color: D.accent }}><i className="fas fa-pen text-[13px]" /> Edit</button>
+                  <button onClick={() => { setShowActions(false); onDelete(post.id); }}
+                    className="w-full flex items-center gap-3 px-4 py-3 text-[14px] font-medium border-0 bg-transparent cursor-pointer text-left transition-all touch-manipulation min-h-[44px]"
+                    style={{ color: D.red }}><i className="fas fa-trash text-[13px]" /> Delete</button>
+                </div>
+              </>
+            )}
+          </div>
+        )}
       </div>
 
-      {/* Content — flex-1 pushes footer to bottom */}
+      {/* Facebook-style content */}
       <div className="flex-1 min-h-0">
-        <Link href={`/dashboard/community/post/${post.id}`} className="block no-underline group">
-          <h3 className="font-jakarta font-bold text-[15px] mb-1.5 leading-snug transition-colors" style={{ color: 'rgba(255,255,255,0.9)' }}
-            onMouseEnter={e => (e.currentTarget.style.color = D.accent)}
-            onMouseLeave={e => (e.currentTarget.style.color = 'rgba(255,255,255,0.9)')}>
+        <Link href={`/dashboard/community/post/${post.id}`} className="block no-underline">
+          <h3 className="font-jakarta font-bold text-[17px] mb-1.5 leading-snug transition-colors touch-manipulation"
+            style={{ color: 'rgba(255,255,255,0.95)' }}>
             {post.title}
           </h3>
-          <p className="text-[13px] leading-relaxed line-clamp-3" style={{ color: D.subtext }}>{post.body}</p>
+          <p className="text-[15px] leading-relaxed line-clamp-4" style={{ color: D.subtext }}>{post.body}</p>
         </Link>
 
-        {(post.mediaUrl || post.imageUrl) && (
-          <MediaPreview url={post.mediaUrl || post.imageUrl} type={post.mediaType || detectMediaType(post.mediaUrl || post.imageUrl)} />
+        {mediaUrl && (
+          <MediaPreview url={mediaUrl} type={mediaType} aspectClass={getMediaAspect()} minHeightClass="min-h-[200px]" />
         )}
 
       {post.tags?.length > 0 && (
         <div className="flex flex-wrap gap-1.5 mt-3">
           {post.tags.map((tag: string) => (
-            <span key={tag} className="text-[11px] px-2 py-0.5 rounded-md font-medium" style={{ background: D.accent + '18', color: D.accent }}>#{tag}</span>
+            <span key={tag} className="text-[12px] px-2.5 py-1 rounded-full font-medium touch-manipulation" style={{ background: D.accent + '15', color: D.accent }}>#{tag}</span>
           ))}
         </div>
       )}
@@ -545,9 +570,9 @@ function PostCard({ post, onLike, onMessage, onEdit, onDelete, currentUserId }: 
         const url = normalizeExternalLink(post.projectUrl);
         return (
           <a href={url} target="_blank" rel="noopener noreferrer"
-            className="inline-flex items-center gap-1.5 mt-2.5 text-[12px] font-medium no-underline transition-colors"
+            className="inline-flex items-center gap-1.5 mt-2.5 text-[13px] font-medium no-underline transition-colors touch-manipulation"
             style={{ color: '#38BDF8' }}>
-            <i className="fas fa-external-link-alt text-[10px]" />
+            <i className="fas fa-external-link-alt text-[11px]" />
             {url.replace(/^https?:\/\//, '').replace(/^\/\//, '').slice(0, 40)}
           </a>
         );
@@ -555,49 +580,45 @@ function PostCard({ post, onLike, onMessage, onEdit, onDelete, currentUserId }: 
 
       </div>{/* end flex-1 content */}
 
-      {/* Footer */}
-      <div className="flex items-center justify-between mt-3.5 pt-3.5" style={{ borderTop: `1px solid ${D.border}` }}>
-        <div className="flex items-center gap-2">
+      {/* Facebook-style action buttons */}
+      <div className="flex items-center justify-between mt-3.5 pt-3" style={{ borderTop: `1px solid ${D.border}` }}>
+        <div className="flex items-center gap-1">
           <button onClick={() => onLike(post.id)}
-            className="flex items-center gap-2 px-3.5 py-2 rounded-xl font-semibold text-[13px] border-0 cursor-pointer transition-all select-none"
+            className="flex items-center gap-2 px-4 py-2 rounded-xl font-semibold text-[14px] border-0 cursor-pointer transition-all touch-manipulation min-h-[44px]"
             style={{
-              background: post.likedByMe ? D.red + '20' : D.input,
+              background: post.likedByMe ? D.red + '20' : 'transparent',
               color: post.likedByMe ? D.red : D.muted,
-              boxShadow: post.likedByMe ? `0 0 0 1.5px ${D.red}` : 'none',
             }}>
-            <i className={`${post.likedByMe ? 'fas' : 'far'} fa-heart text-[14px]`} />
-            <span>{post.likes}</span>
+            <i className={`${post.likedByMe ? 'fas' : 'far'} fa-heart text-[18px]`} />
+            <span className="text-[14px]">{post.likes}</span>
           </button>
 
           <Link href={`/dashboard/community/post/${post.id}`}
-            className="flex items-center gap-1.5 text-[12px] font-medium no-underline transition-colors"
-            style={{ color: D.muted }}
-            onMouseEnter={e => (e.currentTarget.style.color = D.accent)}
-            onMouseLeave={e => (e.currentTarget.style.color = D.muted)}>
-            <i className="far fa-comment" />{post._count?.comments ?? 0}
+            className="flex items-center gap-2 px-4 py-2 rounded-xl text-[14px] font-medium no-underline transition-colors touch-manipulation min-h-[44px]"
+            style={{ color: D.muted }}>
+            <i className="far fa-comment text-[18px]" />
+            <span>{post._count?.comments ?? 0}</span>
           </Link>
 
-          <span className="flex items-center gap-1.5 text-[12px]" style={{ color: D.muted }}>
-            <i className="far fa-eye" />{post.views}
+          <span className="flex items-center gap-1.5 px-3 py-2 text-[14px]" style={{ color: D.muted }}>
+            <i className="far fa-eye text-[16px]" />{post.views}
           </span>
         </div>
 
-        <div className="flex items-center gap-2">
-          <span className="text-[11px]" style={{ color: D.muted }}>{timeAgo(post.createdAt)}</span>
-          <div className="relative">
+        <div className="relative">
             <button onClick={() => setShowShareMenu(v => !v)}
-              className="flex items-center gap-1.5 px-3 py-2 rounded-xl font-semibold text-[12.5px] border-0 cursor-pointer transition-all"
-              style={{ background: shared ? D.green + '20' : D.accent + '18', color: shared ? D.green : D.accent }}>
-              <i className={`fas ${shared ? 'fa-check' : 'fa-share-nodes'} text-[13px]`} />
+              className="flex items-center gap-2 px-4 py-2 rounded-xl font-semibold text-[14px] border-0 cursor-pointer transition-all touch-manipulation min-h-[44px]"
+              style={{ background: shared ? D.green + '20' : 'transparent', color: shared ? D.green : D.accent }}>
+              <i className={`fas ${shared ? 'fa-check' : 'fa-share-nodes'} text-[16px]`} />
               <span>{shared ? 'Copied!' : 'Share'}</span>
             </button>
             {showShareMenu && (
               <>
                 <div className="fixed inset-0 z-100" onClick={() => setShowShareMenu(false)} />
-                <div className="absolute right-0 bottom-full mb-2 z-101 rounded-2xl overflow-hidden w-45 shadow-2xl"
+                <div className="absolute right-0 bottom-full mb-2 z-101 rounded-2xl overflow-hidden w-52 shadow-2xl"
                   style={{ background: 'var(--card-bg)', border: `1px solid ${D.border}` }}>
-                  <div className="px-3.5 py-2.5" style={{ borderBottom: `1px solid ${D.border}` }}>
-                    <p className="text-[11px] font-semibold uppercase tracking-wide" style={{ color: D.muted }}>Share via</p>
+                  <div className="px-4 py-3" style={{ borderBottom: `1px solid ${D.border}` }}>
+                    <p className="text-[12px] font-semibold uppercase tracking-wide" style={{ color: D.muted }}>Share</p>
                   </div>
                   {[
                     { icon: 'fa-link',               label: 'Copy link',   action: 'copy',      color: D.accent  },
@@ -606,15 +627,14 @@ function PostCard({ post, onLike, onMessage, onEdit, onDelete, currentUserId }: 
                     { icon: 'fa-brands fa-whatsapp',  label: 'WhatsApp',    action: 'whatsapp',  color: D.green   },
                   ].map(item => (
                     <button key={item.action} onClick={() => handleShare(item.action)}
-                      className="w-full flex items-center gap-3 px-3.5 py-2.5 text-[13px] font-medium border-0 bg-transparent cursor-pointer text-left transition-all hover:opacity-80"
+                      className="w-full flex items-center gap-3 px-4 py-3 text-[14px] font-medium border-0 bg-transparent cursor-pointer text-left transition-all touch-manipulation min-h-[44px]"
                       style={{ color: item.color }}>
-                      <i className={`fas ${item.icon}`} />{item.label}
+                      <i className={`fas ${item.icon} text-[16px] w-6`} />{item.label}
                     </button>
                   ))}
                 </div>
               </>
             )}
-          </div>
         </div>
       </div>
     </div>
@@ -1274,14 +1294,16 @@ export default function CommunityPage() {
           </div>
         </div>
 
-        {/* Stats */}
-        <StatsBar stats={stats} />
+        <div className="mx-auto w-full max-w-2xl">
+          {/* Stats */}
+          <StatsBar stats={stats} />
 
-        {/* Portfolio spotlights */}
-        <PortfolioSpotlights onMessage={setChatUser} />
+          {/* Portfolio spotlights */}
+          <PortfolioSpotlights onMessage={setChatUser} />
 
-        {/* Unified Activity Feed — discussions, enrolments, new members & more */}
-        <ActivityFeed currentUserId={user?.id} onMessage={setChatUser} onEdit={setEditPost} refreshKey={feedRefresh} />
+          {/* Unified Activity Feed — discussions, enrolments, new members & more */}
+          <ActivityFeed currentUserId={user?.id} onMessage={setChatUser} onEdit={setEditPost} refreshKey={feedRefresh} />
+        </div>
 
       </div>
     </SidebarLayout>
