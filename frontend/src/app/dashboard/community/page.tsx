@@ -1108,8 +1108,8 @@ function PortfolioSpotlights({ onMessage }: { onMessage: (u: any) => void }) {
             return (
               <div key={u.id} className="rounded-xl group transition-all hover:-translate-y-0.5 w-full"
                 style={{ border: `1px solid ${D.border}` }}>
-                <div className="flex flex-col md:flex-row md:items-stretch">
-                  <div className="relative h-40 md:h-auto md:w-64 md:shrink-0 overflow-hidden rounded-t-xl md:rounded-l-xl md:rounded-tr-none"
+                <div className="flex flex-col">
+                  <div className="relative h-48 overflow-hidden rounded-t-xl"
                     style={{ background: `linear-gradient(135deg, ${D.accent}20, ${D.purple}20)` }}>
                     <SafeImageMedia
                       src={project?.thumbnail}
@@ -1119,37 +1119,22 @@ function PortfolioSpotlights({ onMessage }: { onMessage: (u: any) => void }) {
                       maxHeightClass="h-full"
                     />
                     <div className="absolute inset-0" style={{ background: 'linear-gradient(to top, rgba(15,21,33,0.7), transparent)' }} />
-                    <div className="absolute bottom-2 left-2.5 right-2.5">
-                      <div className="text-white font-semibold text-[13px] truncate">{project?.title || 'Project'}</div>
-                    </div>
                   </div>
 
-                  <div className="flex-1 min-w-0 p-4 rounded-b-xl md:rounded-r-xl md:rounded-bl-none" style={{ background: D.card }}>
+                  <div className="flex-1 min-w-0 p-4 rounded-b-xl" style={{ background: D.card }}>
                     <div className="flex flex-col h-full gap-3">
-                      <div className="flex items-center gap-3">
-                        <Avatar user={u} size={7} />
-                        <div className="flex-1 min-w-0">
-                          <div className="font-semibold text-[13px] text-white truncate">{u.firstName} {u.lastName}</div>
-                          <div className="text-[11px] truncate" style={{ color: D.muted }}>{u.title}</div>
-                        </div>
-                      </div>
-
-                      <div className="flex flex-wrap gap-1.5">
-                        {(u.skills || []).slice(0, 4).map((skill: string) => (
-                          <span key={skill} className="text-[10px] font-semibold px-2 py-1 rounded-md"
-                            style={{ background: D.accent + '18', color: D.accent }}>{skill}</span>
-                        ))}
-                      </div>
-
-                      <div className="flex items-center justify-between gap-3 flex-wrap">
-                        <span className="text-[11px]" style={{ color: D.muted }}>
-                          <i className="fas fa-layer-group mr-1" />{u.projects.length} project{u.projects.length !== 1 ? 's' : ''}
-                        </span>
-                        <button onClick={() => onMessage(u)}
-                          className="flex items-center gap-1.5 text-[11px] font-semibold px-3 py-1.5 rounded-lg border-0 cursor-pointer shrink-0"
-                          style={{ background: D.accent + '18', color: D.accent }}>
-                          <i className="fas fa-paper-plane text-[10px]" />Message
-                        </button>
+                      <div className="min-w-0">
+                        <Link
+                          href={postId ? `/dashboard/community/post/${postId}` : '/dashboard/community'}
+                          className="block no-underline"
+                        >
+                          <h4 className="font-jakarta font-bold text-[16px] leading-snug text-white mb-1 truncate">
+                            {project?.title || 'Project'}
+                          </h4>
+                          <p className="text-[13px] leading-relaxed line-clamp-3" style={{ color: D.subtext }}>
+                            {project?.description || community?.title || 'Shared community project'}
+                          </p>
+                        </Link>
                       </div>
 
                       {postId && (
