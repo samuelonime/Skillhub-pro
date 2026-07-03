@@ -30,21 +30,25 @@ const navItems = [
 
 /* ── Design tokens ─────────────────────────────────────────────────────────── */
 const D = {
-  card:    '#0F1521',
-  border:  'rgba(255,255,255,0.07)',
+  card:    'var(--card-bg)',
+  border:  'var(--card-border)',
   accent:  '#4F8EF7',
   green:   '#00E5A0',
   amber:   '#F59E0B',
   purple:  '#A78BFA',
   red:     '#F87171',
-  muted:   'rgba(255,255,255,0.35)',
-  text:    'rgba(255,255,255,0.85)',
-  subtext: 'rgba(255,255,255,0.45)',
-  input:   'rgba(255,255,255,0.06)',
+  muted:   'var(--text-faint)',
+  text:    'var(--text-body)',
+  strong:  'var(--text-strong)',
+  subtext: 'var(--text-faint)',
+  input:   'var(--input-bg)',
+  soft:    'var(--surface-soft)',
+  softHover: 'var(--surface-soft-hover)',
+  borderStrong: 'var(--border-strong)',
 };
 
 function Skeleton({ h = 'h-4', w = 'w-full' }: { h?: string; w?: string }) {
-  return <div className={`${h} ${w} rounded-xl animate-pulse`} style={{ background: 'rgba(255,255,255,0.06)' }} />;
+  return <div className={`${h} ${w} rounded-xl animate-pulse`} style={{ background: D.soft }} />;
 }
 
 function Toast({ msg, type, onDone }: { msg: string; type: 'ok' | 'err'; onDone: () => void }) {
@@ -68,7 +72,7 @@ function StrengthRing({ value }: { value: number }) {
   const color = value >= 80 ? D.green : value >= 50 ? D.accent : D.amber;
   return (
     <svg width="76" height="76" viewBox="0 0 76 76">
-      <circle cx="38" cy="38" r={r} fill="none" stroke="rgba(255,255,255,0.08)" strokeWidth="5" />
+      <circle cx="38" cy="38" r={r} fill="none" stroke="var(--border-soft)" strokeWidth="5" />
       <circle cx="38" cy="38" r={r} fill="none" stroke={color} strokeWidth="5"
         strokeDasharray={`${fill} ${circ}`} strokeLinecap="round" transform="rotate(-90 38 38)" />
       <text x="38" y="44" textAnchor="middle" fontSize="14" fontWeight="800" fill={color}>{value}%</text>
@@ -109,7 +113,7 @@ function DropZone({ onFile, uploading }: { onFile: (f: File) => void; uploading:
     <div
       className="rounded-2xl flex flex-col items-center justify-center gap-4 py-14 px-6 text-center cursor-pointer transition-all relative"
       style={{
-        border: `2px dashed ${dragging ? D.accent : 'rgba(255,255,255,0.12)'}`,
+        border: `2px dashed ${dragging ? D.accent : D.borderStrong}`,
         background: dragging ? `${D.accent}08` : D.input,
       }}
       onClick={() => !uploading && inputRef.current?.click()}
@@ -669,7 +673,7 @@ export default function ResumePage() {
         {/* ── Page header ───────────────────────────────────────── */}
         <div className="flex items-start justify-between gap-4 flex-wrap">
           <div>
-            <h1 className="font-jakarta font-extrabold text-[1.6rem] text-white mb-1">My Resume</h1>
+            <h1 className="font-jakarta font-extrabold text-[1.6rem] mb-1" style={{ color: D.strong }}>My Resume</h1>
             <p className="text-[13.5px]" style={{ color: D.subtext }}>
               Upload, manage, and share your professional resume with employers.
             </p>
@@ -686,7 +690,7 @@ export default function ResumePage() {
               onClick={() => !togglingVis && toggleVisibility(!visibility)}
               disabled={togglingVis}
               className="relative w-11 h-6 rounded-full border-0 cursor-pointer transition-all flex-shrink-0 disabled:opacity-60"
-              style={{ background: visibility ? D.green : 'rgba(255,255,255,0.12)', padding: 0 }}>
+              style={{ background: visibility ? D.green : D.borderStrong, padding: 0 }}>
               <div className="absolute top-0.5 w-5 h-5 bg-white rounded-full shadow transition-all"
                 style={{ left: visibility ? '22px' : '2px' }} />
             </button>
@@ -699,7 +703,7 @@ export default function ResumePage() {
           <div className="p-6">
             <div className="flex items-start justify-between gap-4 flex-wrap mb-4">
               <div>
-                <h2 className="font-jakarta font-bold text-[16px] text-white flex items-center gap-2">
+                <h2 className="font-jakarta font-bold text-[16px] flex items-center gap-2" style={{ color: D.strong }}>
                   <span style={{ color: D.accent }}>🤖</span> AI-Powered Resume
                 </h2>
                 <p className="text-[12px]" style={{ color: D.subtext }}>
@@ -726,12 +730,12 @@ export default function ResumePage() {
                       setAiTab(v => (v === 'view' ? 'preview' : v));
                     }}
                       className="flex items-center gap-2 px-3.5 py-2.5 rounded-xl text-[12px] font-semibold border-0 cursor-pointer transition-all hover:opacity-80"
-                      style={{ background: 'rgba(255,255,255,0.06)', color: D.text, border: `1px solid ${D.border}` }}>
+                      style={{ background: D.soft, color: D.text, border: `1px solid ${D.border}` }}>
                       <i className={`fas ${editingAiResume ? 'fa-xmark' : 'fa-pen'}`} /> {editingAiResume ? 'Cancel Edit' : 'Edit'}
                     </button>
                     <button onClick={copyToClipboard}
                       className="flex items-center gap-2 px-3.5 py-2.5 rounded-xl text-[12px] font-semibold border-0 cursor-pointer transition-all hover:opacity-80"
-                      style={{ background: 'rgba(255,255,255,0.06)', color: D.text, border: `1px solid ${D.border}` }}>
+                      style={{ background: D.soft, color: D.text, border: `1px solid ${D.border}` }}>
                       <i className={`fas ${copied ? 'fa-check' : 'fa-copy'}`} /> {copied ? 'Copied' : 'Copy'}
                     </button>
                     <button onClick={previewResume}
@@ -741,12 +745,12 @@ export default function ResumePage() {
                     </button>
                     <button onClick={downloadMarkdown}
                       className="flex items-center gap-2 px-3.5 py-2.5 rounded-xl text-[12px] font-semibold border-0 cursor-pointer transition-all hover:opacity-80"
-                      style={{ background: 'rgba(255,255,255,0.06)', color: D.text, border: `1px solid ${D.border}` }}>
+                      style={{ background: D.soft, color: D.text, border: `1px solid ${D.border}` }}>
                       <i className="fas fa-download" /> .md
                     </button>
                     <button onClick={downloadTxt}
                       className="flex items-center gap-2 px-3.5 py-2.5 rounded-xl text-[12px] font-semibold border-0 cursor-pointer transition-all hover:opacity-80"
-                      style={{ background: 'rgba(255,255,255,0.06)', color: D.text, border: `1px solid ${D.border}` }}>
+                      style={{ background: D.soft, color: D.text, border: `1px solid ${D.border}` }}>
                       <i className="fas fa-file-lines" /> .txt
                     </button>
                   </>
@@ -772,20 +776,20 @@ export default function ResumePage() {
                 <DataSummaryBar summary={aiResume.dataSummary} />
                 {editingAiResume ? (
                   <div className="space-y-4">
-                    <div className="rounded-xl p-4" style={{ background: 'rgba(255,255,255,0.03)', border: `1px solid ${D.border}` }}>
+                    <div className="rounded-xl p-4" style={{ background: D.soft, border: `1px solid ${D.border}` }}>
                       <label className="block text-[12px] font-semibold mb-2" style={{ color: D.muted }}>Edit Resume Content</label>
                       <textarea
                         value={aiDraft}
                         onChange={e => setAiDraft(e.target.value)}
                         rows={20}
                         className="w-full rounded-xl px-4 py-3 text-[13px] font-mono outline-none resize-y"
-                        style={{ background: 'rgba(255,255,255,0.05)', border: `1px solid ${D.border}`, color: D.text, lineHeight: 1.7 }}
+                        style={{ background: D.input, border: `1px solid ${D.border}`, color: D.text, lineHeight: 1.7 }}
                       />
                     </div>
                     <div className="flex items-center justify-end gap-2">
                       <button onClick={() => { setEditingAiResume(false); setAiDraft(aiResume.content); }}
                         className="px-4 py-2.5 rounded-xl text-[12px] font-semibold border-0 cursor-pointer"
-                        style={{ background: 'rgba(255,255,255,0.06)', color: D.text, border: `1px solid ${D.border}` }}>
+                        style={{ background: D.soft, color: D.text, border: `1px solid ${D.border}` }}>
                         Discard
                       </button>
                       <button onClick={saveAiResumeEdits} disabled={savingAiResume}
