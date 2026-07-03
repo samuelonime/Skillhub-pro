@@ -1071,7 +1071,7 @@ function PortfolioSpotlights({ onMessage }: { onMessage: (u: any) => void }) {
   if (loading) return (
     <div className="rounded-2xl p-5 mb-5 animate-pulse" style={{ background: D.card, border: `1px solid ${D.border}` }}>
       <div className="h-4 rounded w-40 mb-4" style={{ background: 'var(--surface-soft)' }} />
-      <div className="grid grid-cols-3 gap-3">{[1,2,3].map(i => <div key={i} className="h-44 rounded-xl" style={{ background: 'var(--surface-soft)' }} />)}</div>
+      <div className="space-y-4">{[1,2,3].map(i => <div key={i} className="h-48 rounded-xl" style={{ background: 'var(--surface-soft)' }} />)}</div>
     </div>
   );
   if (portfolios.length === 0) return null;
@@ -1097,7 +1097,7 @@ function PortfolioSpotlights({ onMessage }: { onMessage: (u: any) => void }) {
         </div>
       </div>
       {!collapsed && (
-        <div className="p-4 rounded-b-2xl grid grid-cols-3 gap-3 max-[900px]:grid-cols-2 max-md:grid-cols-1">
+        <div className="p-4 rounded-b-2xl space-y-4">
           {portfolios.map(u => {
             const project = u.projects?.[0];
             const community = project?.community;
@@ -1106,151 +1106,154 @@ function PortfolioSpotlights({ onMessage }: { onMessage: (u: any) => void }) {
             const shared = sharedPostId === postId;
 
             return (
-            <div key={u.id} className="rounded-xl group transition-all hover:-translate-y-0.5"
-              style={{ border: `1px solid ${D.border}` }}>
-              <div className="relative h-24 overflow-hidden rounded-t-xl" style={{ background: `linear-gradient(135deg, ${D.accent}20, ${D.purple}20)` }}>
-                <SafeImageMedia
-                  src={project?.thumbnail}
-                  alt={project?.title || 'Project cover'}
-                  fallbackType="project"
-                  className="object-cover group-hover:scale-105 transition-transform duration-500"
-                  maxHeightClass="h-full"
-                />
-                <div className="absolute inset-0" style={{ background: 'linear-gradient(to top, rgba(15,21,33,0.7), transparent)' }} />
-                <div className="absolute bottom-2 left-2.5 right-2.5">
-                  <div className="text-white font-semibold text-[11px] truncate">{project?.title || 'Project'}</div>
-                </div>
-              </div>
-              {/* No overflow-hidden here (unlike the image wrapper above) — the
-                  Share dropdown below needs to render outside this box; overflow-hidden
-                  on this container was clipping it, causing it to show cut off. */}
-              <div className="p-3 rounded-b-xl" style={{ background: D.card }}>
-                <div className="flex items-center gap-2 mb-2">
-                  <Avatar user={u} size={7} />
-                  <div className="flex-1 min-w-0">
-                    <div className="font-semibold text-[12px] text-white truncate">{u.firstName} {u.lastName}</div>
-                    <div className="text-[10.5px] truncate" style={{ color: D.muted }}>{u.title}</div>
+              <div key={u.id} className="rounded-xl group transition-all hover:-translate-y-0.5 w-full"
+                style={{ border: `1px solid ${D.border}` }}>
+                <div className="flex flex-col md:flex-row md:items-stretch">
+                  <div className="relative h-40 md:h-auto md:w-64 md:shrink-0 overflow-hidden rounded-t-xl md:rounded-l-xl md:rounded-tr-none"
+                    style={{ background: `linear-gradient(135deg, ${D.accent}20, ${D.purple}20)` }}>
+                    <SafeImageMedia
+                      src={project?.thumbnail}
+                      alt={project?.title || 'Project cover'}
+                      fallbackType="project"
+                      className="object-cover group-hover:scale-105 transition-transform duration-500"
+                      maxHeightClass="h-full"
+                    />
+                    <div className="absolute inset-0" style={{ background: 'linear-gradient(to top, rgba(15,21,33,0.7), transparent)' }} />
+                    <div className="absolute bottom-2 left-2.5 right-2.5">
+                      <div className="text-white font-semibold text-[13px] truncate">{project?.title || 'Project'}</div>
+                    </div>
                   </div>
-                </div>
-                <div className="flex flex-wrap gap-1 mb-2.5">
-                  {(u.skills || []).slice(0, 3).map((skill: string) => (
-                    <span key={skill} className="text-[9.5px] font-semibold px-1.5 py-0.5 rounded-md"
-                      style={{ background: D.accent + '18', color: D.accent }}>{skill}</span>
-                  ))}
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-[10.5px]" style={{ color: D.muted }}>
-                    <i className="fas fa-layer-group mr-1" />{u.projects.length} project{u.projects.length !== 1 ? 's' : ''}
-                  </span>
-                  <button onClick={() => onMessage(u)}
-                    className="flex items-center gap-1 text-[10.5px] font-semibold px-2 py-1 rounded-lg border-0 cursor-pointer"
-                    style={{ background: D.accent + '18', color: D.accent }}>
-                    <i className="fas fa-paper-plane text-[9px]" />Message
-                  </button>
-                </div>
 
-                {postId && (
-                  <>
-                    <div className="mt-3 pt-3" style={{ borderTop: `1px solid ${D.border}` }}>
-                      <div className="flex flex-wrap items-center gap-1.5 mb-2.5">
-                        {reactionOptions.map((emoji) => {
-                          const isActive = selectedReaction === emoji;
-                          return (
-                            <button
-                              key={emoji}
-                              onClick={() => toggleProjectReaction(postId, !!community?.likedByMe, emoji)}
-                              className="px-2 py-1 rounded-lg text-[13px] border-0 cursor-pointer transition-all"
-                              style={{
-                                background: isActive ? `${D.accent}22` : D.input,
-                                boxShadow: isActive ? `0 0 0 1px ${D.accent}` : 'none',
-                              }}
-                              title={`React with ${emoji}`}
-                            >
-                              {emoji}
-                            </button>
-                          );
-                        })}
+                  <div className="flex-1 min-w-0 p-4 rounded-b-xl md:rounded-r-xl md:rounded-bl-none" style={{ background: D.card }}>
+                    <div className="flex flex-col h-full gap-3">
+                      <div className="flex items-center gap-3">
+                        <Avatar user={u} size={7} />
+                        <div className="flex-1 min-w-0">
+                          <div className="font-semibold text-[13px] text-white truncate">{u.firstName} {u.lastName}</div>
+                          <div className="text-[11px] truncate" style={{ color: D.muted }}>{u.title}</div>
+                        </div>
                       </div>
 
-                      <div className="flex items-center justify-between gap-2 flex-wrap">
-                        <div className="flex items-center gap-2 flex-wrap">
-                          <button
-                            onClick={() => toggleProjectReaction(postId, !!community?.likedByMe, selectedReaction || '👍')}
-                            className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[10.5px] font-semibold border-0 cursor-pointer transition-all"
-                            style={{
-                              background: community?.likedByMe ? `${D.red}18` : D.input,
-                              color: community?.likedByMe ? D.red : D.muted,
-                            }}
-                          >
-                            <span>{selectedReaction || '👍'}</span>
-                            <span>{community?.likes ?? 0}</span>
-                          </button>
+                      <div className="flex flex-wrap gap-1.5">
+                        {(u.skills || []).slice(0, 4).map((skill: string) => (
+                          <span key={skill} className="text-[10px] font-semibold px-2 py-1 rounded-md"
+                            style={{ background: D.accent + '18', color: D.accent }}>{skill}</span>
+                        ))}
+                      </div>
 
-                          <span className="flex items-center gap-1.5 text-[10px]" style={{ color: D.muted }}>
-                            {reactionOptions.map((emoji) => (
-                              <span key={emoji} className="inline-flex items-center gap-1">
-                                <span>{emoji}</span>
-                                <span>{community?.reactions?.[emoji] ?? 0}</span>
+                      <div className="flex items-center justify-between gap-3 flex-wrap">
+                        <span className="text-[11px]" style={{ color: D.muted }}>
+                          <i className="fas fa-layer-group mr-1" />{u.projects.length} project{u.projects.length !== 1 ? 's' : ''}
+                        </span>
+                        <button onClick={() => onMessage(u)}
+                          className="flex items-center gap-1.5 text-[11px] font-semibold px-3 py-1.5 rounded-lg border-0 cursor-pointer shrink-0"
+                          style={{ background: D.accent + '18', color: D.accent }}>
+                          <i className="fas fa-paper-plane text-[10px]" />Message
+                        </button>
+                      </div>
+
+                      {postId && (
+                        <div className="mt-auto pt-3 space-y-3" style={{ borderTop: `1px solid ${D.border}` }}>
+                          <div className="flex flex-wrap items-center gap-2">
+                            {reactionOptions.map((emoji) => {
+                              const isActive = selectedReaction === emoji;
+                              return (
+                                <button
+                                  key={emoji}
+                                  onClick={() => toggleProjectReaction(postId, !!community?.likedByMe, emoji)}
+                                  className="px-2.5 py-1.5 rounded-lg text-[13px] border-0 cursor-pointer transition-all shrink-0"
+                                  style={{
+                                    background: isActive ? `${D.accent}22` : D.input,
+                                    boxShadow: isActive ? `0 0 0 1px ${D.accent}` : 'none',
+                                  }}
+                                  title={`React with ${emoji}`}
+                                >
+                                  {emoji}
+                                </button>
+                              );
+                            })}
+                          </div>
+
+                          <div className="flex flex-col gap-3">
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <button
+                                onClick={() => toggleProjectReaction(postId, !!community?.likedByMe, selectedReaction || '👍')}
+                                className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-[11px] font-semibold border-0 cursor-pointer transition-all shrink-0"
+                                style={{
+                                  background: community?.likedByMe ? `${D.red}18` : D.input,
+                                  color: community?.likedByMe ? D.red : D.muted,
+                                }}
+                              >
+                                <span>{selectedReaction || '👍'}</span>
+                                <span>{community?.likes ?? 0}</span>
+                              </button>
+
+                              <Link
+                                href={`/dashboard/community/post/${postId}`}
+                                className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-[11px] font-semibold no-underline transition-all shrink-0"
+                                style={{ background: D.input, color: D.muted }}
+                              >
+                                <i className="far fa-comment" />
+                                <span>{community?.commentsCount ?? 0}</span>
+                              </Link>
+
+                              <div className="relative shrink-0">
+                                <button
+                                  onClick={() => setShareMenuPostId((current) => (current === postId ? null : postId))}
+                                  className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-[11px] font-semibold border-0 cursor-pointer transition-all"
+                                  style={{ background: shared ? `${D.green}18` : `${D.accent}18`, color: shared ? D.green : D.accent }}
+                                >
+                                  <i className={`fas ${shared ? 'fa-check' : 'fa-share-nodes'}`} />
+                                  <span>{shared ? 'Copied' : 'Share'}</span>
+                                </button>
+                                {shareMenuPostId === postId && (
+                                  <>
+                                    <div className="fixed inset-0 z-100" onClick={() => setShareMenuPostId(null)} />
+                                    <div className="absolute right-0 bottom-full mb-2 z-101 rounded-2xl overflow-hidden w-45 shadow-2xl"
+                                      style={{ background: 'var(--card-bg)', border: `1px solid ${D.border}` }}>
+                                      <div className="px-3.5 py-2.5" style={{ borderBottom: `1px solid ${D.border}` }}>
+                                        <p className="text-[11px] font-semibold uppercase tracking-wide" style={{ color: D.muted }}>Share project</p>
+                                      </div>
+                                      {[
+                                        { icon: 'fa-link', label: 'Copy link', action: 'copy', color: D.accent },
+                                        { icon: 'fa-brands fa-x-twitter', label: 'X / Twitter', action: 'twitter', color: '#E2E8F0' },
+                                        { icon: 'fa-brands fa-linkedin', label: 'LinkedIn', action: 'linkedin', color: '#38BDF8' },
+                                        { icon: 'fa-brands fa-whatsapp', label: 'WhatsApp', action: 'whatsapp', color: D.green },
+                                      ].map((item) => (
+                                        <button
+                                          key={item.action}
+                                          onClick={() => handleProjectShare(postId, item.action)}
+                                          className="w-full flex items-center gap-3 px-3.5 py-2.5 text-[13px] font-medium border-0 bg-transparent cursor-pointer text-left transition-all hover:opacity-80"
+                                          style={{ color: item.color }}
+                                        >
+                                          <i className={`fas ${item.icon}`} />{item.label}
+                                        </button>
+                                      ))}
+                                    </div>
+                                  </>
+                                )}
+                              </div>
+
+                              <span className="text-[10px] ml-auto" style={{ color: D.muted }}>
+                                <i className="far fa-eye mr-1" />{community?.views ?? 0}
                               </span>
-                            ))}
-                          </span>
+                            </div>
 
-                          <Link
-                            href={`/dashboard/community/post/${postId}`}
-                            className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[10.5px] font-semibold no-underline transition-all"
-                            style={{ background: D.input, color: D.muted }}
-                          >
-                            <i className="far fa-comment" />
-                            <span>{community?.commentsCount ?? 0}</span>
-                          </Link>
-
-                          <div className="relative">
-                            <button
-                              onClick={() => setShareMenuPostId((current) => (current === postId ? null : postId))}
-                              className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[10.5px] font-semibold border-0 cursor-pointer transition-all"
-                              style={{ background: shared ? `${D.green}18` : `${D.accent}18`, color: shared ? D.green : D.accent }}
-                            >
-                              <i className={`fas ${shared ? 'fa-check' : 'fa-share-nodes'}`} />
-                              <span>{shared ? 'Copied' : 'Share'}</span>
-                            </button>
-                            {shareMenuPostId === postId && (
-                              <>
-                                <div className="fixed inset-0 z-100" onClick={() => setShareMenuPostId(null)} />
-                                <div className="absolute right-0 bottom-full mb-2 z-101 rounded-2xl overflow-hidden w-45 shadow-2xl"
-                                  style={{ background: 'var(--card-bg)', border: `1px solid ${D.border}` }}>
-                                  <div className="px-3.5 py-2.5" style={{ borderBottom: `1px solid ${D.border}` }}>
-                                    <p className="text-[11px] font-semibold uppercase tracking-wide" style={{ color: D.muted }}>Share project</p>
-                                  </div>
-                                  {[
-                                    { icon: 'fa-link', label: 'Copy link', action: 'copy', color: D.accent },
-                                    { icon: 'fa-brands fa-x-twitter', label: 'X / Twitter', action: 'twitter', color: '#E2E8F0' },
-                                    { icon: 'fa-brands fa-linkedin', label: 'LinkedIn', action: 'linkedin', color: '#38BDF8' },
-                                    { icon: 'fa-brands fa-whatsapp', label: 'WhatsApp', action: 'whatsapp', color: D.green },
-                                  ].map((item) => (
-                                    <button
-                                      key={item.action}
-                                      onClick={() => handleProjectShare(postId, item.action)}
-                                      className="w-full flex items-center gap-3 px-3.5 py-2.5 text-[13px] font-medium border-0 bg-transparent cursor-pointer text-left transition-all hover:opacity-80"
-                                      style={{ color: item.color }}
-                                    >
-                                      <i className={`fas ${item.icon}`} />{item.label}
-                                    </button>
-                                  ))}
-                                </div>
-                              </>
-                            )}
+                            <div className="flex flex-wrap gap-2 text-[10px]" style={{ color: D.muted }}>
+                              {reactionOptions.map((emoji) => (
+                                <span key={emoji} className="inline-flex items-center gap-1">
+                                  <span>{emoji}</span>
+                                  <span>{community?.reactions?.[emoji] ?? 0}</span>
+                                </span>
+                              ))}
+                            </div>
                           </div>
                         </div>
-
-                        <span className="text-[10px]" style={{ color: D.muted }}>
-                          <i className="far fa-eye mr-1" />{community?.views ?? 0}
-                        </span>
-                      </div>
+                      )}
                     </div>
-                  </>
-                )}
+                  </div>
+                </div>
               </div>
-            </div>
           );})}
         </div>
       )}
