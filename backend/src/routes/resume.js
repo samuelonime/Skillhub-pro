@@ -129,6 +129,33 @@ router.get('/ai', authenticate, async (req, res) => {
   }
 });
 
+// ── PUT /api/v1/resume/ai — update saved AI resume content ──────────────────
+router.put('/ai', authenticate, async (req, res) => {
+  const content = typeof req.body?.content === 'string' ? req.body.content.trim() : '';
+
+  if (!content) {
+    return badRequest(res, 'Resume content is required');
+  }
+
+  try {
+    const existing = await prisma.aiResume.findUnique({ where: { userId: req.user.id } });
+    if (!existing) return badRequest(res, 'No AI resume found to update');
+
+    const updated = await prisma.aiResume.update({
+      where: { userId: req.user.id },
+      data: {
+        content,
+        updatedAt: new Date(),
+      },
+    });
+
+    return success(res, updated, 'AI resume updated successfully');
+  } catch (err) {
+    console.error('AI resume update error:', err);
+    return error(res, 'Failed to update AI resume');
+  }
+});
+
 // ── POST /api/v1/resume/generate — AI resume generation using Gemini ──────────
 router.post('/generate', authenticate, async (req, res) => {
   try {

@@ -291,15 +291,15 @@ interface AiResume {
 
 function renderMarkdown(md: string): string {
   return md
-    .replace(/^## (.+)$/gm, '<h2 style="font-size:17px;font-weight:700;color:#e2e8f0;margin:20px 0 8px;border-bottom:2px solid rgba(255,255,255,0.08);padding-bottom:4px">$1</h2>')
-    .replace(/^### (.+)$/gm, '<h3 style="font-size:15px;font-weight:700;color:#cbd5e1;margin:14px 0 6px">$1</h3>')
-    .replace(/^# (.+)$/gm, '<h1 style="font-size:22px;font-weight:800;color:#f1f5f9;margin:0 0 4px">$1</h1>')
-    .replace(/\*\*(.+?)\*\*/g, '<strong style="color:#f1f5f9">$1</strong>')
-    .replace(/\*(.+?)\*/g, '<em style="color:#94a3b8">$1</em>')
-    .replace(/^\- (.+)$/gm, '<li style="margin:3px 0;color:#cbd5e1">$1</li>')
+    .replace(/^## (.+)$/gm, '<h2 style="font-size:15px;font-weight:800;color:#0f172a;margin:24px 0 10px;padding-bottom:6px;border-bottom:1px solid #cbd5e1;text-transform:uppercase;letter-spacing:0.08em">$1</h2>')
+    .replace(/^### (.+)$/gm, '<h3 style="font-size:13px;font-weight:700;color:#1e293b;margin:14px 0 6px">$1</h3>')
+    .replace(/^# (.+)$/gm, '<h1 style="font-size:28px;font-weight:800;color:#020617;margin:0 0 6px;letter-spacing:-0.03em">$1</h1>')
+    .replace(/\*\*(.+?)\*\*/g, '<strong style="color:#020617">$1</strong>')
+    .replace(/\*(.+?)\*/g, '<em style="color:#475569">$1</em>')
+    .replace(/^\- (.+)$/gm, '<li style="margin:4px 0;color:#334155">$1</li>')
     .replace(/(<li.*<\/li>)/gs, '<ul style="margin:6px 0;padding-left:20px">$1</ul>')
-    .replace(/\[(.+?)\]\((.+?)\)/g, '<a href="$2" target="_blank" style="color:#4F8EF7">$1</a>')
-    .replace(/^---$/gm, '<hr style="border:none;border-top:1px solid rgba(255,255,255,0.08);margin:12px 0">')
+    .replace(/\[(.+?)\]\((.+?)\)/g, '<a href="$2" target="_blank" style="color:#2563eb;text-decoration:none">$1</a>')
+    .replace(/^---$/gm, '<hr style="border:none;border-top:1px solid #cbd5e1;margin:12px 0">')
     .replace(/\n\n/g, '<br><br>')
     .replace(/\n/g, '<br>');
 }
@@ -348,11 +348,18 @@ export default function ResumePage() {
   const [genError, setGenError] = useState('');
   const [copied, setCopied] = useState(false);
   const [aiTab, setAiTab] = useState<'view' | 'preview'>('view');
+  const [editingAiResume, setEditingAiResume] = useState(false);
+  const [aiDraft, setAiDraft] = useState('');
+  const [savingAiResume, setSavingAiResume] = useState(false);
 
   const showToast = useCallback((msg: string, type: 'ok' | 'err' = 'ok') => {
     setToast(msg);
     setToastType(type);
   }, []);
+
+  useEffect(() => {
+    setAiDraft(aiResume?.content || '');
+  }, [aiResume?.content]);
 
   /* ── Fetch data ───────────────────────────────────────────────── */
   useEffect(() => {
@@ -490,7 +497,11 @@ export default function ResumePage() {
       const data = await r.json();
       if (data.success) {
         const ai = await apiFetch('/resume/ai');
-        if (ai.success && ai.data) setAiResume(ai.data);
+        if (ai.success && ai.data) {
+          setAiResume(ai.data);
+          setEditingAiResume(false);
+          setAiTab('preview');
+        }
         showToast('AI resume generated successfully! ✨');
       } else {
         setGenError(data.message || 'Generation failed. Please try again.');
@@ -503,43 +514,105 @@ export default function ResumePage() {
   }
 
   function copyToClipboard() {
-    if (!aiResume) return;
-    navigator.clipboard.writeText(aiResume.content);
+    if (!aiDraft) return;
+    navigator.clipboard.writeText(aiDraft);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   }
 
+  async function saveAiResumeEdits() {
+    const trimmed = aiDraft.trim();
+    if (!trimmed) {
+      showToast('Resume content cannot be empty.', 'err');
+      return;
+    }
+
+    setSavingAiResume(true);
+    try {
+      const res = await apiFetch('/resume/ai', {
+        method: 'PUT',
+        body: JSON.stringify({ content: trimmed }),
+      });
+
+      if (res.success && res.data) {
+        setAiResume(res.data);
+        setEditingAiResume(false);
+        setAiTab('preview');
+        showToast('AI resume updated successfully!');
+      } else {
+        showToast(res.message || 'Failed to save AI resume.', 'err');
+      }
+    } catch {
+      showToast('Failed to save AI resume.', 'err');
+    } finally {
+      setSavingAiResume(false);
+    }
+  }
+
   function previewResume() {
-    if (!aiResume) return;
-    const html = renderMarkdown(aiResume.content);
+    if (!aiDraft) return;
+    const html = renderMarkdown(aiDraft);
     const win = window.open('', '_blank');
     if (!win) { alert('Please allow pop-ups to preview your resume.'); return; }
     win.document.write(`<!DOCTYPE html><html><head><title>Resume Preview</title>
       <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
       <style>
-        body { font-family: Georgia, 'Times New Roman', serif; line-height: 1.7; color: #1a1a1a;
-               max-width: 800px; margin: 40px auto; padding: 0 32px; background: #fff; }
-        h1 { font-size: 26px; margin: 0 0 4px; border-bottom: 2px solid #4F8EF7; padding-bottom: 8px; }
-        h2 { font-size: 16px; color: #4F8EF7; margin: 24px 0 8px; text-transform: uppercase; letter-spacing: 0.5px; }
-        h3 { font-size: 14px; margin: 14px 0 4px; }
-        a { color: #4F8EF7; }
-        ul { margin: 6px 0; padding-left: 20px; }
-        li { margin: 3px 0; }
-        @media print { body { margin: 0; } .no-print { display: none; } }
-        .toolbar { position: fixed; top: 12px; right: 12px; }
-        .toolbar button { font-family: sans-serif; padding: 8px 16px; background: #4F8EF7; color: #fff;
-                          border: none; border-radius: 8px; cursor: pointer; font-weight: 600; }
+        * { box-sizing: border-box; }
+        body { margin: 0; background: #e2e8f0; color: #334155; }
+        .page-shell { min-height: 100vh; padding: 40px 20px; }
+        .toolbar { position: fixed; top: 16px; right: 16px; z-index: 10; }
+        .toolbar button { font-family: Arial, sans-serif; padding: 10px 18px; background: #2563eb; color: #fff;
+                          border: none; border-radius: 999px; cursor: pointer; font-weight: 700; box-shadow: 0 12px 30px rgba(37, 99, 235, 0.25); }
+        .paper { max-width: 900px; margin: 0 auto; background: #fff; border: 1px solid #dbe4f0; border-radius: 28px;
+                 box-shadow: 0 30px 90px rgba(2, 6, 23, 0.18); padding: 32px 40px; }
+        .paper-inner { max-width: 780px; margin: 0 auto; }
+        .paper-head { margin-bottom: 24px; padding-bottom: 20px; border-bottom: 1px solid #dbe4f0;
+                      display: flex; justify-content: space-between; gap: 16px; align-items: flex-start; }
+        .eyebrow { margin: 0; color: #2563eb; font: 700 11px/1.2 Arial, sans-serif; text-transform: uppercase; letter-spacing: 0.16em; }
+        .subcopy { margin: 8px 0 0; color: #64748b; font: 400 12px/1.5 Arial, sans-serif; }
+        .meta { color: #64748b; font: 400 11px/1.5 Arial, sans-serif; text-align: right; }
+        .meta strong { display: block; color: #0f172a; font-size: 13px; }
+        .content { font-family: Georgia, 'Times New Roman', serif; line-height: 1.75; color: #334155; }
+        .content h1 { font-size: 28px; font-weight: 800; color: #020617; margin: 0 0 6px; letter-spacing: -0.03em; }
+        .content h2 { font-size: 15px; font-weight: 800; color: #0f172a; margin: 24px 0 10px; padding-bottom: 6px;
+                      border-bottom: 1px solid #cbd5e1; text-transform: uppercase; letter-spacing: 0.08em; }
+        .content h3 { font-size: 13px; font-weight: 700; color: #1e293b; margin: 14px 0 6px; }
+        .content a { color: #2563eb; text-decoration: none; }
+        .content ul { margin: 6px 0; padding-left: 20px; }
+        .content li { margin: 4px 0; }
+        @page { size: A4; margin: 12mm; }
+        @media print {
+          body { background: #fff; }
+          .no-print { display: none !important; }
+          .page-shell { padding: 0; min-height: auto; }
+          .paper { max-width: none; margin: 0; border: none; border-radius: 0; box-shadow: none; padding: 0; }
+          .paper-inner { max-width: none; }
+          .content { font-size: 12pt; }
+        }
       </style></head>
       <body>
-        <div class="toolbar no-print"><button onclick="window.print()">🖨 Print / Save as PDF</button></div>
-        ${html}
+        <div class="toolbar no-print"><button onclick="window.print()">Print / Save as PDF</button></div>
+        <div class="page-shell">
+          <div class="paper">
+            <div class="paper-inner">
+              <div class="paper-head">
+                <div>
+                  <p class="eyebrow">Professional Resume</p>
+                  <p class="subcopy">Designed for recruiter review and PDF export.</p>
+                </div>
+                <div class="meta">Last updated<strong>${resumeLastUpdatedLabel}</strong></div>
+              </div>
+              <div class="content">${html}</div>
+            </div>
+          </div>
+        </div>
       </body></html>`);
     win.document.close();
   }
 
   function downloadMarkdown() {
-    if (!aiResume) return;
-    const blob = new Blob([aiResume.content], { type: 'text/markdown' });
+    if (!aiDraft) return;
+    const blob = new Blob([aiDraft], { type: 'text/markdown' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
@@ -549,8 +622,8 @@ export default function ResumePage() {
   }
 
   function downloadTxt() {
-    if (!aiResume) return;
-    const txt = aiResume.content
+    if (!aiDraft) return;
+    const txt = aiDraft
       .replace(/[#*_`]/g, '').replace(/\[(.+?)\]\(.+?\)/g, '$1').replace(/\n{3,}/g, '\n\n');
     const blob = new Blob([txt], { type: 'text/plain' });
     const url = URL.createObjectURL(blob);
@@ -577,6 +650,14 @@ export default function ResumePage() {
     const done = signals.filter(Boolean).length;
     return Math.round((done / signals.length) * 100);
   })();
+
+  const resumeLastUpdatedLabel = aiResume
+    ? new Date(aiResume.updatedAt || aiResume.generatedAt).toLocaleDateString('en-GB', {
+        day: 'numeric',
+        month: 'short',
+        year: 'numeric',
+      })
+    : '';
 
   /* ── Render ───────────────────────────────────────────────────── */
   return (
@@ -639,6 +720,15 @@ export default function ResumePage() {
                 </button>
                 {aiResume && (
                   <>
+                    <button onClick={() => {
+                      setEditingAiResume(v => !v);
+                      setAiDraft(aiResume.content);
+                      setAiTab(v => (v === 'view' ? 'preview' : v));
+                    }}
+                      className="flex items-center gap-2 px-3.5 py-2.5 rounded-xl text-[12px] font-semibold border-0 cursor-pointer transition-all hover:opacity-80"
+                      style={{ background: 'rgba(255,255,255,0.06)', color: D.text, border: `1px solid ${D.border}` }}>
+                      <i className={`fas ${editingAiResume ? 'fa-xmark' : 'fa-pen'}`} /> {editingAiResume ? 'Cancel Edit' : 'Edit'}
+                    </button>
                     <button onClick={copyToClipboard}
                       className="flex items-center gap-2 px-3.5 py-2.5 rounded-xl text-[12px] font-semibold border-0 cursor-pointer transition-all hover:opacity-80"
                       style={{ background: 'rgba(255,255,255,0.06)', color: D.text, border: `1px solid ${D.border}` }}>
@@ -680,14 +770,55 @@ export default function ResumePage() {
             ) : aiResume ? (
               <div>
                 <DataSummaryBar summary={aiResume.dataSummary} />
-                <div className="rounded-xl p-6 max-h-[600px] overflow-y-auto"
-                  style={{ background: 'rgba(255,255,255,0.03)', border: `1px solid ${D.border}` }}>
-                  <div style={{ fontFamily: '"Georgia", serif', lineHeight: 1.7, color: '#e2e8f0' }}
-                    dangerouslySetInnerHTML={{ __html: renderMarkdown(aiResume.content) }} />
-                </div>
-                <div className="mt-3 text-[11px]" style={{ color: D.muted }}>
-                  Last generated: {new Date(aiResume.generatedAt).toLocaleString()}
-                </div>
+                {editingAiResume ? (
+                  <div className="space-y-4">
+                    <div className="rounded-xl p-4" style={{ background: 'rgba(255,255,255,0.03)', border: `1px solid ${D.border}` }}>
+                      <label className="block text-[12px] font-semibold mb-2" style={{ color: D.muted }}>Edit Resume Content</label>
+                      <textarea
+                        value={aiDraft}
+                        onChange={e => setAiDraft(e.target.value)}
+                        rows={20}
+                        className="w-full rounded-xl px-4 py-3 text-[13px] font-mono outline-none resize-y"
+                        style={{ background: 'rgba(255,255,255,0.05)', border: `1px solid ${D.border}`, color: D.text, lineHeight: 1.7 }}
+                      />
+                    </div>
+                    <div className="flex items-center justify-end gap-2">
+                      <button onClick={() => { setEditingAiResume(false); setAiDraft(aiResume.content); }}
+                        className="px-4 py-2.5 rounded-xl text-[12px] font-semibold border-0 cursor-pointer"
+                        style={{ background: 'rgba(255,255,255,0.06)', color: D.text, border: `1px solid ${D.border}` }}>
+                        Discard
+                      </button>
+                      <button onClick={saveAiResumeEdits} disabled={savingAiResume}
+                        className="px-4 py-2.5 rounded-xl text-[12px] font-semibold border-0 cursor-pointer disabled:opacity-60"
+                        style={{ background: D.accent, color: '#fff' }}>
+                        {savingAiResume ? 'Saving…' : 'Save Changes'}
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <>
+                    <div className="rounded-[28px] p-6 md:p-8 max-h-[720px] overflow-y-auto shadow-[0_30px_90px_rgba(2,6,23,0.18)]"
+                      style={{ background: '#fff', border: '1px solid #dbe4f0' }}>
+                      <div className="mx-auto max-w-[780px]">
+                        <div className="mb-6 flex items-start justify-between gap-4 border-b pb-5" style={{ borderColor: '#dbe4f0' }}>
+                          <div>
+                            <p className="text-[11px] font-bold uppercase tracking-[0.16em]" style={{ color: '#2563eb' }}>Professional Resume</p>
+                            <p className="text-[12px] mt-2" style={{ color: '#64748b' }}>Designed for recruiter review and PDF export.</p>
+                          </div>
+                          <div className="text-right text-[11px]" style={{ color: '#64748b' }}>
+                            <div>Last updated</div>
+                            <div className="font-semibold" style={{ color: '#0f172a' }}>{resumeLastUpdatedLabel}</div>
+                          </div>
+                        </div>
+                        <div style={{ fontFamily: '"Georgia", "Times New Roman", serif', lineHeight: 1.75, color: '#334155' }}
+                          dangerouslySetInnerHTML={{ __html: renderMarkdown(aiDraft) }} />
+                      </div>
+                    </div>
+                    <div className="mt-3 text-[11px]" style={{ color: D.muted }}>
+                      Last generated: {new Date(aiResume.generatedAt).toLocaleString()}
+                    </div>
+                  </>
+                )}
               </div>
             ) : (
               <div className="py-12 text-center">
