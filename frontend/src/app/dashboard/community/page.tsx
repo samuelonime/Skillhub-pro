@@ -135,6 +135,11 @@ function Card({ children, className = '' }: { children: React.ReactNode; classNa
   );
 }
 
+function getNextLikeCount(currentLikes: number, currentLiked: boolean, nextLiked: boolean) {
+  if (currentLiked === nextLiked) return currentLikes;
+  return Math.max(0, currentLikes + (nextLiked ? 1 : -1));
+}
+
 /* ── Media helpers ───────────────────────────────────────────────────────── */
 function detectMediaType(url: string) {
   if (!url) return 'image';
@@ -282,19 +287,61 @@ function ActivityFeed({ currentUserId, onMessage, onEdit, refreshKey }: {
   const [loading, setLoading] = useState(true);
   const [page, setPage]       = useState(1);
   const [hasMore, setHasMore] = useState(true);
+  const [likingIds, setLikingIds] = useState<string[]>([]);
   const filter = '';
   const loaderRef             = useRef<HTMLDivElement>(null);
 
   // Like a post directly from the feed
-  function feedLike(postId: string) {
-    apiFetch(`/community/${postId}/like`, { method: 'POST' })
-      .then(r => {
-        if (r.success) setItems(prev => prev.map(it =>
+  async function feedLike(postId: string) {
+    if (likingIds.includes(postId)) return;
+
+    let previousPost: { likedByMe: boolean; likes: number } | null = null;
+
+    setLikingIds(prev => [...prev, postId]);
+    setItems(prev => prev.map(it => {
+      if (it.post?.id !== postId) return it;
+      previousPost = { likedByMe: !!it.post.likedByMe, likes: it.post.likes ?? 0 };
+      const nextLiked = !it.post.likedByMe;
+      return {
+        ...it,
+        post: {
+          ...it.post,
+          likedByMe: nextLiked,
+          likes: getNextLikeCount(it.post.likes ?? 0, !!it.post.likedByMe, nextLiked),
+        },
+      };
+    }));
+
+    try {
+      const r = await apiFetch(`/community/${postId}/like`, { method: 'POST' });
+      if (!r.success) throw new Error('Failed');
+      setItems(prev => prev.map(it =>
+        it.post?.id === postId
+          ? {
+              ...it,
+              post: {
+                ...it.post,
+                likedByMe: r.data.liked,
+                likes: getNextLikeCount(
+                  previousPost?.likes ?? it.post.likes ?? 0,
+                  previousPost?.likedByMe ?? !!it.post.likedByMe,
+                  r.data.liked,
+                ),
+              },
+            }
+          : it,
+      ));
+    } catch {
+      if (previousPost) {
+        setItems(prev => prev.map(it =>
           it.post?.id === postId
-            ? { ...it, post: { ...it.post, likedByMe: r.data.liked, likes: it.post.likes + (r.data.liked ? 1 : -1) } }
-            : it));
-      })
-      .catch(() => {});
+            ? { ...it, post: { ...it.post, ...previousPost } }
+            : it,
+        ));
+      }
+    } finally {
+      setLikingIds(prev => prev.filter(id => id !== postId));
+    }
   }
 
   // Delete a post from the feed
@@ -397,7 +444,7 @@ function ActivityFeed({ currentUserId, onMessage, onEdit, refreshKey }: {
             return (
               <PostCard key={item.id} post={item.post} onLike={feedLike}
                 onMessage={onMessage} onEdit={onEdit} onDelete={feedDelete}
-                currentUserId={currentUserId} />
+                currentUserId={currentUserId} likePending={likingIds.includes(item.post.id)} />
             );
           }
           return (
@@ -466,9 +513,10 @@ function ActivityFeed({ currentUserId, onMessage, onEdit, refreshKey }: {
 /* ═══════════════════════════════════════════════════════════════════════════ */
 
 /* ── Post card ───────────────────────────────────────────────────────────── */
-function PostCard({ post, onLike, onMessage, onEdit, onDelete, currentUserId }: {
+function PostCard({ post, onLike, onMessage, onEdit, onDelete, currentUserId, likePending }: {
   post: any; onLike: (id: string) => void; onMessage: (user: any) => void;
   onEdit: (post: any) => void; onDelete: (id: string) => void; currentUserId?: string;
+  likePending?: boolean;
 }) {
   const tm = TYPE_META[post.type] || TYPE_META.discussion;
   const [shared, setShared] = useState(false);
@@ -583,13 +631,13 @@ function PostCard({ post, onLike, onMessage, onEdit, onDelete, currentUserId }: 
       {/* Facebook-style action buttons */}
       <div className="flex items-center justify-between mt-3.5 pt-3" style={{ borderTop: `1px solid ${D.border}` }}>
         <div className="flex items-center gap-1">
-          <button onClick={() => onLike(post.id)}
-            className="flex items-center gap-2 px-4 py-2 rounded-xl font-semibold text-[14px] border-0 cursor-pointer transition-all touch-manipulation min-h-[44px]"
+          <button onClick={() => onLike(post.id)} disabled={likePending}
+            className="flex items-center gap-2 px-4 py-2 rounded-xl font-semibold text-[14px] border-0 cursor-pointer transition-all touch-manipulation min-h-[44px] disabled:opacity-60 disabled:cursor-not-allowed"
             style={{
               background: post.likedByMe ? D.red + '20' : 'transparent',
               color: post.likedByMe ? D.red : D.muted,
             }}>
-            <i className={`${post.likedByMe ? 'fas' : 'far'} fa-heart text-[18px]`} />
+            <i className={`${post.likedByMe ? 'fas' : 'far'} fa-heart text-[18px] ${likePending ? 'animate-pulse' : ''}`} />
             <span className="text-[14px]">{post.likes}</span>
           </button>
 
