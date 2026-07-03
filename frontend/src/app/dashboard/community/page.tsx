@@ -599,7 +599,10 @@ function PostCard({ post, onLike, onMessage, onEdit, onDelete, currentUserId, li
             style={{ color: 'rgba(255,255,255,0.95)' }}>
             {post.title}
           </h3>
-          <p className="text-[15px] leading-relaxed line-clamp-4" style={{ color: D.subtext }}>{post.body}</p>
+          <p className="text-[15px] leading-relaxed line-clamp-4"
+            style={{ color: post.type === 'discussion' || post.type === 'project' ? '#000000' : D.subtext }}>
+            {post.body}
+          </p>
         </Link>
 
         {mediaUrl && (
@@ -1131,7 +1134,7 @@ function PortfolioSpotlights({ onMessage }: { onMessage: (u: any) => void }) {
                           <h4 className="font-jakarta font-bold text-[16px] leading-snug text-white mb-1 truncate">
                             {project?.title || 'Project'}
                           </h4>
-                          <p className="text-[13px] leading-relaxed line-clamp-3" style={{ color: D.subtext }}>
+                          <p className="text-[13px] leading-relaxed line-clamp-3" style={{ color: '#000000' }}>
                             {project?.description || community?.title || 'Shared community project'}
                           </p>
                         </Link>
