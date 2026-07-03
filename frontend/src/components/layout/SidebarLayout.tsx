@@ -332,12 +332,12 @@ export function SidebarLayout({ children, navItems, pageTitle }: SidebarLayoutPr
   const isEmployer = pathname?.startsWith('/employer') || false;
 
   const isItemActive = useCallback((item: NavItem): boolean => {
-    if (item.children) return item.children.some(isItemActive);
+    if (item.children) return item.children.some(child => isItemActive(child));
     if (!item.href) return false;
     return item.href === '/dashboard' || item.href === '/employer'
       ? pathname === item.href
-      : pathname === item.href || pathname?.startsWith(item.href + '/');
-  }, [pathname]);
+      : pathname === item.href || (!!pathname && pathname.startsWith(item.href + '/'));
+  }, [pathname]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     const updates: Record<string, boolean> = {};

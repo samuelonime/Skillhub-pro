@@ -8,6 +8,34 @@ import { BrandIcon } from '@/components/ui/BrandIcon';
 
 function Sk({h='h-4',w='w-full',r='rounded'}:any){return <div className={`${h} ${w} ${r} animate-pulse`} style={{background:'rgba(255,255,255,0.06)'}}/>;}
 
+function NotificationToggle({ label, desc, defaultOn }: { label: string; desc: string; defaultOn: boolean }) {
+  const [on, setOn] = useState(defaultOn);
+  return (
+    <div className="flex items-center justify-between py-4">
+      <div>
+        <div className="text-[13.5px] font-semibold" style={{color:'rgba(255,255,255,0.85)'}}>{label}</div>
+        <div className="text-[12px]" style={{color:'rgba(255,255,255,0.45)'}}>{desc}</div>
+      </div>
+      <button
+        id={`notification-${label.toLowerCase().replace(/\s/g, '-')}`}
+        name={`notification_${label.toLowerCase().replace(/\s/g, '_')}`}
+        onClick={() => setOn(v => !v)}
+        className={`w-11 h-6 rounded-full relative transition-colors flex-shrink-0 border-0 cursor-pointer ${on ? 'bg-[#4F8EF7]' : 'bg-[rgba(255,255,255,0.1)]'}`}
+      >
+        <div className={`w-4 h-4 rounded-full bg-white shadow absolute top-1 transition-all ${on ? 'right-1' : 'left-1'}`} />
+      </button>
+    </div>
+  );
+}
+
+const NOTIFICATION_ITEMS = [
+  { label: 'New applicant',    desc: 'Get notified when someone applies to your job',     defaultOn: true  },
+  { label: 'Status updates',   desc: "Alerts when an applicant's application changes",    defaultOn: true  },
+  { label: 'Job expiring',     desc: 'Reminder when a job post is about to close',        defaultOn: true  },
+  { label: 'Weekly digest',    desc: 'Summary of your hiring activity every Monday',      defaultOn: false },
+  { label: 'Platform updates', desc: 'News about new SkillHub features and improvements', defaultOn: false },
+];
+
 function InputField({id, name, label, value, onChange, type='text', placeholder='', disabled=false}:any){
   const fieldId = id || name || label?.toLowerCase().replace(/\s/g, '-') || 'field';
   const fieldName = name || id || label?.toLowerCase().replace(/\s/g, '_') || 'field';
@@ -252,31 +280,9 @@ export default function SettingsPage(){
               <h2 className="font-jakarta font-bold text-[16px] mb-1" style={{color:'rgba(255,255,255,0.85)'}}>Notification Preferences</h2>
               <p className="text-[13px] mb-5" style={{color:'rgba(255,255,255,0.45)'}}>Choose what alerts you receive.</p>
               <div className="flex flex-col gap-0 divide-y" style={{borderColor:'rgba(255,255,255,0.06)'}}>
-                {[
-                  {label:'New applicant',    desc:'Get notified when someone applies to your job',      default:true },
-                  {label:'Status updates',   desc:'Alerts when an applicant\'s application changes',    default:true },
-                  {label:'Job expiring',     desc:'Reminder when a job post is about to close',         default:true },
-                  {label:'Weekly digest',    desc:'Summary of your hiring activity every Monday',       default:false},
-                  {label:'Platform updates', desc:'News about new SkillHub features and improvements',  default:false},
-                ].map(n=>{
-                  const [on,setOn]=useState(n.default);
-                  return (
-                    <div key={n.label} className="flex items-center justify-between py-4">
-                      <div>
-                        <div className="text-[13.5px] font-semibold" style={{color:'rgba(255,255,255,0.85)'}}>{n.label}</div>
-                        <div className="text-[12px]" style={{color:'rgba(255,255,255,0.45)'}}>{n.desc}</div>
-                      </div>
-                      <button 
-                        id={`notification-${n.label.toLowerCase().replace(/\s/g, '-')}`}
-                        name={`notification_${n.label.toLowerCase().replace(/\s/g, '_')}`}
-                        onClick={()=>setOn(v=>!v)} 
-                        className={`w-11 h-6 rounded-full relative transition-colors flex-shrink-0 border-0 cursor-pointer ${on?'bg-[#4F8EF7]':'bg-[rgba(255,255,255,0.1)]'}`}
-                      >
-                        <div className={`w-4 h-4 rounded-full bg-white shadow absolute top-1 transition-all ${on?'right-1':'left-1'}`}/>
-                      </button>
-                    </div>
-                  );
-                })}
+                {NOTIFICATION_ITEMS.map(n => (
+                  <NotificationToggle key={n.label} label={n.label} desc={n.desc} defaultOn={n.defaultOn} />
+                ))}
               </div>
               <div className="pt-4" style={{borderTop:'1px solid rgba(255,255,255,0.06)'}}>
                 <button onClick={()=>showToast('Notification preferences saved!')} 

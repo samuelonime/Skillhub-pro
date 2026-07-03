@@ -28,27 +28,6 @@ function CallbackContent() {
   const [plan,     setPlan]    = useState('');
   const [provider, setProvider] = useState<'paystack' | 'paypal' | null>(null);
 
-  useEffect(() => {
-    // User cancelled from PayPal — show friendly message
-    if (cancelled === '1') {
-      setStatus('failed');
-      setMessage('Payment was cancelled. No charge was made.');
-      return;
-    }
-
-    if (paystackRef) {
-      setProvider('paystack');
-      verifyPaystack(paystackRef);
-    } else if (paypalToken) {
-      setProvider('paypal');
-      capturePayPal(paypalToken);
-    } else {
-      setStatus('failed');
-      setMessage('No payment reference found. Please try again.');
-    }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
   async function verifyPaystack(reference: string) {
     try {
       const res = await apiFetch(`/payment/verify/${reference}`, { method: 'POST' });
@@ -89,6 +68,27 @@ function CallbackContent() {
     setMessage('Payment confirmed! Your subscription is now active.');
     setTimeout(() => router.push('/employer'), 3000);
   }
+
+  useEffect(() => {
+    // User cancelled from PayPal — show friendly message
+    if (cancelled === '1') {
+      setStatus('failed');
+      setMessage('Payment was cancelled. No charge was made.');
+      return;
+    }
+
+    if (paystackRef) {
+      setProvider('paystack');
+      verifyPaystack(paystackRef);
+    } else if (paypalToken) {
+      setProvider('paypal');
+      capturePayPal(paypalToken);
+    } else {
+      setStatus('failed');
+      setMessage('No payment reference found. Please try again.');
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const icons: Record<string, string> = {
     verifying: 'fa-spinner fa-spin',

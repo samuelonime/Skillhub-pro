@@ -127,7 +127,7 @@ export function PostCard({ post, onRefresh, isLoggedIn }: {
     }
   }
 
-  const totalLikes = Object.values(reactions).reduce((a: any, b: any) => a + b, 0);
+  const totalLikes = (Object.values(reactions) as number[]).reduce((a, b) => a + b, 0);
 
   return (
     <div style={{ background: D.card, border: `1px solid ${D.border}` }} className="rounded-2xl p-5 mb-4">

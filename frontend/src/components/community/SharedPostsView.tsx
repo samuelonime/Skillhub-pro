@@ -22,10 +22,6 @@ export function SharedPostsView({ userId, isLoggedIn }: {
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
 
-  useEffect(() => {
-    loadShares();
-  }, [page]);
-
   async function loadShares() {
     try {
       setLoading(true);
@@ -34,7 +30,7 @@ export function SharedPostsView({ userId, isLoggedIn }: {
         if (page === 1) {
           setShares(res.data.shares || []);
         } else {
-          setShares([...shares, ...res.data.shares]);
+          setShares(prev => [...prev, ...res.data.shares]);
         }
         setHasMore(page < res.data.pages);
       }
@@ -44,6 +40,11 @@ export function SharedPostsView({ userId, isLoggedIn }: {
       setLoading(false);
     }
   }
+
+  useEffect(() => {
+    loadShares();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [page]);
 
   if (loading && page === 1) {
     return <div style={{ color: D.subtext }} className="text-center py-8">Loading shared posts...</div>;
