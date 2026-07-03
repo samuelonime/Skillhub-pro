@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import { useState, useEffect, useRef } from 'react';
 import { SidebarLayout } from '@/components/layout/SidebarLayout';
 import { apiFetch } from '@/lib/api';
@@ -387,11 +388,12 @@ function CommunityVisibilityBanner({ portfolioPublic, onToggle, sharedCount, tot
 /* ── Main Page ──────────────────────────────────────────────────────────── */
 export default function PortfolioPage() {
   const [data, setData]               = useState<any>(null);
+  const [resumeSummary, setResumeSummary] = useState<any>(null);
   const [loading, setLoading]         = useState(true);
   const [modal, setModal]             = useState<any>(null);
   const [toast, setToast]             = useState('');
   const [toastType, setToastType]     = useState<'success'|'info'>('success');
-  const [activeTab, setActiveTab]     = useState<'projects' | 'skills' | 'certificates'>('projects');
+  const [activeTab, setActiveTab]     = useState<'projects' | 'skills'>('projects');
   const [editingSkills, setEditingSkills] = useState(false);
   const [skillInput, setSkillInput]   = useState('');
   const [skills, setSkills]           = useState<string[]>([]);
@@ -401,13 +403,18 @@ export default function PortfolioPage() {
   async function load() {
     setLoading(true);
     try {
-      const res = await apiFetch('/portfolio');
-      if (res.success) {
-        setData(res.data);
-        setSkills(res.data.user?.skills || []);
-        savedSkillsRef.current = res.data.user?.skills || [];
-        setPortfolioPublic(res.data.user?.portfolioPublic ?? false);
+      const [portfolioRes, resumeRes] = await Promise.all([
+        apiFetch('/portfolio'),
+        apiFetch('/resume'),
+      ]);
+
+      if (portfolioRes.success) {
+        setData(portfolioRes.data);
+        setSkills(portfolioRes.data.user?.skills || []);
+        savedSkillsRef.current = portfolioRes.data.user?.skills || [];
+        setPortfolioPublic(portfolioRes.data.user?.portfolioPublic ?? false);
       }
+      setResumeSummary(resumeRes.success ? (resumeRes.data || null) : null);
     } catch {}
     finally { setLoading(false); }
   }
@@ -534,9 +541,97 @@ export default function PortfolioPage() {
         totalCount={projects.length}
       />
 
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-6">
+        <div className="rounded-2xl p-5" style={{ background: 'var(--card-bg)', border: '1px solid var(--card-border)' }}>
+          <div className="flex items-start justify-between gap-3 mb-4">
+            <div>
+              <h3 className="font-jakarta font-bold text-[15px]" style={{ color: 'var(--text-body)' }}>Resume</h3>
+              <p className="text-[12px] mt-1" style={{ color: 'var(--text-faint)' }}>Keep your uploaded resume close to your portfolio assets.</p>
+            </div>
+            <div className="w-11 h-11 rounded-xl grid place-items-center text-lg" style={{ background: 'rgba(79,142,247,0.12)', color: '#4F8EF7' }}>
+              <i className="fas fa-file-lines" />
+            </div>
+          </div>
+
+          {resumeSummary ? (
+            <>
+              <div className="rounded-xl px-4 py-3 mb-4" style={{ background: 'var(--surface-soft)', border: '1px solid var(--border-subtle)' }}>
+                <div className="font-semibold text-[13px] truncate" style={{ color: 'var(--text-body)' }}>{resumeSummary.fileName}</div>
+                <div className="text-[11px] mt-1" style={{ color: 'var(--text-faint)' }}>
+                  Updated {new Date(resumeSummary.updatedAt).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}
+                </div>
+              </div>
+              <div className="flex items-center gap-2 flex-wrap">
+                <Link href="/dashboard/resume" className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold no-underline"
+                  style={{ background: '#4F8EF7', color: '#FFFFFF' }}>
+                  <i className="fas fa-eye" />Open Resume
+                </Link>
+                <a href={resumeSummary.fileUrl} target="_blank" rel="noreferrer"
+                  className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold no-underline"
+                  style={{ background: 'var(--surface-soft)', color: 'var(--text-body)', border: '1px solid var(--card-border)' }}>
+                  <i className="fas fa-download" />Download
+                </a>
+              </div>
+            </>
+          ) : (
+            <>
+              <div className="rounded-xl px-4 py-4 mb-4" style={{ background: 'var(--surface-soft)', border: '1px solid var(--border-subtle)' }}>
+                <p className="text-[13px]" style={{ color: 'var(--text-faint)' }}>No resume uploaded yet. Add one so employers can review it alongside your portfolio.</p>
+              </div>
+              <Link href="/dashboard/resume" className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold no-underline"
+                style={{ background: '#4F8EF7', color: '#FFFFFF' }}>
+                <i className="fas fa-upload" />Go To Resume
+              </Link>
+            </>
+          )}
+        </div>
+
+        <div className="rounded-2xl p-5" style={{ background: 'var(--card-bg)', border: '1px solid var(--card-border)' }}>
+          <div className="flex items-start justify-between gap-3 mb-4">
+            <div>
+              <h3 className="font-jakarta font-bold text-[15px]" style={{ color: 'var(--text-body)' }}>Certificates</h3>
+              <p className="text-[12px] mt-1" style={{ color: 'var(--text-faint)' }}>Your certifications now live alongside projects in one portfolio workspace.</p>
+            </div>
+            <div className="w-11 h-11 rounded-xl grid place-items-center text-lg" style={{ background: 'rgba(245,158,11,0.12)', color: '#F59E0B' }}>
+              <i className="fas fa-certificate" />
+            </div>
+          </div>
+
+          {certificates.length > 0 ? (
+            <>
+              <div className="space-y-2.5 mb-4">
+                {certificates.slice(0, 3).map((cert: any) => (
+                  <div key={cert.id} className="rounded-xl px-4 py-3" style={{ background: 'var(--surface-soft)', border: '1px solid var(--border-subtle)' }}>
+                    <div className="font-semibold text-[13px] truncate" style={{ color: 'var(--text-body)' }}>{cert.title}</div>
+                    <div className="text-[11px] mt-1" style={{ color: 'var(--text-faint)' }}>{cert.issuer || cert.course?.title}</div>
+                  </div>
+                ))}
+              </div>
+              <div className="flex items-center gap-2 flex-wrap">
+                <Link href="/dashboard/certificates" className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold no-underline"
+                  style={{ background: '#4F8EF7', color: '#FFFFFF' }}>
+                  <i className="fas fa-eye" />View Certificates
+                </Link>
+                <span className="text-[12px] font-medium" style={{ color: 'var(--text-faint)' }}>{certificates.length} total certificates</span>
+              </div>
+            </>
+          ) : (
+            <>
+              <div className="rounded-xl px-4 py-4 mb-4" style={{ background: 'var(--surface-soft)', border: '1px solid var(--border-subtle)' }}>
+                <p className="text-[13px]" style={{ color: 'var(--text-faint)' }}>No certificates yet. Completed courses will appear here automatically.</p>
+              </div>
+              <Link href="/dashboard/courses" className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold no-underline"
+                style={{ background: '#4F8EF7', color: '#FFFFFF' }}>
+                <i className="fas fa-book-open" />Browse Courses
+              </Link>
+            </>
+          )}
+        </div>
+      </div>
+
       {/* Tabs */}
       <div className="flex gap-1 p-1 rounded-xl w-fit mb-6" style={{ background: 'var(--surface-soft)', border: '1px solid var(--border-subtle)' }}>
-        {(['projects', 'skills', 'certificates'] as const).map(t => (
+        {(['projects', 'skills'] as const).map(t => (
           <button key={t} onClick={() => setActiveTab(t)}
             className={`px-5 py-2 rounded-[9px] text-sm font-medium font-[inherit] cursor-pointer capitalize transition-all border-0 ${
               activeTab === t 
@@ -676,34 +771,6 @@ export default function PortfolioPage() {
         </div>
       )}
 
-      {/* Certificates Tab */}
-      {activeTab === 'certificates' && (
-        <div>
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="font-jakarta font-bold text-[15px]" style={{ color: 'var(--text-body)' }}>Earned Certificates</h2>
-            <a href="/dashboard/certificates" className="text-xs font-semibold px-3 py-1.5 rounded-lg no-underline transition-all" style={{ background: 'var(--surface-soft)', color: '#4F8EF7', border: '1px solid var(--card-border)' }}>View all</a>
-          </div>
-          {certificates.length === 0 ? (
-            <div className="rounded-2xl p-12 text-center" style={{ background: 'var(--card-bg)', border: '1px solid var(--card-border)' }}>
-              <i className="fas fa-certificate text-4xl mb-4 block" style={{ color: '#F59E0B' }} />
-              <h3 className="font-jakarta font-bold text-[15px] mb-2" style={{ color: 'rgba(255,255,255,0.85)' }}>No certificates yet</h3>
-              <p className="text-sm mb-5" style={{ color: 'var(--text-faint)' }}>Complete courses to earn certificates that display here.</p>
-              <a href="/dashboard/courses" className="inline-flex items-center gap-2 px-5 py-2.5 text-white rounded-xl text-sm font-semibold no-underline transition-all" style={{ background: '#4F8EF7' }}>Browse Courses</a>
-            </div>
-          ) : (
-            <div className="grid grid-cols-3 gap-4 max-md:grid-cols-1">
-              {certificates.map((cert: any) => (
-                <div key={cert.id} className="rounded-2xl p-5 transition-all" style={{ background: 'var(--card-bg)', border: '1px solid var(--card-border)' }}>
-                  <div className="w-12 h-12 rounded-xl grid place-items-center text-2xl mb-3" style={{ background: 'rgba(245,158,11,0.1)' }}>🏆</div>
-                  <h3 className="font-jakarta font-bold text-[14px] mb-0.5" style={{ color: 'var(--text-body)' }}>{cert.title}</h3>
-                  <p className="text-xs mb-3" style={{ color: 'var(--text-faint)' }}>{cert.issuer || cert.course?.title}</p>
-                  <div className="text-[11px]" style={{ color: 'rgba(255,255,255,0.35)' }}>{cert.issuedAt ? new Date(cert.issuedAt).toLocaleDateString() : ''}</div>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-      )}
     </SidebarLayout>
   );
 }

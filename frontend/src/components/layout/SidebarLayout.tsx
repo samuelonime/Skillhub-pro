@@ -44,6 +44,8 @@ interface SidebarLayoutProps {
   pageTitle: string;
 }
 
+const HIDDEN_DASHBOARD_NAV_HREFS = new Set(['/dashboard/resume', '/dashboard/certificates']);
+
 const NOTIF_ICON: Record<string, { icon: string; color: string }> = {
   success:            { icon: 'fa-check-circle', color: '#00E5A0' },
   book:               { icon: 'fa-book-open', color: '#4F8EF7' },
@@ -329,6 +331,17 @@ export function SidebarLayout({ children, navItems, pageTitle }: SidebarLayoutPr
   const profileRef = useRef<HTMLDivElement>(null);
   const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({});
 
+  const visibleNavItems = navItems
+    .filter(item => !item.href || !HIDDEN_DASHBOARD_NAV_HREFS.has(item.href))
+    .map(item => item.children
+      ? {
+          ...item,
+          children: item.children.filter(child => !child.href || !HIDDEN_DASHBOARD_NAV_HREFS.has(child.href)),
+        }
+      : item,
+    )
+    .filter(item => !item.children || item.children.length > 0);
+
   const isEmployer = pathname?.startsWith('/employer') || false;
 
   const isItemActive = useCallback((item: NavItem): boolean => {
@@ -341,7 +354,7 @@ export function SidebarLayout({ children, navItems, pageTitle }: SidebarLayoutPr
 
   useEffect(() => {
     const updates: Record<string, boolean> = {};
-    navItems.forEach(item => {
+    visibleNavItems.forEach(item => {
       if (item.children && item.children.some(isItemActive)) {
         updates[item.label] = true;
       }
@@ -349,7 +362,7 @@ export function SidebarLayout({ children, navItems, pageTitle }: SidebarLayoutPr
     if (Object.keys(updates).length) {
       setOpenGroups(prev => ({ ...prev, ...updates }));
     }
-  }, [isItemActive, navItems]);
+  }, [isItemActive, visibleNavItems]);
 
   useEffect(() => {
     const handleResize = () => {
@@ -422,7 +435,7 @@ export function SidebarLayout({ children, navItems, pageTitle }: SidebarLayoutPr
         <div className="flex-1 overflow-y-auto" style={{ scrollbarWidth: 'thin', scrollbarColor: 'var(--scroll-thumb) transparent' }}>
           <nav className="p-3">
             <div className="text-[9px] font-bold uppercase tracking-[0.15em] px-3 mb-2" style={{ color: 'var(--text-ghost)' }}>Navigation</div>
-            {navItems.map(item => {
+            {visibleNavItems.map(item => {
               if (item.children) {
                 const groupActive = item.children.some(isItemActive);
                 const isOpen = !!openGroups[item.label];
