@@ -40,35 +40,65 @@ const PLATFORMS: Record<string, { color: string; logo: string; bg: string }> = {
   'Frontend Masters':{ color: '#e8403a', bg: '#1A0A0A', logo: 'https://frontendmasters.com/static/favicon-32x32.png' },
   AWS:              { color: '#ff9900', bg: '#1A1200', logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/9/93/Amazon_Web_Services_Logo.svg/800px-Amazon_Web_Services_Logo.svg.png' },
 };
+const PLATFORM_ALIASES: Record<string, keyof typeof PLATFORMS> = {
+  local: 'Udemy',
+  meritlives: 'Coursera',
+  'figma academy': 'Skillshare',
+  figma: 'Skillshare',
+  'amazon web services': 'AWS',
+  aws: 'AWS',
+  udemy: 'Udemy',
+  coursera: 'Coursera',
+  edx: 'edX',
+  'linkedin learning': 'LinkedIn Learning',
+  pluralsight: 'Pluralsight',
+  skillshare: 'Skillshare',
+  'frontend masters': 'Frontend Masters',
+};
+
+const REALISTIC_THUMBNAILS: Record<string, string> = {
+  aws: 'https://images.unsplash.com/photo-1451187580459-43490279c0fa?auto=format&fit=crop&w=900&q=80',
+  cloud: 'https://images.unsplash.com/photo-1451187580459-43490279c0fa?auto=format&fit=crop&w=900&q=80',
+  devops: 'https://images.unsplash.com/photo-1667372393119-3d4c48d07fc9?auto=format&fit=crop&w=900&q=80',
+  react: 'https://images.unsplash.com/photo-1555066931-4365d14bab8c?auto=format&fit=crop&w=900&q=80',
+  javascript: 'https://images.unsplash.com/photo-1555066931-4365d14bab8c?auto=format&fit=crop&w=900&q=80',
+  typescript: 'https://images.unsplash.com/photo-1515879218367-8466d910aaa4?auto=format&fit=crop&w=900&q=80',
+  nextjs: 'https://images.unsplash.com/photo-1498050108023-c5249f4df085?auto=format&fit=crop&w=900&q=80',
+  html: 'https://images.unsplash.com/photo-1498050108023-c5249f4df085?auto=format&fit=crop&w=900&q=80',
+  css: 'https://images.unsplash.com/photo-1498050108023-c5249f4df085?auto=format&fit=crop&w=900&q=80',
+  node: 'https://images.unsplash.com/photo-1558494949-ef010cbdcc31?auto=format&fit=crop&w=900&q=80',
+  python: 'https://images.unsplash.com/photo-1526379095098-d400fd0bf935?auto=format&fit=crop&w=900&q=80',
+  django: 'https://images.unsplash.com/photo-1526379095098-d400fd0bf935?auto=format&fit=crop&w=900&q=80',
+  api: 'https://images.unsplash.com/photo-1558494949-ef010cbdcc31?auto=format&fit=crop&w=900&q=80',
+  data: 'https://images.unsplash.com/photo-1551288049-bebda4e38f71?auto=format&fit=crop&w=900&q=80',
+  sql: 'https://images.unsplash.com/photo-1551288049-bebda4e38f71?auto=format&fit=crop&w=900&q=80',
+  'machine learning': 'https://images.unsplash.com/photo-1555255707-c07966088b7b?auto=format&fit=crop&w=900&q=80',
+  ai: 'https://images.unsplash.com/photo-1555255707-c07966088b7b?auto=format&fit=crop&w=900&q=80',
+  security: 'https://images.unsplash.com/photo-1563986768494-4dee2763ff3f?auto=format&fit=crop&w=900&q=80',
+  ethical: 'https://images.unsplash.com/photo-1563986768494-4dee2763ff3f?auto=format&fit=crop&w=900&q=80',
+  ui: 'https://images.unsplash.com/photo-1586717791821-3f44a563fa4c?auto=format&fit=crop&w=900&q=80',
+  ux: 'https://images.unsplash.com/photo-1586717791821-3f44a563fa4c?auto=format&fit=crop&w=900&q=80',
+  figma: 'https://images.unsplash.com/photo-1581291518857-4e27b48ff24e?auto=format&fit=crop&w=900&q=80',
+  flutter: 'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?auto=format&fit=crop&w=900&q=80',
+  'react native': 'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?auto=format&fit=crop&w=900&q=80',
+};
+
+const CATEGORY_LANDING_COPY: Record<string, { eyebrow: string; outcome: string; audience: string; includes: string[] }> = {
+  frontend: { eyebrow: 'Build production interfaces', outcome: 'Ship responsive apps with modern component patterns.', audience: 'Frontend developers', includes: ['Portfolio project', 'Code reviews', 'UI patterns'] },
+  backend: { eyebrow: 'Design reliable services', outcome: 'Create APIs, data models, auth flows, and scalable backend systems.', audience: 'Backend engineers', includes: ['API project', 'Database design', 'Deployment flow'] },
+  cloud: { eyebrow: 'Launch cloud-ready systems', outcome: 'Understand infrastructure, deployment, monitoring, and cloud operations.', audience: 'Cloud learners', includes: ['Cloud labs', 'Architecture demos', 'Ops checklist'] },
+  data: { eyebrow: 'Turn data into decisions', outcome: 'Analyze datasets, build models, and communicate insights clearly.', audience: 'Data professionals', includes: ['Notebook labs', 'Dashboards', 'Model workflow'] },
+  security: { eyebrow: 'Protect modern systems', outcome: 'Learn threat modeling, secure habits, and defensive workflows.', audience: 'Security learners', includes: ['Risk labs', 'Secure checklist', 'Incident basics'] },
+  design: { eyebrow: 'Craft usable experiences', outcome: 'Research, prototype, and present polished product flows.', audience: 'Product designers', includes: ['Figma files', 'UX critique', 'Prototype sprint'] },
+  mobile: { eyebrow: 'Build for every screen', outcome: 'Create polished mobile flows with practical app architecture.', audience: 'Mobile builders', includes: ['App screens', 'State patterns', 'Release prep'] },
+  default: { eyebrow: 'Career-ready skill path', outcome: 'Practice job-relevant skills through lessons, demos, and projects.', audience: 'Skill builders', includes: ['Guided lessons', 'Hands-on project', 'Certificate prep'] },
+};
 
 // ── Real thumbnail sources mapped to course themes ───────────────────────────
 // Prefer upstream API thumbnails first. When a course is missing one, fall back
 // to a curated set of stable editorial images before ever showing the generic card.
 const KEYWORD_THUMBNAILS: Record<string, string> = {
-  aws: '/course-covers/cloud.svg',
-  cloud: '/course-covers/cloud.svg',
-  devops: '/course-covers/cloud.svg',
-  react: '/course-covers/frontend.svg',
-  javascript: '/course-covers/frontend.svg',
-  typescript: '/course-covers/frontend.svg',
-  nextjs: '/course-covers/frontend.svg',
-  html: '/course-covers/frontend.svg',
-  css: '/course-covers/frontend.svg',
-  node: '/course-covers/backend.svg',
-  python: '/course-covers/backend.svg',
-  django: '/course-covers/backend.svg',
-  api: '/course-covers/backend.svg',
-  data: '/course-covers/data.svg',
-  sql: '/course-covers/data.svg',
-  'machine learning': '/course-covers/data.svg',
-  ai: '/course-covers/data.svg',
-  security: '/course-covers/security.svg',
-  ethical: '/course-covers/security.svg',
-  ui: '/course-covers/design.svg',
-  ux: '/course-covers/design.svg',
-  figma: '/course-covers/design.svg',
-  flutter: '/course-covers/mobile.svg',
-  'react native': '/course-covers/mobile.svg',
+  ...REALISTIC_THUMBNAILS,
 };
 
 const CATEGORY_THUMBNAILS: Record<string, string> = {
@@ -127,6 +157,33 @@ function isAllowedCourseImageUrl(value: string) {
 function uniqueUrls(values: string[]) {
   return [...new Set(values.filter(Boolean))];
 }
+function getCoursePlatform(course: any) {
+  const raw = String(course.platform || course.provider || course.source || '').trim();
+  const alias = PLATFORM_ALIASES[raw.toLowerCase()];
+  return alias || raw || 'Skillhub';
+}
+
+function getCourseAccent(course: any) {
+  const platform = getCoursePlatform(course);
+  return PLATFORMS[platform] || { color: '#4F8EF7', bg: '#0A1628', logo: '' };
+}
+
+function formatDuration(value: unknown) {
+  if (!value) return '';
+  const text = String(value).trim();
+  return /h|hour|min/i.test(text) ? text : `${text}h`;
+}
+
+function getLandingCopy(course: any) {
+  const key = String(course.category || '').toLowerCase();
+  return CATEGORY_LANDING_COPY[key] || CATEGORY_LANDING_COPY.default;
+}
+
+function getLearnerCount(course: any) {
+  const value = course.students ?? course.enrollCount ?? course.enrollmentCount ?? course.learners;
+  const number = Number(value);
+  return Number.isFinite(number) && number > 0 ? number.toLocaleString() : null;
+}
 
 function getThumbnailCandidates(course: any): string[] {
   const directCandidates = [
@@ -138,7 +195,7 @@ function getThumbnailCandidates(course: any): string[] {
     course.bannerImage,
   ].filter(isUsableImageUrl).filter(isAllowedCourseImageUrl);
 
-  const haystack = [course.title, course.category, course.description, course.platform, course.source]
+  const haystack = [course.title, course.category, course.description, course.platform, course.provider, course.source]
     .filter(Boolean)
     .join(' ')
     .toLowerCase();
@@ -148,7 +205,7 @@ function getThumbnailCandidates(course: any): string[] {
     .map(([, url]) => url);
 
   const categoryKey = String(course.category || '').toLowerCase();
-  const platformKey = String(course.platform || course.source || '').toLowerCase();
+  const platformKey = String(getCoursePlatform(course)).toLowerCase();
 
   return uniqueUrls([
     ...directCandidates,
@@ -212,8 +269,8 @@ function CourseThumbnail({ course }: { course: any }) {
   const [sourceIndex, setSourceIndex] = useState(0);
   const sources = getThumbnailCandidates(course);
   const src = sources[sourceIndex];
-  const platform = course.platform || course.source || '';
-  const cfg = PLATFORMS[platform] || { color: '#4F8EF7', bg: '#0A1628' };
+  const platform = getCoursePlatform(course);
+  const cfg = getCourseAccent(course);
 
   useEffect(() => {
     setLoaded(false);
@@ -302,7 +359,7 @@ function CourseThumbnail({ course }: { course: any }) {
         <div className="absolute bottom-2 right-2.5 z-20 text-[10px] font-semibold px-1.5 py-0.5 rounded"
           style={{ background: 'rgba(0,0,0,0.75)', color: 'rgba(255,255,255,0.8)', backdropFilter: 'blur(4px)' }}>
           <i className="fas fa-clock mr-1 text-[9px]" />
-          {course.duration}h
+          {formatDuration(course.duration)}
         </div>
       )}
     </div>
@@ -316,115 +373,106 @@ function CourseCard({ course, onEnroll, enrolling }: {
   enrolling: boolean;
 }) {
   const [hovered, setHovered] = useState(false);
-  const platform = course.platform || course.source || '';
-  const cfg = PLATFORMS[platform] || { color: '#4F8EF7', bg: '#0A1628' };
+  const platform = getCoursePlatform(course);
+  const cfg = getCourseAccent(course);
   const isEnrolled = course.enrolled || course.isEnrolled;
+  const copy = getLandingCopy(course);
+  const learnerCount = getLearnerCount(course);
+  const instructorName = typeof course.instructor === 'string'
+    ? course.instructor
+    : (course.instructor?.name || course.instructor?.fullName || `${platform} instructors`);
+  const price = course.price ? String(course.price) : (course.isPremium ? 'Pro' : 'Free preview');
 
   return (
     <div
-      className="group rounded-2xl overflow-hidden flex flex-col cursor-pointer relative"
+      className="group overflow-hidden flex flex-col cursor-pointer relative"
       style={{
-        background: '#0C1220',
-        border: `1px solid ${hovered ? cfg.color + '50' : 'rgba(255,255,255,0.08)'}`,
-        boxShadow: hovered ? `0 20px 50px rgba(0,0,0,0.5), 0 0 0 1px ${cfg.color}25` : '0 4px 16px rgba(0,0,0,0.3)',
+        minHeight: 520,
+        background: `linear-gradient(180deg, rgba(12,18,32,0.98), ${cfg.bg} 145%)`,
+        border: `1px solid ${hovered ? cfg.color + '66' : 'rgba(255,255,255,0.09)'}`,
+        borderRadius: 8,
+        boxShadow: hovered ? `0 22px 55px rgba(0,0,0,0.5), 0 0 0 1px ${cfg.color}20` : '0 8px 24px rgba(0,0,0,0.28)',
         transform: hovered ? 'translateY(-4px)' : 'translateY(0)',
-        transition: 'all 0.25s cubic-bezier(0.34,1.56,0.64,1)',
+        transition: 'all 0.25s ease',
       }}
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
     >
-      {/* Thumbnail */}
       <CourseThumbnail course={course} />
 
-      {/* Card body */}
       <div className="flex flex-col flex-1 p-4 gap-3">
-
-        {/* Category + Level pills */}
-        <div className="flex items-center gap-1.5 flex-wrap">
-          {course.category && (
-            <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full"
-              style={{ background: cfg.color + '18', color: cfg.color, border: `1px solid ${cfg.color}35` }}>
-              {course.category}
-            </span>
-          )}
-          {course.level && (
-            <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full"
-              style={{ background: 'rgba(255,255,255,0.06)', color: 'rgba(255,255,255,0.45)', border: '1px solid rgba(255,255,255,0.1)' }}>
-              {course.level}
-            </span>
-          )}
+        <div className="flex items-center justify-between gap-3">
+          <span className="text-[10px] font-bold uppercase tracking-[0.16em] truncate" style={{ color: cfg.color }}>
+            {copy.eyebrow}
+          </span>
+          <span className="text-[10px] font-bold px-2 py-1 shrink-0" style={{ borderRadius: 6, background: 'rgba(255,255,255,0.07)', color: 'rgba(255,255,255,0.62)' }}>
+            {price}
+          </span>
         </div>
 
-        {/* Title */}
-        <h3 className="font-jakarta font-semibold text-[14px] leading-snug text-white/90 line-clamp-2" style={{ display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
+        <h3 className="font-jakarta font-extrabold text-[18px] leading-tight text-white tracking-normal" style={{ display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
           {course.title}
         </h3>
 
-        {/* Instructor */}
-        {course.instructor && (() => {
-          const instructorName =
-            typeof course.instructor === 'string'
-              ? course.instructor
-              : (course.instructor?.name || course.instructor?.fullName || '');
-          if (!instructorName) return null;
-          return (
-            <div className="flex items-center gap-2">
-              {course.instructorAvatar ? (
-                <img src={course.instructorAvatar} alt={instructorName}
-                  className="w-5 h-5 rounded-full object-cover shrink-0" />
-              ) : (
-                <div className="w-5 h-5 rounded-full shrink-0 grid place-items-center text-[8px] font-bold text-white"
-                  style={{ background: cfg.color + '40' }}>
-                  {instructorName.slice(0, 1).toUpperCase()}
-                </div>
-              )}
-              <span className="text-[11.5px] truncate" style={{ color: 'rgba(255,255,255,0.45)' }}>
-                {instructorName}
-              </span>
-            </div>
-          );
-        })()}
+        <p className="text-[12.5px] leading-relaxed min-h-[54px]" style={{ color: 'rgba(255,255,255,0.55)', display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
+          {course.description || copy.outcome}
+        </p>
 
-        {/* Rating */}
-        {course.rating && (
-          <Stars rating={parseFloat(course.rating)} count={course.ratingCount} />
-        )}
-
-        {/* Stats row */}
-        <div className="flex items-center gap-3 text-[11px]" style={{ color: 'rgba(255,255,255,0.35)' }}>
-          {course.duration && (
-            <span><i className="fas fa-clock mr-1" />{course.duration}h</span>
-          )}
-          {course.lectures && (
-            <span><i className="fas fa-play-circle mr-1" />{course.lectures} lectures</span>
-          )}
-          {course.students && (
-            <span><i className="fas fa-users mr-1" />{Number(course.students).toLocaleString()}</span>
-          )}
+        <div className="grid grid-cols-3 gap-2">
+          <div className="px-2 py-2" style={{ borderRadius: 7, background: 'rgba(255,255,255,0.055)' }}>
+            <div className="text-[10px]" style={{ color: 'rgba(255,255,255,0.36)' }}>Level</div>
+            <div className="text-[11px] font-bold text-white/80 truncate">{course.level || 'All levels'}</div>
+          </div>
+          <div className="px-2 py-2" style={{ borderRadius: 7, background: 'rgba(255,255,255,0.055)' }}>
+            <div className="text-[10px]" style={{ color: 'rgba(255,255,255,0.36)' }}>Duration</div>
+            <div className="text-[11px] font-bold text-white/80 truncate">{formatDuration(course.duration) || 'Self-paced'}</div>
+          </div>
+          <div className="px-2 py-2" style={{ borderRadius: 7, background: 'rgba(255,255,255,0.055)' }}>
+            <div className="text-[10px]" style={{ color: 'rgba(255,255,255,0.36)' }}>Learners</div>
+            <div className="text-[11px] font-bold text-white/80 truncate">{learnerCount || 'New'}</div>
+          </div>
         </div>
 
-        {/* Price + CTA */}
-        <div className="mt-auto pt-3 flex items-center gap-2" style={{ borderTop: '1px solid rgba(255,255,255,0.06)' }}>
-          {course.price && !isEnrolled && (
-            <div className="shrink-0">
-              {course.originalPrice && course.originalPrice !== course.price && (
-                <div className="text-[10px] line-through" style={{ color: 'rgba(255,255,255,0.25)' }}>
-                  {course.originalPrice}
-                </div>
-              )}
-              <div className="text-[13px] font-bold text-white">{course.price}</div>
+        <div className="flex items-center gap-2">
+          {course.instructorAvatar ? (
+            <img src={course.instructorAvatar} alt={instructorName} className="w-7 h-7 rounded-full object-cover shrink-0" />
+          ) : (
+            <div className="w-7 h-7 rounded-full shrink-0 grid place-items-center text-[10px] font-bold text-white" style={{ background: cfg.color + '55' }}>
+              {instructorName.slice(0, 1).toUpperCase()}
             </div>
           )}
+          <div className="min-w-0">
+            <div className="text-[10px]" style={{ color: 'rgba(255,255,255,0.34)' }}>Instructor team</div>
+            <div className="text-[12px] font-semibold truncate" style={{ color: 'rgba(255,255,255,0.66)' }}>{instructorName}</div>
+          </div>
+        </div>
+
+        <div className="space-y-2">
+          <div className="text-[10px] font-bold uppercase tracking-[0.14em]" style={{ color: 'rgba(255,255,255,0.34)' }}>What you get</div>
+          <div className="grid gap-1.5">
+            {copy.includes.map(item => (
+              <div key={item} className="flex items-center gap-2 text-[11.5px]" style={{ color: 'rgba(255,255,255,0.58)' }}>
+                <i className="fas fa-check text-[9px]" style={{ color: cfg.color }} />
+                <span className="truncate">{item}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div className="mt-auto pt-3 flex items-center gap-2" style={{ borderTop: '1px solid rgba(255,255,255,0.07)' }}>
+          <div className="min-w-0 shrink-0">
+            {course.rating && <Stars rating={parseFloat(course.rating)} count={course.ratingCount} />}
+            {!course.rating && <div className="text-[11px] font-semibold" style={{ color: 'rgba(255,255,255,0.45)' }}>{copy.audience}</div>}
+          </div>
           <button
             onClick={() => onEnroll(course.id)}
             disabled={enrolling || isEnrolled}
-            className="flex-1 py-2.5 rounded-xl text-[12px] font-bold border-0 cursor-pointer flex items-center justify-center gap-1.5 transition-all disabled:opacity-60"
+            className="flex-1 py-2.5 text-[12px] font-bold border-0 cursor-pointer flex items-center justify-center gap-1.5 transition-all disabled:opacity-70"
             style={{
-              background: isEnrolled
-                ? 'rgba(0,229,160,0.12)'
-                : `linear-gradient(135deg, ${cfg.color}, ${cfg.color}cc)`,
+              borderRadius: 7,
+              background: isEnrolled ? 'rgba(0,229,160,0.12)' : cfg.color,
               color: isEnrolled ? '#00E5A0' : '#fff',
-              boxShadow: isEnrolled ? 'none' : `0 4px 14px ${cfg.color}40`,
+              boxShadow: isEnrolled ? 'none' : `0 5px 16px ${cfg.color}40`,
             }}
           >
             {enrolling ? (
@@ -432,12 +480,11 @@ function CourseCard({ course, onEnroll, enrolling }: {
             ) : isEnrolled ? (
               <><i className="fas fa-check text-[10px]" /> Enrolled</>
             ) : (
-              <><i className="fas fa-external-link-alt text-[10px]" /> Enroll on {platform.split(' ')[0]}</>
+              <><i className="fas fa-arrow-up-right-from-square text-[10px]" /> View on {platform.split(' ')[0]}</>
             )}
           </button>
         </div>
 
-        {/* Progress bar if enrolled */}
         {isEnrolled && course.progress > 0 && (
           <div>
             <div className="flex justify-between text-[10px] mb-1" style={{ color: 'rgba(255,255,255,0.35)' }}>
@@ -445,8 +492,7 @@ function CourseCard({ course, onEnroll, enrolling }: {
               <span style={{ color: cfg.color }}>{course.progress}%</span>
             </div>
             <div className="h-1 rounded-full overflow-hidden" style={{ background: 'rgba(255,255,255,0.08)' }}>
-              <div className="h-full rounded-full transition-all"
-                style={{ width: `${course.progress}%`, background: cfg.color }} />
+              <div className="h-full rounded-full transition-all" style={{ width: `${course.progress}%`, background: cfg.color }} />
             </div>
           </div>
         )}
@@ -454,7 +500,6 @@ function CourseCard({ course, onEnroll, enrolling }: {
     </div>
   );
 }
-
 // ── Skeleton card ──────────────────────────────────────────────────────────
 function SkeletonCard() {
   return (
