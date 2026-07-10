@@ -5,7 +5,7 @@ const { success, error, badRequest } = require('../utils/response');
 const { scoreJobForUser } = require('../utils/jobMatching');
 
 const DEFAULT_SETTINGS = { jobAlerts: true, pushNotifs: true };
-const MIN_MATCH_SCORE = 45;
+const MIN_MATCH_SCORE = 40;
 
 // ── AI client (multi-provider with automatic fallback) ───────────────────────
 const { generateText, isAIConfigured } = require('../utils/aiClient');
@@ -107,6 +107,7 @@ router.get('/status', authenticate, requireRole('admin'), async (req, res) => {
   return success(res, {
     aiConfigured: isAIConfigured(),
     tavilyConfigured: isTavilyConfigured(),
+    fallbackAvailable: isAIConfigured(),
     geminiKeySet: !!process.env.GEMINI_API_KEY,
     groqKeySet: !!process.env.GROQ_API_KEY,
     openrouterKeySet: !!process.env.OPENROUTER_API_KEY,
@@ -121,12 +122,14 @@ router.post('/run', authenticate, requireRole('admin'), async (req, res) => {
     if (!isAIConfigured()) {
       return error(res, 'AI not configured. Set GEMINI_API_KEY, GROQ_API_KEY, or OPENROUTER_API_KEY.');
     }
-    if (!isTavilyConfigured()) {
-      return error(res, 'Tavily API key not configured. Please set TAVILY_API_KEY.');
-    }
 
     // Start async; respond immediately so cron doesn't time out
-    res.json({ success: true, message: 'Job Scout run started' });
+    res.json({
+      success: true,
+      message: isTavilyConfigured()
+        ? 'Job Scout run started'
+        : 'Job Scout run started using AI fallback because TAVILY_API_KEY is not configured',
+    });
     runJobScout().catch(e => console.error('[JobScout] Fatal error:', e));
   } catch (e) {
     return error(res, 'Failed to start scout run');
@@ -141,12 +144,11 @@ async function runJobScout() {
   console.log('[JobScout] Starting run…');
 
   if (!isAIConfigured()) {
-    console.warn('[JobScout] Gemini not configured. Aborting run.');
+    console.warn('[JobScout] AI not configured. Aborting run.');
     return;
   }
   if (!isTavilyConfigured()) {
-    console.warn('[JobScout] Tavily not configured. Aborting run.');
-    return;
+    console.warn('[JobScout] Tavily not configured. Continuing with AI fallback search/generation.');
   }
 
   // 1. Get all distinct niches with at least one active student
@@ -178,7 +180,7 @@ async function runJobScout() {
 
 async function scoutForNiche(niche) {
   if (!isAIConfigured()) {
-    console.warn(`[JobScout] Gemini not configured. Skipping niche "${niche}"`);
+    console.warn(`[JobScout] AI not configured. Skipping niche "${niche}"`);
     return;
   }
 
@@ -233,10 +235,11 @@ async function persistAndFanOut(niche, jobs) {
         salary: job.salary || null,
         description: job.description || null,
         url: job.url,
-        source: job.source || 'web',
+        source: normalizeLeadSource(job.source, job.url),
         niche,
         skills: Array.isArray(job.skills) ? job.skills : [],
         postedAt: job.postedAt ? new Date(job.postedAt) : null,
+        fetchedAt: new Date(),
       };
       const lead = await prisma.jobScoutLead.upsert({
         where: { url_niche: { url: job.url, niche } },
@@ -419,8 +422,8 @@ Return: {"jobs":[{
   "type": "full-time"|"remote"|"contract"|"part-time",
   "salary": string|null,
   "description": string (2 sentences),
-  "url": string (a real careers-page or LinkedIn jobs search URL for the company/role),
-  "source": "company_site"|"linkedin"|"other",
+  "url": string (a real careers-page, Google Jobs search, LinkedIn jobs search, X/Twitter search, or company role URL),
+  "source": "company_site"|"google"|"linkedin"|"twitter"|"job_board"|"other",
   "skills": string[],
   "postedAt": null
 }]}`;
@@ -440,7 +443,7 @@ Return: {"jobs":[{
         salary: j.salary ? String(j.salary).trim() : null,
         description: j.description ? String(j.description).trim().slice(0, 500) : null,
         url: String(j.url).trim(),
-        source: j.source || 'ai',
+        source: normalizeLeadSource(j.source, j.url),
         skills: Array.isArray(j.skills) ? j.skills.map(s => String(s).trim()).filter(Boolean) : [],
         postedAt: null,
       }));
@@ -463,12 +466,16 @@ async function performWebSearch(niche) {
       `${niche} remote jobs`,
       `${niche} jobs Nigeria Africa`,
       `${niche} job vacancies`,
+      `site:linkedin.com/jobs ${niche} hiring`,
+      `site:x.com ${niche} hiring job`,
+      `site:twitter.com ${niche} hiring job`,
     ];
 
     const JOB_DOMAINS = [
       'linkedin.com', 'indeed.com', 'glassdoor.com', 'ziprecruiter.com', 'monster.com',
       'x.com', 'twitter.com',
       'jobberman.com', 'ngcareers.com', 'myjobmag.com', 'naukri.com', 'workable.com',
+      'lever.co', 'greenhouse.io', 'ashbyhq.com',
     ];
 
     let allResults = [];
@@ -498,7 +505,7 @@ async function performWebSearch(niche) {
               title:   result.title || '',
               link:    result.url || '',
               snippet: result.content || '',
-              source:  result.domain || 'web',
+              source:  normalizeLeadSource(result.domain, result.url),
             }))
           );
         }
@@ -527,6 +534,40 @@ async function performWebSearch(niche) {
 }
 
 // ── Parse jobs from search results using Gemini ───────────────────────────
+function normalizeLeadSource(source, url) {
+  const raw = String(source || '').toLowerCase();
+  const host = (() => {
+    try {
+      return new URL(url || '').hostname.replace(/^www\./, '').toLowerCase();
+    } catch {
+      return '';
+    }
+  })();
+  const value = `${raw} ${host}`;
+
+  if (value.includes('google.')) return 'google';
+  if (value.includes('linkedin.')) return 'linkedin';
+  if (value.includes('twitter.') || value.includes('x.com')) return 'twitter';
+  if (value.includes('indeed.')) return 'indeed';
+  if (value.includes('glassdoor.')) return 'glassdoor';
+  if (value.includes('jobberman.')) return 'jobberman';
+  if (value.includes('ngcareers.')) return 'ngcareers';
+  if (value.includes('myjobmag.')) return 'myjobmag';
+  if (
+    value.includes('lever.co') ||
+    value.includes('greenhouse.io') ||
+    value.includes('workable.com') ||
+    value.includes('ashbyhq.com')
+  ) return 'company_site';
+
+  if ([
+    'google', 'linkedin', 'twitter', 'indeed', 'glassdoor', 'jobberman',
+    'ngcareers', 'myjobmag', 'company_site', 'job_board', 'other',
+  ].includes(raw)) return raw;
+
+  return host ? 'job_board' : 'other';
+}
+
 async function parseJobsWithGemini(niche, searchResults) {
   try {
     if (!isAIConfigured()) {
@@ -545,7 +586,7 @@ Each job must have these fields:
 - salary: string or null (if visible)
 - description: string (2-3 sentence summary)
 - url: string (direct application link)
-- source: "linkedin" | "indeed" | "glassdoor" | "twitter" | "jobberman" | "ngcareers" | "myjobmag" | "company_site" | "other"
+- source: "google" | "linkedin" | "indeed" | "glassdoor" | "twitter" | "jobberman" | "ngcareers" | "myjobmag" | "company_site" | "job_board" | "other"
 - skills: array of strings
 - postedAt: string or null (date in YYYY-MM-DD format)
 
@@ -593,7 +634,7 @@ Return a JSON object with a "jobs" key containing an array of job objects. Examp
         salary:      job.salary ? String(job.salary).trim() : null,
         description: job.description ? String(job.description).trim().slice(0, 500) : null,
         url:         String(job.url || '').trim(),
-        source:      job.source || 'web',
+        source:      normalizeLeadSource(job.source, job.url),
         skills:      Array.isArray(job.skills) ? job.skills.map(s => String(s).trim()).filter(Boolean) : [],
         postedAt:    job.postedAt || null,
       }));
@@ -607,7 +648,7 @@ Return a JSON object with a "jobs" key containing an array of job objects. Examp
 // ── Fallback search using DuckDuckGo (no API key needed) ──────────────
 async function performDuckDuckGoSearch(niche) {
   try {
-    const query = encodeURIComponent(`${niche} jobs`);
+    const query = encodeURIComponent(`${niche} jobs hiring remote LinkedIn Google Jobs Twitter`);
     const response = await fetch(`https://api.duckduckgo.com/?q=${query}&format=json`);
 
     if (!response.ok) throw new Error(`DuckDuckGo API error: ${response.status}`);
@@ -618,7 +659,7 @@ async function performDuckDuckGoSearch(niche) {
       title:   item.Text || '',
       link:    item.FirstURL || '',
       snippet: item.Text || '',
-      source:  'duckduckgo',
+      source:  normalizeLeadSource('duckduckgo', item.FirstURL),
     }));
   } catch (e) {
     console.error('[JobScout] DuckDuckGo search failed:', e.message);

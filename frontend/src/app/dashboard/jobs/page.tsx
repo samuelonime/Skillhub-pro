@@ -56,6 +56,7 @@ type TierKey = keyof typeof TIERS;
 
 /* ── Job Scout source metadata ──────────────────────────────────────────────── */
 const SCOUT_SOURCE: Record<string, { icon: string; color: string }> = {
+  google:       { icon: '🔎', color: '#4285f4' },
   linkedin:     { icon: '💼', color: '#0a66c2' },
   indeed:       { icon: '🔵', color: '#003a9b' },
   twitter:      { icon: '🐦', color: '#1da1f2' },
@@ -64,6 +65,7 @@ const SCOUT_SOURCE: Record<string, { icon: string; color: string }> = {
   ngcareers:    { icon: '📋', color: '#e25c00' },
   myjobmag:     { icon: '📌', color: '#c0392b' },
   company_site: { icon: '🏢', color: D.purple },
+  job_board:    { icon: '🌐', color: '#64748b' },
   web:          { icon: '🌐', color: '#64748b' },
   other:        { icon: '🔍', color: '#94a3b8' },
 };
