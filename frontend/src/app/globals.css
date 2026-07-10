@@ -141,6 +141,56 @@ html[data-theme='light'] body {
 .hero-ink-muted  { color: rgba(255,255,255,0.62); }
 .hero-ink-faint  { color: rgba(255,255,255,0.45); }
 
+/* Broad app-theme bridge -----------------------------------------------------
+   Several older dashboard/employer/admin screens still use hardcoded dark
+   neutrals such as text-white, #0F1521 cards, and rgba(255,255,255,...) text.
+   These rules make neutral page/card chrome inherit the active black/white
+   theme without changing intentional white labels on colored controls. */
+html[data-theme='light'] .theme-transition :where(.text-white, .text-white\/90, .text-white\/80, .text-white\/70, .text-white\/60, .text-white\/50):not(button):not(button *):not(a[class*="bg-"]):not(a[class*="bg-"] *):not([class*="bg-"]):not([style*="background"]) {
+  color: var(--text-strong) !important;
+}
+
+.theme-transition :where(.bg-\[\#080810\], .bg-\[\#080C14\], .bg-\[\#0a0c10\], .bg-\[\#0A0C10\], .bg-\[\#0F1521\], .bg-\[\#0f1521\]) {
+  background-color: var(--surface) !important;
+}
+
+.theme-transition :where(input, textarea, select) {
+  background-color: var(--input-bg) !important;
+  border-color: var(--input-border) !important;
+  color: var(--text-body) !important;
+}
+
+.theme-transition :where(input, textarea)::placeholder {
+  color: var(--text-ghost) !important;
+}
+
+.theme-transition :where([style*="#0F1521"], [style*="#0f1521"], [style*="#0C1220"], [style*="#0c1220"], [style*="#080C14"], [style*="#080c14"], [style*="#080810"], [style*="#0d0d18"], [style*="#0D0D18"]) {
+  background: var(--surface) !important;
+  border-color: var(--border-soft) !important;
+}
+
+.theme-transition :where([style*="rgba(255,255,255,0.05)"], [style*="rgba(255, 255, 255, 0.05)"], [style*="rgba(255,255,255,0.06)"], [style*="rgba(255, 255, 255, 0.06)"], [style*="rgba(255,255,255,0.07)"], [style*="rgba(255, 255, 255, 0.07)"], [style*="rgba(255,255,255,0.08)"], [style*="rgba(255, 255, 255, 0.08)"]) {
+  background: var(--surface-soft) !important;
+  border-color: var(--border-soft) !important;
+}
+
+html[data-theme='light'] .theme-transition :where([style*="rgba(255,255,255,0.85)"], [style*="rgba(255, 255, 255, 0.85)"], [style*="rgba(255,255,255,0.9)"], [style*="rgba(255, 255, 255, 0.9)"], [style*="rgba(255,255,255,0.95)"], [style*="rgba(255, 255, 255, 0.95)"], [style*="#FFFFFF"], [style*="#ffffff"]) {
+  color: var(--text-strong) !important;
+}
+
+html[data-theme='light'] .theme-transition :where([style*="rgba(255,255,255,0.6)"], [style*="rgba(255, 255, 255, 0.6)"], [style*="rgba(255,255,255,0.65)"], [style*="rgba(255, 255, 255, 0.65)"], [style*="rgba(255,255,255,0.7)"], [style*="rgba(255, 255, 255, 0.7)"], [style*="rgba(255,255,255,0.75)"], [style*="rgba(255, 255, 255, 0.75)"], [style*="rgba(255,255,255,0.8)"], [style*="rgba(255, 255, 255, 0.8)"]) {
+  color: var(--text-body) !important;
+}
+
+html[data-theme='light'] .theme-transition :where([style*="rgba(255,255,255,0.25)"], [style*="rgba(255, 255, 255, 0.25)"], [style*="rgba(255,255,255,0.3)"], [style*="rgba(255, 255, 255, 0.3)"], [style*="rgba(255,255,255,0.35)"], [style*="rgba(255, 255, 255, 0.35)"], [style*="rgba(255,255,255,0.4)"], [style*="rgba(255, 255, 255, 0.4)"], [style*="rgba(255,255,255,0.45)"], [style*="rgba(255, 255, 255, 0.45)"], [style*="rgba(255,255,255,0.5)"], [style*="rgba(255, 255, 255, 0.5)"]) {
+  color: var(--text-muted) !important;
+}
+
+html[data-theme='light'] .theme-transition :where([style*="linear-gradient"] *, [style*="radial-gradient"] *, .hero-dark, .hero-dark *) {
+  color: inherit !important;
+}
+
+
 /* Heading font — replaces Syne throughout the app */
 .font-syne { font-family: 'Plus Jakarta Sans', sans-serif !important; }
 .font-jakarta { font-family: 'Plus Jakarta Sans', sans-serif !important; }
