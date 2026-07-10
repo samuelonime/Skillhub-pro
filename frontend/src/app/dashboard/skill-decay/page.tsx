@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { SidebarLayout } from '@/components/layout/SidebarLayout';
 import { apiFetch } from '@/lib/api';
 import { BrandIcon } from '@/components/ui/BrandIcon';
@@ -53,11 +53,222 @@ function Card({ children, className = '' }: { children: React.ReactNode; classNa
   );
 }
 
+/* ────────────────────────────────────────────────────────────────────────
+   Retention timeline — dependency-free SVG (matches the hand-rolled bar style).
+   No new backend fields: each skill's decay constant is solved from the data
+   you already return — S = -daysSinceUse / ln(freshness / 100). Each line holds
+   at 100 until the last-use day, then decays, and projects 120 days forward.
+   ──────────────────────────────────────────────────────────────────────── */
+const DAY_MIN = -90;
+const DAY_MAX = 120;
+const STEP = 6;
+
+function skillSeries(s: any) {
+  const days = Math.max(0, s.daysSinceUse ?? 0);
+  const f = Math.max(1, Math.min(100, s.freshness ?? 100));
+  const S = days <= 0 || f >= 100 ? Infinity : -days / Math.log(f / 100);
+  const at = (x: number) => {
+    const elapsed = days + x;
+    if (elapsed <= 0) return 100;
+    return S === Infinity ? 100 : 100 * Math.exp(-elapsed / S);
+  };
+  const pts: [number, number][] = [];
+  for (let x = DAY_MIN; x <= DAY_MAX; x += STEP) pts.push([x, at(x)]);
+  return pts;
+}
+
+function RetentionTimeline({
+  skills, focused, setFocused,
+}: { skills: any[]; focused: string | null; setFocused: (v: string | null) => void }) {
+  const W = 720, H = 250;
+  const pad = { l: 30, r: 14, t: 12, b: 26 };
+  const xScale = (x: number) => pad.l + ((x - DAY_MIN) / (DAY_MAX - DAY_MIN)) * (W - pad.l - pad.r);
+  const yScale = (v: number) => pad.t + ((100 - v) / 100) * (H - pad.t - pad.b);
+  const fmtDay = (d: number) => (d === 0 ? 'Today' : d < 0 ? `${d}d` : `+${d}d`);
+  const xTicks = [-90, -60, -30, 0, 30, 60, 90, 120];
+
+  const series = useMemo(
+    () => skills.map((s) => ({
+      key: s.skill,
+      color: (DECAY[s.label as DecayLabel] ?? DECAY.cold).bar,
+      pts: skillSeries(s),
+      current: s.freshness,
+    })),
+    [skills]
+  );
+
+  return (
+    <div>
+      <svg viewBox={`0 0 ${W} ${H}`} width="100%" style={{ display: 'block' }}>
+        {/* projection region (future) */}
+        <rect x={xScale(0)} y={pad.t} width={xScale(DAY_MAX) - xScale(0)} height={H - pad.t - pad.b}
+          fill="#4F8EF7" opacity={0.04} />
+        {/* horizontal grid + y labels */}
+        {[0, 25, 50, 75, 100].map((v) => (
+          <g key={v}>
+            <line x1={pad.l} x2={W - pad.r} y1={yScale(v)} y2={yScale(v)} stroke="rgba(255,255,255,0.06)" />
+            <text x={pad.l - 6} y={yScale(v) + 3} textAnchor="end" fontSize="9" fill="rgba(255,255,255,0.3)">{v}</text>
+          </g>
+        ))}
+        {/* x ticks */}
+        {xTicks.map((d) => (
+          <text key={d} x={xScale(d)} y={H - 8} textAnchor="middle" fontSize="9"
+            fill={d === 0 ? 'rgba(255,255,255,0.55)' : 'rgba(255,255,255,0.28)'}>{fmtDay(d)}</text>
+        ))}
+        {/* today marker */}
+        <line x1={xScale(0)} x2={xScale(0)} y1={pad.t} y2={H - pad.b} stroke="rgba(255,255,255,0.28)" strokeDasharray="3 3" />
+        {/* skill lines */}
+        {series.map((s) => {
+          const dim = focused && focused !== s.key;
+          const path = s.pts.map((p, i) => `${i ? 'L' : 'M'}${xScale(p[0]).toFixed(1)} ${yScale(p[1]).toFixed(1)}`).join(' ');
+          return (
+            <path key={s.key} d={path} fill="none" stroke={s.color}
+              strokeWidth={focused === s.key ? 2.6 : 1.5}
+              strokeOpacity={dim ? 0.12 : focused === s.key ? 1 : 0.5}
+              strokeLinejoin="round" />
+          );
+        })}
+        {/* focused endpoint dot @ today */}
+        {focused && (() => {
+          const s = series.find((x) => x.key === focused);
+          if (!s) return null;
+          return <circle cx={xScale(0)} cy={yScale(s.current)} r={3.5} fill={s.color} />;
+        })()}
+      </svg>
+
+      {/* legend / focus chips */}
+      <div className="flex flex-wrap gap-1.5 mt-3">
+        {skills.map((s: any) => {
+          const cfg = DECAY[s.label as DecayLabel] ?? DECAY.cold;
+          const active = focused === s.skill;
+          return (
+            <button key={s.skill} onClick={() => setFocused(active ? null : s.skill)}
+              className="flex items-center gap-1.5 rounded-lg px-2 py-1 text-[11px] font-medium transition-all"
+              style={{
+                background: active ? `${cfg.bar}20` : 'rgba(255,255,255,0.03)',
+                border: `1px solid ${active ? cfg.bar + '60' : 'rgba(255,255,255,0.07)'}`,
+                color: active ? '#fff' : 'rgba(255,255,255,0.55)',
+              }}>
+              <span style={{ width: 7, height: 7, borderRadius: 7, background: cfg.bar }} />
+              {s.skill}
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+/* AI analysis chat — posts to your backend, which calls Gemini (see the
+   companion route file). Grounded in the skills/summary already on screen. */
+type Msg = { role: 'user' | 'assistant'; content: string };
+
+function AnalyzePanel({ skills, summary }: { skills: any[]; summary: any }) {
+  const [messages, setMessages] = useState<Msg[]>([]);
+  const [input, setInput] = useState('');
+  const [busy, setBusy] = useState(false);
+  const scrollRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: 'smooth' });
+  }, [messages, busy]);
+
+  const quickPrompts = [
+    'What should I refresh this week?',
+    'Which skills are most at risk, and why?',
+    'Draft a focused 30-day refresher plan',
+    'Explain the decay on my weakest skill',
+  ];
+
+  async function ask(question: string) {
+    if (!question.trim() || busy) return;
+    const next = [...messages, { role: 'user' as const, content: question }];
+    setMessages(next);
+    setInput('');
+    setBusy(true);
+    try {
+      // apiFetch is expected to set Content-Type: application/json.
+      const r = await apiFetch('/skill-decay/analyze', {
+        method: 'POST',
+        body: JSON.stringify({ question, history: next, context: { skills, summary } }),
+      }).catch(() => null);
+      const answer = r?.success ? (r.data?.answer ?? r.data?.reply ?? '') : '';
+      setMessages((m) => [...m, { role: 'assistant', content: answer || "I couldn't analyze that just now — try again." }]);
+    } catch {
+      setMessages((m) => [...m, { role: 'assistant', content: 'Analysis failed to load. Check your connection and try again.' }]);
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <div className="flex flex-col h-full" style={{ minHeight: 300 }}>
+      <div className="flex items-center gap-2 mb-3">
+        <BrandIcon name="fa-wand-magic-sparkles" style={{ color: '#4F8EF7' }} />
+        <span className="font-jakarta font-semibold text-[14px] text-white/90">Analyze with AI</span>
+      </div>
+
+      <div ref={scrollRef} className="flex-1 overflow-y-auto space-y-2.5 pr-1" style={{ maxHeight: 240 }}>
+        {messages.length === 0 ? (
+          <div className="space-y-2">
+            {quickPrompts.map((q) => (
+              <button key={q} onClick={() => ask(q)}
+                className="w-full text-left rounded-xl px-3 py-2.5 text-[12.5px] transition-all hover:opacity-80"
+                style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)', color: 'rgba(255,255,255,0.7)' }}>
+                {q}
+              </button>
+            ))}
+          </div>
+        ) : (
+          messages.map((m, i) => (
+            <div key={i} className={m.role === 'user' ? 'flex justify-end' : 'flex justify-start'}>
+              <div className="rounded-2xl px-3 py-2 text-[12.5px] whitespace-pre-wrap"
+                style={{
+                  maxWidth: '90%',
+                  background: m.role === 'user' ? '#4F8EF7' : 'rgba(255,255,255,0.04)',
+                  border: m.role === 'user' ? 'none' : '1px solid rgba(255,255,255,0.08)',
+                  color: m.role === 'user' ? '#fff' : 'rgba(255,255,255,0.75)',
+                  lineHeight: 1.5,
+                }}>
+                {m.content}
+              </div>
+            </div>
+          ))
+        )}
+        {busy && (
+          <div className="flex items-center gap-2 text-[12px]" style={{ color: 'rgba(255,255,255,0.4)' }}>
+            <span className="inline-block w-2 h-2 rounded-full animate-pulse" style={{ background: '#4F8EF7' }} />
+            Reading the decay curves…
+          </div>
+        )}
+      </div>
+
+      <div className="flex items-center gap-2 mt-3 rounded-xl px-3 py-2"
+        style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)' }}>
+        <input
+          value={input}
+          onChange={(e) => setInput(e.target.value)}
+          onKeyDown={(e) => e.key === 'Enter' && ask(input)}
+          placeholder="Ask about these skills…"
+          className="flex-1 bg-transparent outline-none text-[12.5px]"
+          style={{ color: '#E2E8F0' }}
+        />
+        <button onClick={() => ask(input)} disabled={busy || !input.trim()}
+          className="rounded-lg px-2.5 py-1.5 transition-all disabled:opacity-40"
+          style={{ background: input.trim() && !busy ? '#4F8EF7' : 'rgba(255,255,255,0.06)' }}>
+          <BrandIcon name="fa-paper-plane" style={{ color: '#fff', fontSize: 12 }} />
+        </button>
+      </div>
+    </div>
+  );
+}
+
 export default function SkillDecayPage() {
   const [data, setData]           = useState<any>(null);
   const [loading, setLoading]     = useState(true);
   const [filter, setFilter]       = useState<FilterType>('all');
   const [refreshing, setRefreshing] = useState<string | null>(null);
+  const [focused, setFocused]     = useState<string | null>(null);
 
   useEffect(() => {
     apiFetch('/skill-decay')
@@ -161,6 +372,29 @@ export default function SkillDecayPage() {
           </div>
         )}
 
+        {/* NEW — Retention timeline + AI analysis */}
+        {!loading && skills.length > 0 && (
+          <div className="grid lg:grid-cols-3 gap-4 mb-5">
+            <div className="lg:col-span-2">
+              <Card>
+                <div className="flex items-center justify-between mb-1">
+                  <span className="font-jakarta font-semibold text-[14px] text-white/90">Retention over time</span>
+                  <span className="text-[10px] font-mono" style={{ color: 'rgba(255,255,255,0.3)' }}>90d back · 120d projected</span>
+                </div>
+                <p className="text-[11.5px] mb-3" style={{ color: 'rgba(255,255,255,0.35)' }}>
+                  Each line holds at full until its last use, then decays. Tap a skill to isolate it.
+                </p>
+                <RetentionTimeline skills={skills} focused={focused} setFocused={setFocused} />
+              </Card>
+            </div>
+            <div className="lg:col-span-1">
+              <Card className="h-full">
+                <AnalyzePanel skills={skills} summary={summary} />
+              </Card>
+            </div>
+          </div>
+        )}
+
         {/* Skills list */}
         <Card>
           <div className="flex items-center justify-between mb-5">
@@ -187,9 +421,11 @@ export default function SkillDecayPage() {
             <div className="space-y-3">
               {filtered.map((s: any) => {
                 const cfg = DECAY[s.label as DecayLabel] ?? DECAY.cold;
+                const isFocused = focused === s.skill;
                 return (
-                  <div key={s.skill} className="flex items-center gap-3 py-2"
-                    style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+                  <div key={s.skill} onClick={() => setFocused(isFocused ? null : s.skill)}
+                    className="flex items-center gap-3 py-2 cursor-pointer transition-colors"
+                    style={{ borderBottom: '1px solid rgba(255,255,255,0.05)', background: isFocused ? 'rgba(255,255,255,0.03)' : 'transparent' }}>
                     <div className="w-28 flex-shrink-0">
                       <div className="font-medium text-[13px] text-white/80 truncate">{s.skill}</div>
                       <div className="text-[11px] capitalize mt-0.5" style={{ color: 'rgba(255,255,255,0.3)' }}>{s.level}</div>
@@ -215,7 +451,7 @@ export default function SkillDecayPage() {
                       </span>
                     </div>
                     {(s.isAlert || s.isCritical) && (
-                      <button onClick={() => refreshSkill(s.skill)} disabled={refreshing === s.skill}
+                      <button onClick={(e) => { e.stopPropagation(); refreshSkill(s.skill); }} disabled={refreshing === s.skill}
                         title="Mark as recently used"
                         className="text-[11px] px-2.5 py-1 rounded-lg transition-all disabled:opacity-40 flex-shrink-0"
                         style={{ background: 'rgba(255,255,255,0.05)', color: 'rgba(255,255,255,0.5)', border: '1px solid rgba(255,255,255,0.08)' }}>
