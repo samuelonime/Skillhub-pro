@@ -160,7 +160,7 @@ export default function DashboardPage() {
         {/* ── Hero banner ──────────────────────────────────────────────── */}
         <div
           className="relative rounded-2xl p-7 mb-5 overflow-hidden"
-          style={{ background: 'linear-gradient(135deg, #0A1628 0%, #0D1F3C 50%, #0A1628 100%)', border: '1px solid rgba(79,142,247,0.15)' }}
+          style={{ background: 'var(--card-bg)', border: '1px solid var(--card-border)' }}
         >
           {/* Glow orbs */}
           <div className="absolute pointer-events-none" style={{ top: -80, left: -60, width: 320, height: 320, background: 'radial-gradient(circle, rgba(79,142,247,0.18) 0%, transparent 65%)', borderRadius: '50%' }} />
@@ -171,7 +171,7 @@ export default function DashboardPage() {
               <div className="text-[12px] font-semibold uppercase tracking-[0.12em] mb-2" style={{ color: 'rgba(79,142,247,0.8)' }}>
                 {greeting}
               </div>
-              <h1 className="font-jakarta font-bold text-[2rem] text-ink leading-tight mb-2">
+              <h1 className="font-jakarta font-bold text-[2rem] leading-tight mb-2" style={{ color: 'var(--text-strong)' }}>
                 {user ? `${user.name?.split(' ')[0] ?? user.firstName}` : <span className="opacity-40">Loading…</span>}
               </h1>
               <p className="text-[13px]" style={{ color: 'var(--text-faint)' }}>
