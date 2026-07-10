@@ -1309,19 +1309,19 @@ export default function CommunityPage() {
 
         {/* Hero banner */}
         <div className="relative rounded-2xl p-7 mb-5 overflow-hidden"
-          style={{ background: 'linear-gradient(135deg, #0A1628 0%, #0D1F3C 50%, #0A1628 100%)', border: `1px solid ${D.accent}25` }}>
+          style={{ background: D.card, border: `1px solid ${D.border}` }}>
           <div className="absolute pointer-events-none" style={{ top: -80, left: -60, width: 320, height: 320, background: `radial-gradient(circle, ${D.accent}18 0%, transparent 65%)`, borderRadius: '50%' }} />
           <div className="absolute pointer-events-none" style={{ bottom: -60, right: 80, width: 220, height: 220, background: `radial-gradient(circle, ${D.purple}12 0%, transparent 65%)`, borderRadius: '50%' }} />
           <div className="relative z-10 flex items-end justify-between gap-6 flex-wrap">
             <div>
               <div className="text-[12px] font-semibold uppercase tracking-[0.12em] mb-2" style={{ color: D.accent + 'cc' }}>Community Hub</div>
-              <h1 className="font-jakarta font-bold text-[2rem] text-white leading-tight mb-1">Connect & Grow</h1>
+              <h1 className="font-jakarta font-bold text-[2rem] leading-tight mb-1" style={{ color: 'var(--text-strong)' }}>Connect & Grow</h1>
               <p className="text-[13px]" style={{ color: D.subtext }}>Share ideas, projects & grow together with fellow learners</p>
             </div>
             <div className="flex items-center gap-2 shrink-0">
               <Link href="/dashboard/community/messages"
                 className="flex items-center gap-2 px-4 py-2.5 font-semibold text-[13px] rounded-xl no-underline"
-                style={{ background: 'rgba(255,255,255,0.08)', color: 'rgba(255,255,255,0.8)', border: `1px solid ${D.border}` }}>
+                style={{ background: D.hover, color: D.text, border: `1px solid ${D.border}` }}>
                 <i className="fas fa-inbox" />Messages
               </Link>
               <button onClick={() => { setShowNew(true); }}
