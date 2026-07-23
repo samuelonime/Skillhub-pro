@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import {
   BarChart3,
   BookOpen,
@@ -331,7 +331,7 @@ export function SidebarLayout({ children, navItems, pageTitle }: SidebarLayoutPr
   const profileRef = useRef<HTMLDivElement>(null);
   const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({});
 
-  const visibleNavItems = navItems
+  const visibleNavItems = useMemo(() => navItems
     .filter(item => !item.href || !HIDDEN_DASHBOARD_NAV_HREFS.has(item.href))
     .map(item => item.children
       ? {
@@ -340,7 +340,7 @@ export function SidebarLayout({ children, navItems, pageTitle }: SidebarLayoutPr
         }
       : item,
     )
-    .filter(item => !item.children || item.children.length > 0);
+    .filter(item => !item.children || item.children.length > 0), [navItems]);
 
   const isEmployer = pathname?.startsWith('/employer') || false;
 
