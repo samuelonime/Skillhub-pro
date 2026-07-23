@@ -66,21 +66,37 @@ export async function apiFetch<T = any>(
 /**
  * Ask the backend to refresh the access cookie using the refresh cookie.
  * Both cookies are HttpOnly so JS never touches the token values directly.
+ *
+ * Deduped: if several requests 401 at the same time (e.g. dashboard firing
+ * several endpoints in parallel), they all await the SAME refresh call
+ * instead of each firing its own — this was causing the 429 storm.
  */
+let _refreshInFlight: Promise<boolean> | null = null;
+
 async function silentRefresh(): Promise<boolean> {
+  if (_refreshInFlight) return _refreshInFlight;
+
+  _refreshInFlight = (async () => {
+    try {
+      const res = await fetch(`${API_BASE}/auth/refresh`, {
+        method:      'POST',
+        credentials: 'include',
+        headers:     { 'Content-Type': 'application/json' },
+      });
+      if (!res.ok) return false;
+      const data = await res.json();
+      // If server returned fresh user data, update the UI cache
+      if (data.data?.user) setCachedUser(data.data.user);
+      return true;
+    } catch {
+      return false;
+    }
+  })();
+
   try {
-    const res = await fetch(`${API_BASE}/auth/refresh`, {
-      method:      'POST',
-      credentials: 'include',
-      headers:     { 'Content-Type': 'application/json' },
-    });
-    if (!res.ok) return false;
-    const data = await res.json();
-    // If server returned fresh user data, update the UI cache
-    if (data.data?.user) setCachedUser(data.data.user);
-    return true;
-  } catch {
-    return false;
+    return await _refreshInFlight;
+  } finally {
+    _refreshInFlight = null;
   }
 }
 

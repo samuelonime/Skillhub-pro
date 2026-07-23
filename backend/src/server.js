@@ -81,6 +81,7 @@ app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
 const authLimiter = rateLimit({ windowMs: 15 * 60 * 1000, max: 20, standardHeaders: true, legacyHeaders: false });
+const refreshLimiter = rateLimit({ windowMs: 15 * 60 * 1000, max: 60, standardHeaders: true, legacyHeaders: false });
 // Contact form: unauthenticated endpoint — tighter limit to prevent spam/flooding
 const contactLimiter = rateLimit({ windowMs: 60 * 60 * 1000, max: 5, standardHeaders: true, legacyHeaders: false, message: { success: false, message: 'Too many contact submissions. Please try again later.' } });
 const apiLimiter  = rateLimit({
@@ -88,6 +89,7 @@ const apiLimiter  = rateLimit({
   max:      parseInt(process.env.RATE_LIMIT_MAX) || 200,
   standardHeaders: true, legacyHeaders: false,
 });
+app.use('/api/v1/auth/refresh', refreshLimiter);
 app.use('/api/v1/auth', authLimiter);
 app.use('/api/v1/contact', contactLimiter);
 app.use('/api', apiLimiter);
