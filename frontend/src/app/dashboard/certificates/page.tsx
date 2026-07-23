@@ -74,7 +74,7 @@ export default function CertificatesPage() {
   const [toast, setToast]       = useState('');
   const [toastOk, setToastOk]   = useState(true);
   const [showUpload, setShowUpload] = useState(false);
-  const [form, setForm]         = useState({ title: '', provider: '', issueDate: '' });
+  const [form, setForm]         = useState({ title: '', provider: '', issueDate: '', credentialId: '', credentialUrl: '' });
   const [certificateFile, setCertificateFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
 
@@ -98,7 +98,10 @@ export default function CertificatesPage() {
   useEffect(() => { load(); }, []);
 
   async function uploadCert() {
-    if (!form.title || !form.provider || !form.issueDate) return;
+    if (!form.title || !form.provider || !form.issueDate || !form.credentialUrl) {
+      showMsg('Certificate link is required for automatic verification', false);
+      return;
+    }
     if (certificateFile && certificateFile.size > 10 * 1024 * 1024) {
       showMsg('Certificate file must be 10 MB or smaller', false);
       return;
@@ -109,12 +112,17 @@ export default function CertificatesPage() {
       body.append('title', form.title);
       body.append('provider', form.provider);
       body.append('issueDate', form.issueDate);
+      if (form.credentialId) body.append('credentialId', form.credentialId);
+      if (form.credentialUrl) body.append('credentialUrl', form.credentialUrl);
       if (certificateFile) body.append('certificate', certificateFile);
       const res = await apiFetch('/certificates', { method: 'POST', body });
       if (res.success) {
-        showMsg('Certificate added!');
+        const verificationStatus = res.data?.verificationStatus || res.data?.status;
+        showMsg(verificationStatus === 'verified'
+          ? 'Certificate verified automatically!'
+          : 'Certificate uploaded and is being checked');
         setShowUpload(false);
-        setForm({ title: '', provider: '', issueDate: '' });
+        setForm({ title: '', provider: '', issueDate: '', credentialId: '', credentialUrl: '' });
         setCertificateFile(null);
         load();
       } else showMsg(res.message || 'Failed to add certificate', false);
@@ -181,10 +189,12 @@ export default function CertificatesPage() {
                 { label: 'Certificate Name', key: 'title', type: 'text', placeholder: 'e.g. AWS Solutions Architect' },
                 { label: 'Issuing Organization', key: 'provider', type: 'text', placeholder: 'e.g. Amazon Web Services' },
                 { label: 'Issue Date', key: 'issueDate', type: 'date', placeholder: '' },
+                { label: 'Certificate ID', key: 'credentialId', type: 'text', placeholder: 'e.g. ABC-123456' },
+                { label: 'Verification URL *', key: 'credentialUrl', type: 'url', placeholder: 'https://issuer.com/verify/...' },
               ].map(({ label, key, type, placeholder }) => (
                 <div key={key}>
                   <label className="block text-[12px] font-semibold mb-1.5 uppercase tracking-wide" style={{ color: D.muted }}>{label}</label>
-                  <input type={type} value={(form as any)[key]} onChange={e => setForm(f => ({ ...f, [key]: e.target.value }))}
+                  <input type={type} required={key === 'credentialUrl'} value={(form as any)[key]} onChange={e => setForm(f => ({ ...f, [key]: e.target.value }))}
                     placeholder={placeholder}
                     className="w-full px-3.5 py-3 rounded-xl text-sm font-[inherit] outline-none transition-all"
                     style={fieldStyle} />
@@ -200,6 +210,7 @@ export default function CertificatesPage() {
                 className="w-full px-3.5 py-3 rounded-xl text-sm font-[inherit] outline-none transition-all file:mr-3 file:rounded-lg file:border-0 file:px-3 file:py-1.5 file:font-semibold file:text-xs file:text-white file:bg-[#4F8EF7]"
                 style={fieldStyle} />
               <p className="text-[11px] mt-1.5" style={{ color: D.muted }}>PDF, JPG, PNG, or WebP up to 10 MB.</p>
+              <p className="text-[11px] mt-1.5" style={{ color: D.amber }}>An official HTTPS verification link is required. Certificate ID is optional.</p>
             </div>
             <div className="flex gap-2 mt-4">
               <button disabled={uploading} onClick={uploadCert}
@@ -301,6 +312,12 @@ export default function CertificatesPage() {
                                   <i className="fas fa-check-circle" /> Verified
                                 </span>
                               )}
+                              {cert.status === 'pending' && (
+                                <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full flex-shrink-0"
+                                  style={{ background: D.amber + '20', color: D.amber }}>
+                                  <i className="fas fa-clock" /> Checking
+                                </span>
+                              )}
                             </div>
                             <p className="text-xs mb-1" style={{ color: D.subtext }}>
                               {cert.provider || cert.issuer}{date ? ` · Issued ${date}` : ''}
@@ -313,6 +330,13 @@ export default function CertificatesPage() {
                                 className="inline-flex items-center gap-1 text-[11px] font-semibold no-underline mt-1"
                                 style={{ color: D.accent }}>
                                 <i className="fas fa-file-alt" /> View certificate file
+                              </a>
+                            )}
+                            {cert.credentialUrl && (
+                              <a href={cert.credentialUrl} target="_blank" rel="noreferrer"
+                                className="inline-flex items-center gap-1 text-[11px] font-semibold no-underline mt-1 ml-3"
+                                style={{ color: D.green }}>
+                                <i className="fas fa-external-link-alt" /> Verification link
                               </a>
                             )}
                           </div>

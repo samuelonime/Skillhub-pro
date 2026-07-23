@@ -129,14 +129,18 @@ router.get('/certificates', async (req, res) => {
 
 router.put('/certificates/:id/verify', async (req, res) => {
   try {
+    const existing = await prisma.certificate.findUnique({ where: { id: req.params.id } });
+    if (!existing) return notFound(res, 'Certificate not found');
     const cert = await prisma.certificate.update({
       where: { id: req.params.id },
       data: { status: 'verified', verifiedAt: new Date(), verifiedBy: req.user.id },
     });
-    await prisma.user.update({ 
-      where: { id: cert.userId }, 
-      data: { meritCoins: { increment: 1 } } 
-    });
+    if (existing.status !== 'verified') {
+      await prisma.user.update({
+        where: { id: cert.userId },
+        data: { meritCoins: { increment: 1 } }
+      });
+    }
     await prisma.notification.create({ 
       data: { 
         userId: cert.userId, 

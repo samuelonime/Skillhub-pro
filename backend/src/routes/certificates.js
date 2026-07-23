@@ -5,6 +5,7 @@ const prisma  = require('../config/database');
 const { authenticate } = require('../middleware/auth');
 const { success, created, notFound, badRequest, error } = require('../utils/response');
 const { uploadRaw } = require('../utils/cloudinary');
+const { verifyCertificate } = require('../services/certificateVerifier');
 
 const certificateUpload = multer({
   storage: multer.memoryStorage(),
@@ -14,6 +15,36 @@ const certificateUpload = multer({
     cb(null, allowed.includes(file.mimetype));
   },
 });
+
+async function finishAutomaticVerification(cert) {
+  const verification = await verifyCertificate(cert);
+
+  if (verification.status === 'verified') {
+    await prisma.$transaction(async tx => {
+      const updated = await tx.certificate.updateMany({
+        where: { id: cert.id, status: 'pending' },
+        data: { status: 'verified', verifiedAt: new Date(), verifiedBy: 'automation' },
+      });
+      if (updated.count !== 1) return;
+
+      await tx.user.update({ where: { id: cert.userId }, data: { meritCoins: { increment: 1 } } });
+      await tx.notification.create({
+        data: {
+          userId: cert.userId,
+          type: 'success',
+          icon: 'certificate',
+          title: 'Certificate Verified Automatically!',
+          message: `${cert.title} was verified through the issuer. +1 Merit Coin!`,
+        },
+      });
+    });
+  } else if (verification.status === 'rejected') {
+    await prisma.certificate.updateMany({
+      where: { id: cert.id, status: 'pending' },
+      data: { status: 'rejected' },
+    });
+  }
+}
 
 // GET /certificates
 router.get('/', authenticate, async (req, res) => {
@@ -30,6 +61,7 @@ router.get('/', authenticate, async (req, res) => {
 router.post('/', authenticate, certificateUpload.single('certificate'), [
   body('title').trim().isLength({ min: 3 }),
   body('provider').trim().isLength({ min: 2 }),
+  body('credentialUrl').trim().isURL({ protocols: ['https'], require_protocol: true }),
 ], async (req, res) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) return badRequest(res, 'Validation failed', errors.array());
@@ -52,7 +84,10 @@ router.post('/', authenticate, certificateUpload.single('certificate'), [
         status:       'pending',
       },
     });
-    return created(res, cert, 'Certificate added');
+    setImmediate(() => finishAutomaticVerification(cert).catch(err => {
+      console.error('Automatic certificate verification failed:', err);
+    }));
+    return created(res, { ...cert, verificationStatus: 'checking' }, 'Certificate uploaded; automatic verification started');
   } catch (err) { return error(res, 'Failed to add certificate'); }
 });
 

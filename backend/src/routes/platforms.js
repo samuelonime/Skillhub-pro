@@ -43,6 +43,16 @@ const PLATFORM_CONFIG = {
     commissionRate: 0.25,
     color: '#02262b',
   },
+  cisco: {
+    label: 'Cisco Networking Academy',
+    network: 'direct',
+    affiliateTag: process.env.CISCO_AFFILIATE_TAG || 'skillhub',
+    webhookSecret: process.env.CISCO_WEBHOOK_SECRET || '',
+    baseUrl: 'https://www.netacad.com',
+    affiliateUrl: () => 'https://www.netacad.com/courses',
+    commissionRate: 0,
+    color: '#049fd9',
+  },
   linkedin: {
     label: 'LinkedIn Learning',
     network: 'impact',
