@@ -75,6 +75,7 @@ export default function CertificatesPage() {
   const [toastOk, setToastOk]   = useState(true);
   const [showUpload, setShowUpload] = useState(false);
   const [form, setForm]         = useState({ title: '', provider: '', issueDate: '' });
+  const [certificateFile, setCertificateFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
 
   function showMsg(msg: string, ok = true) {
@@ -98,13 +99,23 @@ export default function CertificatesPage() {
 
   async function uploadCert() {
     if (!form.title || !form.provider || !form.issueDate) return;
+    if (certificateFile && certificateFile.size > 10 * 1024 * 1024) {
+      showMsg('Certificate file must be 10 MB or smaller', false);
+      return;
+    }
     setUploading(true);
     try {
-      const res = await apiFetch('/certificates', { method: 'POST', body: JSON.stringify(form) });
+      const body = new FormData();
+      body.append('title', form.title);
+      body.append('provider', form.provider);
+      body.append('issueDate', form.issueDate);
+      if (certificateFile) body.append('certificate', certificateFile);
+      const res = await apiFetch('/certificates', { method: 'POST', body });
       if (res.success) {
         showMsg('Certificate added!');
         setShowUpload(false);
         setForm({ title: '', provider: '', issueDate: '' });
+        setCertificateFile(null);
         load();
       } else showMsg(res.message || 'Failed to add certificate', false);
     } catch { showMsg('Failed to add certificate', false); }
@@ -179,6 +190,16 @@ export default function CertificatesPage() {
                     style={fieldStyle} />
                 </div>
               ))}
+            </div>
+            <div className="mt-4">
+              <label htmlFor="certificate-file" className="block text-[12px] font-semibold mb-1.5 uppercase tracking-wide" style={{ color: D.muted }}>
+                Certificate File <span className="normal-case font-normal">(optional)</span>
+              </label>
+              <input id="certificate-file" type="file" accept="application/pdf,image/jpeg,image/png,image/webp"
+                onChange={e => setCertificateFile(e.target.files?.[0] || null)}
+                className="w-full px-3.5 py-3 rounded-xl text-sm font-[inherit] outline-none transition-all file:mr-3 file:rounded-lg file:border-0 file:px-3 file:py-1.5 file:font-semibold file:text-xs file:text-white file:bg-[#4F8EF7]"
+                style={fieldStyle} />
+              <p className="text-[11px] mt-1.5" style={{ color: D.muted }}>PDF, JPG, PNG, or WebP up to 10 MB.</p>
             </div>
             <div className="flex gap-2 mt-4">
               <button disabled={uploading} onClick={uploadCert}
@@ -286,6 +307,13 @@ export default function CertificatesPage() {
                             </p>
                             {cert.credentialId && (
                               <p className="text-[11px] font-mono" style={{ color: D.muted }}>ID: {cert.credentialId}</p>
+                            )}
+                            {cert.fileUrl && (
+                              <a href={cert.fileUrl} target="_blank" rel="noreferrer"
+                                className="inline-flex items-center gap-1 text-[11px] font-semibold no-underline mt-1"
+                                style={{ color: D.accent }}>
+                                <i className="fas fa-file-alt" /> View certificate file
+                              </a>
                             )}
                           </div>
 

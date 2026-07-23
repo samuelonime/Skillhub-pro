@@ -25,7 +25,7 @@ export async function apiFetch<T = any>(
   const url = `${API_BASE}${endpoint}`;
 
   const headers: Record<string, string> = {
-    'Content-Type': 'application/json',
+    ...(typeof FormData !== 'undefined' && options.body instanceof FormData ? {} : { 'Content-Type': 'application/json' }),
     ...(options.headers as Record<string, string> || {}),
   };
 
