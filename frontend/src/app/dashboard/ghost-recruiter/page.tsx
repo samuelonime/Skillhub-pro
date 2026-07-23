@@ -5,8 +5,8 @@ import { SidebarLayout } from '@/components/layout/SidebarLayout';
 import { apiFetch } from '@/lib/api';
 
 const navItems = [
-  { href: '/dashboard',             icon: 'fa-home',          label: 'Dashboard' },
-  { href: '/dashboard/courses',     icon: 'fa-book-open',     label: 'Courses' },
+  { href: '/dashboard',                 icon: 'fa-home',                label: 'Dashboard' },
+  { href: '/dashboard/courses',         icon: 'fa-book-open',           label: 'Courses' },
   {
     icon: 'fa-sparkles',
     label: 'Next Gen',
@@ -18,15 +18,16 @@ const navItems = [
       { href: '/dashboard/ghost-recruiter', icon: 'fa-wand-magic-sparkles', label: 'Ghost Recruiter' },
     ],
   },
-  { href: '/dashboard/community',   icon: 'fa-users',         label: 'Community' },
-  { href: '/dashboard/portfolio',   icon: 'fa-layer-group',   label: 'Portfolio' },
-  { href: '/dashboard/resume',        icon: 'fa-file-lines',           label: 'Resume' },
-  { href: '/dashboard/platforms',   icon: 'fa-graduation-cap',label: 'Learning Platforms' },
-  { href: '/dashboard/jobs',        icon: 'fa-briefcase',     label: 'Jobs' },
-  { href: '/dashboard/certificates',icon: 'fa-certificate',   label: 'Certificates' },
-  { href: '/dashboard/rewards',     icon: 'fa-coins',         label: 'Rewards' },
-  { href: '/dashboard/settings',    icon: 'fa-gear',          label: 'Settings' },
+  { href: '/dashboard/community',       icon: 'fa-users',               label: 'Community' },
+  { href: '/dashboard/portfolio',       icon: 'fa-layer-group',         label: 'Portfolio' },
+  { href: '/dashboard/resume',          icon: 'fa-file-lines',          label: 'Resume' },
+  { href: '/dashboard/platforms',       icon: 'fa-graduation-cap',      label: 'Learning Platforms' },
+  { href: '/dashboard/jobs',            icon: 'fa-briefcase',           label: 'Jobs' },
+  { href: '/dashboard/certificates',    icon: 'fa-certificate',         label: 'Certificates' },
+  { href: '/dashboard/rewards',         icon: 'fa-coins',               label: 'Rewards' },
+  { href: '/dashboard/settings',        icon: 'fa-gear',                label: 'Settings' },
 ];
+
 
 function Sk({ h = 'h-4', w = 'w-full' }: { h?: string; w?: string }) {
   return <div className={`${h} ${w} rounded-lg animate-pulse`} style={{ background: 'rgba(255,255,255,0.06)' }} />;
