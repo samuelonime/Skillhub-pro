@@ -44,7 +44,7 @@ interface SidebarLayoutProps {
   pageTitle: string;
 }
 
-const HIDDEN_DASHBOARD_NAV_HREFS = new Set(['/dashboard/resume', '/dashboard/certificates']);
+const HIDDEN_DASHBOARD_NAV_HREFS = new Set(['/dashboard/resume']);
 
 const NOTIF_ICON: Record<string, { icon: string; color: string }> = {
   success:            { icon: 'fa-check-circle', color: '#00E5A0' },
