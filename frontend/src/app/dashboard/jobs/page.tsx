@@ -288,7 +288,7 @@ export default function JobsPage() {
     try {
       await apiFetch(`/job-scout/alerts/${alertId}/open`, { method: 'POST' });
     } catch {}
-  }
+  } 
 
   useEffect(() => {
     apiFetch('/jobs/featured')
