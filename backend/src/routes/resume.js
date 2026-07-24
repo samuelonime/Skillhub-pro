@@ -25,14 +25,12 @@ const upload = multer({
 
 // ── Helper to get or create API key ──────────────────────────────────────────
 async function getOrCreateApiKey(userId) {
-  // Check if user has an API key
   let user = await prisma.user.findUnique({
     where: { id: userId },
     select: { careerAiApiKey: true }
   });
-  
+
   if (!user?.careerAiApiKey) {
-    // Generate a new API key (you might want to use a UUID or similar)
     const newApiKey = `career_${Date.now()}_${userId}_${Math.random().toString(36).substring(2, 15)}`;
     await prisma.user.update({
       where: { id: userId },
@@ -40,7 +38,7 @@ async function getOrCreateApiKey(userId) {
     });
     return newApiKey;
   }
-  
+
   return user.careerAiApiKey;
 }
 
@@ -178,13 +176,9 @@ router.put('/ai', authenticate, async (req, res) => {
   }
 });
 
-// ── POST /api/v1/resume/generate — AI resume generation using Gemini ──────────
+// ── POST /api/v1/resume/generate — Career AI primary, multi-provider fallback ──
 router.post('/generate', authenticate, async (req, res) => {
   try {
-    if (!isAIConfigured()) {
-      return error(res, 'AI service not configured. Set GEMINI_API_KEY, GROQ_API_KEY, or OPENROUTER_API_KEY.');
-    }
-
     const userId = req.user.id;
 
     // Gather all available data for this student in parallel
@@ -262,7 +256,27 @@ router.post('/generate', authenticate, async (req, res) => {
       })),
     };
 
-    const systemPrompt = `You are a professional resume writer specialising in tech and digital skills candidates.
+    let resumeMarkdown;
+    let provider;
+
+    // ── Primary: Career AI microservice ─────────────────────────────────────
+    try {
+      const careerResult = await callCareerAi(userId, '/resume/generate', { data: dataPayload });
+      resumeMarkdown = careerResult?.resume || careerResult?.content;
+      provider = 'career-ai';
+
+      if (!resumeMarkdown) {
+        throw new Error('Career AI returned no resume content');
+      }
+    } catch (careerAiErr) {
+      console.warn('[Resume] Career AI unavailable, falling back to multi-provider client:', careerAiErr.message);
+
+      // ── Fallback: multi-provider AI client (Gemini / Groq / OpenRouter) ───
+      if (!isAIConfigured()) {
+        return error(res, 'Career AI is unavailable and no fallback AI provider is configured. Set GEMINI_API_KEY, GROQ_API_KEY, or OPENROUTER_API_KEY.');
+      }
+
+      const systemPrompt = `You are a professional resume writer specialising in tech and digital skills candidates.
 Given structured data about a student's progress on SkillHub Pro, produce a complete, polished, ATS-friendly resume in Markdown format.
 
 Rules:
@@ -276,10 +290,13 @@ Rules:
 - Format dates as "Month YYYY". Omit sections with no data.
 - Return ONLY the Markdown resume — no preamble, no explanation.`;
 
-    const userPrompt = `Here is the student's SkillHub Pro data:\n\n${JSON.stringify(dataPayload, null, 2)}`;
+      const userPrompt = `Here is the student's SkillHub Pro data:\n\n${JSON.stringify(dataPayload, null, 2)}`;
 
-    // ── Call Gemini API ────────────────────────────────────────────────────
-    const { text: resumeMarkdown, provider } = await generateText(systemPrompt, userPrompt, { temperature: 0.7, maxTokens: 4000 });
+      const fallbackResult = await generateText(systemPrompt, userPrompt, { temperature: 0.7, maxTokens: 4000 });
+      resumeMarkdown = fallbackResult.text;
+      provider = fallbackResult.provider;
+    }
+
     console.log(`[Resume] Generated via provider: ${provider}`);
 
     if (!resumeMarkdown) {
@@ -316,11 +333,12 @@ Rules:
       userId,
       type:     'resume_generated',
       title:    'Generated an AI-powered resume',
-      metadata: dataSummary,
+      metadata: { ...dataSummary, provider },
     });
 
     return success(res, {
       resume: resumeMarkdown,
+      provider,
       generatedAt: new Date(),
       dataSummary,
     }, 'Resume generated successfully ✨');
@@ -330,36 +348,20 @@ Rules:
   }
 });
 
-// ── POST /api/v1/resume/career/generate — Career AI resume generation ────
-router.post('/career/generate', authenticate, async (req, res) => {
-  try {
-    const { role } = req.body;
-    if (!role) {
-      return badRequest(res, 'Role is required');
-    }
-
-    const result = await callCareerAi(req.user.id, '/resume/generate', { role });
-    return success(res, result, 'Career AI resume generated successfully');
-  } catch (err) {
-    console.error('Career AI generation error:', err);
-    return error(res, 'Failed to generate career AI resume');
-  }
-});
-
 // ── POST /api/v1/resume/export — Export resume as PDF ────────────────────
 router.post('/export', authenticate, async (req, res) => {
   try {
     const apiKey = await getOrCreateApiKey(req.user.id);
-    
+
     const pdfRes = await fetch(`${process.env.CAREER_AI_URL}/v1/resume/export`, {
       method: 'POST',
-      headers: { 
-        'Content-Type': 'application/json', 
-        'Authorization': `Bearer ${apiKey}` 
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${apiKey}`
       },
-      body: JSON.stringify({ 
-        userId: req.user.id, 
-        format: 'pdf' 
+      body: JSON.stringify({
+        userId: req.user.id,
+        format: 'pdf'
       }),
     });
 
@@ -369,55 +371,7 @@ router.post('/export', authenticate, async (req, res) => {
 
     res.setHeader('Content-Type', 'application/pdf');
     res.setHeader('Content-Disposition', 'attachment; filename=resume.pdf');
-    
-    // Stream the PDF straight through
-    pdfRes.body.pipe(res);
-  } catch (err) {
-    console.error('Resume export error:', err);
-    return error(res, 'Failed to export resume');
-  }
-});
 
-// ── POST /api/v1/resume/career/generate — Alternative endpoint for career AI ──
-router.post('/career/generate', authenticate, async (req, res) => {
-  try {
-    const { role } = req.body;
-    if (!role) {
-      return badRequest(res, 'Role is required');
-    }
-
-    const result = await callCareerAi(req.user.id, '/resume/generate', { role });
-    return success(res, result, 'Career AI resume generated successfully');
-  } catch (err) {
-    console.error('Career AI generation error:', err);
-    return error(res, 'Failed to generate career AI resume');
-  }
-});
-
-// ── POST /api/v1/resume/export — Export resume as PDF ────────────────────
-router.post('/export', authenticate, async (req, res) => {
-  try {
-    const apiKey = await getOrCreateApiKey(req.user.id);
-    
-    const pdfRes = await fetch(`${process.env.CAREER_AI_URL}/v1/resume/export`, {
-      method: 'POST',
-      headers: { 
-        'Content-Type': 'application/json', 
-        'Authorization': `Bearer ${apiKey}` 
-      },
-      body: JSON.stringify({ 
-        userId: req.user.id, 
-        format: 'pdf' 
-      }),
-    });
-
-    if (!pdfRes.ok) {
-      throw new Error(`Export failed with status: ${pdfRes.status}`);
-    }
-
-    res.setHeader('Content-Type', 'application/pdf');
-    res.setHeader('Content-Disposition', 'attachment; filename=resume.pdf');
-    
     // Stream the PDF straight through
     pdfRes.body.pipe(res);
   } catch (err) {
@@ -433,8 +387,8 @@ router.get('/career/status', authenticate, async (req, res) => {
       where: { id: req.user.id },
       select: { careerAiApiKey: true }
     });
-    
-    return success(res, { 
+
+    return success(res, {
       hasApiKey: !!user?.careerAiApiKey,
       apiKey: user?.careerAiApiKey || null
     });
@@ -451,7 +405,7 @@ router.post('/career/key', authenticate, async (req, res) => {
       where: { id: req.user.id },
       data: { careerAiApiKey: newApiKey }
     });
-    
+
     return success(res, { apiKey: newApiKey }, 'New API key generated successfully');
   } catch (err) {
     return error(res, 'Failed to generate API key');
