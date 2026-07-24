@@ -1,25 +1,12 @@
 // lib/jobSearchApi.ts
-// ── SkillHub Pro — Web Job Search API helper ──────────────────────────────
+// ── SkillHub Pro — Web Job Search API helper ─────────────────────────────
 //
-// Talks to the skillhub-job-api FastAPI backend deployed on Render.
-// Endpoint:  POST /api/v1/jobs/search
-// Response shape (from backend/app/api/endpoints/search.py):
-//   { query, results, jobs: JobPost[], source_status, response_time }
-//
-// JobPost fields (from backend/app/models/job.py):
-//   id, title, company, location, description, skills, salary_min,
-//   salary_max, salary_currency, source (enum), source_url, is_remote,
-//   job_type (enum), experience_level, posted_date, created_at
-//
-// Match scoring runs entirely client-side using the same SequenceMatcher
-// logic as the backend's JobMatcherService (job_matcher.py), so no extra
-// auth token or API call is needed for scoring.
+// IMPORTANT CHANGE: All requests now go to /api/job-search (same-origin
+// Next.js route handler) instead of directly to the Render FastAPI server.
+// This eliminates both the CORS problem and the browser cold-start timeout.
+// See: frontend/src/app/api/job-search/route.ts
 
-const JOB_SEARCH_API =
-  process.env.NEXT_PUBLIC_JOB_SEARCH_API_URL ||
-  'https://skillhub-job-api.onrender.com';
-
-// ── Types matching the FastAPI models exactly ────────────────────────────────
+// ── Types matching backend/app/models/job.py exactly ─────────────────────
 
 export type JobSource =
   | 'linkedin' | 'indeed' | 'glassdoor'
@@ -62,13 +49,12 @@ export interface SourceStatus {
   detail?: string;
 }
 
-/** Mirrors POST /api/v1/jobs/search response */
 export interface SearchApiResponse {
-  query:         string;
-  results:       number;
-  jobs:          ScrapedJob[];
-  source_status: SourceStatus[];
-  response_time: number;
+  query:          string;
+  results:        number;
+  jobs:           ScrapedJob[];
+  source_status:  SourceStatus[];
+  response_time:  number;
 }
 
 export interface SearchOptions {
@@ -79,78 +65,73 @@ export interface SearchOptions {
   sources?:    JobSource[];
 }
 
-// ── API call ─────────────────────────────────────────────────────────────────
+// ── API call (via same-origin Next.js proxy) ──────────────────────────────
 
 /**
- * POST /api/v1/jobs/search
+ * Searches live jobs by calling the Next.js route handler at /api/job-search,
+ * which proxies the request to the Render FastAPI backend server-side.
  *
- * The backend uses JobSpy to scrape LinkedIn, Indeed, and Glassdoor in
- * parallel and returns real-time results cached in Redis for 5 minutes.
- * The Render free-tier service sleeps after inactivity — first call after
- * sleep can take ~30 s to respond; subsequent calls are fast.
- *
- * No auth token required (uses optional_auth middleware).
+ * This avoids browser CORS restrictions and Render cold-start timeouts.
+ * The route handler has a 55-second server-side timeout to cover cold starts.
  */
 export async function searchWebJobs(
   query: string,
   opts: SearchOptions = {}
 ): Promise<ScrapedJob[]> {
   const body: Record<string, any> = {
-    query,
+    query:       query.trim(),
     remote_only: opts.remoteOnly ?? false,
     max_results: opts.maxResults ?? 20,
   };
 
-  if (opts.location)  body.location  = opts.location;
-  if (opts.jobType)   body.job_type  = opts.jobType;
-  if (opts.sources)   body.sources   = opts.sources;
+  if (opts.location) body.location = opts.location;
+  if (opts.jobType)  body.job_type  = opts.jobType;
+  if (opts.sources)  body.sources   = opts.sources;
 
-  const res = await fetch(`${JOB_SEARCH_API}/api/v1/jobs/search`, {
+  const res = await fetch('/api/job-search', {
     method:  'POST',
     headers: { 'Content-Type': 'application/json' },
     body:    JSON.stringify(body),
   });
 
   if (!res.ok) {
-    // Surface the FastAPI error detail when available
     let detail = `${res.status} ${res.statusText}`;
     try {
       const err = await res.json();
-      if (err?.detail) detail = err.detail;
+      if (err?.error) detail = err.error;
     } catch {}
-    throw new Error(
-      `Job search failed: ${detail}. ` +
-      'The Render free-tier service may be waking up — try again in ~30 s.'
-    );
+
+    // Give a user-friendly message for the Render cold-start scenario
+    if (res.status === 504 || detail.toLowerCase().includes('waking')) {
+      throw new Error(
+        'The job search service is starting up — this takes ~30 seconds on first use. ' +
+        'Please try again shortly.'
+      );
+    }
+
+    throw new Error(`Job search failed: ${detail}`);
   }
 
   const data = (await res.json()) as SearchApiResponse;
 
-  // Normalise source_url: FastAPI validates it as HttpUrl which sometimes
-  // serialises to an object rather than a plain string — make it safe.
+  // Normalise source_url — FastAPI's HttpUrl can serialise as an object
   return (data.jobs || []).map(job => ({
     ...job,
-    source_url: String(job.source_url ?? ''),
+    source_url:  String(job.source_url  ?? ''),
     company_url: job.company_url ? String(job.company_url) : undefined,
   }));
 }
 
-// ── Client-side skill scoring ─────────────────────────────────────────────────
-//
-// Mirrors the SequenceMatcher logic in backend/app/services/job_matcher.py
-// → JobMatcherService._calculate_skill_match()
-// Running it client-side avoids the authenticated POST /api/v1/match endpoint.
+// ── Client-side skill scoring ──────────────────────────────────────────────
+// Mirrors SequenceMatcher logic from backend/app/services/job_matcher.py
 
 function sequenceSimilarity(a: string, b: string): number {
   a = a.toLowerCase().trim();
   b = b.toLowerCase().trim();
   if (!a || !b) return 0;
   if (a === b)  return 1;
-
-  // Fast path — substring containment (covers "react" ↔ "reactjs" etc.)
   if (a.includes(b) || b.includes(a)) return 0.8;
 
-  // Bigram overlap (approximates SequenceMatcher.ratio())
   const bigrams = (s: string) =>
     new Set(Array.from({ length: s.length - 1 }, (_, i) => s.slice(i, i + 2)));
   const bA = bigrams(a);
@@ -166,14 +147,13 @@ function calculateSkillMatch(jobSkill: string, userSkills: string[]): number {
 }
 
 /**
- * Score each ScrapedJob against the user's verified skill list and sort
- * best-match first. Jobs with no listed skills receive a neutral 50%
- * (same behaviour as the backend matcher).
+ * Score and sort jobs against the user's skill list.
  *
- * @param jobs       Raw results from searchWebJobs()
- * @param userSkills The logged-in user's skill list.
- *                   In SkillHub Pro this comes from the /jobs/featured
- *                   response (featured.userSkills) or /auth/me (user.skills).
+ * userSkills source in SkillHub Pro:
+ *   The /jobs/featured endpoint returns { jobs, userTier, userCoins } —
+ *   it does NOT include userSkills. Fetch skills from /auth/me instead:
+ *     const me = await apiFetch('/auth/me');
+ *     const userSkills = me.data?.skills ?? [];
  */
 export function scoreJobsAgainstSkills(
   jobs: ScrapedJob[],
@@ -186,18 +166,16 @@ export function scoreJobsAgainstSkills(
   return jobs
     .map(job => {
       const jobSkills = job.skills ?? [];
-      if (jobSkills.length === 0) return { ...job, match: 50 };
+      if (!jobSkills.length) return { ...job, match: 50 };
 
       const scores  = jobSkills.map(js => calculateSkillMatch(js, userSkills));
-      const average = scores.reduce((a, b) => a + b, 0) / scores.length;
+      const average = scores.reduce((s, n) => s + n, 0) / scores.length;
       return { ...job, match: Math.round(average) };
     })
     .sort((a, b) => (b.match ?? 0) - (a.match ?? 0));
 }
 
-// ── Salary formatter ──────────────────────────────────────────────────────────
-// Converts the backend's salary_min/salary_max/salary_currency fields into a
-// human-readable string ready to display in the jobs page.
+// ── Salary formatter ───────────────────────────────────────────────────────
 
 export function formatSalary(job: ScrapedJob): string | null {
   if (!job.salary_min && !job.salary_max) return null;
