@@ -4,6 +4,7 @@ import Image from 'next/image';
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { SidebarLayout } from '@/components/layout/SidebarLayout';
 import { apiFetch } from '@/lib/api';
+import { searchWebJobs, scoreJobsAgainstSkills, ScrapedJob } from '@/lib/jobSearchApi';
 
 const navItems = [
   { href: '/dashboard',                 icon: 'fa-home',                label: 'Dashboard' },
@@ -237,20 +238,47 @@ function LockedTierTeaser({ targetTier, coinsNeeded }: { targetTier: TierKey; co
 
 /* ── Main Page ──────────────────────────────────────────────────────────────── */
 export default function JobsPage() {
-  const [featured, setFeatured]       = useState<any>(null);
-  const [scouted, setScouted]         = useState<any[]>([]);
-  const [allJobs, setAllJobs]         = useState<any[] | null>(null);
-  const [scoutUnread, setScoutUnread] = useState(0);
-  const [selected, setSelected]       = useState<string | null>(null);
-  const [search, setSearch]           = useState('');
-  const [activeTab, setActiveTab]     = useState<'opportunities' | 'all' | 'saved' | 'applications'>('opportunities');
-  const [saved, setSaved]             = useState<any[] | null>(null);
-  const [applications, setApplications] = useState<any[] | null>(null);
-  const [applying, setApplying]       = useState<string | null>(null);
-  const [saving, setSaving]           = useState<string | null>(null);
-  const [toast, setToast]             = useState('');
+  const [featured, setFeatured]           = useState<any>(null);
+  const [scouted, setScouted]             = useState<any[]>([]);
+  const [allJobs, setAllJobs]             = useState<any[] | null>(null);
+  const [scoutUnread, setScoutUnread]     = useState(0);
+  const [selected, setSelected]           = useState<string | null>(null);
+  const [search, setSearch]               = useState('');
+  const [activeTab, setActiveTab]         = useState<'opportunities' | 'all' | 'saved' | 'applications' | 'websearch'>('opportunities');
+  const [saved, setSaved]                 = useState<any[] | null>(null);
+  const [applications, setApplications]   = useState<any[] | null>(null);
+  const [applying, setApplying]           = useState<string | null>(null);
+  const [saving, setSaving]               = useState<string | null>(null);
+  const [toast, setToast]                 = useState('');
+
+  // ── Web search state ───────────────────────────────────────────────────────
+  const [webQuery,     setWebQuery]       = useState('');
+  const [webResults,   setWebResults]     = useState<ScrapedJob[] | null>(null);
+  const [webSearching, setWebSearching]   = useState(false);
+  const [webError,     setWebError]       = useState('');
 
   function showToast(msg: string) { setToast(msg); setTimeout(() => setToast(''), 3000); }
+
+  // ── Web search handler ─────────────────────────────────────────────────────
+  async function runWebSearch() {
+    if (!webQuery.trim()) return;
+    setWebSearching(true);
+    setWebError('');
+    try {
+      const jobs = await searchWebJobs(webQuery);
+      // featured?.userSkills is where SkillHub stores the user's skill list.
+      // If your API returns skills under a different key, update this line.
+      const userSkills: string[] = featured?.userSkills ?? user?.skills ?? [];
+      setWebResults(scoreJobsAgainstSkills(jobs, userSkills));
+    } catch (err: any) {
+      setWebError(
+        err?.message ||
+        'Search failed. The Render free-tier service may be waking up — try again in ~30 s.'
+      );
+    } finally {
+      setWebSearching(false);
+    }
+  }
 
   async function markScoutOpened(alertId?: string) {
     if (!alertId) return;
@@ -268,7 +296,6 @@ export default function JobsPage() {
     apiFetch('/jobs')
       .then(r => { if (r.success) { setAllJobs(r.data); if (r.data.length > 0) setSelected(r.data[0].id); } else setAllJobs([]); })
       .catch(() => setAllJobs([]));
-    // AI Job Scout — personalised leads scouted from the web
     apiFetch('/job-scout/my-alerts')
       .then(r => {
         if (r.success && Array.isArray(r.data?.alerts)) {
@@ -334,10 +361,9 @@ export default function JobsPage() {
 
   async function saveJob(jobId: string, isSaved: boolean) {
     const job = (allJobs || []).find(j => j.id === jobId);
-    if (job?.kind === 'scouted') return; // scouted leads aren't saved server-side
+    if (job?.kind === 'scouted') return;
     setSaving(jobId);
     try {
-      // Backend POST /jobs/:id/save is a toggle — it saves if unsaved, removes if saved.
       const res = await apiFetch(`/jobs/${jobId}/save`, { method: 'POST' });
       if (res.success) {
         apiFetch('/jobs/featured').then(r => { if (r.success) setFeatured(r.data); });
@@ -368,10 +394,11 @@ export default function JobsPage() {
     rejected:     [D.red + '20',     D.red],
   };
 
-  // ── Define tabs with proper typing ──────────────────────────────────────
-  const tabs: Array<{ key: 'opportunities' | 'all' | 'saved' | 'applications'; label: string; badge?: number }> = [
+  // ── Tabs ──────────────────────────────────────────────────────────────────
+  const tabs: Array<{ key: 'opportunities' | 'all' | 'saved' | 'applications' | 'websearch'; label: string; badge?: number }> = [
     { key: 'opportunities', label: '⭐ Opportunities', badge: scoutUnread },
     { key: 'all',           label: 'All Jobs' },
+    { key: 'websearch',     label: '🔍 Search the Web' },
     { key: 'saved',         label: 'Saved' },
     { key: 'applications',  label: 'My Applications' },
   ];
@@ -688,6 +715,174 @@ export default function JobsPage() {
           </>
         )}
 
+        {/* ── Web Search Tab ─────────────────────────────────────────────────── */}
+        {activeTab === 'websearch' && (
+          <div>
+            {/* Search bar */}
+            <div className="flex gap-2 mb-6 max-w-xl">
+              <input
+                type="text"
+                placeholder="e.g. React developer Nigeria, remote data analyst…"
+                value={webQuery}
+                onChange={e => setWebQuery(e.target.value)}
+                onKeyDown={e => e.key === 'Enter' && runWebSearch()}
+                className="flex-1 px-4 py-3 rounded-xl text-sm font-[inherit] outline-none transition-all"
+                style={{ background: D.input, border: `1px solid ${D.border}`, color: D.text }}
+                onFocus={e => { e.target.style.borderColor = D.accent; }}
+                onBlur={e => { e.target.style.borderColor = D.border; }}
+              />
+              <button
+                onClick={runWebSearch}
+                disabled={webSearching || !webQuery.trim()}
+                className="px-6 py-3 rounded-xl text-sm font-semibold border-0 cursor-pointer text-white disabled:opacity-50 transition-all hover:opacity-90"
+                style={{ background: D.accent }}
+              >
+                {webSearching ? (
+                  <span className="flex items-center gap-2">
+                    <span className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin inline-block" />
+                    Searching…
+                  </span>
+                ) : 'Search'}
+              </button>
+            </div>
+
+            {/* Empty state with suggestion chips */}
+            {webResults === null && !webSearching && !webError && (
+              <div className="rounded-2xl p-10 text-center" style={{ background: D.card, border: `1px solid ${D.border}` }}>
+                <i className="fas fa-search text-3xl block mb-4" style={{ color: D.accent + '60' }} />
+                <p className="text-[14px] font-semibold text-white/80 mb-1">Search live jobs across the web</p>
+                <p className="text-[12.5px] mb-6" style={{ color: D.subtext }}>
+                  Results are pulled in real-time and scored against your verified SkillHub skills.
+                </p>
+                <div className="flex flex-wrap gap-2 justify-center">
+                  {['React developer Lagos', 'Remote data analyst', 'Python engineer Nigeria', 'Cloud engineer Africa'].map(q => (
+                    <button key={q} onClick={() => setWebQuery(q)}
+                      className="text-[11.5px] font-semibold px-3 py-1.5 rounded-full border-0 cursor-pointer transition-all hover:opacity-80"
+                      style={{ background: D.accent + '14', color: D.accent, border: `1px solid ${D.accent}30` }}>
+                      {q}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Error state */}
+            {webError && (
+              <div className="rounded-2xl p-4 mb-5 flex items-start gap-3"
+                style={{ background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.2)' }}>
+                <i className="fas fa-exclamation-circle text-[14px] mt-0.5 flex-shrink-0" style={{ color: D.red }} />
+                <div>
+                  <p className="text-[13px] font-semibold mb-0.5" style={{ color: D.red }}>Search error</p>
+                  <p className="text-[12px]" style={{ color: 'rgba(255,255,255,0.45)' }}>{webError}</p>
+                  <button onClick={runWebSearch}
+                    className="mt-2 text-[11.5px] font-semibold border-0 bg-transparent cursor-pointer"
+                    style={{ color: D.accent }}>
+                    Try again →
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* Skeleton */}
+            {webSearching && (
+              <div className="flex flex-col gap-3">
+                {[1, 2, 3].map(i => <Sk key={i} h="h-24" r="rounded-2xl" />)}
+              </div>
+            )}
+
+            {/* Results */}
+            {webResults !== null && !webSearching && (
+              webResults.length === 0 ? (
+                <div className="rounded-2xl p-12 text-center" style={{ background: D.card, border: `1px solid ${D.border}` }}>
+                  <i className="fas fa-search text-4xl block mb-3" style={{ color: D.muted }} />
+                  <h3 className="font-jakarta font-bold text-[15px] text-white mb-2">No results found</h3>
+                  <p className="text-sm" style={{ color: D.subtext }}>Try a different search term.</p>
+                </div>
+              ) : (
+                <>
+                  {/* Result count + clear */}
+                  <div className="flex items-center justify-between mb-4">
+                    <p className="text-[12px]" style={{ color: D.subtext }}>
+                      {webResults.length} live jobs for{' '}
+                      <strong className="text-white/70">"{webQuery}"</strong>
+                    </p>
+                    <button
+                      onClick={() => { setWebResults(null); setWebQuery(''); }}
+                      className="text-[11.5px] font-semibold border-0 bg-transparent cursor-pointer"
+                      style={{ color: D.muted }}
+                    >
+                      Clear ×
+                    </button>
+                  </div>
+
+                  <div className="flex flex-col gap-3">
+                    {webResults.map((job, i) => {
+                      const [mbg, mc] = job.match != null ? matchColor(job.match) : ['transparent', D.muted];
+                      return (
+                        <div
+                          key={job.id || i}
+                          className="rounded-2xl p-5 transition-all hover:-translate-y-0.5"
+                          style={{ background: D.card, border: `1px solid ${D.border}` }}
+                        >
+                          <div className="flex items-start justify-between gap-4">
+                            {/* Left */}
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-2 flex-wrap mb-1">
+                                <h3 className="font-jakarta font-bold text-[14px] text-white">{job.title}</h3>
+                                {job.match != null && (
+                                  <span
+                                    className="text-[10.5px] font-bold px-2 py-0.5 rounded-full flex-shrink-0"
+                                    style={{ background: mbg, color: mc }}
+                                  >
+                                    {job.match}% match
+                                  </span>
+                                )}
+                              </div>
+                              <p className="text-[12px] mb-2" style={{ color: D.subtext }}>
+                                <span className="font-medium" style={{ color: 'rgba(255,255,255,0.65)' }}>{job.company}</span>
+                                {job.location && <span> · {job.location}</span>}
+                                <span style={{ color: D.muted }}> · via {job.source}</span>
+                              </p>
+                              {job.skills && job.skills.length > 0 && (
+                                <div className="flex flex-wrap gap-1.5">
+                                  {job.skills.slice(0, 6).map(s => (
+                                    <span
+                                      key={s}
+                                      className="text-[10px] font-semibold px-2 py-0.5 rounded-full"
+                                      style={{ background: D.accent + '16', color: D.accent }}
+                                    >
+                                      {s}
+                                    </span>
+                                  ))}
+                                  {job.skills.length > 6 && (
+                                    <span className="text-[10px]" style={{ color: D.muted }}>
+                                      +{job.skills.length - 6} more
+                                    </span>
+                                  )}
+                                </div>
+                              )}
+                            </div>
+                            {/* Right: CTA */}
+                            <a
+                              href={job.source_url}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="flex-shrink-0 flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-[12px] font-bold no-underline text-white transition-all hover:opacity-80"
+                              style={{ background: D.accent }}
+                            >
+                              View <i className="fas fa-external-link-alt text-[10px]" />
+                            </a>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </>
+              )
+            )}
+          </div>
+        )}
+
         {/* ── Saved Tab ─────────────────────────────────────────────────────── */}
         {activeTab === 'saved' && (
           <div>
@@ -749,6 +944,7 @@ export default function JobsPage() {
             )}
           </Card>
         )}
+
       </div>
     </SidebarLayout>
   );
