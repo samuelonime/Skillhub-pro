@@ -36,6 +36,7 @@ model User {
   minTier          String?
   isPremium        Boolean  @default(false)
   trialEndsAt      DateTime?
+  careerAiKey      String?  // API key issued by the self-hosted skillhub-career-1 service; generated once, reused
   createdAt        DateTime @default(now())
   updatedAt        DateTime @updatedAt
   
@@ -74,6 +75,7 @@ model User {
   receivedMessages     DirectMessage[]        @relation("ReceivedMessages")
   sharedPosts          PostShare[]
   sharedProjects       ProjectShare[]
+  apiKeys              ApiKey[]
 
   @@map("users")
 }
@@ -899,4 +901,21 @@ model ContactMessage {
   @@index([topic])
   @@index([createdAt])
   @@map("contact_messages")
+}
+
+model ApiKey {
+  id         String    @id @default(uuid())
+  userId     String
+  name       String    @default("Default Key")
+  keyHash    String    @unique
+  keyPrefix  String
+  lastUsedAt DateTime?
+  revoked    Boolean   @default(false)
+  createdAt  DateTime  @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([keyHash])
+  @@map("api_keys")
 }
