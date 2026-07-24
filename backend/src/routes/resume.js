@@ -24,22 +24,40 @@ const upload = multer({
 });
 
 // ── Helper to get or create API key ──────────────────────────────────────────
+// Requests a REAL key from the career-ai service — never fabricates one locally,
+// since a locally-fabricated string will never match anything in that service's
+// ApiKey table and will always fail auth there.
 async function getOrCreateApiKey(userId) {
   let user = await prisma.user.findUnique({
     where: { id: userId },
     select: { careerAiKey: true }
   });
 
-  if (!user?.careerAiKey) {
-    const newApiKey = `career_${Date.now()}_${userId}_${Math.random().toString(36).substring(2, 15)}`;
-    await prisma.user.update({
-      where: { id: userId },
-      data: { careerAiKey: newApiKey }
-    });
-    return newApiKey;
+  if (user?.careerAiKey) return user.careerAiKey;
+
+  const res = await fetch(`${process.env.CAREER_AI_URL}/v1/keys`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'x-internal-secret': process.env.CAREER_AI_INTERNAL_SECRET,
+    },
+    body: JSON.stringify({ userId }),
+  });
+
+  if (!res.ok) {
+    const text = await res.text();
+    throw new Error(`Failed to generate career-ai key: ${res.status} ${text.slice(0, 200)}`);
   }
 
-  return user.careerAiKey;
+  const body = await res.json();
+  const newApiKey = body.data.apiKey;
+
+  await prisma.user.update({
+    where: { id: userId },
+    data: { careerAiKey: newApiKey }
+  });
+
+  return newApiKey;
 }
 
 // ── POST /api/v1/resume — upload resume ───────────────────────────────────────
@@ -398,9 +416,27 @@ router.get('/career/status', authenticate, async (req, res) => {
 });
 
 // ── POST /api/v1/resume/career/key — Generate new career AI API key ──────
+// Requests a REAL key from the career-ai service — never fabricates one locally.
 router.post('/career/key', authenticate, async (req, res) => {
   try {
-    const newApiKey = `career_${Date.now()}_${req.user.id}_${Math.random().toString(36).substring(2, 15)}`;
+    const apiRes = await fetch(`${process.env.CAREER_AI_URL}/v1/keys`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-internal-secret': process.env.CAREER_AI_INTERNAL_SECRET,
+      },
+      body: JSON.stringify({ userId: req.user.id }),
+    });
+
+    if (!apiRes.ok) {
+      const text = await apiRes.text();
+      console.error('career-ai key generation failed:', apiRes.status, text.slice(0, 200));
+      return error(res, 'Failed to generate API key');
+    }
+
+    const body = await apiRes.json();
+    const newApiKey = body.data.apiKey;
+
     await prisma.user.update({
       where: { id: req.user.id },
       data: { careerAiKey: newApiKey }
@@ -408,6 +444,7 @@ router.post('/career/key', authenticate, async (req, res) => {
 
     return success(res, { apiKey: newApiKey }, 'New API key generated successfully');
   } catch (err) {
+    console.error('career/key route error:', err);
     return error(res, 'Failed to generate API key');
   }
 });
