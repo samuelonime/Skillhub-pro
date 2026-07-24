@@ -279,20 +279,25 @@ router.post('/generate', authenticate, async (req, res) => {
 
     // ── Primary: Career AI microservice ─────────────────────────────────────
     try {
-      const careerResult = await callCareerAi(userId, '/resume/generate', { data: dataPayload });
-      resumeMarkdown = careerResult?.resume || careerResult?.content;
-      provider = 'career-ai';
+      const careerResult = await callCareerAi(userId, '/resume/generate', { role: req.body?.role });
+      const payload = careerResult?.data;
 
-      if (!resumeMarkdown) {
+      if (!payload?.summary) {
         throw new Error('Career AI returned no resume content');
       }
-    } catch (careerAiErr) {
-      console.warn('[Resume] Career AI unavailable, falling back to multi-provider client:', careerAiErr.message);
 
-      // ── Fallback: multi-provider AI client (Gemini / Groq / OpenRouter) ───
-      if (!isAIConfigured()) {
-        return error(res, 'Career AI is unavailable and no fallback AI provider is configured. Set GEMINI_API_KEY, GROQ_API_KEY, or OPENROUTER_API_KEY.');
-      }
+      resumeMarkdown = [
+        `# ${user.firstName} ${user.lastName}`,
+        `${[user.email, user.location].filter(Boolean).join(' | ')}`,
+        '',
+        '## Summary', payload.summary, '',
+        payload.skills?.length ? `## Skills\n${payload.skills.join(', ')}\n` : '',
+        payload.projects?.length ? `## Projects\n${payload.projects.map(p => `**${p.title}** — ${p.description || ''}`).join('\n\n')}\n` : '',
+        payload.certifications?.length ? `## Certifications\n${payload.certifications.map(c => `- ${c.name} (${c.issuer || ''})`).join('\n')}\n` : '',
+        payload.achievements?.length ? `## Achievements\n${payload.achievements.map(a => `- ${a}`).join('\n')}\n` : '',
+      ].filter(Boolean).join('\n');
+
+      provider = 'career-ai';
 
       const systemPrompt = `You are a professional resume writer specialising in tech and digital skills candidates.
 Given structured data about a student's progress on SkillHub Pro, produce a complete, polished, ATS-friendly resume in Markdown format.
