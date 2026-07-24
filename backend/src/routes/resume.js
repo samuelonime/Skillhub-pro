@@ -27,19 +27,19 @@ const upload = multer({
 async function getOrCreateApiKey(userId) {
   let user = await prisma.user.findUnique({
     where: { id: userId },
-    select: { careerAiApiKey: true }
+    select: { careerAiKey: true }
   });
 
-  if (!user?.careerAiApiKey) {
+  if (!user?.careerAiKey) {
     const newApiKey = `career_${Date.now()}_${userId}_${Math.random().toString(36).substring(2, 15)}`;
     await prisma.user.update({
       where: { id: userId },
-      data: { careerAiApiKey: newApiKey }
+      data: { careerAiKey: newApiKey }
     });
     return newApiKey;
   }
 
-  return user.careerAiApiKey;
+  return user.careerAiKey;
 }
 
 // ── POST /api/v1/resume — upload resume ───────────────────────────────────────
@@ -385,12 +385,12 @@ router.get('/career/status', authenticate, async (req, res) => {
   try {
     const user = await prisma.user.findUnique({
       where: { id: req.user.id },
-      select: { careerAiApiKey: true }
+      select: { careerAiKey: true }
     });
 
     return success(res, {
-      hasApiKey: !!user?.careerAiApiKey,
-      apiKey: user?.careerAiApiKey || null
+      hasApiKey: !!user?.careerAiKey,
+      apiKey: user?.careerAiKey || null
     });
   } catch (err) {
     return error(res, 'Failed to get career AI status');
@@ -403,7 +403,7 @@ router.post('/career/key', authenticate, async (req, res) => {
     const newApiKey = `career_${Date.now()}_${req.user.id}_${Math.random().toString(36).substring(2, 15)}`;
     await prisma.user.update({
       where: { id: req.user.id },
-      data: { careerAiApiKey: newApiKey }
+      data: { careerAiKey: newApiKey }
     });
 
     return success(res, { apiKey: newApiKey }, 'New API key generated successfully');

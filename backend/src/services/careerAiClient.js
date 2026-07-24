@@ -1,8 +1,9 @@
+const prisma = require('../config/database');
+
 const CAREER_AI_URL = process.env.CAREER_AI_URL;
 const INTERNAL_SECRET = process.env.CAREER_AI_INTERNAL_SECRET;
 
 async function getOrCreateApiKey(userId) {
-  // Check your own DB first — store the key once per user so you don't regenerate every call.
   const existing = await prisma.user.findUnique({ where: { id: userId }, select: { careerAiKey: true } });
   if (existing?.careerAiKey) return existing.careerAiKey;
 
