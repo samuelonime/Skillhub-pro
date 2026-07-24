@@ -1,4 +1,4 @@
-// routes/resume.js — Resume upload + Portfolio visibility toggle
+// routes/resume.js — Resume upload + Portfolio visibility toggle + Career AI
 const router  = require('express').Router();
 const multer  = require('multer');
 const prisma  = require('../config/database');
@@ -6,6 +6,7 @@ const { authenticate } = require('../middleware/auth');
 const { uploadRaw, deleteFile } = require('../utils/cloudinary');
 const { logActivity } = require('../utils/activityLogger');
 const { success, created, error, badRequest } = require('../utils/response');
+const { callCareerAi } = require('../services/careerAiClient');
 
 // ── AI client (multi-provider with automatic fallback) ───────────────────────
 const { generateText, isAIConfigured } = require('../utils/aiClient');
@@ -21,6 +22,27 @@ const upload = multer({
     else cb(new Error('Only PDF, DOC and DOCX files are allowed'));
   },
 });
+
+// ── Helper to get or create API key ──────────────────────────────────────────
+async function getOrCreateApiKey(userId) {
+  // Check if user has an API key
+  let user = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { careerAiApiKey: true }
+  });
+  
+  if (!user?.careerAiApiKey) {
+    // Generate a new API key (you might want to use a UUID or similar)
+    const newApiKey = `career_${Date.now()}_${userId}_${Math.random().toString(36).substring(2, 15)}`;
+    await prisma.user.update({
+      where: { id: userId },
+      data: { careerAiApiKey: newApiKey }
+    });
+    return newApiKey;
+  }
+  
+  return user.careerAiApiKey;
+}
 
 // ── POST /api/v1/resume — upload resume ───────────────────────────────────────
 router.post('/', authenticate, upload.single('resume'), async (req, res) => {
@@ -305,6 +327,134 @@ Rules:
   } catch (err) {
     console.error('AI resume generation error:', err);
     return error(res, 'Failed to generate resume. Please try again.');
+  }
+});
+
+// ── POST /api/v1/resume/career/generate — Career AI resume generation ────
+router.post('/career/generate', authenticate, async (req, res) => {
+  try {
+    const { role } = req.body;
+    if (!role) {
+      return badRequest(res, 'Role is required');
+    }
+
+    const result = await callCareerAi(req.user.id, '/resume/generate', { role });
+    return success(res, result, 'Career AI resume generated successfully');
+  } catch (err) {
+    console.error('Career AI generation error:', err);
+    return error(res, 'Failed to generate career AI resume');
+  }
+});
+
+// ── POST /api/v1/resume/export — Export resume as PDF ────────────────────
+router.post('/export', authenticate, async (req, res) => {
+  try {
+    const apiKey = await getOrCreateApiKey(req.user.id);
+    
+    const pdfRes = await fetch(`${process.env.CAREER_AI_URL}/v1/resume/export`, {
+      method: 'POST',
+      headers: { 
+        'Content-Type': 'application/json', 
+        'Authorization': `Bearer ${apiKey}` 
+      },
+      body: JSON.stringify({ 
+        userId: req.user.id, 
+        format: 'pdf' 
+      }),
+    });
+
+    if (!pdfRes.ok) {
+      throw new Error(`Export failed with status: ${pdfRes.status}`);
+    }
+
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', 'attachment; filename=resume.pdf');
+    
+    // Stream the PDF straight through
+    pdfRes.body.pipe(res);
+  } catch (err) {
+    console.error('Resume export error:', err);
+    return error(res, 'Failed to export resume');
+  }
+});
+
+// ── POST /api/v1/resume/career/generate — Alternative endpoint for career AI ──
+router.post('/career/generate', authenticate, async (req, res) => {
+  try {
+    const { role } = req.body;
+    if (!role) {
+      return badRequest(res, 'Role is required');
+    }
+
+    const result = await callCareerAi(req.user.id, '/resume/generate', { role });
+    return success(res, result, 'Career AI resume generated successfully');
+  } catch (err) {
+    console.error('Career AI generation error:', err);
+    return error(res, 'Failed to generate career AI resume');
+  }
+});
+
+// ── POST /api/v1/resume/export — Export resume as PDF ────────────────────
+router.post('/export', authenticate, async (req, res) => {
+  try {
+    const apiKey = await getOrCreateApiKey(req.user.id);
+    
+    const pdfRes = await fetch(`${process.env.CAREER_AI_URL}/v1/resume/export`, {
+      method: 'POST',
+      headers: { 
+        'Content-Type': 'application/json', 
+        'Authorization': `Bearer ${apiKey}` 
+      },
+      body: JSON.stringify({ 
+        userId: req.user.id, 
+        format: 'pdf' 
+      }),
+    });
+
+    if (!pdfRes.ok) {
+      throw new Error(`Export failed with status: ${pdfRes.status}`);
+    }
+
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', 'attachment; filename=resume.pdf');
+    
+    // Stream the PDF straight through
+    pdfRes.body.pipe(res);
+  } catch (err) {
+    console.error('Resume export error:', err);
+    return error(res, 'Failed to export resume');
+  }
+});
+
+// ── GET /api/v1/resume/career/status — Check career AI status ────────────
+router.get('/career/status', authenticate, async (req, res) => {
+  try {
+    const user = await prisma.user.findUnique({
+      where: { id: req.user.id },
+      select: { careerAiApiKey: true }
+    });
+    
+    return success(res, { 
+      hasApiKey: !!user?.careerAiApiKey,
+      apiKey: user?.careerAiApiKey || null
+    });
+  } catch (err) {
+    return error(res, 'Failed to get career AI status');
+  }
+});
+
+// ── POST /api/v1/resume/career/key — Generate new career AI API key ──────
+router.post('/career/key', authenticate, async (req, res) => {
+  try {
+    const newApiKey = `career_${Date.now()}_${req.user.id}_${Math.random().toString(36).substring(2, 15)}`;
+    await prisma.user.update({
+      where: { id: req.user.id },
+      data: { careerAiApiKey: newApiKey }
+    });
+    
+    return success(res, { apiKey: newApiKey }, 'New API key generated successfully');
+  } catch (err) {
+    return error(res, 'Failed to generate API key');
   }
 });
 

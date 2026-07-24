@@ -143,6 +143,7 @@ app.use('/api/v1/skill-decay',      require('./routes/skillDecay'));
 app.use('/api/v1/ghost-recruiter',  require('./routes/ghostRecruiter'));
 app.use('/api/v1/contact',          require('./routes/contact'));
 app.use('/api/v1/job-scout', require('./routes/jobScout'));
+app.use('/api/v1/resume', require('./routes/resume'));
 
 app.get('/', (_req, res) => {
   res.json({ status: 'ok', service: 'SkillHub API', health: '/health' });
