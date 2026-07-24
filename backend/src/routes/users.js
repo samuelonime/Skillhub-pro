@@ -87,13 +87,25 @@ router.put('/profile', authenticate, [
                    'company', 'companyWebsite', 'companySize', 'industry', 'phone', 'interestNiche', 'skills'];
   const data = {};
   ALLOWED.forEach(k => {
-    if (req.body[k] !== undefined) data[k] = req.body[k];
+    if (req.body[k] !== undefined && k !== 'skills') data[k] = req.body[k];
   });
+
+  const skillNames = Array.isArray(req.body.skills)
+    ? [...new Set(req.body.skills.map(skill => String(skill).trim()).filter(Boolean))]
+    : null;
 
   try {
     const user = await prisma.user.update({
       where: { id: req.user.id },
-      data
+      data: {
+        ...data,
+        ...(skillNames ? {
+          skills: {
+            deleteMany: {},
+            create: skillNames.map(name => ({ name })),
+          },
+        } : {}),
+      },
     });
 
     // Calculate profile strength based on completed fields
