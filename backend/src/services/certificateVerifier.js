@@ -11,9 +11,13 @@ function containsTerm(text, value) {
 
 const PROVIDER_RULES = [
   { names: ['cisco', 'networking academy', 'netacad'], domains: ['netacad.com', 'cisco.com', 'credly.com'] },
+  { names: ['credly'], domains: ['credly.com'] },
   { names: ['coursera'], domains: ['coursera.org'] },
   { names: ['edx'], domains: ['edx.org'] },
   { names: ['udemy'], domains: ['udemy.com'] },
+  { names: ['microsoft', 'microsoft learn'], domains: ['microsoft.com', 'learn.microsoft.com'] },
+  { names: ['google cloud', 'cloud skills boost', 'google'], domains: ['cloudskillsboost.google', 'google.com'] },
+  { names: ['aws', 'amazon web services', 'aws training'], domains: ['amazon.com', 'aws.amazon.com', 'skillbuilder.aws', 'credly.com'] },
   { names: ['linkedin'], domains: ['linkedin.com'] },
   { names: ['pluralsight'], domains: ['pluralsight.com'] },
   { names: ['skillshare'], domains: ['skillshare.com'] },
