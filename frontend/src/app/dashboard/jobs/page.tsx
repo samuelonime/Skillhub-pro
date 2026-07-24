@@ -266,14 +266,15 @@ export default function JobsPage() {
     setWebError('');
     try {
       const jobs = await searchWebJobs(webQuery);
-      // featured?.userSkills is where SkillHub stores the user's skill list.
-      // If your API returns skills under a different key, update this line.
-      const userSkills: string[] = featured?.userSkills ?? user?.skills ?? [];
+      // featured.userSkills is the user's skill list returned by the jobs API.
+      const userSkills: string[] = Array.isArray(featured?.userSkills)
+        ? featured.userSkills.map((skill: any) => typeof skill === 'string' ? skill : skill.name).filter(Boolean)
+        : [];
       setWebResults(scoreJobsAgainstSkills(jobs, userSkills));
     } catch (err: any) {
       setWebError(
         err?.message ||
-        'Search failed. The Render free-tier service may be waking up — try again in ~30 s.'
+        'Search failed. The Render service may be waking up — try again in ~30 s.'
       );
     } finally {
       setWebSearching(false);
