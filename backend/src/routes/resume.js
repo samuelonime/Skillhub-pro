@@ -199,7 +199,6 @@ router.post('/generate', authenticate, async (req, res) => {
   try {
     const userId = req.user.id;
 
-    // Gather all available data for this student in parallel
     const [user, enrollments, certificates, projects, skills, externalCerts, applications] =
       await Promise.all([
         prisma.user.findUnique({
@@ -298,6 +297,12 @@ router.post('/generate', authenticate, async (req, res) => {
       ].filter(Boolean).join('\n');
 
       provider = 'career-ai';
+    } catch (careerAiErr) {
+      console.warn('[Resume] Career AI unavailable, falling back to multi-provider client:', careerAiErr.message);
+
+      if (!isAIConfigured()) {
+        return error(res, 'Career AI is unavailable and no fallback AI provider is configured. Set GEMINI_API_KEY, GROQ_API_KEY, or OPENROUTER_API_KEY.');
+      }
 
       const systemPrompt = `You are a professional resume writer specialising in tech and digital skills candidates.
 Given structured data about a student's progress on SkillHub Pro, produce a complete, polished, ATS-friendly resume in Markdown format.
@@ -333,17 +338,14 @@ Rules:
       certificates:     certificates.length + externalCerts.length,
     };
 
-    // Check if this is a first-time generation before upsert
     const existing = await prisma.aiResume.findUnique({ where: { userId } });
 
-    // Persist the generated resume
     await prisma.aiResume.upsert({
       where:  { userId },
       create: { userId, content: resumeMarkdown, dataSummary, generatedAt: new Date() },
       update: { content: resumeMarkdown, dataSummary, generatedAt: new Date(), updatedAt: new Date() },
     });
 
-    // Award merit coins on very first generation
     if (!existing) {
       await prisma.user.update({
         where: { id: userId },
@@ -351,7 +353,6 @@ Rules:
       });
     }
 
-    // Log to activity feed
     await logActivity({
       userId,
       type:     'resume_generated',
