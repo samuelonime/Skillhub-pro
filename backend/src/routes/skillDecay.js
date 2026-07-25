@@ -7,6 +7,7 @@ const router = require('express').Router();
 const prisma  = require('../config/database');
 const { authenticate } = require('../middleware/auth');
 const { success, error } = require('../utils/response');
+const { analyze } = require('../utils/skillDecayAnalyzer');
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 const HALF_LIFE_DAYS    = 120; // skill loses ~50% freshness after 120 inactive days
@@ -144,6 +145,35 @@ router.post('/refresh/:skillName', authenticate, async (req, res) => {
   } catch (err) {
     console.error('[skill-decay/refresh]', err);
     return error(res, 'Failed to refresh skill');
+  }
+});
+
+// ── POST /api/v1/skill-decay/analyze — standalone AI coach, grounded in
+// the user's real decay data (freshness scores, demand, alerts) rather
+// than the AI guessing. This is a separate concern from the numeric decay
+// model above: that computes freshness deterministically, this explains
+// it conversationally and gives tailored recommendations. ─────────────────
+router.post('/analyze', authenticate, async (req, res) => {
+  try {
+    const { question, context } = req.body || {};
+
+    if (!question || typeof question !== 'string' || !question.trim()) {
+      return error(res, 'A question is required', 400);
+    }
+
+    // Ground the analyzer in the actual decay report the user is looking at
+    // (passed up from the frontend) rather than re-querying the DB, so the
+    // answer always matches exactly what's on the user's screen.
+    const skills  = Array.isArray(context?.skills) ? context.skills : [];
+    const summary = context?.summary || {};
+
+    // Entirely self-built — no external API, no API key, no network call.
+    const { answer, intent } = analyze(question, skills, summary);
+
+    return success(res, { answer, provider: 'skillhub-native', intent });
+  } catch (err) {
+    console.error('[skill-decay/analyze]', err);
+    return error(res, 'Failed to analyze skills right now. Please try again.');
   }
 });
 
