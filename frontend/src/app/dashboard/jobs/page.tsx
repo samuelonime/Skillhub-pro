@@ -266,15 +266,14 @@ export default function JobsPage() {
     setWebError('');
     try {
       const jobs = await searchWebJobs(webQuery);
-      // featured.userSkills is the user's skill list returned by the jobs API.
-      const userSkills: string[] = Array.isArray(featured?.userSkills)
-        ? featured.userSkills.map((skill: any) => typeof skill === 'string' ? skill : skill.name).filter(Boolean)
-        : [];
+      // featured.userSkills comes from GET /jobs/featured — verified/accomplishment
+      // skills first, falling back to self-reported skills if none are verified yet.
+      const userSkills: string[] = featured?.userSkills ?? [];
       setWebResults(scoreJobsAgainstSkills(jobs, userSkills));
     } catch (err: any) {
       setWebError(
         err?.message ||
-        'Search failed. The Render service may be waking up — try again in ~30 s.'
+        'Search failed. The Render free-tier service may be waking up — try again in ~30 s.'
       );
     } finally {
       setWebSearching(false);
@@ -288,7 +287,7 @@ export default function JobsPage() {
     try {
       await apiFetch(`/job-scout/alerts/${alertId}/open`, { method: 'POST' });
     } catch {}
-  } 
+  }
 
   useEffect(() => {
     apiFetch('/jobs/featured')

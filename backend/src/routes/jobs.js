@@ -28,6 +28,17 @@ function meetsMinTier(userTier, jobMinTier) {
   return (tierRank[userTier] || 0) >= (tierRank[jobMinTier || 'bronze'] || 0);
 }
 
+// Skills the user has actually accomplished/verified inside SkillHub take
+// priority (e.g. earned via completed courses/certificates). If the user
+// has none yet, fall back to their full self-reported skill list so the
+// web job search still has something to match against.
+function accomplishmentSkills(user) {
+  const all = user?.skills || [];
+  const verified = all.filter(s => s?.verified).map(s => s.name);
+  if (verified.length) return verified;
+  return all.map(s => s?.name).filter(Boolean);
+}
+
 // ── GET /jobs/featured — tier-gated opportunity ads ──────────────────────────
 router.get('/featured', authenticate, async (req, res) => {
   const coins  = req.user.meritCoins || 0;
@@ -69,7 +80,12 @@ router.get('/featured', authenticate, async (req, res) => {
         return b.match - a.match;
       });
 
-    return success(res, { jobs: result, userTier: tier, userCoins: coins });
+    return success(res, {
+      jobs: result,
+      userTier: tier,
+      userCoins: coins,
+      userSkills: accomplishmentSkills(req.user),
+    });
   } catch (err) {
     console.error('Featured jobs error:', err);
     return error(res, 'Failed to fetch featured jobs');
