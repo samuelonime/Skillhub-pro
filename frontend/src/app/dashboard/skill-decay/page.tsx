@@ -160,19 +160,32 @@ function RetentionTimeline({
   );
 }
 
-/* AI analysis chat — posts to your backend, which calls Gemini (see the
-   companion route file). Grounded in the skills/summary already on screen. */
-type Msg = { role: 'user' | 'assistant'; content: string };
+/* AI analysis chat — posts to your backend, which runs the self-built
+   skill-decay analyzer (see the companion route file). Grounded in the
+   skills/summary already on screen. Assistant replies stream in with a
+   typewriter effect since the backend returns the full answer at once. */
+type Msg = { role: 'user' | 'assistant'; content: string; typing?: boolean };
+
+// Tune these to taste: higher CHARS_PER_TICK = faster typing,
+// lower TICK_MS = smoother (but more re-renders).
+const TYPE_TICK_MS = 18;
+const TYPE_CHARS_PER_TICK = 2;
 
 function AnalyzePanel({ skills, summary }: { skills: any[]; summary: any }) {
   const [messages, setMessages] = useState<Msg[]>([]);
   const [input, setInput] = useState('');
   const [busy, setBusy] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const typeIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   useEffect(() => {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: 'smooth' });
   }, [messages, busy]);
+
+  // Clean up any in-flight typing interval on unmount.
+  useEffect(() => () => {
+    if (typeIntervalRef.current) clearInterval(typeIntervalRef.current);
+  }, []);
 
   const quickPrompts = [
     'What should I refresh this week?',
@@ -180,6 +193,26 @@ function AnalyzePanel({ skills, summary }: { skills: any[]; summary: any }) {
     'Draft a focused 30-day refresher plan',
     'Explain the decay on my weakest skill',
   ];
+
+  // Reveals `fullText` into the message at `index` a few characters at a
+  // time, so the assistant's reply appears to type itself out live.
+  function typeOutMessage(index: number, fullText: string) {
+    if (typeIntervalRef.current) clearInterval(typeIntervalRef.current);
+
+    let shown = 0;
+    typeIntervalRef.current = setInterval(() => {
+      shown = Math.min(fullText.length, shown + TYPE_CHARS_PER_TICK);
+      setMessages((m) => {
+        const copy = [...m];
+        copy[index] = { role: 'assistant', content: fullText.slice(0, shown), typing: shown < fullText.length };
+        return copy;
+      });
+      if (shown >= fullText.length && typeIntervalRef.current) {
+        clearInterval(typeIntervalRef.current);
+        typeIntervalRef.current = null;
+      }
+    }, TYPE_TICK_MS);
+  }
 
   async function ask(question: string) {
     if (!question.trim() || busy) return;
@@ -194,7 +227,14 @@ function AnalyzePanel({ skills, summary }: { skills: any[]; summary: any }) {
         body: JSON.stringify({ question, history: next, context: { skills, summary } }),
       }).catch(() => null);
       const answer = r?.success ? (r.data?.answer ?? r.data?.reply ?? '') : '';
-      setMessages((m) => [...m, { role: 'assistant', content: answer || "I couldn't analyze that just now — try again." }]);
+      const fullText = answer || "I couldn't analyze that just now — try again.";
+
+      setMessages((m) => {
+        const withPlaceholder = [...m, { role: 'assistant' as const, content: '', typing: true }];
+        // Kick off the typewriter effect once the placeholder is in place.
+        typeOutMessage(withPlaceholder.length - 1, fullText);
+        return withPlaceholder;
+      });
     } catch {
       setMessages((m) => [...m, { role: 'assistant', content: 'Analysis failed to load. Check your connection and try again.' }]);
     } finally {
@@ -232,11 +272,14 @@ function AnalyzePanel({ skills, summary }: { skills: any[]; summary: any }) {
                   lineHeight: 1.5,
                 }}>
                 {m.content}
+                {m.typing && (
+                  <span className="inline-block align-baseline animate-pulse" style={{ marginLeft: 1, color: '#4F8EF7' }}>▊</span>
+                )}
               </div>
             </div>
           ))
         )}
-        {busy && (
+        {busy && !messages[messages.length - 1]?.typing && (
           <div className="flex items-center gap-2 text-[12px]" style={{ color: 'rgba(255,255,255,0.4)' }}>
             <span className="inline-block w-2 h-2 rounded-full animate-pulse" style={{ background: '#4F8EF7' }} />
             Reading the decay curves…
