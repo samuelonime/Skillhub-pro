@@ -175,6 +175,8 @@ model Job {
   salary      String?
   skills      String[]  @default([])
   description String?
+  source      String?   // "linkedin" | "indeed" | "glassdoor" | "remoteok" | etc.
+  sourceUrl   String?
   status      JobStatus @default(active)
   minTier     String?
   isPremium   Boolean   @default(false)
