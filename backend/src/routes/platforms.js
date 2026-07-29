@@ -1,8 +1,22 @@
 const router = require('express').Router();
 const crypto = require('crypto');
+const multer  = require('multer');
 const prisma  = require('../config/database');
 const { authenticate, requireRole } = require('../middleware/auth');
 const { success, created, badRequest, error, notFound, forbidden } = require('../utils/response');
+const { uploadRaw } = require('../utils/cloudinary');
+
+// Same shape as backend/src/routes/certificates.js — memory storage, 10MB cap,
+// PDF/image only, so the same file the user picks for a manual certificate
+// works identically here.
+const certificateUpload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 10 * 1024 * 1024 },
+  fileFilter: (_req, file, cb) => {
+    const allowed = ['application/pdf', 'image/jpeg', 'image/png', 'image/webp'];
+    cb(null, allowed.includes(file.mimetype));
+  },
+});
 
 // ── Affiliate config ─────────────────────────────────────────────────────────
 // Replace tag values with your real affiliate IDs from each network's dashboard.
@@ -687,7 +701,7 @@ router.delete('/:platform/disconnect', authenticate, async (req, res) => {
 });
 
 // POST /api/v1/platforms/:platform/certificates — manually import a certificate
-router.post('/:platform/certificates', authenticate, async (req, res) => {
+router.post('/:platform/certificates', authenticate, certificateUpload.single('certificate'), async (req, res) => {
   const { platform } = req.params;
   const { title, issuer, completedAt, credentialUrl, skills } = req.body;
   if (!title || !completedAt) return badRequest(res, 'Title and completion date are required');
@@ -698,6 +712,10 @@ router.post('/:platform/certificates', authenticate, async (req, res) => {
     });
     if (!conn) return badRequest(res, 'Platform not connected. Connect it first.');
 
+    const uploadedFileUrl = req.file
+      ? await uploadRaw(req.file.buffer, 'skillhub/certificates', `external-certificate-${req.user.id}-${Date.now()}`)
+      : null;
+
     const cert = await prisma.externalCertificate.create({
       data: {
         userId: req.user.id,
@@ -707,7 +725,10 @@ router.post('/:platform/certificates', authenticate, async (req, res) => {
         issuer: issuer || PLATFORM_CONFIG[platform]?.label || platform,
         completedAt: new Date(completedAt),
         credentialUrl: credentialUrl || null,
-        skills: skills || [],
+        fileUrl: uploadedFileUrl,
+        skills: typeof skills === 'string'
+          ? skills.split(',').map(s => s.trim()).filter(Boolean)
+          : (Array.isArray(skills) ? skills : []),
       },
     });
 

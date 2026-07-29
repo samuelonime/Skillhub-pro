@@ -595,6 +595,7 @@ function ImportCertModal({ platform, onClose, onImported }: {
   onImported: (msg: string) => void;
 }) {
   const [form, setForm]     = useState({ title: '', completedAt: '', credentialUrl: '', skills: '' });
+  const [file, setFile]     = useState<File | null>(null);
   const [saving, setSaving] = useState(false);
   const [error, setError]   = useState('');
 
@@ -602,9 +603,16 @@ function ImportCertModal({ platform, onClose, onImported }: {
     if (!form.title || !form.completedAt) { setError('Course title and completion date are required.'); return; }
     setSaving(true);
     try {
+      const body = new FormData();
+      body.append('title', form.title);
+      body.append('completedAt', form.completedAt);
+      if (form.credentialUrl) body.append('credentialUrl', form.credentialUrl);
+      if (form.skills) body.append('skills', form.skills);
+      if (file) body.append('certificate', file);
+
       const res = await apiFetch(`/platforms/${platform.key}/certificates`, {
         method: 'POST',
-        body: JSON.stringify({ ...form, skills: form.skills.split(',').map(s => s.trim()).filter(Boolean) }),
+        body,
       });
       if (res.success) { onImported('Certificate imported successfully!'); onClose(); }
       else setError(res.message || 'Failed to import certificate.');
@@ -669,6 +677,25 @@ function ImportCertModal({ platform, onClose, onImported }: {
                 />
               </div>
             ))}
+
+            <div>
+              <label className="block text-[10.5px] font-bold uppercase tracking-wider mb-1.5" style={{ color: 'rgba(255,255,255,0.3)' }}>
+                Certificate File (optional)
+              </label>
+              <label
+                className="flex items-center gap-3 w-full px-4 py-3 rounded-xl text-[13px] cursor-pointer transition-all"
+                style={{ background: 'rgba(255,255,255,0.05)', border: '1px dashed rgba(255,255,255,0.15)', color: 'rgba(255,255,255,0.5)' }}
+              >
+                <i className="fas fa-upload text-[12px]" style={{ color: platform.accent }} />
+                {file ? file.name : 'Upload PDF, JPG, or PNG (max 10MB)'}
+                <input
+                  type="file"
+                  accept="application/pdf,image/jpeg,image/png,image/webp"
+                  className="hidden"
+                  onChange={e => setFile(e.target.files?.[0] || null)}
+                />
+              </label>
+            </div>
           </div>
 
           <div className="flex gap-2.5 mt-6">
@@ -1059,12 +1086,20 @@ export default function PlatformsPage() {
                     <span className="text-[10.5px]" style={{ color: 'rgba(255,255,255,0.25)' }}>
                       {cert.completedAt ? new Date(cert.completedAt).toLocaleDateString() : ''}
                     </span>
-                    {cert.credentialUrl && (
-                      <a href={cert.credentialUrl} target="_blank" rel="noreferrer"
-                        className="text-[11px] font-semibold no-underline hover:opacity-70 transition-all" style={{ color: '#4F8EF7' }}>
-                        View <i className="fas fa-external-link-alt text-[9px]" />
-                      </a>
-                    )}
+                    <div className="flex items-center gap-3">
+                      {cert.fileUrl && (
+                        <a href={cert.fileUrl} target="_blank" rel="noreferrer"
+                          className="text-[11px] font-semibold no-underline hover:opacity-70 transition-all" style={{ color: '#00E5A0' }}>
+                          <i className="fas fa-file-arrow-down text-[9px] mr-1" />File
+                        </a>
+                      )}
+                      {cert.credentialUrl && (
+                        <a href={cert.credentialUrl} target="_blank" rel="noreferrer"
+                          className="text-[11px] font-semibold no-underline hover:opacity-70 transition-all" style={{ color: '#4F8EF7' }}>
+                          View <i className="fas fa-external-link-alt text-[9px]" />
+                        </a>
+                      )}
+                    </div>
                   </div>
                 </div>
               );
