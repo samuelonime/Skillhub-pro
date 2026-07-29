@@ -536,6 +536,7 @@ model ExternalCertificate {
   completedAt   DateTime
   credentialUrl String?
   thumbnailUrl  String?
+  fileUrl       String? 
   skills        String[] @default([])
   createdAt     DateTime @default(now())
 
