@@ -86,11 +86,33 @@ export default function CertificatesPage() {
   async function load() {
     setLoading(true);
     try {
-      const [certsRes, coursesRes] = await Promise.all([
+      const [certsRes, externalRes, coursesRes] = await Promise.all([
         apiFetch('/certificates'),
+        apiFetch('/platforms/certificates'),
         apiFetch('/courses/enrolled'),
       ]);
-      if (certsRes.success) setCerts(certsRes.data);
+
+      const owned = certsRes.success ? certsRes.data : [];
+      // Normalize ExternalCertificate rows to the same shape owned certs use,
+      // so the existing render logic (cert.issueDate, cert.provider, etc.)
+      // works for both without any conditional branching in the JSX.
+      const imported = externalRes.success
+        ? externalRes.data.map((c: any) => ({
+            id: c.id,
+            title: c.title,
+            provider: c.issuer,
+            issueDate: c.completedAt,
+            credentialUrl: c.credentialUrl,
+            fileUrl: c.fileUrl,
+            status: 'verified', // platform imports are trusted at import time — no pending review step
+            source: 'external',
+            platform: c.platform,
+          }))
+        : [];
+
+      setCerts([...owned, ...imported].sort((a: any, b: any) =>
+        new Date(b.issueDate || 0).getTime() - new Date(a.issueDate || 0).getTime()
+      ));
       if (coursesRes.success) setUpcoming(coursesRes.data.filter((c: any) => c.progress > 0 && c.progress < 100).slice(0, 3));
     } catch {} finally { setLoading(false); }
   }
@@ -130,10 +152,11 @@ export default function CertificatesPage() {
     finally { setUploading(false); }
   }
 
-  async function deleteCert(id: string) {
+  async function deleteCert(id: string, source?: string) {
     if (!confirm('Delete this certificate?')) return;
     try {
-      await apiFetch(`/certificates/${id}`, { method: 'DELETE' });
+      const endpoint = source === 'external' ? `/platforms/certificates/${id}` : `/certificates/${id}`;
+      await apiFetch(endpoint, { method: 'DELETE' });
       showMsg('Certificate removed');
       load();
     } catch {}
@@ -353,7 +376,7 @@ export default function CertificatesPage() {
                               style={{ background: D.input, border: `1px solid ${D.border}`, color: D.muted }}>
                               <i className="fas fa-link mr-1" /> Copy Link
                             </button>
-                            <button onClick={() => deleteCert(cert.id)}
+                            <button onClick={() => deleteCert(cert.id, cert.source)}
                               className="px-3.5 py-2 text-xs font-semibold rounded-lg border-0 cursor-pointer transition-all hover:opacity-80"
                               style={{ background: D.red + '18', color: D.red }}>
                               <i className="fas fa-trash mr-1" /> Remove
