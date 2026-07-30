@@ -148,6 +148,7 @@ model Course {
   thumbnail   String?
   description String?
   isPremium   Boolean  @default(false)
+  url         String?  // link to the course on its external platform (Udemy, Coursera, etc.)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 

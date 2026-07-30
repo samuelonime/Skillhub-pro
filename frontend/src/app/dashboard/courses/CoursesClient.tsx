@@ -534,11 +534,10 @@ function EnrolledCourses() {
       .finally(() => setLoading(false));
   }, []);
 
-  async function handleEnroll(id: string) {
-    setEnrolling(id);
+  function handleEnroll(id: string) {
     const course = courses.find(c => c.id === id);
-    if (course?.courseUrl) window.open(course.courseUrl, '_blank');
-    setEnrolling(null);
+    const link = course?.courseUrl || course?.url;
+    if (link) window.open(link, '_blank', 'noopener,noreferrer');
   }
 
   if (loading) return (
@@ -612,17 +611,25 @@ export default function CoursesClient() {
   // Reset page on filter change
   useEffect(() => { setPage(1); }, [category, level, sort, search]);
 
-  async function handleEnroll(id: string) {
+  function handleEnroll(id: string) {
+    const course = courses.find(c => c.id === id);
+
+    // Open the external platform immediately, inside the click handler,
+    // so the browser doesn't treat it as a blocked popup. Do this before
+    // any await — otherwise it fires after the user gesture window closes.
+    const link = course?.courseUrl || course?.url;
+    if (link) {
+      window.open(link, '_blank', 'noopener,noreferrer');
+    }
+
     setEnrolling(id);
-    try {
-      const res = await apiFetch(`/courses/${id}/enroll`, { method: 'POST' });
-      const course = courses.find(c => c.id === id);
-      if (res.success || course?.courseUrl) {
-        setCourses(prev => prev.map(c => c.id === id ? { ...c, enrolled: true } : c));
-        if (course?.courseUrl) window.open(course.courseUrl, '_blank');
-      }
-    } catch {}
-    finally { setEnrolling(null); }
+    // Mark as enrolled optimistically; the platform visit is what matters,
+    // not whether our own tracking call succeeds.
+    setCourses(prev => prev.map(c => c.id === id ? { ...c, enrolled: true } : c));
+
+    apiFetch(`/courses/${id}/enroll`, { method: 'POST' })
+      .catch(() => {})
+      .finally(() => setEnrolling(null));
   }
 
   const totalPages = Math.ceil(total / PER_PAGE);
