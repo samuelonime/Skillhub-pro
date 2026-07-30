@@ -76,6 +76,7 @@ model User {
   sharedPosts          PostShare[]
   sharedProjects       ProjectShare[]
   apiKeys              ApiKey[]
+  mockInterviews       MockInterview[]
 
   @@map("users")
 }
@@ -102,6 +103,25 @@ model UserSkill {
   @@unique([userId, name])
   @@index([userId])
   @@map("user_skills")
+}
+
+model MockInterview {
+  id                  String    @id @default(uuid())
+  userId              String
+  role                String
+  status              String    @default("in_progress") // in_progress | completed
+  questions           Json      // array of { id, text, category, expectedKeywords }
+  answers             Json      @default("[]") // array of { questionId, text, score, feedback, breakdown }
+  currentQuestionIndex Int      @default(0)
+  overallScore        Int?
+  verdict             String?
+  startedAt           DateTime  @default(now())
+  completedAt         DateTime?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("mock_interviews")
 }
 
 model RefreshToken {
