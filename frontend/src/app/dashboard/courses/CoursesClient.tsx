@@ -466,7 +466,7 @@ function CourseCard({ course, onEnroll, enrolling }: {
           </div>
           <button
             onClick={() => onEnroll(course.id)}
-            disabled={enrolling || isEnrolled}
+            disabled={enrolling}
             className="flex-1 py-2.5 text-[12px] font-bold border-0 cursor-pointer flex items-center justify-center gap-1.5 transition-all disabled:opacity-70"
             style={{
               borderRadius: 7,
@@ -478,7 +478,7 @@ function CourseCard({ course, onEnroll, enrolling }: {
             {enrolling ? (
               <div className="w-4 h-4 rounded-full border-2 border-white/30 border-t-white animate-spin" />
             ) : isEnrolled ? (
-              <><i className="fas fa-check text-[10px]" /> Enrolled</>
+              <><i className="fas fa-arrow-up-right-from-square text-[10px]" /> Continue on {platform.split(' ')[0]}</>
             ) : (
               <><i className="fas fa-arrow-up-right-from-square text-[10px]" /> View on {platform.split(' ')[0]}</>
             )}
@@ -621,6 +621,12 @@ export default function CoursesClient() {
     if (link) {
       window.open(link, '_blank', 'noopener,noreferrer');
     }
+
+    // Already enrolled: just re-open the platform link above and stop.
+    // Don't re-hit the enroll endpoint — the button must stay clickable
+    // forever so users can always get back to the course on Udemy/
+    // Coursera/etc, instead of freezing into a dead "Enrolled" state.
+    if (course?.enrolled) return;
 
     setEnrolling(id);
     // Mark as enrolled optimistically; the platform visit is what matters,
