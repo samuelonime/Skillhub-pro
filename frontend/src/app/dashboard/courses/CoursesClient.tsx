@@ -370,7 +370,7 @@ function CourseThumbnail({ course }: { course: any }) {
 function CourseCard({ course, onEnroll, enrolling }: {
   course: any;
   onEnroll: (id: string) => void;
-  enrolling: boolean;
+  enrolling: boolean; // true only when THIS card's own enroll call is in flight
 }) {
   const [hovered, setHovered] = useState(false);
   const platform = getCoursePlatform(course);
