@@ -84,7 +84,7 @@ function normalize(course) {
     isPremium: (course.price ?? 0) > 0,
     instructor: course.instructor,
     lessonCount: course.lessonCount,
-    url: course.url,
+    courseUrl: course.url,
     createdAt: course.createdAt,
     updatedAt: course.updatedAt,
   };
