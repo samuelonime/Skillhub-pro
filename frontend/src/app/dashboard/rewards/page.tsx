@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { SidebarLayout } from '@/components/layout/SidebarLayout';
 import { apiFetch } from '@/lib/api';
+import { MockInterviewModal } from './MockInterviewModal';
 
 const navItems = [
   { href: '/dashboard',             icon: 'fa-home',          label: 'Dashboard' },
@@ -260,6 +261,7 @@ export default function RewardsPage() {
   const [toast, setToast] = useState('');
   const [buyModal, setBuyModal] = useState(false);
   const [activeTab, setActiveTab] = useState<'redeem' | 'buy' | 'tiers'>('redeem');
+  const [mockInterviewSessionId, setMockInterviewSessionId] = useState<string | null>(null);
 
   async function load() {
     setLoading(true);
@@ -291,8 +293,16 @@ export default function RewardsPage() {
     setRedeeming(rewardId);
     try {
       const res = await apiFetch(`/rewards/${rewardId}/redeem`, { method: 'POST' });
-      if (res.success) { setToast(`${rewardName} redeemed successfully!`); load(); }
-      else setToast(res.message || 'Redemption failed');
+      if (res.success) {
+        if (res.data?.mockInterviewSessionId) {
+          setMockInterviewSessionId(res.data.mockInterviewSessionId);
+        } else {
+          setToast(`${rewardName} redeemed successfully!`);
+        }
+        load();
+      } else {
+        setToast(res.message || 'Redemption failed');
+      }
     } catch { setToast('Redemption failed'); }
     finally { setRedeeming(null); setTimeout(() => setToast(''), 3000); }
   }
@@ -311,6 +321,9 @@ export default function RewardsPage() {
       )}
       {buyModal && (
         <BuyCoinsModal onClose={() => setBuyModal(false)} onSuccess={() => { setBuyModal(false); load(); }} />
+      )}
+      {mockInterviewSessionId && (
+        <MockInterviewModal sessionId={mockInterviewSessionId} onClose={() => setMockInterviewSessionId(null)} />
       )}
 
       <div className="flex items-start justify-between mb-6 gap-4 flex-wrap">
