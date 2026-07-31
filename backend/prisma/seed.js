@@ -72,12 +72,12 @@ async function main() {
   console.log('📚 Creating courses...');
   
   const courses = [
-    { title: 'React Mastery', provider: 'Udemy', category: 'Frontend', level: 'Intermediate', duration: '40h', rating: 4.8, enrollCount: 15420, thumbnail: 'https://placehold.co/320x180/4f46e5/white?text=React', courseUrl: 'https://www.udemy.com/courses/search/?q=react' },
-    { title: 'Node.js & APIs', provider: 'Coursera', category: 'Backend', level: 'Beginner', duration: '30h', rating: 4.7, enrollCount: 9830, thumbnail: 'https://placehold.co/320x180/10b981/white?text=Node.js', courseUrl: 'https://www.coursera.org/search?query=node.js' },
-    { title: 'Python for Data Science', provider: 'edX', category: 'Data', level: 'Beginner', duration: '50h', rating: 4.9, enrollCount: 23100, thumbnail: 'https://placehold.co/320x180/f59e0b/white?text=Python', courseUrl: 'https://www.edx.org/search?q=python%20data%20science' },
-    { title: 'AWS Cloud Fundamentals', provider: 'AWS', category: 'Cloud', level: 'Beginner', duration: '25h', rating: 4.6, enrollCount: 11200, thumbnail: 'https://placehold.co/320x180/ef4444/white?text=AWS', courseUrl: 'https://skillbuilder.aws/' },
-    { title: 'UI/UX Design Principles', provider: 'Figma Academy', category: 'Design', level: 'Beginner', duration: '20h', rating: 4.7, enrollCount: 7500, thumbnail: 'https://placehold.co/320x180/8b5cf6/white?text=UI%2FUX', courseUrl: 'https://www.figma.com/academy/' },
-    { title: 'TypeScript Deep Dive', provider: 'Frontend Masters', category: 'Frontend', level: 'Advanced', duration: '35h', rating: 4.9, enrollCount: 5400, isPremium: true, price: 5000, thumbnail: 'https://placehold.co/320x180/06b6d4/white?text=TypeScript', courseUrl: 'https://frontendmasters.com/courses/typescript-v4/' },
+    { title: 'React Mastery', provider: 'Udemy', category: 'Frontend', level: 'Intermediate', duration: '40h', rating: 4.8, enrollCount: 15420, thumbnail: 'https://placehold.co/320x180/4f46e5/white?text=React', url: 'https://www.udemy.com/topic/react/' },
+    { title: 'Node.js & APIs', provider: 'Coursera', category: 'Backend', level: 'Beginner', duration: '30h', rating: 4.7, enrollCount: 9830, thumbnail: 'https://placehold.co/320x180/10b981/white?text=Node.js', url: 'https://www.coursera.org/courses?query=node.js' },
+    { title: 'Python for Data Science', provider: 'edX', category: 'Data', level: 'Beginner', duration: '50h', rating: 4.9, enrollCount: 23100, thumbnail: 'https://placehold.co/320x180/f59e0b/white?text=Python', url: 'https://www.edx.org/search?q=python%20data%20science' },
+    { title: 'AWS Cloud Fundamentals', provider: 'AWS', category: 'Cloud', level: 'Beginner', duration: '25h', rating: 4.6, enrollCount: 11200, thumbnail: 'https://placehold.co/320x180/ef4444/white?text=AWS', url: 'https://www.aws.training/' },
+    { title: 'UI/UX Design Principles', provider: 'Figma Academy', category: 'Design', level: 'Beginner', duration: '20h', rating: 4.7, enrollCount: 7500, thumbnail: 'https://placehold.co/320x180/8b5cf6/white?text=UI%2FUX', url: 'https://www.figma.com/academy/' },
+    { title: 'TypeScript Deep Dive', provider: 'Frontend Masters', category: 'Frontend', level: 'Advanced', duration: '35h', rating: 4.9, enrollCount: 5400, isPremium: true, price: 5000, thumbnail: 'https://placehold.co/320x180/06b6d4/white?text=TypeScript', url: 'https://frontendmasters.com/courses/typescript-v4/' },
   ];
 
   // Use createMany for better performance
